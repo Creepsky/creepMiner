@@ -37,14 +37,14 @@
 #include "rapidjson/document.h"
 
 #ifndef WIN32
-#   ifndef MSG_NOSIGNAL
-#       define MSG_NOSIGNAL SO_NOSIGPIPE
-#   endif
 #   include <netdb.h>
 #   include <sys/socket.h>
 #   include <netinet/in.h>
 #   include <arpa/inet.h>
 #   include "unistd.h"
+#   ifndef MSG_NOSIGNAL
+#       define MSG_NOSIGNAL SO_NOSIGPIPE
+#   endif
 #else
 #   define MSG_NOSIGNAL 0
 #endif
