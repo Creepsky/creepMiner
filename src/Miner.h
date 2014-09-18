@@ -26,6 +26,8 @@
 #include <limits>
 #include <random>
 #include <deque>
+#include <condition_variable>
+#include <atomic>
 
 #include <sys/types.h>
 #include <sys/stat.h>
