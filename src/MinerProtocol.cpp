@@ -57,7 +57,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string method,
                     totalBytesRead = 0;
                     this->readBuffer[totalBytesRead] = 0;
                 }
-            }while( (bytesRead > 0) && (totalBytesRead < readBufferSize-1) );
+            }while( (bytesRead > 0) && (totalBytesRead < (int)readBufferSize-1) );
             
             shutdown(sock,SHUT_RDWR);
             close(sock);
