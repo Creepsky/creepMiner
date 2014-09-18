@@ -14,8 +14,8 @@ void Burst::MinerSocket::setRemote(const std::string ip, size_t port,size_t defa
     this->remoteAddr.sin_family = AF_INET;
     this->remoteAddr.sin_port = htons( (u_short)port );
     
-    this->socketTimeout.tv_sec =  (long)defaultTimeout;
-    this->socketTimeout.tv_usec = 0;
+    this->socketTimeout.tv_sec  = (long)defaultTimeout;
+	this->socketTimeout.tv_usec = (long)defaultTimeout*1000;
 }
 
 std::string Burst::MinerSocket::httpRequest(const std::string method,
@@ -26,7 +26,11 @@ std::string Burst::MinerSocket::httpRequest(const std::string method,
     std::string response = "";
     memset((void*)this->readBuffer,0,readBufferSize);
 	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&this->socketTimeout,sizeof(struct timeval));
+#ifdef WIN32
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&this->socketTimeout.tv_usec, sizeof(this->socketTimeout.tv_usec));
+#else
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&this->socketTimeout, sizeof(struct timeval));
+#endif
     if(connect(sock, (struct sockaddr*)&this->remoteAddr, sizeof(struct sockaddr_in)) == -1)
     {
         MinerLogger::write("unable to connect to remote host");

@@ -48,8 +48,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	this->hash.close(&newGenSig[0]);
 	this->scoopNum = ((int)(newGenSig[newGenSig.size()-2] & 0x0F) << 8) | (int)newGenSig[newGenSig.size()-1];
     
-    MinerLogger::write("#"+std::to_string(blockHeight)+" "+
-                       "["+std::to_string(this->baseTarget)+"] "+
+	MinerLogger::write("New Block #" + std::to_string(blockHeight));
+    MinerLogger::write("["+std::to_string(this->baseTarget)+"] "+
                        this->gensigStr+
                        " scoop:"+std::to_string(this->scoopNum));
     
