@@ -17,6 +17,7 @@
 		14DA7A0419CB4CCE004EB96F /* MinerUtil.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 14DA79EA19CB4CCE004EB96F /* MinerUtil.cpp */; };
 		14DA7A0519CB4CCE004EB96F /* PlotReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 14DA79EC19CB4CCE004EB96F /* PlotReader.cpp */; };
 		14DA7A0619CB4CCE004EB96F /* sph_shabal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 14DA79FB19CB4CCE004EB96F /* sph_shabal.cpp */; };
+		14DA7A0B19CB5A0E004EB96F /* nxt_address.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 14DA7A0A19CB5A0E004EB96F /* nxt_address.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -62,6 +63,8 @@
 		14DA79FB19CB4CCE004EB96F /* sph_shabal.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sph_shabal.cpp; sourceTree = "<group>"; };
 		14DA79FC19CB4CCE004EB96F /* sph_shabal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sph_shabal.h; sourceTree = "<group>"; };
 		14DA79FD19CB4CCE004EB96F /* sph_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sph_types.h; sourceTree = "<group>"; };
+		14DA7A0819CB5801004EB96F /* nxt_address.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nxt_address.h; sourceTree = "<group>"; };
+		14DA7A0A19CB5A0E004EB96F /* nxt_address.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nxt_address.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +98,7 @@
 		14DA79DE19CB4CCE004EB96F /* src */ = {
 			isa = PBXGroup;
 			children = (
+				14DA7A0719CB5801004EB96F /* nxt */,
 				14DA79DF19CB4CCE004EB96F /* main.cpp */,
 				14DA79E019CB4CCE004EB96F /* Miner.cpp */,
 				14DA79E119CB4CCE004EB96F /* Miner.h */,
@@ -151,6 +155,15 @@
 			path = sphlib;
 			sourceTree = "<group>";
 		};
+		14DA7A0719CB5801004EB96F /* nxt */ = {
+			isa = PBXGroup;
+			children = (
+				14DA7A0819CB5801004EB96F /* nxt_address.h */,
+				14DA7A0A19CB5A0E004EB96F /* nxt_address.cpp */,
+			);
+			path = nxt;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -180,7 +193,7 @@
 				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = Miner;
 			};
-			buildConfigurationList = 1495546719C6C76100DC6D79 /* Build configuration list for PBXProject "burst-miner" */;
+			buildConfigurationList = 1495546719C6C76100DC6D79 /* Build configuration list for PBXProject "cryptoport-miner" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -203,6 +216,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				14C1B22419CB414B00E26D42 /* Makefile in Sources */,
+				14DA7A0B19CB5A0E004EB96F /* nxt_address.cpp in Sources */,
 				14DA79FE19CB4CCE004EB96F /* main.cpp in Sources */,
 				14DA7A0119CB4CCE004EB96F /* MinerLogger.cpp in Sources */,
 				14DA7A0319CB4CCE004EB96F /* MinerShabal.cpp in Sources */,
@@ -317,7 +331,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1495546719C6C76100DC6D79 /* Build configuration list for PBXProject "burst-miner" */ = {
+		1495546719C6C76100DC6D79 /* Build configuration list for PBXProject "cryptoport-miner" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1495547319C6C76100DC6D79 /* Debug */,

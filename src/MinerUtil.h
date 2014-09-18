@@ -32,6 +32,7 @@ namespace Burst
     std::string getStartNonceFromPlotFile(const std::string path);
     std::string getNonceCountFromPlotFile(const std::string path);
     std::string getStaggerSizeFromPlotFile(const std::string path);
+    std::string deadlineFormat(uint64_t seconds);
 }
 
 #endif

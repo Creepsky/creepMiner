@@ -154,7 +154,8 @@ bool Burst::MinerProtocol::run(Miner* miner)
 
 uint64_t Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId)
 {
-    MinerLogger::write("submitting nonce "+std::to_string(nonce)+" for account "+std::to_string(accountId));
+    NxtAddress addr(accountId);
+    MinerLogger::write("submitting nonce "+std::to_string(nonce)+" for "+addr.to_string());
     std::string request = "requestType=submitNonce&nonce="+std::to_string(nonce)+"&accountId="+std::to_string(accountId)+"&secretPhrase=cryptoport";
     std::string url = "/burst?"+request;
     

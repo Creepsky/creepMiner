@@ -49,6 +49,7 @@
 #   define MSG_NOSIGNAL 0
 #endif
 
+#include "nxt/nxt_address.h"
 #include "MinerConfig.h"
 
 namespace Burst

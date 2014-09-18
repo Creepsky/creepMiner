@@ -137,6 +137,12 @@ void Burst::Miner::nonceSubmitterThread()
                 }
                 mutex.unlock();
                 submitList.pop_front();
+                
+                if(confirmedDeadline != (uint64_t)(-1))
+                {
+                    NxtAddress addr(submitData.second);
+                    MinerLogger::write("confirmed deadline for "+addr.to_string()+" : "+Burst::deadlineFormat(confirmedDeadline));
+                }
             }
         }
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -152,7 +158,9 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
         {
             this->bestDeadline[accountId] = deadline;
             this->bestNonce[accountId] = nonce;
-            MinerLogger::write("best deadline "+std::to_string(deadline)+" seconds for account "+std::to_string(accountId)+" using nonce "+std::to_string(nonce));
+            NxtAddress addr(accountId);
+            
+            MinerLogger::write(addr.to_string()+" best deadline "+Burst::deadlineFormat(deadline)+" using nonce "+std::to_string(nonce));
         }
     }
     else
