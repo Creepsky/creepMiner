@@ -28,6 +28,7 @@
 #include <deque>
 #include <condition_variable>
 #include <atomic>
+#include <algorithm>
 
 #include <sys/types.h>
 #include <sys/stat.h>
