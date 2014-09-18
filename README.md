@@ -1,7 +1,7 @@
 burst-miner
 ===========
 
-native burstcoin miner, its fast, its multithreaded, low memory usage, and multi-plot
+native burstcoin miner, its fast, its multithreaded, low memory usage, multi-account and multi-plot
 you can specity plot directory or files inside mining.conf file
 
 http://github.com/uraymeiviar/burst-miner

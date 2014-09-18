@@ -53,7 +53,7 @@ char* NxtAddress::c_str(bool prefix)
     
 	for(int i = 0; i < 17; i++)
 	{
-		out[pos++] = alphabet[codeword[cwmap[i]]];
+		out[pos++] = alphabet[(int)codeword[cwmap[i]]];
         
 		if((i & 3) == 3 && i < 13) out[pos++] = '-';
 	}
@@ -147,7 +147,7 @@ void NxtAddress::encode()
 bool NxtAddress::ok()
 {
     int sum = 0;
-    int t;
+    int t = 0;
 	
     for(int i = 1; i < 5; i++)
     {

@@ -2,7 +2,7 @@ CFLAGS    := -O3 -march=native -std=c++11 -Wall
 CC        := g++ $(CFLAGS)
 LD        := g++ -pthread
 
-MODULES   := rapidjson sphlib
+MODULES   := rapidjson sphlib nxt
 SRC_DIR   := $(addprefix src/,$(MODULES)) src
 BUILD_DIR := $(addprefix bin/,$(MODULES)) bin
 
