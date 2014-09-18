@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "Burst::MinerSocket::httpRequest(std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt;, std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt;, std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt;, std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt;, std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt;&amp;):MinerProtocol.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "request">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Burst::PlotReader::verifierThread():PlotReader.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "this-&gt;buffer">
+            </PersistentString>
+            <PersistentString
+               value = "test">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Burst::Miner::nonceSubmitterThread():Miner.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "this-&gt;bestDeadline">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Burst::PlotReader::readerThread():PlotReader.cpp">
+         <PersistentStrings>
+            <PersistentString
+               value = "nonceCount">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "Burst::getAccountIdFromPlotFile(std::__1::basic_string&lt;char, std::__1::char_traits&lt;char&gt;, std::__1::allocator&lt;char&gt; &gt;):MinerUtil.cpp">
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>
