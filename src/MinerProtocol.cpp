@@ -12,9 +12,9 @@ void Burst::MinerSocket::setRemote(const std::string ip, size_t port,size_t defa
 {
     this->remoteAddr.sin_addr.s_addr = inet_addr( ip.c_str() );
     this->remoteAddr.sin_family = AF_INET;
-    this->remoteAddr.sin_port = htons( port );
+    this->remoteAddr.sin_port = htons( (u_short)port );
     
-    this->socketTimeout.tv_sec =  defaultTimeout;
+    this->socketTimeout.tv_sec =  (long)defaultTimeout;
     this->socketTimeout.tv_usec = 0;
 }
 
@@ -25,7 +25,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string method,
 {
     std::string response = "";
     memset((void*)this->readBuffer,0,readBufferSize);
-    int sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&this->socketTimeout,sizeof(struct timeval));
     if(connect(sock, (struct sockaddr*)&this->remoteAddr, sizeof(struct sockaddr_in)) == -1)
     {
@@ -38,7 +38,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string method,
         request += header+"\r\n\r\n";
         request += body;
         
-        if(send(sock, request.c_str(), request.length(),MSG_NOSIGNAL) > 0)
+        if(send(sock, request.c_str(), (int)request.length(),MSG_NOSIGNAL) > 0)
         {
             //shutdown(sock,SHUT_WR);
             
@@ -60,7 +60,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string method,
             }while( (bytesRead > 0) && (totalBytesRead < (int)readBufferSize-1) );
             
             shutdown(sock,SHUT_RDWR);
-            close(sock);
+			closesocket(sock);
             sock = 0;
             
             if(response.length() > 0)

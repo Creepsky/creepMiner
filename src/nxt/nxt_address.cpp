@@ -8,6 +8,11 @@
 
 #include "nxt_address.h"
 
+#ifdef WIN32
+#	define strcasecmp _stricmp 
+#	define strncasecmp _strnicmp 
+#endif
+
 char NxtAddress::alphabet[33] = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 char cwmap[17] = { 3, 2, 1, 0, 7, 6, 5, 4, 13, 14, 15, 16, 12, 8, 9, 10, 11, };
 int NxtAddress::gexp[32] = { 1, 2, 4, 8, 16, 5, 10, 20, 13, 26, 17, 7, 14, 28, 29, 31, 27, 19, 3, 6, 12, 24, 21, 15, 30, 25, 23, 11, 22, 9, 18, 1 };
@@ -111,7 +116,7 @@ bool NxtAddress::set(char *adr)
             
 			if(len > 16) return false;
             
-			codeword[(int)cwmap[len++]] = p - alphabet;
+			codeword[(int)cwmap[len++]] = (char)(p - alphabet);
 		}
 	}
     
@@ -151,7 +156,8 @@ bool NxtAddress::ok()
 	
     for(int i = 1; i < 5; i++)
     {
-        for(int j = 0, t = 0; j < 31; j++)
+		t = 0;
+        for(int j = 0; j < 31; j++)
         {
             if(j > 12 && j < 27) continue;
             

@@ -24,7 +24,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string configPath)
     try {
         inputFileStream.open(configPath);
     }
-    catch (std::ios_base::failure& e)
+    catch (...)
     {
         MinerLogger::write("unable to open file "+configPath);
         return false;
