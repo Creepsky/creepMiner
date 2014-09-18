@@ -53,7 +53,7 @@ char* NxtAddress::c_str(bool prefix)
     
 	for(int i = 0; i < 17; i++)
 	{
-		out[pos++] = alphabet[(int)codeword[cwmap[i]]];
+		out[pos++] = alphabet[(int)codeword[(int)cwmap[i]]];
         
 		if((i & 3) == 3 && i < 13) out[pos++] = '-';
 	}
@@ -72,7 +72,7 @@ char* NxtAddress::account_id()
 {
 	static char out[21];
     
-	sprintf(out, "%llu", uint64_t(*this));
+	sprintf(out, "%llu", (unsigned long long)(*this));
     
 	return out;
 }
@@ -89,11 +89,11 @@ bool NxtAddress::set(char *adr)
 	{
 		if(digits > 5 && digits < 21)
 		{
-			uint64_t acc;
+            uint64_t acc;
             
 			if(digits == 20 && *adr != '1') return false;
 			
-			if(sscanf(adr, "%llu", &acc) == 1)
+			if(sscanf(adr, "%llu", (unsigned long long*)&acc) == 1)
 			{
 				*this = acc; return true;
 			}
@@ -111,7 +111,7 @@ bool NxtAddress::set(char *adr)
             
 			if(len > 16) return false;
             
-			codeword[cwmap[len++]] = p - alphabet;
+			codeword[(int)cwmap[len++]] = p - alphabet;
 		}
 	}
     
