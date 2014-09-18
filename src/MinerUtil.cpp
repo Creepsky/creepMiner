@@ -44,21 +44,21 @@ bool Burst::isValidPlotFile(const std::string filePath)
     if(getAccountIdFromPlotFile(fileName)  != "" &&
        getStartNonceFromPlotFile(fileName) != "")
     {
-        struct stat info;
-        int statResult = stat( filePath.c_str(), &info );
+        //struct stat info;
+        //int statResult = stat( filePath.c_str(), &info );
         
-        if( statResult == 0)
-        {
-            if( (info.st_mode & S_IFDIR) == 0)
-            {
+        //if( statResult >= 0)
+        //{
+        //    if( (info.st_mode & S_IFDIR) == 0)
+        //    {
                 std::ifstream testRead(filePath);
                 if(testRead.good())
                 {
                     result = true;
                 }
                 testRead.close();
-            }
-        }
+        //    }
+        //}
     }
     
     return result;

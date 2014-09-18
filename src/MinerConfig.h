@@ -46,7 +46,7 @@ namespace Burst
         static const size_t plotScoopSize = scoopSize + hashSize; // 64 + 32 bytes
     private :
         bool addPlotLocation(const std::string fileOrPath);
-        bool addPlotFile(const std::string file);
+        bool addPlotFile( std::string file);
     };
 }
 

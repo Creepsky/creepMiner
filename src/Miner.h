@@ -47,6 +47,7 @@
 #   endif
 #	define closesocket close
 #	define SOCKET int
+#	define PATH_SEPARATOR '/'
 #else
 #   define MSG_NOSIGNAL 0
 #	include "win/dirent.h"
@@ -59,6 +60,7 @@
 #	define SHUT_RD SD_RECEIVE
 #	define SHUT_WR SD_SEND
 #   define __builtin_bswap64 _byteswap_uint64
+#	define PATH_SEPARATOR '\\'
 #endif
 
 #include "nxt/nxt_address.h"

@@ -18,6 +18,14 @@ int main(int argc, const char* argv[])
     Burst::MinerLogger::write(" [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX");
     Burst::MinerLogger::write(" [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b");
     Burst::MinerLogger::write(" ");
+
+#ifdef WIN32
+	WSADATA   wsadata;
+	if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
+	{
+		Burst::MinerLogger::write("failed to initalize networking system");
+	}
+#endif
     
     std::string configFile = "mining.conf";
     if(argc > 1)
@@ -46,6 +54,9 @@ int main(int argc, const char* argv[])
         Burst::MinerLogger::write("Aborting program due to invalid configuration");
     }
     
+#ifdef WIN32
+	WSACleanup();
+#endif
     return 0;
 }
 

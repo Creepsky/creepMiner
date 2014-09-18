@@ -95,7 +95,7 @@ void Burst::PlotReader::readerThread()
         
         this->done = true;
         verifierThreadObj.join();
-        MinerLogger::write("plot read done. "+this->inputPath+" "+std::to_string(this->nonceRead)+" nonces ");
+        MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" "+std::to_string(this->nonceRead)+" nonces ");
     }
 }
 

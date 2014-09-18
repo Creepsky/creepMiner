@@ -164,14 +164,14 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
     else if( info.st_mode & S_IFDIR )
     {
         std::string dirPath = fileOrPath;
-        if(dirPath[dirPath.length()-1] != '/' )
+		if (dirPath[dirPath.length() - 1] != PATH_SEPARATOR)
         {
-            dirPath+='/';
+			dirPath += PATH_SEPARATOR;
         }
         
         DIR *dir;
         struct dirent *ent;
-        if ((dir = opendir (fileOrPath.c_str())) != NULL)
+		if ((dir = opendir(dirPath.c_str())) != NULL)
         {
             while ((ent = readdir (dir)) != NULL)
             {
@@ -193,7 +193,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
     return true;
 }
 
-bool Burst::MinerConfig::addPlotFile(const std::string file)
+bool Burst::MinerConfig::addPlotFile(std::string file)
 {
     if(Burst::isValidPlotFile(file))
     {

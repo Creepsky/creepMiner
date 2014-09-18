@@ -10,7 +10,7 @@
 
 void Burst::MinerSocket::setRemote(const std::string ip, size_t port,size_t defaultTimeout)
 {
-    this->remoteAddr.sin_addr.s_addr = inet_addr( ip.c_str() );
+	inet_pton(AF_INET, ip.c_str(), &this->remoteAddr.sin_addr);
     this->remoteAddr.sin_family = AF_INET;
     this->remoteAddr.sin_port = htons( (u_short)port );
     
@@ -233,9 +233,10 @@ std::string Burst::MinerProtocol::resolveHostname(const std::string host)
     
     addr_list = (struct in_addr **) he->h_addr_list;
     
+	char inetAddrStr[64];
     for(i = 0; addr_list[i] != NULL; i++)
     {
-        std::string ip = std::string(inet_ntoa(*addr_list[i]) );
+		std::string ip = std::string(inet_ntop(AF_INET, addr_list[i], inetAddrStr,64));
         MinerLogger::write("Remote IP "+ip);
         return ip;
     }
