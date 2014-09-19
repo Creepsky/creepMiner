@@ -41,9 +41,9 @@
 #   include <netinet/in.h>
 #   include <arpa/inet.h>
 #   include "unistd.h"
-#	#include <dirent.h>
+#	include <dirent.h>
 #   ifndef MSG_NOSIGNAL
-#       define MSG_NOSIGNAL 
+#       define MSG_NOSIGNAL SO_NOSIGPIPE
 #   endif
 #	define closesocket close
 #	define SOCKET int
