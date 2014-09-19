@@ -43,7 +43,7 @@
 #   include "unistd.h"
 #	#include <dirent.h>
 #   ifndef MSG_NOSIGNAL
-#       define MSG_NOSIGNAL SO_NOSIGPIPE
+#       define MSG_NOSIGNAL 
 #   endif
 #	define closesocket close
 #	define SOCKET int
@@ -115,7 +115,7 @@ namespace Burst
         MinerProtocol protocol;
         Shabal256 hash;
         GensigData gensig;
-        std::vector<std::unique_ptr<PlotReader>> plotReaders;
+		std::vector<std::shared_ptr<PlotReader>> plotReaders;
         std::map<uint64_t,uint64_t> bestDeadline;
         std::map<uint64_t,uint64_t> bestNonce;
         std::map<uint64_t,uint64_t> bestDeadlineConfirmed;

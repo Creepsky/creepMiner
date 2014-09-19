@@ -49,7 +49,7 @@ void Burst::PlotReader::read(const std::string path)
 
 void Burst::PlotReader::readerThread()
 {
-    std::ifstream inputStream(this->inputPath);
+	std::ifstream inputStream(this->inputPath, std::ifstream::binary);
     if(inputStream.good())
     {
         inputStream.clear();
