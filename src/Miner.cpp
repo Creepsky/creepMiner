@@ -63,7 +63,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		this->plotReaders.push_back(reader);
     }
     
-    std::default_random_engine randomizer((std::random_device())());
+    std::random_device rd;
+    std::default_random_engine randomizer(rd());
     std::uniform_int_distribution<size_t> dist(0, this->config->submissionMaxDelay);
     size_t delay = dist(randomizer);
     this->nextNonceSubmission = std::chrono::system_clock::now() +
@@ -130,7 +131,8 @@ void Burst::Miner::nonceSubmitterThread()
             }
             mutex.unlock();
             
-            std::default_random_engine randomizer((std::random_device())());
+            std::random_device rd;
+            std::default_random_engine randomizer(rd());
             std::uniform_int_distribution<size_t> dist(0, this->config->submissionMaxDelay);
             this->nextNonceSubmission = std::chrono::system_clock::now() +
             std::chrono::seconds(dist(randomizer));
@@ -143,6 +145,7 @@ void Burst::Miner::nonceSubmitterThread()
 					submitList.pop_front();
 				
 				mutex.unlock();
+                
 				uint64_t confirmedDeadline = this->protocol.submitNonce(submitData.first, submitData.second);
                 
                 if(confirmedDeadline != (uint64_t)(-1))
