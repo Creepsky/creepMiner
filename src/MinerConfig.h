@@ -35,6 +35,7 @@ namespace Burst
         std::string poolHost = "burst-pool.cryptoport.io";
         size_t poolPort = 80;
         size_t socketTimeout = 30;
+        size_t maxBufferSizeMB = 64;
         std::string configPath;
         std::vector<std::string> plotList;
         

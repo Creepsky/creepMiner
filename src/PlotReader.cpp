@@ -52,8 +52,58 @@ void Burst::PlotReader::readerThread()
 	std::ifstream inputStream(this->inputPath, std::ifstream::binary);
     if(inputStream.good())
     {
+        /*
         inputStream.clear();
+        this->runVerify = true;
+        std::unique_lock<std::mutex> verifyLock(this->readLock);
+        verifyLock.unlock();
+        std::thread verifierThreadObj(&PlotReader::verifierThread,this);
         
+        size_t readlimit = this->miner->getConfig()->maxBufferSizeMB / 32;
+        size_t scoopBufferCount = this->staggerSize / readlimit;
+        size_t scoopBufferSize = readlimit;
+        size_t scoopDoneRead = 0;
+        while(scoopDoneRead <= scoopBufferCount)
+        {
+            size_t staggerOffset = this->scoopNum * MinerConfig::scoopSize * scoopDoneRead * scoopBufferSize;
+            if(scoopBufferSize > (this->staggerSize - (scoopDoneRead * scoopBufferSize)))
+            {
+                scoopBufferSize = this->staggerSize - (scoopDoneRead * scoopBufferSize);
+            }
+            
+            this->buffer[0].resize(scoopBufferSize);
+            this->buffer[1].resize(scoopBufferSize);
+            this->readBuffer  = &this->buffer[0];
+            this->writeBuffer = &this->buffer[1];
+            
+            size_t bufferSize  = scoopBufferSize * MinerConfig::scoopSize;
+            size_t startByte = this->scoopNum * MinerConfig::scoopSize * scoopBufferSize + staggerOffset;
+            size_t chunkNum = 0;
+            size_t totalChunk = this->nonceCount / scoopBufferSize;
+            this->nonceOffset = 0;
+            
+            while(!this->done && inputStream.good() && chunkNum <= totalChunk)
+            {
+                inputStream.seekg(startByte + chunkNum*scoopBufferSize*MinerConfig::plotSize);
+                char* scoopData = (char*)&(*this->writeBuffer)[0];
+                inputStream.read(scoopData, bufferSize);
+                
+                verifyLock.lock();
+                std::vector<ScoopData>* temp = this->readBuffer;
+                this->readBuffer  = this->writeBuffer;
+                this->writeBuffer = temp;
+                this->nonceOffset = chunkNum*scoopBufferSize;
+                verifyLock.unlock();
+                this->readSignal.notify_all();
+                
+                chunkNum++;
+            }
+            
+            scoopDoneRead++;
+        }
+        */
+        
+        /*
         this->buffer[0].resize(this->staggerSize);
         this->buffer[1].resize(this->staggerSize);
         this->readBuffer  = &this->buffer[0];
@@ -86,10 +136,67 @@ void Burst::PlotReader::readerThread()
             
             chunkNum++;
         }
+        */
+        
+        this->runVerify = true;
+        std::unique_lock<std::mutex> verifyLock(this->readLock);
+        verifyLock.unlock();
+        std::thread verifierThreadObj(&PlotReader::verifierThread,this);
+        
+        size_t chunkNum = 0;
+        size_t totalChunk = (size_t)std::ceil((double)this->nonceCount / (double)this->staggerSize);
+        this->nonceOffset = 0;
+        
+        this->readBuffer  = &this->buffer[0];
+        this->writeBuffer = &this->buffer[1];
+        
+        while(!this->done && inputStream.good() && chunkNum <= totalChunk)
+        {
+            size_t scoopBufferSize = this->miner->getConfig()->maxBufferSizeMB*1024*1024 / (64*2);
+            size_t scoopBufferCount = (size_t)std::ceil((float)(this->staggerSize*MinerConfig::scoopSize) / (float)(scoopBufferSize));
+            size_t startByte = this->scoopNum * MinerConfig::scoopSize*this->staggerSize + chunkNum*this->staggerSize*MinerConfig::plotSize;
+            size_t scoopDoneRead = 0;
+            size_t staggerOffset = 0;
+            
+            while(!this->done && inputStream.good() && scoopDoneRead <= scoopBufferCount)
+            {
+                this->writeBuffer->resize(scoopBufferSize / MinerConfig::scoopSize);
+                staggerOffset = scoopDoneRead * scoopBufferSize;
+                if(scoopBufferSize > (this->staggerSize*MinerConfig::scoopSize - (scoopDoneRead * scoopBufferSize)))
+                {
+                    scoopBufferSize = this->staggerSize*MinerConfig::scoopSize - (scoopDoneRead * scoopBufferSize);
+                    if(scoopBufferSize > MinerConfig::scoopSize)
+                    {
+                        this->writeBuffer->resize(scoopBufferSize / MinerConfig::scoopSize);
+                    }
+                }
+                if(scoopBufferSize > MinerConfig::scoopSize)
+                {
+                    //MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset));
+                    inputStream.seekg(startByte + staggerOffset);
+                    char* scoopData = (char*)&(*this->writeBuffer)[0];
+                    inputStream.read(scoopData, scoopBufferSize);
+                    
+                    
+                    verifyLock.lock();
+                    std::vector<ScoopData>* temp = this->readBuffer;
+                    this->readBuffer  = this->writeBuffer;
+                    this->writeBuffer = temp;
+                    this->nonceOffset = chunkNum*this->staggerSize + scoopDoneRead*(scoopBufferSize / MinerConfig::scoopSize);
+                    //MinerLogger::write("read buffer size "+std::to_string(this->readBuffer->size())+" nonce offset "+std::to_string(this->nonceOffset));
+                    verifyLock.unlock();
+                    this->readSignal.notify_all();
+                }
+                scoopDoneRead++;
+            }
+            
+            chunkNum++;
+        }
+        
         inputStream.close();
         
-        this->runVerify = false;
         verifyLock.lock();
+        this->runVerify = false;
         this->readSignal.notify_all();
         verifyLock.unlock();
         
@@ -126,5 +233,6 @@ void Burst::PlotReader::verifierThread()
                 this->nonceRead++;
             }
         }
+        //MinerLogger::write("verifier processed "+std::to_string(this->nonceRead));
     }
 }

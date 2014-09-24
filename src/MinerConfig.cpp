@@ -148,6 +148,27 @@ bool Burst::MinerConfig::readConfigFile(const std::string configPath)
         }
     }
     
+    if(configDoc.HasMember("maxBufferSizeMB"))
+    {
+        if( configDoc["maxBufferSizeMB"].IsNumber() )
+        {
+            this->maxBufferSizeMB = configDoc["maxBufferSizeMB"].GetInt();
+        }
+        else
+        {
+            std::string maxBufferSizeMBStr = configDoc["maxBufferSizeMB"].GetString();
+            try {
+                this->maxBufferSizeMB = std::stoul(maxBufferSizeMBStr);
+            } catch (...) {
+                this->maxBufferSizeMB = 64;
+            }
+        }
+        
+        if (this->maxBufferSizeMB < 1) {
+            this->maxBufferSizeMB = 1;
+        }
+    }
+    
     return true;
 }
 
