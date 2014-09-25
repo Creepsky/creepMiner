@@ -48,9 +48,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	this->hash.close(&newGenSig[0]);
 	this->scoopNum = ((int)(newGenSig[newGenSig.size()-2] & 0x0F) << 8) | (int)newGenSig[newGenSig.size()-1];
     
-	MinerLogger::write("New Block #" + std::to_string(blockHeight) + " scoop:" + std::to_string(this->scoopNum));
-    MinerLogger::write("["+std::to_string(this->baseTarget)+"] "+
-                       this->gensigStr);
+	MinerLogger::write("block#" + std::to_string(blockHeight) + " s#:" + std::to_string(this->scoopNum)+" bt:"+std::to_string(this->baseTarget)+" "+this->gensigStr);
     
     this->bestDeadline.clear();
     this->config->rescan();
@@ -169,14 +167,14 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
             this->bestDeadline[accountId] = deadline;
             this->bestNonce[accountId] = nonce;
             
-            MinerLogger::write(addr.to_string()+" best deadline "+Burst::deadlineFormat(deadline)+" using nonce "+std::to_string(nonce));
+            MinerLogger::write(addr.to_string()+" dl:"+Burst::deadlineFormat(deadline)+" n:"+std::to_string(nonce));
         }
     }
     else
     {
         this->bestDeadline.insert(std::make_pair(accountId, deadline));
         this->bestNonce.insert(std::make_pair(accountId, nonce));
-		MinerLogger::write(addr.to_string() + " best deadline " + Burst::deadlineFormat(deadline) + " using nonce " + std::to_string(nonce));
+		MinerLogger::write(addr.to_string() + " dl:" + Burst::deadlineFormat(deadline) + " n:" + std::to_string(nonce));
     }
 }
 
@@ -189,12 +187,12 @@ void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_
         if(deadline < this->bestDeadlineConfirmed[accountId])
         {
             this->bestDeadlineConfirmed[accountId] = deadline;
-			MinerLogger::write("confirmed deadline for " + addr.to_string() + " : " + Burst::deadlineFormat(deadline));
+			MinerLogger::write("confirmed dl. for " + addr.to_string() + " : " + Burst::deadlineFormat(deadline));
         }
     }
     else
     {
         this->bestDeadlineConfirmed.insert(std::make_pair(accountId, deadline));
-		MinerLogger::write("confirmed deadline for " + addr.to_string() + " : " + Burst::deadlineFormat(deadline));
+		MinerLogger::write("confirmed dl. for " + addr.to_string() + " : " + Burst::deadlineFormat(deadline));
     }
 }
