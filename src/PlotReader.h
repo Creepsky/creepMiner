@@ -35,8 +35,8 @@ namespace Burst
         uint64_t accountId;
         GensigData gensig;
         
-        std::atomic<bool> done;
-        std::atomic<bool> runVerify;
+        bool done;
+        bool runVerify;
         std::string inputPath;
 
         Miner* miner;
@@ -45,8 +45,9 @@ namespace Burst
         std::vector<ScoopData> buffer[2];
         
         Shabal256 hash;
-        std::mutex readLock;
-        std::condition_variable readSignal;
+        bool verifySignaled;
+        std::mutex verifyMutex;
+        std::condition_variable verifySignal;
         std::vector<ScoopData>* readBuffer;
         std::vector<ScoopData>* writeBuffer;
     };

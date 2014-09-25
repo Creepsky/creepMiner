@@ -44,6 +44,7 @@ int main(int argc, const char* argv[])
     {
         Burst::MinerLogger::write("Submission Max Delay : "+ std::to_string(config.submissionMaxDelay));
         Burst::MinerLogger::write("Submission Max Retry : "+ std::to_string(config.submissionMaxRetry));
+        Burst::MinerLogger::write("Buffer Size : "+ std::to_string(config.maxBufferSizeMB)+"MB");
         Burst::MinerLogger::write("Pool Host : "+config.poolHost+" port "+ std::to_string(config.poolPort));
         
         Burst::Miner miner(config);

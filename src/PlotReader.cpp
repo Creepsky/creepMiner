@@ -139,13 +139,13 @@ void Burst::PlotReader::readerThread()
         */
         
         this->runVerify = true;
-        std::unique_lock<std::mutex> verifyLock(this->readLock);
-        verifyLock.unlock();
         std::thread verifierThreadObj(&PlotReader::verifierThread,this);
         
         size_t chunkNum = 0;
         size_t totalChunk = (size_t)std::ceil((double)this->nonceCount / (double)this->staggerSize);
         this->nonceOffset = 0;
+        this->nonceRead = 0;
+        this->verifySignaled = false;
         
         this->readBuffer  = &this->buffer[0];
         this->writeBuffer = &this->buffer[1];
@@ -170,23 +170,40 @@ void Burst::PlotReader::readerThread()
                         this->writeBuffer->resize(scoopBufferSize / MinerConfig::scoopSize);
                     }
                 }
+                
                 if(scoopBufferSize > MinerConfig::scoopSize)
                 {
-                    //MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset));
                     inputStream.seekg(startByte + staggerOffset);
                     char* scoopData = (char*)&(*this->writeBuffer)[0];
                     inputStream.read(scoopData, scoopBufferSize);
                     
                     
-                    verifyLock.lock();
+                    std::unique_lock<std::mutex> verifyLock(this->verifyMutex);
+                    
+                    //MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
+                    
                     std::vector<ScoopData>* temp = this->readBuffer;
                     this->readBuffer  = this->writeBuffer;
                     this->writeBuffer = temp;
                     this->nonceOffset = chunkNum*this->staggerSize + scoopDoneRead*(scoopBufferSize / MinerConfig::scoopSize);
-                    //MinerLogger::write("read buffer size "+std::to_string(this->readBuffer->size())+" nonce offset "+std::to_string(this->nonceOffset));
+                    this->verifySignaled = true;
+                    this->verifySignal.notify_one();
                     verifyLock.unlock();
-                    this->readSignal.notify_all();
+                    
+                    while(this->verifySignaled)
+                    {
+                        //MinerLogger::write("stupid");
+                        std::this_thread::sleep_for(std::chrono::microseconds(1));
+                        this->verifySignal.notify_one();
+                    };
+                    
                 }
+                /*
+                else
+                {
+                    MinerLogger::write("scoop buffer ="+std::to_string(scoopBufferSize));
+                }
+                 */
                 scoopDoneRead++;
             }
             
@@ -194,45 +211,52 @@ void Burst::PlotReader::readerThread()
         }
         
         inputStream.close();
+
         
-        verifyLock.lock();
+        std::unique_lock<std::mutex> verifyLock(this->verifyMutex);
         this->runVerify = false;
-        this->readSignal.notify_all();
+        this->readBuffer->clear();
+        this->writeBuffer->clear();
+        this->verifySignaled = true;
+        this->verifySignal.notify_all();
         verifyLock.unlock();
         
-        this->done = true;
         verifierThreadObj.join();
+        
+        this->done = true;
         MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
     }
 }
 
 void Burst::PlotReader::verifierThread()
 {
-    std::unique_lock<std::mutex> verifyLock(this->readLock);
-    this->nonceRead = 0;
+    std::unique_lock<std::mutex> verifyLock(this->verifyMutex);
     
     while(this->runVerify)
     {
-        readSignal.wait(verifyLock);
+        do {
+            this->verifySignal.wait(verifyLock);
+        }
+        while(!this->verifySignaled);
+        this->verifySignaled = false;
+        
         for(size_t i=0 ; i<this->readBuffer->size() ; i++)
         {
-            if(this->nonceOffset + i < this->nonceCount)
-            {
-                HashData target;
-                char* test = (char*)&((*this->readBuffer)[i]);
-                this->hash.update(&this->gensig[0], MinerConfig::hashSize);
-                this->hash.update(test,MinerConfig::scoopSize);
-                this->hash.close(&target[0]);
-                
-                uint64_t targetResult = 0;
-                memcpy(&targetResult,&target[0],sizeof(uint64_t));
-                uint64_t deadline = targetResult / this->miner->getBaseTarget();
-                
-                uint64_t nonceNum = this->nonceStart + this->nonceOffset + i;
-                this->miner->submitNonce(nonceNum, this->accountId, deadline);
-                this->nonceRead++;
-            }
+            HashData target;
+            char* test = (char*)&((*this->readBuffer)[i]);
+            this->hash.update(&this->gensig[0], MinerConfig::hashSize);
+            this->hash.update(test,MinerConfig::scoopSize);
+            this->hash.close(&target[0]);
+            
+            uint64_t targetResult = 0;
+            memcpy(&targetResult,&target[0],sizeof(uint64_t));
+            uint64_t deadline = targetResult / this->miner->getBaseTarget();
+            
+            uint64_t nonceNum = this->nonceStart + this->nonceOffset + i;
+            this->miner->submitNonce(nonceNum, this->accountId, deadline);
+            this->nonceRead++;
         }
-        //MinerLogger::write("verifier processed "+std::to_string(this->nonceRead));
+        //MinerLogger::write("verifier processed "+std::to_string(this->nonceRead)+" readsize "+std::to_string(this->readBuffer->size()));
     }
+    //MinerLogger::write("plot read done. "+std::to_string(this->nonceRead)+" nonces ");
 }
