@@ -18,13 +18,13 @@ The orignal author is uray meiviar (uraymeiviar@gmail.com).
 
 If you want to support him, you can donate to:
 
-'''
+```
 - [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 - [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
-'''
+```
 
 If you want to support me, you can donate to:
 
-'''
+```
 - [ Burst   ] BURST-JBKL-ZUAV-UXMB-2G795
-'''
+```
