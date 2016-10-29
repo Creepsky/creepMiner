@@ -1,19 +1,30 @@
 burst-miner
 ===========
 
-native burstcoin miner, its fast, its multithreaded, low memory usage, multi-account and multi-plot
-you can specity plot directory or files inside mining.conf file
+## What is burst-miner
 
-contact : uray meiviar [ uraymeiviar@gmail.com ]
+burst-miner is a client application for mining Burst on a pool. For more informations about Burst follow [this link](https://www.burst-team.us/).
+It is written in C++ and therefore can be compiled on different operating systems.
+It is designed multi-threaded to reach the best performance. While mining, only the CPU is used.
 
-please donate to support developments :
+## Fork
 
-+ [ Burst   ] `BURST-8E8K-WQ2F-ZDZ5-FQWHX`
-+ [ Bitcoin ] `1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b`
+This is a fork of the burst-miner found on [this github repository](https://github.com/uraymeiviar/burst-miner).
+The purpose of this fork is to optimize and beautify the original program and on this way make it more user friendly.
 
-## compilation :
-tested on OSX and Linux using GCC 4.8.x
+## Donations :moneybag:
 
-+ for linux, just do "make", binary will be in "bin" directory and then edit "mining.conf" file
-+ for windows, compilation is tested using Visual Studio Express 2013 (Desktop)
-+ for OSX, compilation is tested using XCode 5
+The orignal author is uray meiviar (uraymeiviar@gmail.com).
+
+If you want to support him, you can donate to:
+
+'''
+- [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
+- [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
+'''
+
+If you want to support me, you can donate to:
+
+'''
+- [ Burst   ] BURST-JBKL-ZUAV-UXMB-2G795
+'''
