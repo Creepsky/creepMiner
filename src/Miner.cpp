@@ -7,6 +7,13 @@
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
 #include "Miner.h"
+#include "MinerLogger.h"
+#include "MinerConfig.h"
+#include "PlotReader.h"
+#include "MinerUtil.h"
+#include "nxt/nxt_address.h"
+#include <random>
+#include <deque>
 
 Burst::Miner::Miner(MinerConfig& config)
 	: scoopNum(0), baseTarget(0), blockHeight(0)
@@ -61,14 +68,44 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	this->config->plotList.clear();
     this->config->rescan();
     this->plotReaders.clear();
-
-    for(const auto plotFile : this->config->plotList)
-    {
-	    auto reader = std::make_shared<PlotReader>(this);
-		reader->read(plotFile->getPath());
-		this->plotReaders.emplace_back(reader);
-    }
     
+	// this block is closed in itself
+	// dont use the variables in it outside!
+	{
+		using PlotList = std::vector<std::shared_ptr<PlotFile>>;
+		std::unordered_map<std::string, PlotList> plotDirs;
+	
+		for(const auto plotFile : this->config->plotList)
+		{
+			auto last_slash_idx = plotFile->getPath().find_first_of('/\\');
+
+			std::string dir;
+
+			if (last_slash_idx == std::string::npos)
+				continue;
+
+			dir = plotFile->getPath().substr(0, last_slash_idx);
+		
+			auto iter = plotDirs.find(dir);
+
+			if (iter == plotDirs.end())
+				plotDirs.emplace(std::make_pair(dir, PlotList{}));
+
+			plotDirs[dir].emplace_back(plotFile);
+
+			//auto reader = std::make_shared<PlotReader>(*this);
+			//reader->read(plotFile->getPath());
+			//this->plotReaders.emplace_back(reader);
+		}
+    
+		for (auto& plotDir : plotDirs)
+		{
+			auto reader = std::make_shared<PlotReader>(*this);
+			reader->read(std::move(plotDir.second));
+			plotReaders.emplace_back(reader);
+		}
+    }
+
     std::random_device rd;
     std::default_random_engine randomizer(rd());
     std::uniform_int_distribution<size_t> dist(0, this->config->submissionMaxDelay);

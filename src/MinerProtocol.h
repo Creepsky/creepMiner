@@ -6,11 +6,16 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#ifndef cryptoport_MinerProtocol_h
-#define cryptoport_MinerProtocol_h
+#pragma once
+
+#include <string>
+#include <functional>
+#include "SocketDefinitions.hpp"
 
 namespace Burst
 {
+	class Miner;
+
     class MinerSocket
     {
     public:
@@ -28,7 +33,8 @@ namespace Burst
                               std::function< void ( std::string ) > responseCallback );
         static const size_t readBufferSize = 2048;
         char readBuffer[readBufferSize];
-        struct sockaddr_in remoteAddr;
+        
+		struct sockaddr_in remoteAddr;
         struct timeval socketTimeout;
     };
     
@@ -55,5 +61,3 @@ namespace Burst
         MinerSocket nonceSubmitterSocket;
     };
 }
-
-#endif

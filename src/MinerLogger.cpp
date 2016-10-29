@@ -6,11 +6,14 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#include "Miner.h"
+#include "MinerLogger.h"
+#include <iostream>
+#include <iomanip>
+#include <mutex>
 
-void Burst::MinerLogger::write(const std::string text)
+void Burst::MinerLogger::write(const std::string& text)
 {
-    std::lock_guard<std::mutex> lock(MinerLogger::getInstance()->consoleMutex);
+    std::lock_guard<std::mutex> lock(getInstance().consoleMutex);
 	
 	auto now = std::chrono::system_clock::now();
 	auto now_c = std::chrono::system_clock::to_time_t(now);
@@ -20,12 +23,12 @@ void Burst::MinerLogger::write(const std::string text)
 
 void Burst::MinerLogger::nextLine()
 {
-	std::lock_guard<std::mutex> lock(MinerLogger::getInstance()->consoleMutex);
+	std::lock_guard<std::mutex> lock(getInstance().consoleMutex);
 	std::cout << std::endl;
 }
 
-Burst::MinerLogger* Burst::MinerLogger::getInstance()
+Burst::MinerLogger& Burst::MinerLogger::getInstance()
 {
-    static Burst::MinerLogger instance;
-    return &instance;
+    static MinerLogger instance;
+    return instance;
 }

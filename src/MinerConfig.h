@@ -6,19 +6,20 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#ifndef cryptoport_MinerConfig_h
-#define cryptoport_MinerConfig_h
-#include "Miner.h"
+#pragma once
+
+#include <memory>
+#include <vector>
 
 /*
  {
-    poolUrl : "burst-pool.cryptoport.io:80",
-    submissionMaxDelay : 60000,
-    submissionMaxRetry : 3,
-    plots : [
-        "/mnt/sda/plots/",
-        "/mnt/sdb/plots/"
-    ]
+	poolUrl : "burst-pool.cryptoport.io:80",
+	submissionMaxDelay : 60000,
+	submissionMaxRetry : 3,
+	plots : [
+		"/mnt/sda/plots/",
+		"/mnt/sdb/plots/"
+	]
  }
  */
 
@@ -64,5 +65,3 @@ namespace Burst
         std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
     };
 }
-
-#endif

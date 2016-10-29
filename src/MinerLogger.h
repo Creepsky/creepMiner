@@ -6,24 +6,22 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#ifndef cryptoport_MinerLogger_h
-#define cryptoport_MinerLogger_h
-#include "Miner.h"
+#pragma once
+
+#include <string>
+#include <mutex>
 
 namespace Burst
 {
     class MinerLogger
     {
     public:
-        static void write(const std::string text);
+        static void write(const std::string& text);
 		static void nextLine();
 
-		static MinerLogger* getInstance();
+		static MinerLogger& getInstance();
 
-
-        std::mutex consoleMutex;
     private:
+        std::mutex consoleMutex;
     };
 }
-
-#endif

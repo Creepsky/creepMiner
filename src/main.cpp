@@ -7,6 +7,8 @@
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
 #include "Miner.h"
+#include "MinerLogger.h"
+#include "MinerConfig.h"
 
 int main(int argc, const char* argv[])
 {

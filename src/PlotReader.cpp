@@ -6,13 +6,18 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
+#include "PlotReader.h"
+#include "MinerUtil.h"
+#include "MinerLogger.h"
+#include "MinerConfig.h"
+#include <fstream>
 #include "Miner.h"
 
-Burst::PlotReader::PlotReader(Miner* miner)
+Burst::PlotReader::PlotReader(Miner& miner)
 	: PlotReader()
 {
 	this->done = true;
-	this->miner = miner;
+	this->miner = &miner;
 }
 
 Burst::PlotReader::~PlotReader()
@@ -40,12 +45,18 @@ void Burst::PlotReader::read(const std::string& path)
 	nonceStart = stoull(getStartNonceFromPlotFile(path));
 	nonceCount = stoull(getNonceCountFromPlotFile(path));
 	staggerSize = stoull(getStaggerSizeFromPlotFile(path));
-	scoopNum = this->miner->getScoopNum();
+	scoopNum = miner->getScoopNum();
 	gensig = miner->getGensig();
 	done = false;
 	inputPath = path;
 	//readerThreadObj = std::thread(&PlotReader::readerThread, this);
 	readerThread();
+}
+
+void Burst::PlotReader::read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
+{
+	plotFileList = std::move(plotFiles);
+	std::thread(&PlotReader::listReaderThread, this);
 }
 
 void Burst::PlotReader::readerThread()
@@ -216,6 +227,8 @@ void Burst::PlotReader::readerThread()
 
 		inputStream.close();
 
+		MinerLogger::write("finished reading plot file " + inputPath);
+
 		std::unique_lock<std::mutex> verifyLock(this->verifyMutex);
 		this->runVerify = false;
 		this->readBuffer->clear();
@@ -227,7 +240,8 @@ void Burst::PlotReader::readerThread()
 		verifierThreadObj.join();
 
 		this->done = true;
-		//MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
+
+		MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
 	}
 }
 
@@ -264,4 +278,10 @@ void Burst::PlotReader::verifierThread()
 		//MinerLogger::write("verifier processed "+std::to_string(this->nonceRead)+" readsize "+std::to_string(this->readBuffer->size()));
 	}
 	//MinerLogger::write("plot read done. "+std::to_string(this->nonceRead)+" nonces ");
+}
+
+void Burst::PlotReader::listReaderThread()
+{
+	for (const auto& plotFile : plotFileList)
+		read(plotFile->getPath());
 }

@@ -6,27 +6,38 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#ifndef cryptoport_PlotReader_h
-#define cryptoport_PlotReader_h
-#include "Miner.h"
+#pragma once
+
+#include <string>
+#include <vector>
+#include <memory>
+#include <thread>
+#include "MinerShabal.h"
+#include <mutex>
+#include "Declarations.hpp"
 
 namespace Burst
 {
+	class Miner;
+	class PlotFile;
+
     class PlotReader
     {
     public:
 		PlotReader() = default;
-	    explicit PlotReader(Miner* miner);
+	    explicit PlotReader(Miner& miner);
         ~PlotReader();
         
         void read(const std::string& path);
+		void read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
         void stop();
         bool isDone() const;
         
     private:
         void readerThread();
         void verifierThread();
-        
+		void listReaderThread();
+
         size_t nonceStart;
         size_t scoopNum;
         size_t nonceCount;
@@ -41,6 +52,7 @@ namespace Burst
         std::string inputPath;
 
         Miner* miner;
+		std::vector<std::shared_ptr<PlotFile>> plotFileList;
         std::thread readerThreadObj;
         
         std::vector<ScoopData> buffer[2];
@@ -52,5 +64,13 @@ namespace Burst
         std::vector<ScoopData>* readBuffer;
         std::vector<ScoopData>* writeBuffer;
     };
+
+	class PlotListReader
+	{
+	public:
+		void read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
+
+	private:
+		std::vector<std::shared_ptr<PlotFile>> plotFileList;
+	};
 }
-#endif

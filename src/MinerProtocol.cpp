@@ -6,6 +6,11 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
+#include "MinerProtocol.h"
+#include "MinerLogger.h"
+#include "MinerConfig.h"
+#include "nxt/nxt_address.h"
+#include "rapidjson/document.h"
 #include "Miner.h"
 
 void Burst::MinerSocket::setRemote(const std::string ip, size_t port, size_t defaultTimeout)

@@ -6,7 +6,14 @@
 //  Copyright (c) 2014 Miner. All rights reserved.
 //
 
-#include "Miner.h"
+#include "MinerConfig.h"
+#include "MinerLogger.h"
+#include "MinerUtil.h"
+#include <fstream>
+#include "rapidjson/document.h"
+#include <sstream>
+#include <win/dirent.h>
+#include "SocketDefinitions.hpp"
 
 void Burst::MinerConfig::rescan()
 {

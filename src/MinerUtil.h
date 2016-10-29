@@ -6,9 +6,12 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#ifndef cryptoport_MinerUtil_h
-#define cryptoport_MinerUtil_h
-#include "Miner.h"
+#pragma once
+
+#include <string>
+#include <vector>
+#include <sstream>
+#include <iomanip>
 
 namespace Burst
 {    
@@ -18,7 +21,7 @@ namespace Burst
         std::stringstream stream;
         for(size_t i=0 ; i<SZ ; i++)
         {
-            stream << std::setfill ('0') << std::setw(sizeof(T)*2) << std::hex << (size_t)arr[i];
+            stream << std::setfill ('0') << std::setw(sizeof(T)*2) << std::hex << static_cast<size_t>(arr[i]);
         }
         return stream.str();
     }
@@ -35,5 +38,3 @@ namespace Burst
     std::string deadlineFormat(uint64_t seconds);
 	std::string gbToString(uint64_t size);
 }
-
-#endif

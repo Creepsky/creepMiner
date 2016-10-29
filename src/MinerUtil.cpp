@@ -6,7 +6,11 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#include "Miner.h"
+#include "MinerUtil.h"
+#include <sstream>
+#include <fstream>
+#include <iomanip>
+#include <algorithm>
 
 bool Burst::isNumberStr(const std::string& str)
 {

@@ -6,9 +6,9 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#ifndef cryptoport_MinerShabal_h
-#define cryptoport_MinerShabal_h
-#include "Miner.h"
+#pragma once
+
+#include "sphlib/sph_shabal.h"
 
 namespace Burst
 {
@@ -19,9 +19,8 @@ namespace Burst
             void update(const void* data, size_t length);
             void update(const uint64_t data);
             void close(void* outData);
+
         private :
             sph_shabal256_context context;
     };
 }
-
-#endif
