@@ -24,10 +24,17 @@
 
 namespace Burst
 {
+	class PlotFile
+	{
+	public:
+		std::string path;
+		size_t size;
+	};
+
     class MinerConfig
     {
     public:
-        bool readConfigFile(const std::string configPath);
+        bool readConfigFile(const std::string& configPath);
         void rescan();
         
         size_t submissionMaxDelay = 60;
@@ -37,7 +44,7 @@ namespace Burst
         size_t socketTimeout = 30;
         size_t maxBufferSizeMB = 64;
         std::string configPath;
-        std::vector<std::string> plotList;
+        std::vector<PlotFile> plotList;
         
         static const size_t hashSize = 32;
         static const size_t scoopPerPlot = 4096;
@@ -45,9 +52,10 @@ namespace Burst
         static const size_t scoopSize = hashPerScoop * hashSize; // 64 Bytes
         static const size_t plotSize = scoopPerPlot * scoopSize; // 256KB = 262144 Bytes
         static const size_t plotScoopSize = scoopSize + hashSize; // 64 + 32 bytes
-    private :
+
+    private:
         bool addPlotLocation(const std::string fileOrPath);
-        bool addPlotFile( std::string file);
+        bool addPlotFile(const std::string& file);
     };
 }
 

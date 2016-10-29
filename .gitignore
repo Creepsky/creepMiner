@@ -270,3 +270,6 @@ __pycache__/
 
 # Cake - Uncomment if you are using it
 # tools/
+
+# Custom files and dirs
+mining.conf

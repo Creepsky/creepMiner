@@ -10,14 +10,18 @@
 
 int main(int argc, const char* argv[])
 {
-    Burst::MinerLogger::write("Burst cryptoport Miners");
-    Burst::MinerLogger::write("-----------------------");
-    Burst::MinerLogger::write("http://github.com/uraymeiviar/burst-miner");
+    Burst::MinerLogger::write("Burst miner");
+    Burst::MinerLogger::write("----------------------------------------------");
+    Burst::MinerLogger::write("Github:   https://github.com/Creepsky/burst-miner");
+    Burst::MinerLogger::write("Author:   Creepsky [creepsky@gmail.com]");
+	Burst::MinerLogger::write("Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
+    Burst::MinerLogger::write("----------------------------------------------");
+    Burst::MinerLogger::write("Based on http://github.com/uraymeiviar/burst-miner");
     Burst::MinerLogger::write("author : uray meiviar [ uraymeiviar@gmail.com ]");
     Burst::MinerLogger::write("please donate to support developments :");
     Burst::MinerLogger::write(" [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX");
     Burst::MinerLogger::write(" [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b");
-    Burst::MinerLogger::write(" ");
+    Burst::MinerLogger::write("----------------------------------------------");
 
 #ifdef WIN32
 	WSADATA   wsadata;
@@ -28,6 +32,7 @@ int main(int argc, const char* argv[])
 #endif
     
     std::string configFile = "mining.conf";
+
     if(argc > 1)
     {
         if(argv[1][0] == '-')
@@ -37,17 +42,14 @@ int main(int argc, const char* argv[])
         }
         configFile = std::string(argv[1]);
     }
+
     Burst::MinerLogger::write("using config file : "+configFile);
     
     Burst::MinerConfig config;
+
     if( config.readConfigFile(configFile) )
     {
-        Burst::MinerLogger::write("Submission Max Delay : "+ std::to_string(config.submissionMaxDelay));
-        Burst::MinerLogger::write("Submission Max Retry : "+ std::to_string(config.submissionMaxRetry));
-        Burst::MinerLogger::write("Buffer Size : "+ std::to_string(config.maxBufferSizeMB)+"MB");
-        Burst::MinerLogger::write("Pool Host : "+config.poolHost+" port "+ std::to_string(config.poolPort));
-        
-        Burst::Miner miner(config);
+		Burst::Miner miner(config);
         miner.run();
     }
     else

@@ -15,10 +15,11 @@ namespace Burst
     class PlotReader
     {
     public:
-        PlotReader(Miner* miner);
+		PlotReader() = default;
+	    explicit PlotReader(Miner* miner);
         ~PlotReader();
         
-        void read(const std::string path);
+        void read(const std::string& path);
         void stop();
         bool isDone() const;
         

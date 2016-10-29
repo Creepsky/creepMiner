@@ -8,7 +8,6 @@
 
 #ifndef cryptoport_MinerProtocol_h
 #define cryptoport_MinerProtocol_h
-#include "Miner.h"
 
 namespace Burst
 {
@@ -20,6 +19,7 @@ namespace Burst
         std::string httpGet(const std::string url);
         void httpPostAsync(const std::string url, const std::string body,std::function< void ( std::string ) > responseCallback);
         void httpGetAsync(const std::string url,std::function< void ( std::string ) > responseCallback);
+
     private:
         std::string httpRequest(const std::string method, const std::string url,
                          const std::string body, const std::string header);
@@ -40,8 +40,9 @@ namespace Burst
         
         bool run(Miner* miner);
         void stop();
-        uint64_t submitNonce(uint64_t nonce, uint64_t accountId);
+        bool submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
         static std::string resolveHostname(const std::string host);
+
     private:
         Miner* miner;
         bool running;
