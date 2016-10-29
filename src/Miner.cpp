@@ -65,7 +65,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
     for(const auto plotFile : this->config->plotList)
     {
 	    auto reader = std::make_shared<PlotReader>(this);
-		reader->read(plotFile.path);
+		reader->read(plotFile->getPath());
 		this->plotReaders.emplace_back(reader);
     }
     

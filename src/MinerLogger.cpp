@@ -11,7 +11,17 @@
 void Burst::MinerLogger::write(const std::string text)
 {
     std::lock_guard<std::mutex> lock(MinerLogger::getInstance()->consoleMutex);
-    std::cout << text << std::endl;
+	
+	auto now = std::chrono::system_clock::now();
+	auto now_c = std::chrono::system_clock::to_time_t(now);
+
+	std::cout << std::put_time(std::localtime(&now_c), "%X") << ": " << text << std::endl;
+}
+
+void Burst::MinerLogger::nextLine()
+{
+	std::lock_guard<std::mutex> lock(MinerLogger::getInstance()->consoleMutex);
+	std::cout << std::endl;
 }
 
 Burst::MinerLogger* Burst::MinerLogger::getInstance()

@@ -27,6 +27,12 @@ namespace Burst
 	class PlotFile
 	{
 	public:
+		PlotFile(std::string&& path, size_t size);
+
+		const std::string& getPath() const;
+		size_t getSize() const;
+
+	private:
 		std::string path;
 		size_t size;
 	};
@@ -44,7 +50,7 @@ namespace Burst
         size_t socketTimeout = 30;
         size_t maxBufferSizeMB = 64;
         std::string configPath;
-        std::vector<PlotFile> plotList;
+        std::vector<std::shared_ptr<PlotFile>> plotList;
         
         static const size_t hashSize = 32;
         static const size_t scoopPerPlot = 4096;
@@ -55,7 +61,7 @@ namespace Burst
 
     private:
         bool addPlotLocation(const std::string fileOrPath);
-        bool addPlotFile(const std::string& file);
+        std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
     };
 }
 

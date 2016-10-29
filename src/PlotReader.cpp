@@ -44,7 +44,8 @@ void Burst::PlotReader::read(const std::string& path)
 	gensig = miner->getGensig();
 	done = false;
 	inputPath = path;
-	readerThreadObj = std::thread(&PlotReader::readerThread, this);
+	//readerThreadObj = std::thread(&PlotReader::readerThread, this);
+	readerThread();
 }
 
 void Burst::PlotReader::readerThread()
@@ -151,6 +152,8 @@ void Burst::PlotReader::readerThread()
 		this->readBuffer = &this->buffer[0];
 		this->writeBuffer = &this->buffer[1];
 
+		MinerLogger::write("reading plot file " + inputPath);
+
 		while (!this->done && inputStream.good() && chunkNum <= totalChunk)
 		{
 			auto scoopBufferSize = this->miner->getConfig()->maxBufferSizeMB * 1024 * 1024 / (64 * 2);
@@ -164,6 +167,7 @@ void Burst::PlotReader::readerThread()
 			{
 				this->writeBuffer->resize(scoopBufferSize / MinerConfig::scoopSize);
 				staggerOffset = scoopDoneRead * scoopBufferSize;
+
 				if (scoopBufferSize > (this->staggerSize * MinerConfig::scoopSize - (scoopDoneRead * scoopBufferSize)))
 				{
 					scoopBufferSize = this->staggerSize * MinerConfig::scoopSize - (scoopDoneRead * scoopBufferSize);

@@ -187,3 +187,11 @@ std::string Burst::deadlineFormat(uint64_t seconds)
 
 	return std::to_string(day) + " days " + hourStr + ":" + minStr + ":" + secStr;
 }
+
+std::string Burst::gbToString(uint64_t size)
+{
+	std::stringstream ss;
+	ss << std::fixed << std::setprecision(2);
+	ss << size / 1024 / 1024 / 1024;
+	return ss.str();
+}

@@ -13,6 +13,20 @@ void Burst::MinerConfig::rescan()
 	this->readConfigFile(this->configPath);
 }
 
+Burst::PlotFile::PlotFile(std::string&& path, size_t size)
+	: path(std::move(path)), size(size)
+{}
+
+const std::string& Burst::PlotFile::getPath() const
+{
+	return path;
+}
+
+size_t Burst::PlotFile::getSize() const
+{
+	return size;
+}
+
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 {
 	this->configPath = configPath;
@@ -107,6 +121,13 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			MinerLogger::write("Invalid plot file or directory in config file " + configPath);
 			return false;
 		}
+
+		uint64_t totalSize = 0;
+
+		for (auto plotFile : plotList)
+			totalSize += plotFile->getSize();
+
+		MinerLogger::write("Total plots size: " + gbToString(totalSize) + " GB");
 	}
 	else
 	{
@@ -211,11 +232,17 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
 
 		DIR* dir;
 		struct dirent* ent;
+		size_t size = 0;
 
 		if ((dir = opendir(dirPath.c_str())) != nullptr)
 		{
 			while ((ent = readdir(dir)) != nullptr)
-				this->addPlotFile(dirPath + std::string(ent->d_name));
+			{
+				auto plotFile = addPlotFile(dirPath + std::string(ent->d_name));
+				
+				if (plotFile != nullptr)
+					size += plotFile->getSize();
+			}
 
 			closedir(dir);
 		}
@@ -225,36 +252,42 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
 			closedir(dir);
 			return false;
 		}
-		
-		std::cout << this->plotList.size() - sizeBefore << " plot(s) found at " << fileOrPath << std::endl;
+
+		MinerLogger::write(std::to_string(this->plotList.size() - sizeBefore) + " plot(s) found at " + fileOrPath
+						   + ", total size: " + gbToString(size) + " GB");
 	}
 	// its a single plot file
 	else
 	{
-		this->addPlotFile(fileOrPath);
-		std::cout << "plot found at " << fileOrPath << std::endl;
+		auto plotFile = this->addPlotFile(fileOrPath);
+
+		if (plotFile != nullptr)
+			MinerLogger::write("plot found at " + fileOrPath + ", total size: " + gbToString(plotFile->getSize()) + " GB");
 	}
+
 	return true;
 }
 
-bool Burst::MinerConfig::addPlotFile(const std::string& path)
+std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const std::string& path)
 {
 	if (isValidPlotFile(path))
 	{
 		for (size_t i = 0; i < this->plotList.size(); i++)
-			if (this->plotList[i].path == path)
-				return true;
+			if (this->plotList[i]->getPath() == path)
+				return this->plotList[i];
 
 		std::ifstream in(path, std::ifstream::ate | std::ifstream::binary);
 
-		this->plotList.emplace_back(PlotFile { path, in.tellg() });
+		auto plotFile = std::make_shared<PlotFile>(std::string(path), in.tellg());
+
+		this->plotList.emplace_back(plotFile);
 
 		in.close();
 
 		// MinerLogger::write("Plot " + std::to_string(this->plotList.size()) + ": " + file);
 
-		return true;
+		return plotFile;
 	}
 
-	return false;
+	return nullptr;
 }

@@ -16,7 +16,11 @@ namespace Burst
     {
     public:
         static void write(const std::string text);
-        static MinerLogger* getInstance();
+		static void nextLine();
+
+		static MinerLogger* getInstance();
+
+
         std::mutex consoleMutex;
     private:
     };
