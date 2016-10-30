@@ -10,18 +10,61 @@
 
 #include <string>
 #include <mutex>
+#include <map>
 
 namespace Burst
 {
     class MinerLogger
     {
-    public:
-        static void write(const std::string& text);
-		static void nextLine();
+	public:
+		enum class Color
+		{
+			Black = 0,
+			Blue = 1,
+			Green = 2,
+			Cyan = 3,
+			Red = 4,
+			Magenta = 5,
+			Brown = 6,
+			LightGray = 7,
+			DarkGray = 8,
+			LightBlue = 9,
+			LightGreen = 10,
+			LightCyan = 11,
+			LightRed = 12,
+			LightMagenta = 13,
+			Yellow = 14,
+			White = 15
+		};
 
-		static MinerLogger& getInstance();
+		struct ColorPair
+		{
+			Color foreground, background;
+		};
+
+		enum class TextType
+		{
+			Normal, Error, Information, Success, Warning,
+			Important, System, Unimportant, Ok
+		};
+
+        static void write(const std::string& text, TextType type = TextType::Normal);
+
+		static void nextLine();
+		
+		static void setTextTypeColor(TextType type, ColorPair color);
+		static ColorPair getTextTypeColor(TextType type);
 
     private:
-        std::mutex consoleMutex;
+		static MinerLogger& getInstance();
+		static void print(const std::string& text);
+		static void setColor(Color foreground, Color background = Color::Black);
+		static void setColor(ColorPair color);
+
+        static std::mutex consoleMutex;
+	    static ColorPair currentColor;
+		static std::map<TextType, ColorPair> typeColors;
     };
+
+	using TextType = MinerLogger::TextType;
 }

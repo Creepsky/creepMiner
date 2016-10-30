@@ -13,13 +13,13 @@
 
 /*
  {
-	poolUrl : "burst-pool.cryptoport.io:80",
-	submissionMaxDelay : 60000,
-	submissionMaxRetry : 3,
-	plots : [
-		"/mnt/sda/plots/",
-		"/mnt/sdb/plots/"
-	]
+    poolUrl : "burst-pool.cryptoport.io:80",
+    submissionMaxDelay : 60000,
+    submissionMaxRetry : 3,
+    plots : [
+        "/mnt/sda/plots/",
+        "/mnt/sdb/plots/"
+    ]
  }
  */
 
@@ -50,18 +50,16 @@ namespace Burst
         size_t poolPort = 80;
         size_t socketTimeout = 30;
         size_t maxBufferSizeMB = 64;
-        std::string configPath;
-        std::vector<std::shared_ptr<PlotFile>> plotList;
-        
-        static const size_t hashSize = 32;
-        static const size_t scoopPerPlot = 4096;
-        static const size_t hashPerScoop = 2;
-        static const size_t scoopSize = hashPerScoop * hashSize; // 64 Bytes
-        static const size_t plotSize = scoopPerPlot * scoopSize; // 256KB = 262144 Bytes
-        static const size_t plotScoopSize = scoopSize + hashSize; // 64 + 32 bytes
+		const std::string& getPath() const;
+
+		const std::vector<std::shared_ptr<PlotFile>>& getPlotFiles() const;
+		uintmax_t getTotalPlotsize() const;
 
     private:
         bool addPlotLocation(const std::string fileOrPath);
         std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
+
+		std::string configPath;
+		std::vector<std::shared_ptr<PlotFile>> plotList;
     };
 }

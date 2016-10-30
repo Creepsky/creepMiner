@@ -9,6 +9,7 @@
 #include "Miner.h"
 #include "MinerLogger.h"
 #include "MinerConfig.h"
+#include <iostream>
 
 int main(int argc, const char* argv[])
 {
@@ -29,7 +30,7 @@ int main(int argc, const char* argv[])
 	WSADATA   wsadata;
 	if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
 	{
-		Burst::MinerLogger::write("failed to initalize networking system");
+		Burst::MinerLogger::write("failed to initalize networking system", Burst::TextType::Error);
 	}
 #endif
     
@@ -45,7 +46,7 @@ int main(int argc, const char* argv[])
         configFile = std::string(argv[1]);
     }
 
-    Burst::MinerLogger::write("using config file : "+configFile);
+    Burst::MinerLogger::write("using config file : " + configFile);
     
     Burst::MinerConfig config;
 
@@ -56,7 +57,7 @@ int main(int argc, const char* argv[])
     }
     else
     {
-        Burst::MinerLogger::write("Aborting program due to invalid configuration");
+        Burst::MinerLogger::write("Aborting program due to invalid configuration", Burst::TextType::Error);
     }
     
 #ifdef WIN32

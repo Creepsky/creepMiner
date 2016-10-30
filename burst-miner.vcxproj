@@ -172,6 +172,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Deadline.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Miner.cpp" />
     <ClCompile Include="src\MinerConfig.cpp" />
@@ -184,6 +185,8 @@
     <ClCompile Include="src\sphlib\sph_shabal.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Deadline.hpp" />
+    <ClInclude Include="src\Declarations.hpp" />
     <ClInclude Include="src\Miner.h" />
     <ClInclude Include="src\MinerConfig.h" />
     <ClInclude Include="src\MinerLogger.h" />
@@ -199,6 +202,7 @@
     <ClInclude Include="src\rapidjson\reader.h" />
     <ClInclude Include="src\rapidjson\stringbuffer.h" />
     <ClInclude Include="src\rapidjson\writer.h" />
+    <ClInclude Include="src\SocketDefinitions.hpp" />
     <ClInclude Include="src\sphlib\sph_shabal.h" />
     <ClInclude Include="src\sphlib\sph_types.h" />
   </ItemGroup>

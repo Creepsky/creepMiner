@@ -39,7 +39,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	this->configPath = configPath;
 	std::ifstream inputFileStream;
 
-	std::ios_base::iostate exceptionMask = inputFileStream.exceptions() | std::ios::failbit;
+	plotList.clear();
+
+	auto exceptionMask = inputFileStream.exceptions() | std::ios::failbit;
 	inputFileStream.exceptions(exceptionMask);
 
 	try
@@ -48,7 +50,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 	catch (...)
 	{
-		MinerLogger::write("unable to open file " + configPath);
+		MinerLogger::write("unable to open file " + configPath, TextType::Error);
 		return false;
 	}
 
@@ -64,13 +66,13 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	{
 		std::string parseError = configDoc.GetParseError();
 		size_t parseErrorLoc = configDoc.GetErrorOffset();
-		MinerLogger::write("Parsing Error : " + parseError);
+		MinerLogger::write("Parsing Error : " + parseError, TextType::Error);
 		size_t sampleLen = 16;
 		if (configContentStr.length() - parseErrorLoc < 16)
 		{
 			sampleLen = configContentStr.length() - parseErrorLoc;
 		}
-		MinerLogger::write("--> " + configContentStr.substr(parseErrorLoc, sampleLen) + "...");
+		MinerLogger::write("--> " + configContentStr.substr(parseErrorLoc, sampleLen) + "...", TextType::Error);
 		return false;
 	}
 
@@ -106,7 +108,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 	else
 	{
-		MinerLogger::write("No poolUrl is defined in config file " + configPath);
+		MinerLogger::write("No poolUrl is defined in config file " + configPath, TextType::Error);
 		return false;
 	}
 
@@ -125,7 +127,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		}
 		else
 		{
-			MinerLogger::write("Invalid plot file or directory in config file " + configPath);
+			MinerLogger::write("Invalid plot file or directory in config file " + configPath, TextType::Error);
 			return false;
 		}
 
@@ -134,17 +136,17 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		for (auto plotFile : plotList)
 			totalSize += plotFile->getSize();
 
-		MinerLogger::write("Total plots size: " + gbToString(totalSize) + " GB");
+		MinerLogger::write("Total plots size: " + gbToString(totalSize) + " GB", TextType::System);
 	}
 	else
 	{
-		MinerLogger::write("No plot file or directory defined in config file " + configPath);
+		MinerLogger::write("No plot file or directory defined in config file " + configPath, TextType::Error);
 		return false;
 	}
 
 	if (this->plotList.empty())
 	{
-		MinerLogger::write("No valid plot file or directory in config file " + configPath);
+		MinerLogger::write("No valid plot file or directory in config file " + configPath, TextType::Error);
 		return false;
 	}
 
@@ -217,6 +219,26 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	return true;
 }
 
+const std::string& Burst::MinerConfig::getPath() const
+{
+	return configPath;
+}
+
+const std::vector<std::shared_ptr<Burst::PlotFile>>& Burst::MinerConfig::getPlotFiles() const
+{
+	return plotList;
+}
+
+uintmax_t Burst::MinerConfig::getTotalPlotsize() const
+{
+	uintmax_t sum = 0;
+
+	for (auto plotFile : plotList)
+		sum += plotFile->getSize();
+
+	return sum;
+}
+
 bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
 {
 	struct stat info;
@@ -224,7 +246,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
 
 	if (statResult != 0)
 	{
-		MinerLogger::write(fileOrPath + " does not exist or can not be read");
+		MinerLogger::write(fileOrPath + " does not exist or can not be read", TextType::Error);
 		return false;
 	}
 
@@ -255,13 +277,13 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
 		}
 		else
 		{
-			MinerLogger::write("failed reading file or directory " + fileOrPath);
+			MinerLogger::write("failed reading file or directory " + fileOrPath, TextType::Error);
 			closedir(dir);
 			return false;
 		}
 
 		MinerLogger::write(std::to_string(this->plotList.size() - sizeBefore) + " plot(s) found at " + fileOrPath
-						   + ", total size: " + gbToString(size) + " GB");
+						   + ", total size: " + gbToString(size) + " GB", TextType::System);
 	}
 	// its a single plot file
 	else
@@ -269,7 +291,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
 		auto plotFile = this->addPlotFile(fileOrPath);
 
 		if (plotFile != nullptr)
-			MinerLogger::write("plot found at " + fileOrPath + ", total size: " + gbToString(plotFile->getSize()) + " GB");
+			MinerLogger::write("plot found at " + fileOrPath + ", total size: " + gbToString(plotFile->getSize()) + " GB", TextType::System);
 	}
 
 	return true;

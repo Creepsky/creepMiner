@@ -27,7 +27,9 @@ namespace Burst
 
 	template <size_t SZ>
 	using BytesArray = std::array<uint8_t,SZ>;
-	using ScoopData  = BytesArray<Settings::HashSize>;
+	using ScoopData  = BytesArray<Settings::ScoopSize>;
 	using GensigData = BytesArray<Settings::HashSize>;
 	using HashData   = BytesArray<Settings::HashSize>;
+
+	using AccountId = uint64_t;
 }

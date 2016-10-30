@@ -14,7 +14,7 @@
 #include "Miner.h"
 
 Burst::PlotReader::PlotReader(Miner& miner)
-	: PlotReader()
+	: Burst::PlotReader()
 {
 	this->done = true;
 	this->miner = &miner;
@@ -45,18 +45,12 @@ void Burst::PlotReader::read(const std::string& path)
 	nonceStart = stoull(getStartNonceFromPlotFile(path));
 	nonceCount = stoull(getNonceCountFromPlotFile(path));
 	staggerSize = stoull(getStaggerSizeFromPlotFile(path));
-	scoopNum = miner->getScoopNum();
+	scoopNum = this->miner->getScoopNum();
 	gensig = miner->getGensig();
 	done = false;
 	inputPath = path;
 	//readerThreadObj = std::thread(&PlotReader::readerThread, this);
 	readerThread();
-}
-
-void Burst::PlotReader::read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
-{
-	plotFileList = std::move(plotFiles);
-	std::thread(&PlotReader::listReaderThread, this);
 }
 
 void Burst::PlotReader::readerThread()
@@ -163,32 +157,32 @@ void Burst::PlotReader::readerThread()
 		this->readBuffer = &this->buffer[0];
 		this->writeBuffer = &this->buffer[1];
 
-		MinerLogger::write("reading plot file " + inputPath);
+		//MinerLogger::write("reading plot file " + inputPath);
 
 		while (!this->done && inputStream.good() && chunkNum <= totalChunk)
 		{
 			auto scoopBufferSize = this->miner->getConfig()->maxBufferSizeMB * 1024 * 1024 / (64 * 2);
 			auto scoopBufferCount = static_cast<size_t>(
-				std::ceil(static_cast<float>(this->staggerSize * MinerConfig::scoopSize) / static_cast<float>(scoopBufferSize)));
-			auto startByte = this->scoopNum * MinerConfig::scoopSize * this->staggerSize + chunkNum * this->staggerSize * MinerConfig::plotSize;
+				std::ceil(static_cast<float>(this->staggerSize * Settings::ScoopSize) / static_cast<float>(scoopBufferSize)));
+			auto startByte = this->scoopNum * Settings::ScoopSize * this->staggerSize + chunkNum * this->staggerSize * Settings::PlotSize;
 			auto scoopDoneRead = 0;
 			size_t staggerOffset;
 
 			while (!this->done && inputStream.good() && scoopDoneRead <= scoopBufferCount)
 			{
-				this->writeBuffer->resize(scoopBufferSize / MinerConfig::scoopSize);
+				this->writeBuffer->resize(scoopBufferSize / Settings::ScoopSize);
 				staggerOffset = scoopDoneRead * scoopBufferSize;
 
-				if (scoopBufferSize > (this->staggerSize * MinerConfig::scoopSize - (scoopDoneRead * scoopBufferSize)))
+				if (scoopBufferSize > (this->staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize)))
 				{
-					scoopBufferSize = this->staggerSize * MinerConfig::scoopSize - (scoopDoneRead * scoopBufferSize);
-					if (scoopBufferSize > MinerConfig::scoopSize)
+					scoopBufferSize = this->staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize);
+					if (scoopBufferSize > Settings::ScoopSize)
 					{
-						this->writeBuffer->resize(scoopBufferSize / MinerConfig::scoopSize);
+						this->writeBuffer->resize(scoopBufferSize / Settings::ScoopSize);
 					}
 				}
 
-				if (scoopBufferSize > MinerConfig::scoopSize)
+				if (scoopBufferSize > Settings::ScoopSize)
 				{
 					inputStream.seekg(startByte + staggerOffset);
 					auto scoopData = reinterpret_cast<char*>(&(*this->writeBuffer)[0]);
@@ -201,7 +195,7 @@ void Burst::PlotReader::readerThread()
 					auto temp = this->readBuffer;
 					readBuffer = this->writeBuffer;
 					writeBuffer = temp;
-					nonceOffset = chunkNum * this->staggerSize + scoopDoneRead * (scoopBufferSize / MinerConfig::scoopSize);
+					nonceOffset = chunkNum * this->staggerSize + scoopDoneRead * (scoopBufferSize / Settings::ScoopSize);
 					verifySignaled = true;
 					verifySignal.notify_one();
 					verifyLock.unlock();
@@ -227,7 +221,7 @@ void Burst::PlotReader::readerThread()
 
 		inputStream.close();
 
-		MinerLogger::write("finished reading plot file " + inputPath);
+		//MinerLogger::write("finished reading plot file " + inputPath);
 
 		std::unique_lock<std::mutex> verifyLock(this->verifyMutex);
 		this->runVerify = false;
@@ -241,7 +235,7 @@ void Burst::PlotReader::readerThread()
 
 		this->done = true;
 
-		MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
+		//MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
 	}
 }
 
@@ -263,8 +257,8 @@ void Burst::PlotReader::verifierThread()
 		{
 			HashData target;
 			auto test = reinterpret_cast<char*>(&((*this->readBuffer)[i]));
-			hash.update(&this->gensig[0], MinerConfig::hashSize);
-			hash.update(test, MinerConfig::scoopSize);
+			hash.update(&this->gensig[0], Settings::HashSize);
+			hash.update(test, Settings::ScoopSize);
 			hash.close(&target[0]);
 
 			uint64_t targetResult = 0;
@@ -280,8 +274,83 @@ void Burst::PlotReader::verifierThread()
 	//MinerLogger::write("plot read done. "+std::to_string(this->nonceRead)+" nonces ");
 }
 
-void Burst::PlotReader::listReaderThread()
+Burst::PlotListReader::PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress)
+	: done(false), miner(&miner), progress(progress)
+{}
+
+Burst::PlotListReader::~PlotListReader()
 {
-	for (const auto& plotFile : plotFileList)
-		read(plotFile->getPath());
+	stop();
+}
+
+void Burst::PlotListReader::read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
+{
+	plotFileList = std::move(plotFiles);
+	readerThreadObj = std::thread(&PlotListReader::readThread, this);
+}
+
+void Burst::PlotListReader::stop()
+{
+	done = true;
+
+	if (readerThreadObj.joinable())
+		readerThreadObj.join();
+}
+
+bool Burst::PlotListReader::isDone() const
+{
+	return done;
+}
+
+void Burst::PlotListReader::readThread()
+{
+	if (miner == nullptr)
+		return;
+
+	PlotReader plotReader { *miner };
+	
+	for (auto iter = plotFileList.begin(); iter != plotFileList.end() && !done; ++iter)
+	{
+		plotReader.read((*iter)->getPath());
+		
+		if (progress != nullptr)
+			progress->add((*iter)->getSize());
+	}
+
+	done = true;
+}
+
+void Burst::PlotReadProgress::reset()
+{
+	std::lock_guard<std::mutex> guard(lock);
+	progress = 0;
+}
+
+void Burst::PlotReadProgress::add(uintmax_t value)
+{
+	std::lock_guard<std::mutex> guard(lock);
+	progress += value;
+	
+	if (max > 0)
+	{
+		MinerLogger::write("progress: " + std::to_string(progress * 1.f / max * 100) + " %",
+			TextType::Unimportant);
+	}
+}
+
+void Burst::PlotReadProgress::set(uintmax_t value)
+{
+	std::lock_guard<std::mutex> guard(lock);
+	progress = value;
+}
+
+void Burst::PlotReadProgress::setMax(uintmax_t value)
+{
+	std::lock_guard<std::mutex> guard(lock);
+	max = value;
+}
+
+bool Burst::PlotReadProgress::isReady() const
+{
+	return progress >= max;
 }

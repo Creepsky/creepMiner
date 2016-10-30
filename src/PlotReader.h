@@ -20,6 +20,7 @@ namespace Burst
 {
 	class Miner;
 	class PlotFile;
+	class PlotReadProgress;
 
     class PlotReader
     {
@@ -29,15 +30,13 @@ namespace Burst
         ~PlotReader();
         
         void read(const std::string& path);
-		void read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
         void stop();
         bool isDone() const;
         
     private:
         void readerThread();
         void verifierThread();
-		void listReaderThread();
-
+        
         size_t nonceStart;
         size_t scoopNum;
         size_t nonceCount;
@@ -52,7 +51,6 @@ namespace Burst
         std::string inputPath;
 
         Miner* miner;
-		std::vector<std::shared_ptr<PlotFile>> plotFileList;
         std::thread readerThreadObj;
         
         std::vector<ScoopData> buffer[2];
@@ -68,9 +66,34 @@ namespace Burst
 	class PlotListReader
 	{
 	public:
+		PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress);
+		~PlotListReader();
+
 		void read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
+		void stop();
+		bool isDone() const;
 
 	private:
+		void readThread();
+
 		std::vector<std::shared_ptr<PlotFile>> plotFileList;
+		std::thread readerThreadObj;
+		bool done;
+		Miner* miner;
+		std::shared_ptr<PlotReadProgress> progress;
+	};
+
+	class PlotReadProgress
+	{
+	public:
+		void reset();
+		void add(uintmax_t value);
+		void set(uintmax_t value);
+		void setMax(uintmax_t value);
+		bool isReady() const;
+
+	private:
+		uintmax_t progress = 0, max = 0;
+		std::mutex lock;
 	};
 }

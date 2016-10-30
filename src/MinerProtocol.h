@@ -33,8 +33,7 @@ namespace Burst
                               std::function< void ( std::string ) > responseCallback );
         static const size_t readBufferSize = 2048;
         char readBuffer[readBufferSize];
-        
-		struct sockaddr_in remoteAddr;
+        struct sockaddr_in remoteAddr;
         struct timeval socketTimeout;
     };
     

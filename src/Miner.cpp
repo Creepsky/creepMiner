@@ -22,16 +22,26 @@ Burst::Miner::Miner(MinerConfig& config)
 	this->running = false;
 }
 
+Burst::Miner::~Miner()
+{}
+
 void Burst::Miner::run()
 {
     this->running = true;
     std::thread submitter(&Miner::nonceSubmitterThread,this);
     
+	progress = std::make_unique<PlotReadProgress>();
+
 	if(!this->protocol.run(this))
-        MinerLogger::write("Mining networking failed");
+        MinerLogger::write("Mining networking failed", TextType::Error);
 
     this->running = false;
     submitter.join();
+}
+
+void Burst::Miner::stop()
+{
+	this->running = false;
 }
 
 const Burst::MinerConfig* Burst::Miner::getConfig() const
@@ -41,6 +51,10 @@ const Burst::MinerConfig* Burst::Miner::getConfig() const
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
+	// stop all reading processes if any
+	for (auto& plotReader : plotReaders)
+		plotReader->stop();
+
     this->gensigStr = gensigStr;
     this->blockHeight = blockHeight;
     this->baseTarget = baseTarget;
@@ -57,25 +71,36 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	this->hash.close(&newGenSig[0]);
 	this->scoopNum = (static_cast<int>(newGenSig[newGenSig.size()-2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size()-1]);
 
-	MinerLogger::write("------------------------------------------");
-	MinerLogger::write("block#      " + std::to_string(blockHeight));
-	MinerLogger::write("scoop#      " + std::to_string(scoopNum));
-	MinerLogger::write("baseTarget# " + std::to_string(baseTarget));
-	MinerLogger::write("gensig#     " + gensigStr);
-	MinerLogger::write("------------------------------------------");
+	//auto writeLine = [](const std::string& text, uint8_t lineWidth = 76)
+	//{
+		//std::string filler(lineWidth - text.size(), ' ');
+		//MinerLogger::write(text + filler, MinerLogger::TextType::Urgent);
+	//};
+
+	//writeLine("block#      " + std::to_string(blockHeight));
+	//writeLine("scoop#      " + std::to_string(scoopNum));
+	//writeLine("baseTarget# " + std::to_string(baseTarget));
+	//writeLine("gensig#     " + gensigStr);
+
+	MinerLogger::write(std::string(76, '-'), TextType::Information);
+	MinerLogger::write("block#      " + std::to_string(blockHeight), TextType::Information);
+	MinerLogger::write("scoop#      " + std::to_string(scoopNum), TextType::Information);
+	MinerLogger::write("baseTarget# " + std::to_string(baseTarget), TextType::Information);
+	MinerLogger::write("gensig#     " + gensigStr, TextType::Information);
+	MinerLogger::write(std::string(76, '-'), TextType::Information);
     
-    this->bestDeadline.clear();
-	this->config->plotList.clear();
+    //this->bestDeadline.clear();
+	this->bestDeadline.clear();
     this->config->rescan();
     this->plotReaders.clear();
-    
+
 	// this block is closed in itself
 	// dont use the variables in it outside!
 	{
 		using PlotList = std::vector<std::shared_ptr<PlotFile>>;
 		std::unordered_map<std::string, PlotList> plotDirs;
-	
-		for(const auto plotFile : this->config->plotList)
+
+		for(const auto plotFile : this->config->getPlotFiles())
 		{
 			auto last_slash_idx = plotFile->getPath().find_first_of('/\\');
 
@@ -92,20 +117,19 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 				plotDirs.emplace(std::make_pair(dir, PlotList{}));
 
 			plotDirs[dir].emplace_back(plotFile);
-
-			//auto reader = std::make_shared<PlotReader>(*this);
-			//reader->read(plotFile->getPath());
-			//this->plotReaders.emplace_back(reader);
 		}
-    
+		  
+		auto progress = std::make_shared<PlotReadProgress>();
+		progress->setMax(config->getTotalPlotsize());
+
 		for (auto& plotDir : plotDirs)
 		{
-			auto reader = std::make_shared<PlotReader>(*this);
+			auto reader = std::make_shared<PlotListReader>(*this, progress);
 			reader->read(std::move(plotDir.second));
 			plotReaders.emplace_back(reader);
 		}
-    }
-
+	}
+    
     std::random_device rd;
     std::default_random_engine randomizer(rd());
     std::uniform_int_distribution<size_t> dist(0, this->config->submissionMaxDelay);
@@ -145,11 +169,12 @@ void Burst::Miner::nonceSubmitterThread()
 
     while(this->running)
     {
-        if(std::chrono::system_clock::now() > this->nextNonceSubmission)
+        if(std::chrono::system_clock::now() > this->nextNonceSubmission ||
+			std::all_of(plotReaders.begin(), plotReaders.end(), [](std::shared_ptr<PlotListReader> reader) { return reader->isDone(); }))
         {
             mutex.lock();
 
-            for (auto& kv : this->bestDeadline)
+            for (auto& kv : bestDeadline)
             {
 	            auto accountId = kv.first;
 	            auto deadline = kv.second;
@@ -194,8 +219,8 @@ void Burst::Miner::nonceSubmitterThread()
 				
 				mutex.unlock();
 
-				uint64_t deadline;
-                
+				uint64_t deadline = bestDeadline[submitData.second];
+
                 if(protocol.submitNonce(submitData.first, submitData.second, deadline))
 					this->nonceSubmitReport(submitData.first, submitData.second, deadline);
             }
@@ -216,15 +241,16 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
         {
             this->bestDeadline[accountId] = deadline;
             this->bestNonce[accountId] = nonce;
-            
-            //MinerLogger::write(addr.to_string()+" dl:"+Burst::deadlineFormat(deadline)+" n:"+std::to_string(nonce));
+
+			MinerLogger::write(addr.to_string() + ": deadline found (" + Burst::deadlineFormat(deadline) + ")", TextType::Ok);
         }
     }
     else
     {
         this->bestDeadline.insert(std::make_pair(accountId, deadline));
         this->bestNonce.insert(std::make_pair(accountId, nonce));
-		//MinerLogger::write(addr.to_string() + " dl:" + Burst::deadlineFormat(deadline) + " n:" + std::to_string(nonce));
+
+		MinerLogger::write(addr.to_string() + ": deadline found (" + Burst::deadlineFormat(deadline) + ")", TextType::Ok);
     }
 }
 
@@ -238,12 +264,12 @@ void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_
         if(deadline < this->bestDeadlineConfirmed[accountId])
         {
             this->bestDeadlineConfirmed[accountId] = deadline;
-			MinerLogger::write("deadline confirmed for " + addr.to_string() + " : " + deadlineFormat(deadline));
+			MinerLogger::write(addr.to_string() + ": deadline confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
         }
     }
     else
     {
         this->bestDeadlineConfirmed.insert(std::make_pair(accountId, deadline));
-		MinerLogger::write("deadline confirmed for " + addr.to_string() + ": " + deadlineFormat(deadline));
+		MinerLogger::write(addr.to_string() + ": deadline confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
     }
 }

@@ -12,6 +12,7 @@
 #include "nxt/nxt_address.h"
 #include "rapidjson/document.h"
 #include "Miner.h"
+#include "MinerUtil.h"
 
 void Burst::MinerSocket::setRemote(const std::string ip, size_t port, size_t defaultTimeout)
 {
@@ -40,7 +41,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string method,
 
 	if (connect(sock, reinterpret_cast<struct sockaddr*>(&this->remoteAddr), sizeof(struct sockaddr_in)) == -1)
 	{
-		MinerLogger::write("unable to connect to remote host");
+		MinerLogger::write("unable to connect to remote host", TextType::Error);
 	}
 	else
 	{
@@ -154,10 +155,10 @@ bool Burst::MinerProtocol::run(Miner* miner)
 
 	if (remoteIP != "")
 	{
-		MinerLogger::write("Submission Max Delay : " + std::to_string(config.submissionMaxDelay));
-		MinerLogger::write("Submission Max Retry : " + std::to_string(config.submissionMaxRetry));
-		MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB");
-		MinerLogger::write("Pool Host : " + config.poolHost + ":" + std::to_string(config.poolPort) + " (" + remoteIP + ")");
+		MinerLogger::write("Submission Max Delay : " + std::to_string(config.submissionMaxDelay), TextType::System);
+		MinerLogger::write("Submission Max Retry : " + std::to_string(config.submissionMaxRetry), TextType::System);
+		MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
+		MinerLogger::write("Pool Host : " + config.poolHost + ":" + std::to_string(config.poolPort) + " (" + remoteIP + ")", TextType::System);
 
 		this->running = true;
 		this->miningInfoSocket.setRemote(remoteIP, config.poolPort);
@@ -176,10 +177,9 @@ bool Burst::MinerProtocol::run(Miner* miner)
 bool Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline)
 {
 	NxtAddress addr(accountId);
-	deadline = 0;
 
 	//MinerLogger::write("submitting nonce " + std::to_string(nonce) + " for " + addr.to_string());
-	MinerLogger::write("nonce submitted for " + addr.to_string() + ": " + std::to_string(nonce)); 
+	MinerLogger::write(addr.to_string() + ": nonce submitted (" + deadlineFormat(deadline) + ")", TextType::Ok); 
 	
 	auto request = "requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId) + "&secretPhrase=cryptoport";
 	auto url = "/burst?" + request;
@@ -204,6 +204,16 @@ bool Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint6
 			deadline = body["deadline"].GetUint64();
 			return true;
 		}
+		
+		if (body.HasMember("errorCode"))
+		{
+			MinerLogger::write(std::string("error: ") + body["errorDescription"].GetString(), TextType::Error);
+			// we send true so we dont send it again and again
+			return true;
+		}
+		
+		MinerLogger::write(response, TextType::Error);
+		return true;
 	}
 
 	return false;
@@ -255,7 +265,7 @@ std::string Burst::MinerProtocol::resolveHostname(const std::string host)
 
 	if ((he = gethostbyname(host.c_str())) == nullptr)
 	{
-		MinerLogger::write("error while resolving hostname");
+		MinerLogger::write("error while resolving hostname", TextType::Error);
 		return "";
 	}
 
@@ -269,6 +279,6 @@ std::string Burst::MinerProtocol::resolveHostname(const std::string host)
 		return ip;
 	}
 
-	MinerLogger::write("can not resolve hostname " + host);
+	MinerLogger::write("can not resolve hostname " + host, TextType::Error);
 	return "";
 }
