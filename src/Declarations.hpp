@@ -32,6 +32,7 @@ namespace Burst
 	using HashData   = BytesArray<Settings::HashSize>;
 
 	using AccountId = uint64_t;
+	using Nonce = uint64_t;
 
 	class Version
 	{

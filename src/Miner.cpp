@@ -90,7 +90,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	MinerLogger::write(std::string(76, '-'), TextType::Information);
     
     //this->bestDeadline.clear();
-	this->bestDeadline.clear();
+	deadlines.clear();
     this->config->rescan();
     this->plotReaders.clear();
 
@@ -140,9 +140,10 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
     
 	{
 		std::lock_guard<std::mutex> mutex(this->accountLock);
-		this->bestDeadline.clear();
+		deadlines.clear();
+		/*this->bestDeadline.clear();
 		this->bestNonce.clear();
-		this->bestDeadlineConfirmed.clear();
+		this->bestDeadlineConfirmed.clear();*/
     }
 }
 
@@ -163,7 +164,9 @@ size_t Burst::Miner::getScoopNum() const
 
 void Burst::Miner::nonceSubmitterThread()
 {
-    std::deque<std::pair<uint64_t,uint64_t>> submitList;
+	using SubmitEntry = std::pair<std::shared_ptr<Deadline>, AccountId>;
+
+    std::deque<SubmitEntry> submitList;
     std::unique_lock<std::mutex> mutex(this->accountLock, std::defer_lock);
 
     while(this->running)
@@ -173,32 +176,28 @@ void Burst::Miner::nonceSubmitterThread()
         {
             mutex.lock();
 
-            for (auto& kv : bestDeadline)
+            for (auto& accountDeadlines : deadlines)
             {
-	            auto accountId = kv.first;
-	            auto deadline = kv.second;
-	            auto nonce = this->bestNonce[accountId];
-	            auto firstSubmit = this->bestDeadlineConfirmed.find(accountId) == this->bestDeadlineConfirmed.end();
+				auto accountId = accountDeadlines.first;
+				auto deadline = accountDeadlines.second.getBestDeadline();
+				auto bestConfirmed = accountDeadlines.second.getBestConfirmed();
+				auto needToSubmit = true;
 
-				if (!firstSubmit)
-					firstSubmit = deadline < this->bestDeadlineConfirmed[accountId];
+				if (deadline == nullptr)
+					continue;
 
-                if( firstSubmit )
+				if (bestConfirmed != nullptr)
+					needToSubmit = deadline->getDeadline() < bestConfirmed->getDeadline();
+
+                if(needToSubmit)
                 {
-	                auto exist = false;
-
-					for (size_t i = 0; i < submitList.size(); i++)
+					auto iter = std::find_if(submitList.begin(), submitList.end(), [accountId, deadline](const SubmitEntry& entry)
 					{
-						if (submitList.at(i).first == nonce &&
-							submitList.at(i).second == accountId)
-						{
-							exist = true;
-							break;
-						}
-					}
-
-					if (!exist)
-						submitList.emplace_back(nonce, accountId);
+						return entry.first->getNonce() == deadline->getNonce() && entry.second == accountId;
+					});
+					
+					if (iter == submitList.end())
+						submitList.emplace_back(deadline, accountId);
                 }
             }
 
@@ -218,10 +217,12 @@ void Burst::Miner::nonceSubmitterThread()
 				
 				mutex.unlock();
 
-	            auto deadline = bestDeadline[submitData.second];
+				auto nonce = submitData.first->getNonce();
+	            auto deadline = submitData.first->getDeadline();
+				auto accountId = submitData.second;
 
-                if(protocol.submitNonce(submitData.first, submitData.second, deadline) == SubmitResponse::Submitted)
-					this->nonceSubmitReport(submitData.first, submitData.second, deadline);
+                if(protocol.submitNonce(nonce, accountId, deadline) == SubmitResponse::Submitted)
+					this->nonceSubmitReport(nonce, accountId, deadline);
             }
         }
 
@@ -234,23 +235,19 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
     std::lock_guard<std::mutex> mutex(this->accountLock);
 	NxtAddress addr(accountId);
 
-    if(this->bestDeadline.find(accountId) != this->bestDeadline.end())
-    {
-        if(deadline < this->bestDeadline[accountId])
-        {
-            this->bestDeadline[accountId] = deadline;
-            this->bestNonce[accountId] = nonce;
+	auto bestDeadline = deadlines[accountId].getBestDeadline();
+	auto better = false;
 
-			MinerLogger::write(addr.to_string() + ": deadline found (" + Burst::deadlineFormat(deadline) + ")", TextType::Ok);
-        }
-    }
-    else
-    {
-        this->bestDeadline.insert(std::make_pair(accountId, deadline));
-        this->bestNonce.insert(std::make_pair(accountId, nonce));
+	if (bestDeadline == nullptr)
+		better = true;
+	else
+		better = bestDeadline->getDeadline() > deadline;
 
+	if (better)
+	{
+		deadlines[accountId].add({ nonce, deadline });
 		MinerLogger::write(addr.to_string() + ": deadline found (" + Burst::deadlineFormat(deadline) + ")", TextType::Ok);
-    }
+	}
 }
 
 void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline)
@@ -258,17 +255,6 @@ void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_
     std::lock_guard<std::mutex> mutex(this->accountLock);
 	NxtAddress addr(accountId);
     
-	if(this->bestDeadlineConfirmed.find(accountId) != this->bestDeadlineConfirmed.end())
-    {
-        if(deadline < this->bestDeadlineConfirmed[accountId])
-        {
-            this->bestDeadlineConfirmed[accountId] = deadline;
-			MinerLogger::write(addr.to_string() + ": deadline confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
-        }
-    }
-    else
-    {
-        this->bestDeadlineConfirmed.insert(std::make_pair(accountId, deadline));
+	if (deadlines[accountId].confirm(nonce))
 		MinerLogger::write(addr.to_string() + ": deadline confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
-    }
 }

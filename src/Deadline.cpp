@@ -1,5 +1,6 @@
 ﻿#include "Deadline.hpp"
 #include "MinerUtil.h"
+#include <algorithm>
 
 Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline)
 	: nonce(nonce), deadline(deadline)
@@ -25,6 +26,9 @@ bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
 	return getDeadline() < rhs.getDeadline();
 }
 
+Burst::Deadline::~Deadline()
+{}
+
 void Burst::Deadline::confirm()
 {
 	confirmed = true;
@@ -42,7 +46,11 @@ bool Burst::Deadline::operator()(const Deadline& lhs, const Deadline& rhs) const
 
 void Burst::Deadlines::add(Deadline&& deadline)
 {
-	deadlines.emplace(std::move(deadline));
+	deadlines.emplace_back(std::make_shared<Deadline>(std::move(deadline)));
+	std::sort(deadlines.begin(), deadlines.end(), [](std::shared_ptr<Deadline> lhs, std::shared_ptr<Deadline> rhs)
+	{
+		return *lhs < *rhs;
+	});
 }
 
 void Burst::Deadlines::clear()
@@ -50,12 +58,31 @@ void Burst::Deadlines::clear()
 	deadlines.clear();
 }
 
-Burst::Deadline* Burst::Deadlines::getBestDeadline()
+bool Burst::Deadlines::confirm(Nonce nonce)
 {
-	return nullptr;
+	auto iter = std::find_if(deadlines.begin(), deadlines.end(), [nonce](std::shared_ptr<Deadline> dl)
+	{
+		return dl->getNonce() == nonce;
+	});
+
+	if (iter == deadlines.end())
+		return false;
+
+	(*iter)->confirm();
+	return true;
 }
 
-Burst::Deadline* Burst::Deadlines::getBestConfirmed()
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestDeadline()
 {
+	if (deadlines.empty())
+		return nullptr;
+	return deadlines.front();
+}
+
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed()
+{
+	for (auto& deadline : deadlines)
+		if (deadline->isConfirmed())
+			return deadline;
 	return nullptr;
 }

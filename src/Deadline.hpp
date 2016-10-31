@@ -1,7 +1,9 @@
 ﻿#pragma once
 
 #include <cstdint>
-#include <set>
+#include <memory>
+#include <vector>
+#include "Declarations.hpp"
 
 namespace Burst
 {
@@ -9,6 +11,8 @@ namespace Burst
 	{
 	public:
 		Deadline(uint64_t nonce, uint64_t deadline);
+		Deadline(Deadline&& rhs) = default;
+		~Deadline();
 
 		void confirm();
 		std::string deadlineToReadableString() const;
@@ -30,11 +34,12 @@ namespace Burst
 	public:
 		void add(Deadline&& deadline);
 		void clear();
+		bool confirm(Nonce nonce);
 
-		Deadline* getBestDeadline();
-		Deadline* getBestConfirmed();
+		std::shared_ptr<Deadline> getBestDeadline();
+		std::shared_ptr<Deadline> getBestConfirmed();
 
 	private:
-		std::set<Deadline> deadlines;
+		std::vector<std::shared_ptr<Deadline>> deadlines;
 	};
 }

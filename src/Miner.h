@@ -14,6 +14,8 @@
 #include "Declarations.hpp"
 #include "MinerProtocol.h"
 #include <set>
+#include "Deadline.hpp"
+
 //#include "Deadline.hpp"
 
 namespace Burst
@@ -53,10 +55,10 @@ namespace Burst
         GensigData gensig;
 		std::vector<std::shared_ptr<PlotListReader>> plotReaders;
 		//std::vector<std::shared_ptr<PlotReader>> plotReaders;
-        std::unordered_map<uint64_t, uint64_t> bestDeadline;
-        std::unordered_map<uint64_t, uint64_t> bestNonce;
-        std::unordered_map<uint64_t, uint64_t> bestDeadlineConfirmed;
-		//std::unordered_map<AccountId, Deadlines> deadlines;
+        //std::unordered_map<uint64_t, uint64_t> bestDeadline;
+        //std::unordered_map<uint64_t, uint64_t> bestNonce;
+        //std::unordered_map<uint64_t, uint64_t> bestDeadlineConfirmed;
+		std::unordered_map<AccountId, Deadlines> deadlines;
         std::mutex accountLock;
         std::chrono::system_clock::time_point nextNonceSubmission;
 		std::unique_ptr<PlotReadProgress> progress;
