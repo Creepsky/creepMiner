@@ -206,7 +206,7 @@ void Burst::Miner::nonceSubmitterThread()
 
 void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline)
 {
-    //std::lock_guard<std::mutex> mutex(this->accountLock);
+    std::lock_guard<std::mutex> mutex(this->accountLock);
 
 	auto bestDeadline = deadlines[accountId].getBestDeadline();
 
