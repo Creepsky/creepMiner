@@ -37,6 +37,11 @@ namespace Burst
         struct timeval socketTimeout;
     };
     
+	enum class SubmitResponse
+	{
+		Submitted, TooHigh, Error, None
+	};
+
     class MinerProtocol
     {
     public:
@@ -45,7 +50,7 @@ namespace Burst
         
         bool run(Miner* miner);
         void stop();
-        bool submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
+		SubmitResponse submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
         static std::string resolveHostname(const std::string host);
 
     private:
@@ -54,6 +59,7 @@ namespace Burst
         void getMiningInfo();
         uint64_t currentBlockHeight;
         uint64_t currentBaseTarget;
+		uint64_t targetDeadline = 0u;
         std::string gensig;
         
         MinerSocket miningInfoSocket;

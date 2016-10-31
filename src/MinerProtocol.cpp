@@ -176,9 +176,12 @@ bool Burst::MinerProtocol::run(Miner* miner)
 	return false;
 }
 
-bool Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline)
+Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline)
 {
 	NxtAddress addr(accountId);
+
+	if (targetDeadline > 0 && deadline > targetDeadline)
+		return SubmitResponse::TooHigh;
 
 	//MinerLogger::write("submitting nonce " + std::to_string(nonce) + " for " + addr.to_string());
 	MinerLogger::write(addr.to_string() + ": nonce submitted (" + deadlineFormat(deadline) + ")", TextType::Ok);
@@ -205,21 +208,21 @@ bool Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint6
 		if (body.HasMember("deadline"))
 		{
 			deadline = body["deadline"].GetUint64();
-			return true;
+			return SubmitResponse::Submitted;
 		}
 		
 		if (body.HasMember("errorCode"))
 		{
 			MinerLogger::write(std::string("error: ") + body["errorDescription"].GetString(), TextType::Error);
 			// we send true so we dont send it again and again
-			return true;
+			return SubmitResponse::Error;
 		}
 		
 		MinerLogger::write(response, TextType::Error);
-		return true;
+		return SubmitResponse::Error;
 	}
 
-	return false;
+	return SubmitResponse::None;
 }
 
 void Burst::MinerProtocol::getMiningInfo()
@@ -230,7 +233,7 @@ void Burst::MinerProtocol::getMiningInfo()
 	{
 		rapidjson::Document body;
 		body.Parse<0>(response.c_str());
-
+		
 		if (body.GetParseError() == nullptr)
 		{
 			if (body.HasMember("baseTarget"))
@@ -238,7 +241,7 @@ void Burst::MinerProtocol::getMiningInfo()
 				std::string baseTargetStr = body["baseTarget"].GetString();
 				this->currentBaseTarget = std::stoull(baseTargetStr);
 			}
-
+			
 			if (body.HasMember("generationSignature"))
 			{
 				this->gensig = body["generationSignature"].GetString();
@@ -253,6 +256,11 @@ void Burst::MinerProtocol::getMiningInfo()
 					this->miner->updateGensig(this->gensig, newBlockHeight, this->currentBaseTarget);
 
 				this->currentBlockHeight = newBlockHeight;
+			}
+
+			if (body.HasMember("targetDeadline"))
+			{
+				targetDeadline = body["targetDeadline"].GetUint64();
 			}
 		}
 	}

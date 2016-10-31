@@ -219,9 +219,9 @@ void Burst::Miner::nonceSubmitterThread()
 				
 				mutex.unlock();
 
-				uint64_t deadline = bestDeadline[submitData.second];
+	            auto deadline = bestDeadline[submitData.second];
 
-                if(protocol.submitNonce(submitData.first, submitData.second, deadline))
+                if(protocol.submitNonce(submitData.first, submitData.second, deadline) == SubmitResponse::Submitted)
 					this->nonceSubmitReport(submitData.first, submitData.second, deadline);
             }
         }
