@@ -19,11 +19,11 @@ int main(int argc, const char* argv[])
     Burst::MinerLogger::write("Author:   Creepsky [creepsky@gmail.com]");
 	Burst::MinerLogger::write("Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
     Burst::MinerLogger::write("----------------------------------------------");
-    Burst::MinerLogger::write("Based on http://github.com/uraymeiviar/burst-miner");
-    Burst::MinerLogger::write("author : uray meiviar [ uraymeiviar@gmail.com ]");
-    Burst::MinerLogger::write("please donate to support developments :");
-    Burst::MinerLogger::write(" [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX");
-    Burst::MinerLogger::write(" [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b");
+    Burst::MinerLogger::write("Based on http://github.com/uraymeiviar/burst-miner", Burst::TextType::Unimportant);
+    Burst::MinerLogger::write("author : uray meiviar [ uraymeiviar@gmail.com ]", Burst::TextType::Unimportant);
+    Burst::MinerLogger::write("please donate to support developments :", Burst::TextType::Unimportant);
+    Burst::MinerLogger::write(" [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX", Burst::TextType::Unimportant);
+    Burst::MinerLogger::write(" [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b", Burst::TextType::Unimportant);
     Burst::MinerLogger::write("----------------------------------------------");
 
 #ifdef WIN32
@@ -46,7 +46,7 @@ int main(int argc, const char* argv[])
         configFile = std::string(argv[1]);
     }
 
-    Burst::MinerLogger::write("using config file : " + configFile);
+    Burst::MinerLogger::write("using config file : " + configFile, Burst::TextType::System);
     
     Burst::MinerConfig config;
 
