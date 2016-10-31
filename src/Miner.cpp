@@ -187,8 +187,17 @@ void Burst::Miner::nonceSubmitterThread()
 					auto nonce = deadline->getNonce();
 					auto deadlineValue = deadline->getDeadline();
 
+					mutex.unlock();
+
 					if(protocol.submitNonce(nonce, accountId, deadlineValue) == SubmitResponse::Submitted)
+					{
+						mutex.lock();
 						this->nonceSubmitReport(nonce, accountId, deadlineValue);
+					}
+					else
+					{
+						mutex.lock();
+					}
                 }
             }
 
