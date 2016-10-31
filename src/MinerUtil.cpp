@@ -73,59 +73,17 @@ bool Burst::isValidPlotFile(const std::string& filePath)
 
 std::string Burst::getAccountIdFromPlotFile(const std::string& path)
 {
-	size_t filenamePos = path.find_last_of("/\\");
-	if (filenamePos == std::string::npos)
-	{
-		filenamePos = 0;
-	}
-	std::vector<std::string> fileNamePart = splitStr(path.substr(filenamePos + 1, path.length() - (filenamePos + 1)), '_');
-	if (fileNamePart.size() > 3)
-	{
-		std::string accountIdPart = fileNamePart[0];
-		if (isNumberStr(accountIdPart))
-		{
-			return accountIdPart;
-		}
-	}
-	return "";
+	return getInformationFromPlotFile(path, 0);
 }
 
 std::string Burst::getNonceCountFromPlotFile(const std::string& path)
 {
-	size_t filenamePos = path.find_last_of("/\\");
-	if (filenamePos == std::string::npos)
-	{
-		filenamePos = 0;
-	}
-	std::vector<std::string> fileNamePart = splitStr(path.substr(filenamePos + 1, path.length() - (filenamePos + 1)), '_');
-	if (fileNamePart.size() > 3)
-	{
-		std::string nonceCountPart = fileNamePart[2];
-		if (isNumberStr(nonceCountPart))
-		{
-			return nonceCountPart;
-		}
-	}
-	return "";
+	return getInformationFromPlotFile(path, 2);
 }
 
 std::string Burst::getStaggerSizeFromPlotFile(const std::string& path)
 {
-	size_t filenamePos = path.find_last_of("/\\");
-	if (filenamePos == std::string::npos)
-	{
-		filenamePos = 0;
-	}
-	std::vector<std::string> fileNamePart = splitStr(path.substr(filenamePos + 1, path.length() - (filenamePos + 1)), '_');
-	if (fileNamePart.size() > 3)
-	{
-		std::string staggerPart = fileNamePart[3];
-		if (isNumberStr(staggerPart))
-		{
-			return staggerPart;
-		}
-	}
-	return "";
+	return getInformationFromPlotFile(path, 3);
 }
 
 std::string Burst::getStartNonceFromPlotFile(const std::string& path)
@@ -206,4 +164,19 @@ std::string Burst::versionToString()
 	return std::to_string(Version::Major) + "." +
 			std::to_string(Version::Minor) + "." +
 			std::to_string(Version::Build);
+}
+
+std::string Burst::getInformationFromPlotFile(const std::string& path, uint8_t index)
+{
+	auto filenamePos = path.find_last_of("/\\");
+
+	if (filenamePos == std::string::npos)
+		filenamePos = 0;
+
+	auto fileNamePart = splitStr(path.substr(filenamePos + 1, path.length() - (filenamePos + 1)), '_');
+
+	if (index >= fileNamePart.size())
+		return "";
+
+	return fileNamePart[index];
 }

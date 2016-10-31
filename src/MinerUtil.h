@@ -38,4 +38,5 @@ namespace Burst
     std::string deadlineFormat(uint64_t seconds);
 	std::string gbToString(uint64_t size);
 	std::string versionToString();
+	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);
 }
