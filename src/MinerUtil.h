@@ -37,4 +37,5 @@ namespace Burst
     std::string getStaggerSizeFromPlotFile(const std::string& path);
     std::string deadlineFormat(uint64_t seconds);
 	std::string gbToString(uint64_t size);
+	std::string versionToString();
 }

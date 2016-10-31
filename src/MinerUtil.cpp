@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
+#include "Declarations.hpp"
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -198,4 +199,11 @@ std::string Burst::gbToString(uint64_t size)
 	ss << std::fixed << std::setprecision(2);
 	ss << size / 1024 / 1024 / 1024;
 	return ss.str();
+}
+
+std::string Burst::versionToString()
+{
+	return std::to_string(Version::Major) + "." +
+			std::to_string(Version::Minor) + "." +
+			std::to_string(Version::Build);
 }

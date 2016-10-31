@@ -9,11 +9,11 @@
 #include "Miner.h"
 #include "MinerLogger.h"
 #include "MinerConfig.h"
-#include <iostream>
+#include "MinerUtil.h"
 
 int main(int argc, const char* argv[])
 {
-    Burst::MinerLogger::write("Burst miner");
+    Burst::MinerLogger::write("Burst miner " + Burst::versionToString());
     Burst::MinerLogger::write("----------------------------------------------");
     Burst::MinerLogger::write("Github:   https://github.com/Creepsky/burst-miner");
     Burst::MinerLogger::write("Author:   Creepsky [creepsky@gmail.com]");

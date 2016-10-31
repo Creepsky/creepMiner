@@ -32,4 +32,10 @@ namespace Burst
 	using HashData   = BytesArray<Settings::HashSize>;
 
 	using AccountId = uint64_t;
+
+	class Version
+	{
+	public:
+		static const uint32_t Major = 1u, Minor = 2u, Build = 2u;
+	};
 }
