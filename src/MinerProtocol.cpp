@@ -14,7 +14,7 @@
 #include "Miner.h"
 #include "MinerUtil.h"
 
-void Burst::MinerSocket::setRemote(const std::string ip, size_t port, size_t defaultTimeout)
+void Burst::MinerSocket::setRemote(const std::string& ip, size_t port, size_t defaultTimeout)
 {
 	inet_pton(AF_INET, ip.c_str(), &this->remoteAddr.sin_addr);
 	this->remoteAddr.sin_family = AF_INET;
@@ -24,10 +24,10 @@ void Burst::MinerSocket::setRemote(const std::string ip, size_t port, size_t def
 	this->socketTimeout.tv_usec = static_cast<long>(defaultTimeout) * 1000;
 }
 
-std::string Burst::MinerSocket::httpRequest(const std::string method,
-											const std::string url,
-											const std::string body,
-											const std::string header)
+std::string Burst::MinerSocket::httpRequest(const std::string& method,
+											const std::string& url,
+											const std::string& body,
+											const std::string& header)
 {
 	std::string response = "";
 	memset(static_cast<void*>(this->readBuffer), 0, readBufferSize);
@@ -86,26 +86,28 @@ std::string Burst::MinerSocket::httpRequest(const std::string method,
 	return response;
 }
 
-std::string Burst::MinerSocket::httpPost(const std::string url, const std::string body)
+std::string Burst::MinerSocket::httpPost(const std::string& url, const std::string& body, const std::string& header)
 {
-	std::string header = "Connection: close";
-		//header = "Content-Type: application/x-www-form-urlencoded\r\n";
-		//header = "Content-Length: "+std::to_string(body.length())+"\r\n";
+	std::string headerAll = "Connection: close";
+	headerAll += "\r\nX-Miner: uray-creepsky";
+	headerAll += header;
+	//header = "Content-Type: application/x-www-form-urlencoded\r\n";
+	//header = "Content-Length: "+std::to_string(body.length())+"\r\n";
 			
-	return this->httpRequest("POST", url, body, header);
+	return this->httpRequest("POST", url, body, headerAll);
 }
 
-void Burst::MinerSocket::httpRequestAsync(const std::string method,
-										  const std::string url,
-										  const std::string body,
-										  const std::string header,
+void Burst::MinerSocket::httpRequestAsync(const std::string& method,
+										  const std::string& url,
+										  const std::string& body,
+										  const std::string& header,
 										  std::function<void (std::string)> responseCallback)
 {
 	std::string response = httpRequest(method, url, body, header);
 	responseCallback(response);
 }
 
-void Burst::MinerSocket::httpPostAsync(const std::string url, const std::string body,
+void Burst::MinerSocket::httpPostAsync(const std::string& url, const std::string& body,
 									   std::function<void (std::string)> responseCallback)
 {
 	std::string //header = "Content-Type: application/x-www-form-urlencoded\r\n";
@@ -115,7 +117,7 @@ void Burst::MinerSocket::httpPostAsync(const std::string url, const std::string 
 	requestThread.detach();
 }
 
-void Burst::MinerSocket::httpGetAsync(const std::string url,
+void Burst::MinerSocket::httpGetAsync(const std::string& url,
 									  std::function<void (std::string)> responseCallback)
 {
 	std::string header = "Connection: close";
@@ -123,7 +125,7 @@ void Burst::MinerSocket::httpGetAsync(const std::string url,
 	requestThread.detach();
 }
 
-std::string Burst::MinerSocket::httpGet(const std::string url)
+std::string Burst::MinerSocket::httpGet(const std::string& url)
 {
 	std::string header = "Connection: close";
 	return httpRequest("GET", url, "", header);
@@ -179,8 +181,8 @@ bool Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint6
 	NxtAddress addr(accountId);
 
 	//MinerLogger::write("submitting nonce " + std::to_string(nonce) + " for " + addr.to_string());
-	MinerLogger::write(addr.to_string() + ": nonce submitted (" + deadlineFormat(deadline) + ")", TextType::Ok); 
-	
+	MinerLogger::write(addr.to_string() + ": nonce submitted (" + deadlineFormat(deadline) + ")", TextType::Ok);
+
 	auto request = "requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId) + "&secretPhrase=cryptoport";
 	auto url = "/burst?" + request;
 	auto tryCount = 0u;
@@ -188,7 +190,8 @@ bool Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint6
 
 	do
 	{
-		response = this->nonceSubmitterSocket.httpPost(url, "");
+		response = this->nonceSubmitterSocket.httpPost(url, "",
+			"\r\nX-Capacity: " + std::to_string(miner->getConfig()->getTotalPlotsize() / 1024 / 1024 / 1024));
 		++tryCount;
 	}
 	while (response.empty() && tryCount < this->miner->getConfig()->submissionMaxRetry);
