@@ -89,7 +89,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string& method,
 std::string Burst::MinerSocket::httpPost(const std::string& url, const std::string& body, const std::string& header)
 {
 	std::string headerAll = "Connection: close";
-	headerAll += "\r\nX-Miner: uray-creepsky";
+	headerAll += "\r\nX-Miner: uray-creepsky-" + versionToString();
 	headerAll += header;
 	//header = "Content-Type: application/x-www-form-urlencoded\r\n";
 	//header = "Content-Length: "+std::to_string(body.length())+"\r\n";
