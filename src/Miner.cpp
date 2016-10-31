@@ -164,8 +164,7 @@ size_t Burst::Miner::getScoopNum() const
 void Burst::Miner::nonceSubmitterThread()
 {
     std::deque<std::pair<uint64_t,uint64_t>> submitList;
-    std::unique_lock<std::mutex> mutex(this->accountLock);
-    mutex.unlock();
+    std::unique_lock<std::mutex> mutex(this->accountLock, std::defer_lock);
 
     while(this->running)
     {
