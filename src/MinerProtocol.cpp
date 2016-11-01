@@ -39,47 +39,71 @@ std::string Burst::MinerSocket::httpRequest(const std::string& method,
 	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char *>(&this->socketTimeout), sizeof(struct timeval));
 #endif
 
-	if (connect(sock, reinterpret_cast<struct sockaddr*>(&this->remoteAddr), sizeof(struct sockaddr_in)) == -1)
-	{
-		MinerLogger::write("unable to connect to remote host", TextType::Error);
-	}
-	else
+	if (connect(sock, reinterpret_cast<struct sockaddr*>(&this->remoteAddr), sizeof(struct sockaddr_in)) == 0)
 	{
 		auto request = method + " ";
 		request += url + " HTTP/1.0\r\n";
 		request += header + "\r\n\r\n";
 		request += body;
+		
+		auto tryCount = 0;
+		auto sent = false;
 
-		if (send(sock, request.c_str(), static_cast<int>(request.length()),MSG_NOSIGNAL) > 0)
+		while (tryCount < 5 && !sent)
 		{
-			//shutdown(sock,SHUT_WR);
+			auto sendLength = static_cast<int>(request.size());
+			auto ptr = request.data();
 
-			auto totalBytesRead = 0;
-			int bytesRead;
-
-			do
+			while (sendLength > 0)
 			{
-				bytesRead = static_cast<int>(recv(sock, &this->readBuffer[totalBytesRead],
-												  readBufferSize - totalBytesRead - 1, 0));
-				if (bytesRead > 0)
-				{
-					totalBytesRead += bytesRead;
-					this->readBuffer[totalBytesRead] = 0;
-					response += std::string(static_cast<char*>(this->readBuffer));
-					totalBytesRead = 0;
-					this->readBuffer[totalBytesRead] = 0;
-				}
+				auto result = send(sock, ptr, sendLength, MSG_NOSIGNAL);
+
+				if (result < 1)
+					break;
+
+				ptr += result;
+				sendLength -= result;
 			}
-			while ((bytesRead > 0) && (totalBytesRead < static_cast<int>(readBufferSize) - 1));
 
-			shutdown(sock,SHUT_RDWR);
-			closesocket(sock);
+			if (sendLength == 0)
+				sent = true;
 
-			if (response.length() > 0)
+			++tryCount;
+		}
+
+		if (!sent)
+		{
+			MinerLogger::write("No connection to host!", TextType::Error);
+			return "";
+		}
+
+		//shutdown(sock,SHUT_WR);
+
+		auto totalBytesRead = 0;
+		int bytesRead;
+
+		do
+		{
+			bytesRead = static_cast<int>(recv(sock, &this->readBuffer[totalBytesRead],
+												readBufferSize - totalBytesRead - 1, 0));
+			if (bytesRead > 0)
 			{
-				auto httpBodyPos = response.find("\r\n\r\n");
-				response = response.substr(httpBodyPos + 4, response.length() - (httpBodyPos + 4));
+				totalBytesRead += bytesRead;
+				this->readBuffer[totalBytesRead] = 0;
+				response += std::string(static_cast<char*>(this->readBuffer));
+				totalBytesRead = 0;
+				this->readBuffer[totalBytesRead] = 0;
 			}
+		}
+		while ((bytesRead > 0) && (totalBytesRead < static_cast<int>(readBufferSize) - 1));
+
+		shutdown(sock,SHUT_RDWR);
+		closesocket(sock);
+
+		if (response.length() > 0)
+		{
+			auto httpBodyPos = response.find("\r\n\r\n");
+			response = response.substr(httpBodyPos + 4, response.length() - (httpBodyPos + 4));
 		}
 	}
 
