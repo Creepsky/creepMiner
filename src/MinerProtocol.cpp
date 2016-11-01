@@ -268,28 +268,53 @@ void Burst::MinerProtocol::getMiningInfo()
 
 std::string Burst::MinerProtocol::resolveHostname(const std::string host)
 {
-	struct hostent* he;
-	struct in_addr** addr_list;
-	int i;
+	//struct hostent* he;
+	//struct in_addr** addr_list;
+	//int i;
 
-	// MinerLogger::write("resolving hostname "+host);
+	//// MinerLogger::write("resolving hostname "+host);
 
-	if ((he = gethostbyname(host.c_str())) == nullptr)
+	//if ((he = gethostbyname(host.c_str())) == nullptr)
+	//{
+	//	MinerLogger::write("error while resolving hostname", TextType::Error);
+	//	return "";
+	//}
+
+	//addr_list = reinterpret_cast<struct in_addr **>(he->h_addr_list);
+	//char inetAddrStr[64];
+	//
+	//for (i = 0; addr_list[i] != nullptr;)
+	//{
+	//	auto ip = std::string(inet_ntop(AF_INET, addr_list[i], inetAddrStr, 64));
+	//	//MinerLogger::write("Remote IP " + ip);
+	//	return ip;
+	//}
+
+	//MinerLogger::write("can not resolve hostname " + host, TextType::Error);
+
+	struct addrinfo *result = nullptr;
+	struct addrinfo hints;
+	struct in_addr addr;
+
+	ZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	auto retval = getaddrinfo(host.c_str(), nullptr, &hints, &result);
+
+	if (retval != 0)
+		return "";
+
+	char buf[INET_ADDRSTRLEN];
+	addr.S_un = reinterpret_cast<struct sockaddr_in*>(result->ai_addr)->sin_addr.S_un;
+
+	if (inet_ntop(AF_INET, &addr, buf, INET_ADDRSTRLEN) == nullptr)
 	{
-		MinerLogger::write("error while resolving hostname", TextType::Error);
+		MinerLogger::write("can not resolve hostname " + host, TextType::Error);
 		return "";
 	}
 
-	addr_list = reinterpret_cast<struct in_addr **>(he->h_addr_list);
-	char inetAddrStr[64];
+	freeaddrinfo(result);
 
-	for (i = 0; addr_list[i] != nullptr;)
-	{
-		auto ip = std::string(inet_ntop(AF_INET, addr_list[i], inetAddrStr, 64));
-		//MinerLogger::write("Remote IP " + ip);
-		return ip;
-	}
-
-	MinerLogger::write("can not resolve hostname " + host, TextType::Error);
-	return "";
+	return buf;
 }
