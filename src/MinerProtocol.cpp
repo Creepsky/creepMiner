@@ -268,30 +268,6 @@ void Burst::MinerProtocol::getMiningInfo()
 
 std::string Burst::MinerProtocol::resolveHostname(const std::string host)
 {
-	//struct hostent* he;
-	//struct in_addr** addr_list;
-	//int i;
-
-	//// MinerLogger::write("resolving hostname "+host);
-
-	//if ((he = gethostbyname(host.c_str())) == nullptr)
-	//{
-	//	MinerLogger::write("error while resolving hostname", TextType::Error);
-	//	return "";
-	//}
-
-	//addr_list = reinterpret_cast<struct in_addr **>(he->h_addr_list);
-	//char inetAddrStr[64];
-	//
-	//for (i = 0; addr_list[i] != nullptr;)
-	//{
-	//	auto ip = std::string(inet_ntop(AF_INET, addr_list[i], inetAddrStr, 64));
-	//	//MinerLogger::write("Remote IP " + ip);
-	//	return ip;
-	//}
-
-	//MinerLogger::write("can not resolve hostname " + host, TextType::Error);
-
 	struct addrinfo *result = nullptr;
 	struct addrinfo hints;
 	struct in_addr addr;
