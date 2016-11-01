@@ -51,9 +51,14 @@ Inside the config-file, you can define the following settings:
  }
 ```
 
-```poolUrl : the host, wo whom the miner will connect```
-```submissionMaxRetry : the max tries to resend a message to the server```
-```socketTimeout : the max time to wait for a response from the server```
+```**poolUrl** : the host, wo whom the miner will connect```
+
+```**submissionMaxRetry** : the max tries to resend a message to the server```
+
+```**socketTimeout** : the max time to wait for a response from the server```
+
 ```maxBufferSizeMB : the buffer size while reading the plot files```
+
 ```output : decides, what messages will be seen in the output. Possible values: progress (the progress in percent while reading the plot files), debug (debug messages)'''
+
 ```plots : the paths to the directories, where to search for plot files. plot files are searched every new block.'''
