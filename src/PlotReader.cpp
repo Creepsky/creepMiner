@@ -197,6 +197,7 @@ Burst::PlotListReader::~PlotListReader()
 
 void Burst::PlotListReader::read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
 {
+	done = false;
 	plotFileList = std::move(plotFiles);
 	readerThreadObj = std::thread(&PlotListReader::readThread, this);
 }
@@ -225,7 +226,7 @@ void Burst::PlotListReader::readThread()
 	{
 		plotReader.read((*iter)->getPath());
 		
-		if (progress != nullptr)
+		if (progress != nullptr && miner->getConfig()->showProgress)
 			progress->add((*iter)->getSize());
 	}
 

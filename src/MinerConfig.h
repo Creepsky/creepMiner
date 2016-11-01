@@ -50,6 +50,7 @@ namespace Burst
         size_t poolPort = 80;
         size_t socketTimeout = 30;
         size_t maxBufferSizeMB = 64;
+		bool showProgress = true;
 		const std::string& getPath() const;
 
 		const std::vector<std::shared_ptr<PlotFile>>& getPlotFiles() const;

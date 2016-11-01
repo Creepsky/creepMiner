@@ -216,6 +216,10 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		}
 	}
 
+	if (configDoc.HasMember("showProgress"))
+		if (configDoc["showProgress"].IsBool())
+			showProgress = configDoc["showProgress"].GetBool();
+
 	return true;
 }
 

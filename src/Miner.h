@@ -16,8 +16,6 @@
 #include <set>
 #include "Deadline.hpp"
 
-//#include "Deadline.hpp"
-
 namespace Burst
 {    
 	class PlotListReader;
@@ -57,8 +55,9 @@ namespace Burst
 		std::vector<std::shared_ptr<PlotListReader>> plotReaders;
 		std::unordered_map<AccountId, Deadlines> deadlines;
         std::mutex deadlinesLock;
-        std::chrono::system_clock::time_point nextNonceSubmission;
 		std::shared_ptr<PlotReadProgress> progress;
 		std::vector<std::thread> sendNonceThreads;
+		std::condition_variable newBlockIncoming;
+		bool submitThreadNotified = false;
     };
 }
