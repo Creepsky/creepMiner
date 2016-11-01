@@ -31,7 +31,7 @@ If you want to support me, you can donate to:
 
 ## Config
 
-You can use a custom config-file by explicit naming it on call: ```burst-miner.exe <config-file>'''.
+You can use a custom config-file by explicit naming it on call: ```burst-miner.exe <config-file>```.
 If you leave the config-file-parameter empty, the config-file with the name mining.conf in the execution-path will be used.
 
 Inside the config-file, you can define the following settings:
