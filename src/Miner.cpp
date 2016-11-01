@@ -28,9 +28,9 @@ Burst::Miner::~Miner()
 void Burst::Miner::run()
 {
     this->running = true;
-    std::thread submitter(&Miner::nonceSubmitterThread,this);
+    std::thread submitter(&Miner::nonceSubmitterThread, this);
     
-	progress = std::make_unique<PlotReadProgress>();
+	progress = std::make_shared<PlotReadProgress>();
 
 	if(!this->protocol.run(this))
         MinerLogger::write("Mining networking failed", TextType::Error);
@@ -51,15 +51,35 @@ const Burst::MinerConfig* Burst::Miner::getConfig() const
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
+	std::lock_guard<std::mutex> lock(deadlinesLock);
+
 	// stop all reading processes if any
 	for (auto& plotReader : plotReaders)
 		plotReader->stop();
 
+	// wait for all plotReaders to stop
+	auto stopped = false;
+	//
+	while (!stopped)
+	{
+		stopped = true;
+
+		for (auto& plotReader : plotReaders)
+		{
+			if (!plotReader->isDone())
+			{
+				stopped = false;
+				break;
+			}
+		}
+	}
+
     this->gensigStr = gensigStr;
     this->blockHeight = blockHeight;
     this->baseTarget = baseTarget;
+	this->deadlines.clear();
     
-	for(auto i = 0; i < 32; ++i)
+	for (auto i = 0; i < 32; ++i)
     {
 	    auto byteStr = gensigStr.substr(i*2,2);
         this->gensig[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 16));
@@ -71,28 +91,12 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	this->hash.close(&newGenSig[0]);
 	this->scoopNum = (static_cast<int>(newGenSig[newGenSig.size()-2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size()-1]);
 
-	//auto writeLine = [](const std::string& text, uint8_t lineWidth = 76)
-	//{
-		//std::string filler(lineWidth - text.size(), ' ');
-		//MinerLogger::write(text + filler, MinerLogger::TextType::Urgent);
-	//};
-
-	//writeLine("block#      " + std::to_string(blockHeight));
-	//writeLine("scoop#      " + std::to_string(scoopNum));
-	//writeLine("baseTarget# " + std::to_string(baseTarget));
-	//writeLine("gensig#     " + gensigStr);
-
 	MinerLogger::write(std::string(76, '-'), TextType::Information);
 	MinerLogger::write("block#      " + std::to_string(blockHeight), TextType::Information);
 	MinerLogger::write("scoop#      " + std::to_string(scoopNum), TextType::Information);
 	MinerLogger::write("baseTarget# " + std::to_string(baseTarget), TextType::Information);
 	MinerLogger::write("gensig#     " + gensigStr, TextType::Information);
 	MinerLogger::write(std::string(76, '-'), TextType::Information);
-    
-    //this->bestDeadline.clear();
-	deadlines.clear();
-    this->config->rescan();
-    this->plotReaders.clear();
 
 	// this block is closed in itself
 	// dont use the variables in it outside!
@@ -102,7 +106,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 		for(const auto plotFile : this->config->getPlotFiles())
 		{
-			auto last_slash_idx = plotFile->getPath().find_first_of('/\\');
+			auto last_slash_idx = plotFile->getPath().find_last_of("/\\");
 
 			std::string dir;
 
@@ -118,8 +122,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 			plotDirs[dir].emplace_back(plotFile);
 		}
-		  
-		auto progress = std::make_shared<PlotReadProgress>();
+		
+		progress->reset();
 		progress->setMax(config->getTotalPlotsize());
 
 		for (auto& plotDir : plotDirs)
@@ -132,19 +136,12 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
     
     std::random_device rd;
     std::default_random_engine randomizer(rd());
-    std::uniform_int_distribution<size_t> dist(0, this->config->submissionMaxDelay);
+    //std::uniform_int_distribution<size_t> dist(0, this->config->submissionMaxDelay);
+	std::uniform_int_distribution<size_t> dist(0, 3);
 	auto delay = dist(randomizer);
 
     this->nextNonceSubmission = std::chrono::system_clock::now() +
                                 std::chrono::seconds(delay);
-    
-	{
-		std::lock_guard<std::mutex> mutex(this->accountLock);
-		deadlines.clear();
-		/*this->bestDeadline.clear();
-		this->bestNonce.clear();
-		this->bestDeadlineConfirmed.clear();*/
-    }
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const
@@ -164,18 +161,17 @@ size_t Burst::Miner::getScoopNum() const
 
 void Burst::Miner::nonceSubmitterThread()
 {
-    std::unique_lock<std::mutex> mutex(this->accountLock, std::defer_lock);
+    std::unique_lock<std::mutex> lock(this->deadlinesLock, std::defer_lock);
 
     while(this->running)
-    {
-        if(std::chrono::system_clock::now() > this->nextNonceSubmission ||
-			std::all_of(plotReaders.begin(), plotReaders.end(), [](std::shared_ptr<PlotListReader> reader) { return reader->isDone(); }))
+    {		
+        if(std::chrono::system_clock::now() > this->nextNonceSubmission)
+		  //|| std::all_of(plotReaders.begin(), plotReaders.end(), [](std::shared_ptr<PlotListReader> reader) { return reader->isDone(); }))
         {
-            mutex.lock();
+			lock.lock();
 
-            for (auto& accountDeadlines : deadlines)
+            for (auto accountDeadlines : deadlines)
             {
-				auto accountId = accountDeadlines.first;
 				auto deadline = accountDeadlines.second.getBestDeadline();
 				auto bestConfirmed = accountDeadlines.second.getBestConfirmed();
 
@@ -184,52 +180,81 @@ void Burst::Miner::nonceSubmitterThread()
 
                 if(deadline != bestConfirmed)
                 {
-					auto nonce = deadline->getNonce();
-					auto deadlineValue = deadline->getDeadline();
-
-					mutex.unlock();
-
-					if(protocol.submitNonce(nonce, accountId, deadlineValue) == SubmitResponse::Submitted)
+					std::thread sendThread([this, deadline]()
 					{
-						mutex.lock();
-						this->nonceSubmitReport(nonce, accountId, deadlineValue);
-					}
-					else
-					{
-						mutex.lock();
-					}
+						static std::set<std::shared_ptr<Deadline>> deadlinesToSend;
+						static std::mutex deadlinesToSendMutex;
+
+						std::unique_lock<std::mutex> _lock(deadlinesToSendMutex);
+
+						if (deadlinesToSend.find(deadline) != deadlinesToSend.end())
+						{
+							_lock.unlock();
+							return;
+						}
+
+						deadlinesToSend.emplace(deadline);
+
+						_lock.unlock();
+
+						auto nonce = deadline->getNonce();
+						auto deadlineValue = deadline->getDeadline();
+						auto accountId = deadline->getAccountId();
+
+						//MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
+
+						if(protocol.submitNonce(nonce, accountId, deadlineValue) == SubmitResponse::Submitted)
+						{
+							this->nonceSubmitReport(nonce, accountId, deadlineValue);
+
+							_lock.lock();
+							deadlinesToSend.erase(deadline);
+							_lock.unlock();
+						}
+						else
+						{
+							MinerLogger::write("nonce not submitted!", TextType::Error);
+						}
+
+						//MinerLogger::write("leaving thread with deadline " + deadlineFormat(deadlineValue), TextType::System);
+					});
+
+					sendThread.detach();
                 }
             }
 
-            mutex.unlock();
-            
-            std::random_device rd;
-            std::default_random_engine randomizer(rd());
-            std::uniform_int_distribution<size_t> dist(0, this->config->submissionMaxDelay);
-            this->nextNonceSubmission = std::chrono::system_clock::now() + std::chrono::seconds(dist(randomizer));
-        }
+			lock.unlock();
 
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+            //std::random_device rd;
+            //std::default_random_engine randomizer(rd());
+            //std::uniform_int_distribution<size_t> dist(0, this->config->submissionMaxDelay);
+            //this->nextNonceSubmission = std::chrono::system_clock::now() + std::chrono::seconds(dist(randomizer));
+			this->nextNonceSubmission = std::chrono::system_clock::now() + std::chrono::seconds(2);
+        }
+		
+		std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 }
 
 void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline)
 {
-    std::lock_guard<std::mutex> mutex(this->accountLock);
+    std::lock_guard<std::mutex> mutex(deadlinesLock);
 
 	auto bestDeadline = deadlines[accountId].getBestDeadline();
 
+	// is the new nonce better then the best one we already have?
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
 	{
-		deadlines[accountId].add({ nonce, deadline });
+		deadlines[accountId].add({ nonce, deadline, accountId, blockHeight });
 		MinerLogger::write(NxtAddress(accountId).to_string() + ": deadline found (" + Burst::deadlineFormat(deadline) + ")", TextType::Ok);
 	}
 }
 
 void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline)
 {
-    //std::lock_guard<std::mutex> mutex(this->accountLock);
+    std::lock_guard<std::mutex> mutex(deadlinesLock);
     
-	if (deadlines[accountId].confirm(nonce))
-		MinerLogger::write(NxtAddress(accountId).to_string() + ": deadline confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
+	if (deadlines[accountId].confirm(nonce, accountId, blockHeight))
+		if (deadlines[accountId].getBestConfirmed()->getDeadline() == deadline)
+			MinerLogger::write(NxtAddress(accountId).to_string() + ": deadline confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
 }

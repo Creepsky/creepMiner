@@ -40,10 +40,11 @@ namespace Burst
         const MinerConfig* getConfig() const;
         void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
         void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline);
-        void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 
     private:
         void nonceSubmitterThread();
+        void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
+
         bool running;
         MinerConfig* config;
         size_t scoopNum;
@@ -54,13 +55,10 @@ namespace Burst
         Shabal256 hash;
         GensigData gensig;
 		std::vector<std::shared_ptr<PlotListReader>> plotReaders;
-		//std::vector<std::shared_ptr<PlotReader>> plotReaders;
-        //std::unordered_map<uint64_t, uint64_t> bestDeadline;
-        //std::unordered_map<uint64_t, uint64_t> bestNonce;
-        //std::unordered_map<uint64_t, uint64_t> bestDeadlineConfirmed;
 		std::unordered_map<AccountId, Deadlines> deadlines;
-        std::mutex accountLock;
+        std::mutex deadlinesLock;
         std::chrono::system_clock::time_point nextNonceSubmission;
-		std::unique_ptr<PlotReadProgress> progress;
+		std::shared_ptr<PlotReadProgress> progress;
+		std::vector<std::thread> sendNonceThreads;
     };
 }

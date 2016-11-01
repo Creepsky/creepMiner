@@ -59,92 +59,6 @@ void Burst::PlotReader::readerThread()
 
 	if (inputStream.good())
 	{
-		/*
-		inputStream.clear();
-		this->runVerify = true;
-		std::unique_lock<std::mutex> verifyLock(this->readLock);
-		verifyLock.unlock();
-		std::thread verifierThreadObj(&PlotReader::verifierThread,this);
-		
-		size_t readlimit = this->miner->getConfig()->maxBufferSizeMB / 32;
-		size_t scoopBufferCount = this->staggerSize / readlimit;
-		size_t scoopBufferSize = readlimit;
-		size_t scoopDoneRead = 0;
-		while(scoopDoneRead <= scoopBufferCount)
-		{
-			size_t staggerOffset = this->scoopNum * MinerConfig::scoopSize * scoopDoneRead * scoopBufferSize;
-			if(scoopBufferSize > (this->staggerSize - (scoopDoneRead * scoopBufferSize)))
-			{
-				scoopBufferSize = this->staggerSize - (scoopDoneRead * scoopBufferSize);
-			}
-			
-			this->buffer[0].resize(scoopBufferSize);
-			this->buffer[1].resize(scoopBufferSize);
-			this->readBuffer  = &this->buffer[0];
-			this->writeBuffer = &this->buffer[1];
-			
-			size_t bufferSize  = scoopBufferSize * MinerConfig::scoopSize;
-			size_t startByte = this->scoopNum * MinerConfig::scoopSize * scoopBufferSize + staggerOffset;
-			size_t chunkNum = 0;
-			size_t totalChunk = this->nonceCount / scoopBufferSize;
-			this->nonceOffset = 0;
-			
-			while(!this->done && inputStream.good() && chunkNum <= totalChunk)
-			{
-				inputStream.seekg(startByte + chunkNum*scoopBufferSize*MinerConfig::plotSize);
-				char* scoopData = (char*)&(*this->writeBuffer)[0];
-				inputStream.read(scoopData, bufferSize);
-				
-				verifyLock.lock();
-				std::vector<ScoopData>* temp = this->readBuffer;
-				this->readBuffer  = this->writeBuffer;
-				this->writeBuffer = temp;
-				this->nonceOffset = chunkNum*scoopBufferSize;
-				verifyLock.unlock();
-				this->readSignal.notify_all();
-				
-				chunkNum++;
-			}
-			
-			scoopDoneRead++;
-		}
-		*/
-
-		/*
-		this->buffer[0].resize(this->staggerSize);
-		this->buffer[1].resize(this->staggerSize);
-		this->readBuffer  = &this->buffer[0];
-		this->writeBuffer = &this->buffer[1];
-		
-		size_t bufferSize  = this->staggerSize * MinerConfig::scoopSize;
-		size_t startByte = scoopNum * MinerConfig::scoopSize * this->staggerSize;
-		size_t chunkNum = 0;
-		size_t totalChunk = this->nonceCount / this->staggerSize;
-		this->nonceOffset = 0;
-
-		this->runVerify = true;
-		std::unique_lock<std::mutex> verifyLock(this->readLock);
-		verifyLock.unlock();
-		std::thread verifierThreadObj(&PlotReader::verifierThread,this);
-		
-		while(!this->done && inputStream.good() && chunkNum <= totalChunk)
-		{
-			inputStream.seekg(startByte + chunkNum*this->staggerSize*MinerConfig::plotSize);
-			char* scoopData = (char*)&(*this->writeBuffer)[0];
-			inputStream.read(scoopData, bufferSize);
-			
-			verifyLock.lock();
-				std::vector<ScoopData>* temp = this->readBuffer;
-				this->readBuffer  = this->writeBuffer;
-				this->writeBuffer = temp;
-				this->nonceOffset = chunkNum*this->staggerSize;
-			verifyLock.unlock();
-			this->readSignal.notify_all();
-			
-			chunkNum++;
-		}
-		*/
-
 		this->runVerify = true;
 		std::thread verifierThreadObj(&PlotReader::verifierThread, this);
 
@@ -202,21 +116,19 @@ void Burst::PlotReader::readerThread()
 
 					while (this->verifySignaled)
 					{
-						//MinerLogger::write("stupid");
 						std::this_thread::sleep_for(std::chrono::microseconds(1));
 						this->verifySignal.notify_one();
 					};
 				}
-				/*
-				else
-				{
-					MinerLogger::write("scoop buffer ="+std::to_string(scoopBufferSize));
-				}
-				 */
-				scoopDoneRead++;
+				//else
+				//{
+				//	MinerLogger::write("scoop buffer ="+std::to_string(scoopBufferSize));
+				//}
+
+				++scoopDoneRead;
 			}
 
-			chunkNum++;
+			++chunkNum;
 		}
 
 		inputStream.close();
@@ -256,7 +168,7 @@ void Burst::PlotReader::verifierThread()
 		for (size_t i = 0; i < this->readBuffer->size(); i++)
 		{
 			HashData target;
-			auto test = reinterpret_cast<char*>(&((*this->readBuffer)[i]));
+			auto test = reinterpret_cast<char*>(&(*this->readBuffer)[i]);
 			hash.update(&this->gensig[0], Settings::HashSize);
 			hash.update(test, Settings::ScoopSize);
 			hash.close(&target[0]);

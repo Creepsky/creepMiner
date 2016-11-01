@@ -6,6 +6,10 @@ Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline)
 	: nonce(nonce), deadline(deadline)
 {}
 
+Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block)
+	: nonce(nonce), deadline(deadline), accountId(accountId), block(block)
+{}
+
 uint64_t Burst::Deadline::getNonce() const
 {
 	return nonce;
@@ -14,6 +18,16 @@ uint64_t Burst::Deadline::getNonce() const
 uint64_t Burst::Deadline::getDeadline() const
 {
 	return deadline;
+}
+
+Burst::AccountId Burst::Deadline::getAccountId() const
+{
+	return accountId;
+}
+
+uint64_t Burst::Deadline::getBlock() const
+{
+	return block;
 }
 
 bool Burst::Deadline::isConfirmed() const
@@ -63,6 +77,20 @@ bool Burst::Deadlines::confirm(Nonce nonce)
 	auto iter = std::find_if(deadlines.begin(), deadlines.end(), [nonce](std::shared_ptr<Deadline> dl)
 	{
 		return dl->getNonce() == nonce;
+	});
+
+	if (iter == deadlines.end())
+		return false;
+
+	(*iter)->confirm();
+	return true;
+}
+
+bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, uint64_t block)
+{
+	auto iter = std::find_if(deadlines.begin(), deadlines.end(), [nonce, accountId, block](std::shared_ptr<Deadline> dl)
+	{
+		return dl->getNonce() == nonce && dl->getAccountId() == accountId && dl->getBlock() == block;
 	});
 
 	if (iter == deadlines.end())

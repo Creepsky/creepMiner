@@ -247,6 +247,11 @@ void Burst::MinerProtocol::getMiningInfo()
 				this->gensig = body["generationSignature"].GetString();
 			}
 
+			if (body.HasMember("targetDeadline"))
+			{
+				targetDeadline = body["targetDeadline"].GetUint64();
+			}
+
 			if (body.HasMember("height"))
 			{
 				std::string newBlockHeightStr = body["height"].GetString();
@@ -256,11 +261,6 @@ void Burst::MinerProtocol::getMiningInfo()
 					this->miner->updateGensig(this->gensig, newBlockHeight, this->currentBaseTarget);
 
 				this->currentBlockHeight = newBlockHeight;
-			}
-
-			if (body.HasMember("targetDeadline"))
-			{
-				targetDeadline = body["targetDeadline"].GetUint64();
 			}
 		}
 	}
