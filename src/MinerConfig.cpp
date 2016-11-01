@@ -216,9 +216,28 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		}
 	}
 
-	if (configDoc.HasMember("showProgress"))
-		if (configDoc["showProgress"].IsBool())
-			showProgress = configDoc["showProgress"].GetBool();
+	if (configDoc.HasMember("output"))
+	{
+		if (configDoc["output"].IsArray())
+		{
+			auto& outputs = configDoc["output"];
+
+			for (auto i = 0; i < outputs.Size(); ++i)
+			{
+				auto& setting = outputs[i];
+
+				if (!setting.IsString())
+					continue;
+
+				std::string value(setting.GetString());
+
+				if (value == "progress")
+					this->output.progress = true;
+				if (value == "debug")
+					this->output.debug = true;
+			}
+		}
+	}
 
 	return true;
 }
@@ -241,6 +260,12 @@ uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 		sum += plotFile->getSize();
 
 	return sum;
+}
+
+Burst::MinerConfig& Burst::MinerConfig::getConfig()
+{
+	static MinerConfig config;
+	return config;
 }
 
 bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)

@@ -48,17 +48,10 @@ int main(int argc, const char* argv[])
 
     Burst::MinerLogger::write("using config file : " + configFile, Burst::TextType::System);
     
-    Burst::MinerConfig config;
-
-    if( config.readConfigFile(configFile) )
-    {
-		Burst::Miner miner(config);
-        miner.run();
-    }
+    if(Burst::MinerConfig::getConfig().readConfigFile(configFile) )
+		Burst::Miner().run();
     else
-    {
         Burst::MinerLogger::write("Aborting program due to invalid configuration", Burst::TextType::Error);
-    }
     
 #ifdef WIN32
 	WSACleanup();

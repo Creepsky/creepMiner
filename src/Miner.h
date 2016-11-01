@@ -26,7 +26,6 @@ namespace Burst
     {
     public:
 		Miner() = default;
-	    explicit Miner(MinerConfig& config);
 		~Miner();
 
         void run();
@@ -35,7 +34,6 @@ namespace Burst
         size_t getScoopNum() const;
         uint64_t getBaseTarget() const;
         const GensigData& getGensig() const;
-        const MinerConfig* getConfig() const;
         void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
         void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 
@@ -44,7 +42,6 @@ namespace Burst
         void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 
         bool running;
-        MinerConfig* config;
         size_t scoopNum;
         uint64_t baseTarget;
         uint64_t blockHeight;

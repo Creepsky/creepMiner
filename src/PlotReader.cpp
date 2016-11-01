@@ -75,7 +75,7 @@ void Burst::PlotReader::readerThread()
 
 		while (!this->done && inputStream.good() && chunkNum <= totalChunk)
 		{
-			auto scoopBufferSize = this->miner->getConfig()->maxBufferSizeMB * 1024 * 1024 / (64 * 2);
+			auto scoopBufferSize = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / (64 * 2);
 			auto scoopBufferCount = static_cast<size_t>(
 				std::ceil(static_cast<float>(this->staggerSize * Settings::ScoopSize) / static_cast<float>(scoopBufferSize)));
 			auto startByte = this->scoopNum * Settings::ScoopSize * this->staggerSize + chunkNum * this->staggerSize * Settings::PlotSize;
@@ -226,7 +226,7 @@ void Burst::PlotListReader::readThread()
 	{
 		plotReader.read((*iter)->getPath());
 		
-		if (progress != nullptr && miner->getConfig()->showProgress)
+		if (progress != nullptr && MinerConfig::getConfig().output.progress)
 			progress->add((*iter)->getSize());
 	}
 
@@ -244,11 +244,9 @@ void Burst::PlotReadProgress::add(uintmax_t value)
 	std::lock_guard<std::mutex> guard(lock);
 	progress += value;
 	
-	if (max > 0)
-	{
+	if (max > 0 && MinerConfig::getConfig().output.progress)
 		MinerLogger::write("progress: " + std::to_string(progress * 1.f / max * 100) + " %",
 			TextType::Unimportant);
-	}
 }
 
 void Burst::PlotReadProgress::set(uintmax_t value)

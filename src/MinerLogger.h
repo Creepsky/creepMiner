@@ -45,7 +45,7 @@ namespace Burst
 		enum class TextType
 		{
 			Normal, Error, Information, Success, Warning,
-			Important, System, Unimportant, Ok
+			Important, System, Unimportant, Ok, Debug
 		};
 
         static void write(const std::string& text, TextType type = TextType::Normal);

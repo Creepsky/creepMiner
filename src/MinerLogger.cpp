@@ -10,6 +10,7 @@
 #include <iostream>
 #include <iomanip>
 #include <mutex>
+#include "MinerConfig.h"
 
 #ifdef _WIN32
 #include <win/dirent.h>
@@ -30,6 +31,7 @@ std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::Min
 	{ TextType::System, { Color::Yellow, Color::Black }},
 	{ TextType::Unimportant, { Color::DarkGray, Color::Black }},
 	{ TextType::Ok, { Color::Green, Color::Black }},
+	{ TextType::Debug, { Color::LightMagenta, Color::Black }},
 };
 
 void Burst::MinerLogger::print(const std::string& text)
@@ -48,7 +50,15 @@ void Burst::MinerLogger::print(const std::string& text)
 
 void Burst::MinerLogger::write(const std::string& text, TextType type)
 {
-    std::lock_guard<std::mutex> lock(consoleMutex);
+	switch (type)
+	{
+	case TextType::Debug:
+		if (!MinerConfig::getConfig().output.debug)
+			return;
+	default: break;
+	}
+
+	std::lock_guard<std::mutex> lock(consoleMutex);
 	setColor(getTextTypeColor(type));
 	print(text);
 }

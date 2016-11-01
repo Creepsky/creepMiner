@@ -12,15 +12,7 @@
 #include "PlotReader.h"
 #include "MinerUtil.h"
 #include "nxt/nxt_address.h"
-#include <random>
 #include <deque>
-
-Burst::Miner::Miner(MinerConfig& config)
-	: scoopNum(0), baseTarget(0), blockHeight(0)
-{
-	this->config = &config;
-	this->running = false;
-}
 
 Burst::Miner::~Miner()
 {}
@@ -42,11 +34,6 @@ void Burst::Miner::run()
 void Burst::Miner::stop()
 {
 	this->running = false;
-}
-
-const Burst::MinerConfig* Burst::Miner::getConfig() const
-{
-    return this->config;
 }
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
@@ -104,7 +91,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		using PlotList = std::vector<std::shared_ptr<PlotFile>>;
 		std::unordered_map<std::string, PlotList> plotDirs;
 
-		for(const auto plotFile : this->config->getPlotFiles())
+		for(const auto plotFile : MinerConfig::getConfig().getPlotFiles())
 		{
 			auto last_slash_idx = plotFile->getPath().find_last_of("/\\");
 
@@ -124,7 +111,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		}
 		
 		progress->reset();
-		progress->setMax(config->getTotalPlotsize());
+		progress->setMax(MinerConfig::getConfig().getTotalPlotsize());
 
 		for (auto& plotDir : plotDirs)
 		{
@@ -155,6 +142,8 @@ size_t Burst::Miner::getScoopNum() const
 
 void Burst::Miner::nonceSubmitterThread()
 {
+	static uint32_t submitThreads = 0;
+
     while(running)
     {
 		std::unique_lock<std::mutex> lock(deadlinesLock);
@@ -196,13 +185,9 @@ void Burst::Miner::nonceSubmitterThread()
 						std::thread sendThread([this, deadline]()
 						{
 							std::unique_lock<std::mutex> innerLock(deadlinesToSendMutex);
-							//static uint32_t count = 0;
 
-							//MinerLogger::write(std::to_string(++count) + " submitter-threads running", TextType::System);
-							//++count;
-
+							++submitThreads;
 							deadlinesToSend.emplace(deadline);
-
 							innerLock.unlock();
 
 							auto nonce = deadline->getNonce();
@@ -220,8 +205,7 @@ void Burst::Miner::nonceSubmitterThread()
 								innerLock.unlock();
 							}
 
-							//MinerLogger::write("leaving thread with deadline " + deadlineFormat(deadlineValue), TextType::System);
-							//MinerLogger::write(std::to_string(--count) + " submitter-threads running", TextType::System);
+							--submitThreads;
 						});
 
 						sendThread.detach();
@@ -236,6 +220,8 @@ void Burst::Miner::nonceSubmitterThread()
 
 			lock.unlock();
 		}
+
+		MinerLogger::write(std::to_string(submitThreads) + " submitter-threads running", TextType::Debug);
 
 		//MinerLogger::write("submitter-thread: finished block", TextType::System);
 	}

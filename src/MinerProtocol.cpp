@@ -89,7 +89,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string& method,
 std::string Burst::MinerSocket::httpPost(const std::string& url, const std::string& body, const std::string& header)
 {
 	std::string headerAll = "Connection: close";
-	headerAll += "\r\nX-Miner: uray-creepsky-" + versionToString();
+	headerAll += "\r\nX-Miner: creepsky-uray-" + versionToString();
 	headerAll += header;
 	//header = "Content-Type: application/x-www-form-urlencoded\r\n";
 	//header = "Content-Length: "+std::to_string(body.length())+"\r\n";
@@ -151,7 +151,7 @@ void Burst::MinerProtocol::stop()
 
 bool Burst::MinerProtocol::run(Miner* miner)
 {
-	auto config = *miner->getConfig();
+	auto& config = MinerConfig::getConfig();
 	this->miner = miner;
 	auto remoteIP = resolveHostname(config.poolHost);
 
@@ -194,10 +194,10 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 	do
 	{
 		response = this->nonceSubmitterSocket.httpPost(url, "",
-			"\r\nX-Capacity: " + std::to_string(miner->getConfig()->getTotalPlotsize() / 1024 / 1024 / 1024));
+			"\r\nX-Capacity: " + std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
 		++tryCount;
 	}
-	while (response.empty() && tryCount < this->miner->getConfig()->submissionMaxRetry);
+	while (response.empty() && tryCount < MinerConfig::getConfig().submissionMaxRetry);
 
 	//MinerLogger::write(response);
 	rapidjson::Document body;

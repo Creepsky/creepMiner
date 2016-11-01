@@ -38,6 +38,12 @@ namespace Burst
 		size_t size;
 	};
 
+	struct Output
+	{
+		bool progress = false;
+		bool debug = false;
+	};
+
     class MinerConfig
     {
     public:
@@ -50,11 +56,13 @@ namespace Burst
         size_t poolPort = 80;
         size_t socketTimeout = 30;
         size_t maxBufferSizeMB = 64;
-		bool showProgress = true;
+		Output output;
 		const std::string& getPath() const;
 
 		const std::vector<std::shared_ptr<PlotFile>>& getPlotFiles() const;
 		uintmax_t getTotalPlotsize() const;
+
+		static MinerConfig& getConfig();
 
     private:
         bool addPlotLocation(const std::string fileOrPath);
