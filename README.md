@@ -51,7 +51,7 @@ Inside the config-file, you can define the following settings:
  }
 ```
 
-**poolUrl** : the host, wo whom the miner will connect.
+**poolUrl** : the host, to whom the miner will connect.
 
 **submissionMaxRetry** : the max tries to resend a message to the server.
 
