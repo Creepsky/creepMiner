@@ -18,9 +18,9 @@ void Burst::MinerSocket::setRemote(const std::string& ip, size_t port, size_t de
 {
 	inet_pton(AF_INET, ip.c_str(), &this->remoteAddr.sin_addr);
 	this->remoteAddr.sin_family = AF_INET;
-	this->remoteAddr.sin_port   = htons(static_cast<u_short>(port));
+	this->remoteAddr.sin_port = htons(static_cast<u_short>(port));
 
-	this->socketTimeout.tv_sec  = static_cast<long>(defaultTimeout);
+	this->socketTimeout.tv_sec = static_cast<long>(defaultTimeout);
 	this->socketTimeout.tv_usec = static_cast<long>(defaultTimeout) * 1000;
 }
 
@@ -45,7 +45,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string& method,
 		request += url + " HTTP/1.0\r\n";
 		request += header + "\r\n\r\n";
 		request += body;
-		
+
 		auto tryCount = 0;
 		auto sent = false;
 
@@ -85,7 +85,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string& method,
 		do
 		{
 			bytesRead = static_cast<int>(recv(sock, &this->readBuffer[totalBytesRead],
-												readBufferSize - totalBytesRead - 1, 0));
+											  readBufferSize - totalBytesRead - 1, 0));
 			if (bytesRead > 0)
 			{
 				totalBytesRead += bytesRead;
@@ -117,7 +117,7 @@ std::string Burst::MinerSocket::httpPost(const std::string& url, const std::stri
 	headerAll += header;
 	//header = "Content-Type: application/x-www-form-urlencoded\r\n";
 	//header = "Content-Length: "+std::to_string(body.length())+"\r\n";
-			
+
 	return this->httpRequest("POST", url, body, headerAll);
 }
 
@@ -221,7 +221,7 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 	do
 	{
 		response = this->nonceSubmitterSocket.httpPost(url, "",
-			"\r\nX-Capacity: " + std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
+													   "\r\nX-Capacity: " + std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
 		++tryCount;
 	}
 	while (response.empty() && tryCount < MinerConfig::getConfig().submissionMaxRetry);
@@ -237,14 +237,14 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 			deadline = body["deadline"].GetUint64();
 			return SubmitResponse::Submitted;
 		}
-		
+
 		if (body.HasMember("errorCode"))
 		{
 			MinerLogger::write(std::string("error: ") + body["errorDescription"].GetString(), TextType::Error);
 			// we send true so we dont send it again and again
 			return SubmitResponse::Error;
 		}
-		
+
 		MinerLogger::write(response, TextType::Error);
 		return SubmitResponse::Error;
 	}
@@ -254,14 +254,13 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 
 void Burst::MinerProtocol::getMiningInfo()
 {
-
 	auto response = this->miningInfoSocket.httpPost("/burst?requestType=getMiningInfo", "");
 
 	if (response.length() > 0)
 	{
 		rapidjson::Document body;
 		body.Parse<0>(response.c_str());
-				
+
 		if (body.GetParseError() == nullptr)
 		{
 			if (body.HasMember("baseTarget"))
@@ -269,7 +268,7 @@ void Burst::MinerProtocol::getMiningInfo()
 				std::string baseTargetStr = body["baseTarget"].GetString();
 				this->currentBaseTarget = std::stoull(baseTargetStr);
 			}
-			
+
 			if (body.HasMember("generationSignature"))
 			{
 				this->gensig = body["generationSignature"].GetString();
@@ -301,7 +300,7 @@ void Burst::MinerProtocol::getMiningInfo()
 
 std::string Burst::MinerProtocol::resolveHostname(const std::string host)
 {
-	struct addrinfo *result = nullptr;
+	struct addrinfo* result = nullptr;
 	struct addrinfo hints;
 	struct in_addr addr;
 

@@ -27,4 +27,3 @@
 #   define __builtin_bswap64 _byteswap_uint64
 #	define PATH_SEPARATOR '\\'
 #endif
-

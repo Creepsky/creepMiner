@@ -231,9 +231,9 @@ void Burst::PlotListReader::readThread()
 
 		// we create a new thread, which will run the plot-reader
 		std::thread readThread([&plotReader, path]()
-		{
-			plotReader.read(path);
-		});
+							   {
+								   plotReader.read(path);
+							   });
 
 		// we have to react to the stop-flag
 		while (!plotReader.isDone() && stopped)
@@ -266,10 +266,10 @@ void Burst::PlotReadProgress::add(uintmax_t value)
 {
 	std::lock_guard<std::mutex> guard(lock);
 	progress += value;
-	
+
 	if (max > 0 && MinerConfig::getConfig().output.progress)
 		MinerLogger::write("progress: " + std::to_string(progress * 1.f / max * 100) + " %",
-			TextType::Unimportant);
+						   TextType::Unimportant);
 }
 
 void Burst::PlotReadProgress::set(uintmax_t value)

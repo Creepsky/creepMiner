@@ -15,16 +15,16 @@ Burst::Shabal256::Shabal256()
 
 void Burst::Shabal256::update(const void* data, size_t length)
 {
-	sph_shabal256(&this->context,data,length);
+	sph_shabal256(&this->context, data, length);
 }
 
 void Burst::Shabal256::update(const uint64_t data)
 {
-    uint64_t result = __builtin_bswap64(data);
-    this->update(&result, sizeof(uint64_t));
+	uint64_t result = __builtin_bswap64(data);
+	this->update(&result, sizeof(uint64_t));
 }
 
 void Burst::Shabal256::close(void* outData)
 {
-	sph_shabal256_close(&this->context,outData);
+	sph_shabal256_close(&this->context, outData);
 }

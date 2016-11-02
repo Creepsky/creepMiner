@@ -23,7 +23,7 @@ namespace Burst
 		uint64_t getBlock() const;
 		bool isConfirmed() const;
 
-		bool operator< (const Deadline& rhs) const;
+		bool operator<(const Deadline& rhs) const;
 		bool operator()(const Deadline& lhs, const Deadline& rhs) const;
 
 	private:

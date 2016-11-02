@@ -14,8 +14,8 @@
 
 namespace Burst
 {
-    class MinerLogger
-    {
+	class MinerLogger
+	{
 	public:
 		enum class Color
 		{
@@ -44,27 +44,35 @@ namespace Burst
 
 		enum class TextType
 		{
-			Normal, Error, Information, Success, Warning,
-			Important, System, Unimportant, Ok, Debug
+			Normal,
+			Error,
+			Information,
+			Success,
+			Warning,
+			Important,
+			System,
+			Unimportant,
+			Ok,
+			Debug
 		};
 
-        static void write(const std::string& text, TextType type = TextType::Normal);
+		static void write(const std::string& text, TextType type = TextType::Normal);
 
 		static void nextLine();
-		
+
 		static void setTextTypeColor(TextType type, ColorPair color);
 		static ColorPair getTextTypeColor(TextType type);
 
-    private:
+	private:
 		static MinerLogger& getInstance();
 		static void print(const std::string& text);
 		static void setColor(Color foreground, Color background = Color::Black);
 		static void setColor(ColorPair color);
 
-        static std::mutex consoleMutex;
-	    static ColorPair currentColor;
+		static std::mutex consoleMutex;
+		static ColorPair currentColor;
 		static std::map<TextType, ColorPair> typeColors;
-    };
+	};
 
 	using TextType = MinerLogger::TextType;
 }

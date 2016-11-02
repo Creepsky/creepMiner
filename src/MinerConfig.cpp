@@ -297,7 +297,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
 			while ((ent = readdir(dir)) != nullptr)
 			{
 				auto plotFile = addPlotFile(dirPath + std::string(ent->d_name));
-				
+
 				if (plotFile != nullptr)
 					size += plotFile->getSize();
 			}

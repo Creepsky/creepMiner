@@ -17,44 +17,44 @@
 #include "Deadline.hpp"
 
 namespace Burst
-{    
+{
 	class PlotListReader;
 	class MinerConfig;
 	class PlotReadProgress;
 
-    class Miner
-    {
-    public:
+	class Miner
+	{
+	public:
 		Miner() = default;
 		~Miner();
 
-        void run();
+		void run();
 		void stop();
 
-        size_t getScoopNum() const;
-        uint64_t getBaseTarget() const;
-        const GensigData& getGensig() const;
-        void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
-        void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline);
+		size_t getScoopNum() const;
+		uint64_t getBaseTarget() const;
+		const GensigData& getGensig() const;
+		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
+		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 
-    private:
-        void nonceSubmitterThread();
-        void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
+	private:
+		void nonceSubmitterThread();
+		void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 
-        bool running;
-        size_t scoopNum;
-        uint64_t baseTarget;
-        uint64_t blockHeight;
-        std::string gensigStr;
-        MinerProtocol protocol;
-        Shabal256 hash;
-        GensigData gensig;
+		bool running;
+		size_t scoopNum;
+		uint64_t baseTarget;
+		uint64_t blockHeight;
+		std::string gensigStr;
+		MinerProtocol protocol;
+		Shabal256 hash;
+		GensigData gensig;
 		std::vector<std::shared_ptr<PlotListReader>> plotReaders;
 		std::unordered_map<AccountId, Deadlines> deadlines;
-        std::mutex deadlinesLock;
+		std::mutex deadlinesLock;
 		std::shared_ptr<PlotReadProgress> progress;
 		std::vector<std::thread> sendNonceThreads;
 		std::condition_variable newBlockIncoming;
 		bool submitThreadNotified = false;
-    };
+	};
 }

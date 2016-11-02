@@ -13,13 +13,13 @@
 
 /*
  {
-    poolUrl : "burst-pool.cryptoport.io:80",
-    submissionMaxDelay : 60000,
-    submissionMaxRetry : 3,
-    plots : [
-        "/mnt/sda/plots/",
-        "/mnt/sdb/plots/"
-    ]
+	poolUrl : "burst-pool.cryptoport.io:80",
+	submissionMaxDelay : 60000,
+	submissionMaxRetry : 3,
+	plots : [
+		"/mnt/sda/plots/",
+		"/mnt/sdb/plots/"
+	]
  }
  */
 
@@ -44,18 +44,18 @@ namespace Burst
 		bool debug = false;
 	};
 
-    class MinerConfig
-    {
-    public:
-        bool readConfigFile(const std::string& configPath);
-        void rescan();
-        
-        size_t submissionMaxDelay = 60;
-        size_t submissionMaxRetry = 5;
-        std::string poolHost = "burst-pool.cryptoport.io";
-        size_t poolPort = 80;
-        size_t socketTimeout = 30;
-        size_t maxBufferSizeMB = 64;
+	class MinerConfig
+	{
+	public:
+		bool readConfigFile(const std::string& configPath);
+		void rescan();
+
+		size_t submissionMaxDelay = 60;
+		size_t submissionMaxRetry = 5;
+		std::string poolHost = "burst-pool.cryptoport.io";
+		size_t poolPort = 80;
+		size_t socketTimeout = 30;
+		size_t maxBufferSizeMB = 64;
 		Output output;
 		const std::string& getPath() const;
 
@@ -64,11 +64,11 @@ namespace Burst
 
 		static MinerConfig& getConfig();
 
-    private:
-        bool addPlotLocation(const std::string fileOrPath);
-        std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
+	private:
+		bool addPlotLocation(const std::string fileOrPath);
+		std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
 
 		std::string configPath;
 		std::vector<std::shared_ptr<PlotFile>> plotList;
-    };
+	};
 }

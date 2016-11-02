@@ -21,18 +21,18 @@ Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White,
 std::mutex Burst::MinerLogger::consoleMutex;
 
 std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
-{
-	{ TextType::Normal, { Color::White, Color::Black }},
-	{ TextType::Error, { Color::LightRed, Color::Black }},
-	{ TextType::Information, { Color::LightCyan, Color::Black }},
-	{ TextType::Success, { Color::LightGreen, Color::Black }},
-	{ TextType::Warning, { Color::Yellow, Color::Black }},
-	{ TextType::Important, { Color::Black, Color::White }},
-	{ TextType::System, { Color::Yellow, Color::Black }},
-	{ TextType::Unimportant, { Color::DarkGray, Color::Black }},
-	{ TextType::Ok, { Color::Green, Color::Black }},
-	{ TextType::Debug, { Color::LightMagenta, Color::Black }},
-};
+	{
+			{ TextType::Normal, { Color::White, Color::Black } },
+			{ TextType::Error, { Color::LightRed, Color::Black } },
+			{ TextType::Information, { Color::LightCyan, Color::Black } },
+			{ TextType::Success, { Color::LightGreen, Color::Black } },
+			{ TextType::Warning, { Color::Yellow, Color::Black } },
+			{ TextType::Important, { Color::Black, Color::White } },
+			{ TextType::System, { Color::Yellow, Color::Black } },
+			{ TextType::Unimportant, { Color::DarkGray, Color::Black } },
+			{ TextType::Ok, { Color::Green, Color::Black } },
+			{ TextType::Debug, { Color::LightMagenta, Color::Black } },
+	};
 
 void Burst::MinerLogger::print(const std::string& text)
 {
@@ -74,7 +74,7 @@ void Burst::MinerLogger::setColor(Color foreground, Color background)
 	auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD color = ((static_cast<int32_t>(foreground) & 0x0F) + ((static_cast<int32_t>(background) & 0x0F) << 4));
 	SetConsoleTextAttribute(hConsole, color);
-	
+
 	currentColor = { foreground, background };
 #endif
 }
@@ -102,6 +102,6 @@ Burst::MinerLogger::ColorPair Burst::MinerLogger::getTextTypeColor(TextType type
 
 Burst::MinerLogger& Burst::MinerLogger::getInstance()
 {
-    static MinerLogger instance;
-    return instance;
+	static MinerLogger instance;
+	return instance;
 }

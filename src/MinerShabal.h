@@ -12,15 +12,15 @@
 
 namespace Burst
 {
-    class Shabal256
-    {
-        public :
-            Shabal256();
-            void update(const void* data, size_t length);
-            void update(const uint64_t data);
-            void close(void* outData);
+	class Shabal256
+	{
+	public :
+		Shabal256();
+		void update(const void* data, size_t length);
+		void update(const uint64_t data);
+		void close(void* outData);
 
-        private :
-            sph_shabal256_context context;
-    };
+	private :
+		sph_shabal256_context context;
+	};
 }
