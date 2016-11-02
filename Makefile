@@ -1,6 +1,6 @@
-CFLAGS    := -O3 -march=native -std=c++11 -Wall -D_REENTRANT
-CC        := g++ $(CFLAGS)
-LD        := g++ -pthread
+CFLAGS    := -O3 -march=native -std=c++0x -Wall -D_REENTRANT
+CC        := $(CXX) $(CFLAGS)
+LD        := $(CXX) -pthread
 
 MODULES   := rapidjson sphlib nxt
 SRC_DIR   := $(addprefix src/,$(MODULES)) src

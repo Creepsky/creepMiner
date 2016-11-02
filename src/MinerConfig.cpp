@@ -12,7 +12,10 @@
 #include <fstream>
 #include "rapidjson/document.h"
 #include <sstream>
-#include <win/dirent.h>
+#ifdef _WIN32
+#	include <win/dirent.h>
+#endif
+#include <sys/stat.h>
 #include "SocketDefinitions.hpp"
 
 void Burst::MinerConfig::rescan()
@@ -222,7 +225,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		{
 			auto& outputs = configDoc["output"];
 
-			for (auto i = 0; i < outputs.Size(); ++i)
+			for (auto i = 0u; i < outputs.Size(); ++i)
 			{
 				auto& setting = outputs[i];
 
@@ -297,7 +300,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
 			while ((ent = readdir(dir)) != nullptr)
 			{
 				auto plotFile = addPlotFile(dirPath + std::string(ent->d_name));
-				
+
 				if (plotFile != nullptr)
 					size += plotFile->getSize();
 			}

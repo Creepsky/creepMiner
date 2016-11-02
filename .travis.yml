@@ -1,2 +1,16 @@
 language: cpp
 solution: burst-miner.sln
+dist: precice
+compiler: g++
+
+install:
+- if [ "$CXX" = "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-6
+
+script: make

@@ -15,6 +15,8 @@
 #include "MinerShabal.h"
 #include <mutex>
 #include "Declarations.hpp"
+#include <condition_variable>
+#include <cmath>
 
 namespace Burst
 {
@@ -22,46 +24,46 @@ namespace Burst
 	class PlotFile;
 	class PlotReadProgress;
 
-    class PlotReader
-    {
-    public:
+	class PlotReader
+	{
+	public:
 		PlotReader() = default;
-	    explicit PlotReader(Miner& miner);
-        ~PlotReader();
-        
-        void read(const std::string& path);
-        void stop();
-        bool isDone() const;
-        
-    private:
-        void readerThread();
-        void verifierThread();
-        
-        size_t nonceStart;
-        size_t scoopNum;
-        size_t nonceCount;
-        size_t nonceOffset;
-        size_t nonceRead;
-        size_t staggerSize;
-        uint64_t accountId;
-        GensigData gensig;
-        
-        bool done;
-        bool runVerify;
-        std::string inputPath;
+		explicit PlotReader(Miner& miner);
+		~PlotReader();
 
-        Miner* miner;
-        std::thread readerThreadObj;
-        
-        std::vector<ScoopData> buffer[2];
-        
-        Shabal256 hash;
-        bool verifySignaled;
-        std::mutex verifyMutex;
-        std::condition_variable verifySignal;
-        std::vector<ScoopData>* readBuffer;
-        std::vector<ScoopData>* writeBuffer;
-    };
+		void read(const std::string& path);
+		void stop();
+		bool isDone() const;
+
+	private:
+		void readerThread();
+		void verifierThread();
+
+		size_t nonceStart;
+		size_t scoopNum;
+		size_t nonceCount;
+		size_t nonceOffset;
+		size_t nonceRead;
+		size_t staggerSize;
+		uint64_t accountId;
+		GensigData gensig;
+
+		bool done = false, stopped = false;
+		bool runVerify;
+		std::string inputPath;
+
+		Miner* miner;
+		std::thread readerThreadObj;
+
+		std::vector<ScoopData> buffer[2];
+
+		Shabal256 hash;
+		bool verifySignaled;
+		std::mutex verifyMutex;
+		std::condition_variable verifySignal;
+		std::vector<ScoopData>* readBuffer;
+		std::vector<ScoopData>* writeBuffer;
+	};
 
 	class PlotListReader
 	{
