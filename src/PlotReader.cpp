@@ -140,8 +140,8 @@ void Burst::PlotReader::readerThread()
 		this->readBuffer->clear();
 		this->writeBuffer->clear();
 		this->verifySignaled = true;
-		this->verifySignal.notify_all();
 		verifyLock.unlock();
+		this->verifySignal.notify_all();
 
 		verifierThreadObj.join();
 
@@ -161,11 +161,11 @@ void Burst::PlotReader::verifierThread()
 		{
 			this->verifySignal.wait(verifyLock);
 		}
-		while (!this->verifySignaled);
+		while (!this->verifySignaled && runVerify);
 
 		this->verifySignaled = false;
 
-		for (size_t i = 0; i < this->readBuffer->size(); i++)
+		for (size_t i = 0; i < this->readBuffer->size() && runVerify; i++)
 		{
 			HashData target;
 			auto test = reinterpret_cast<char*>(&(*this->readBuffer)[i]);

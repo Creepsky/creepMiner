@@ -46,6 +46,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	for (auto& plotReader : plotReaders)
 		plotReader->stop();
 
+	MinerLogger::write("waiting plot readers to stop...", TextType::Debug);
+
 	// wait for all plotReaders to stop
 	auto stopped = false;
 	//
