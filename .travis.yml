@@ -1,2 +1,3 @@
 language: cpp
 solution: burst-miner.sln
+script: make
