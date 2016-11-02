@@ -11,11 +11,13 @@
 #include <iomanip>
 #include <mutex>
 #include "MinerConfig.h"
+#include <iomanip>
 
 #ifdef _WIN32
 #include <win/dirent.h>
 #include <wincon.h>
 #endif
+
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
