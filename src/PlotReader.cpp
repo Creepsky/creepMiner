@@ -29,7 +29,7 @@ Burst::PlotReader::~PlotReader()
 
 void Burst::PlotReader::stop()
 {
-	this->done = true;
+	this->stopped = true;
 
 	if (readerThreadObj.joinable())
 		readerThreadObj.join();
@@ -50,6 +50,7 @@ void Burst::PlotReader::read(const std::string& path)
 	scoopNum = this->miner->getScoopNum();
 	gensig = miner->getGensig();
 	done = false;
+	stopped = false;
 	inputPath = path;
 	//readerThreadObj = std::thread(&PlotReader::readerThread, this);
 	readerThread();
@@ -75,7 +76,7 @@ void Burst::PlotReader::readerThread()
 
 		//MinerLogger::write("reading plot file " + inputPath);
 
-		while (!this->done && inputStream.good() && chunkNum <= totalChunk)
+		while (!this->done && !stopped && inputStream.good() && chunkNum <= totalChunk)
 		{
 			auto scoopBufferSize = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / (64 * 2);
 			auto scoopBufferCount = static_cast<size_t>(
@@ -84,7 +85,7 @@ void Burst::PlotReader::readerThread()
 			auto scoopDoneRead = 0;
 			size_t staggerOffset;
 
-			while (!this->done && inputStream.good() && scoopDoneRead <= scoopBufferCount)
+			while (!this->done && !stopped && inputStream.good() && scoopDoneRead <= scoopBufferCount)
 			{
 				this->writeBuffer->resize(scoopBufferSize / Settings::ScoopSize);
 				staggerOffset = scoopDoneRead * scoopBufferSize;
@@ -107,10 +108,8 @@ void Burst::PlotReader::readerThread()
 					std::unique_lock<std::mutex> verifyLock(this->verifyMutex);
 
 					//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
-
-					auto temp = this->readBuffer;
-					readBuffer = this->writeBuffer;
-					writeBuffer = temp;
+					
+					std::swap(this->readBuffer, this->writeBuffer);
 					nonceOffset = chunkNum * this->staggerSize + scoopDoneRead * (scoopBufferSize / Settings::ScoopSize);
 					verifySignaled = true;
 					verifySignal.notify_one();
@@ -148,6 +147,7 @@ void Burst::PlotReader::readerThread()
 		verifierThreadObj.join();
 
 		this->done = true;
+		this->stopped = true;
 
 		//MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
 	}
@@ -224,28 +224,29 @@ void Burst::PlotListReader::readThread()
 	if (miner == nullptr)
 		return;
 
-	PlotReader plotReader { *miner };
 	auto iter = plotFileList.begin();
 
-	while (iter != plotFileList.end() && !done)
+	while (iter != plotFileList.end() && !stopped)
 	{
 		auto path = (*iter)->getPath();
+		PlotReader plotReader { *miner };
 
 		// we create a new thread, which will run the plot-reader
-		std::thread readThread([&plotReader, path]()
-							   {
-								   plotReader.read(path);
-							   });
+		std::thread readThread([&plotReader, path]() { plotReader.read(path); });
 
 		// we have to react to the stop-flag
-		while (!plotReader.isDone() && stopped)
+		while (!plotReader.isDone())
 		{
-			plotReader.stop();
-			MinerLogger::write("stopped single plot reader", TextType::Debug);
+			if (stopped)
+			{
+				MinerLogger::write("stopping single plot reader", TextType::Debug);
+				plotReader.stop();
+			}
 		}
 
-		if (readThread.joinable())
-			readThread.join();
+		//MinerLogger::write("waiting for plot-reader to finish...", TextType::Debug);
+		readThread.join();
+		//MinerLogger::write("plot-reader finished", TextType::Debug);
 
 		if (progress != nullptr && MinerConfig::getConfig().output.progress)
 			progress->add((*iter)->getSize());

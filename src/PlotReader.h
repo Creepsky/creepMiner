@@ -48,7 +48,7 @@ namespace Burst
 		uint64_t accountId;
 		GensigData gensig;
 
-		bool done;
+		bool done = false, stopped = false;
 		bool runVerify;
 		std::string inputPath;
 

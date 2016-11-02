@@ -178,6 +178,7 @@ bool Burst::MinerProtocol::run(Miner* miner)
 	auto& config = MinerConfig::getConfig();
 	this->miner = miner;
 	auto remoteIP = resolveHostname(config.poolHost);
+	auto loops = 0u;
 
 	if (remoteIP != "")
 	{
@@ -194,6 +195,10 @@ bool Burst::MinerProtocol::run(Miner* miner)
 		{
 			this->getMiningInfo();
 			std::this_thread::sleep_for(std::chrono::seconds(3));
+			++loops;
+
+			//if (loops % 3 == 0 && loops > 0)
+				//this->miner->updateGensig(this->gensig, this->currentBlockHeight, this->currentBaseTarget);
 		}
 	}
 

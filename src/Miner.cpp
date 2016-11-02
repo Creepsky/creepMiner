@@ -39,8 +39,6 @@ void Burst::Miner::stop()
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
-	std::lock_guard<std::mutex> lock(deadlinesLock);
-
 	MinerLogger::write("stopping plot readers...", TextType::Debug);
 
 	// stop all reading processes if any
@@ -67,6 +65,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	}
 
 	MinerLogger::write("plot readers stopped", TextType::Debug);
+	std::lock_guard<std::mutex> lock(deadlinesLock);
 
 	this->gensigStr = gensigStr;
 	this->blockHeight = blockHeight;
