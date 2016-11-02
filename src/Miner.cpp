@@ -40,6 +40,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 {
 	std::lock_guard<std::mutex> lock(deadlinesLock);
 
+	MinerLogger::write("stopping plot readers...", TextType::Debug);
+
 	// stop all reading processes if any
 	for (auto& plotReader : plotReaders)
 		plotReader->stop();
@@ -60,6 +62,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 			}
 		}
 	}
+
+	MinerLogger::write("plot readers stopped", TextType::Debug);
 
     this->gensigStr = gensigStr;
     this->blockHeight = blockHeight;
@@ -116,7 +120,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		for (auto& plotDir : plotDirs)
 		{
 			auto reader = std::make_shared<PlotListReader>(*this, progress);
-			reader->read(std::move(plotDir.second));
+			reader->read(std::string(plotDir.first), std::move(plotDir.second));
 			plotReaders.emplace_back(reader);
 		}
 	}
@@ -142,8 +146,6 @@ size_t Burst::Miner::getScoopNum() const
 
 void Burst::Miner::nonceSubmitterThread()
 {
-	static uint32_t submitThreads = 0;
-
     while(running)
     {
 		std::unique_lock<std::mutex> lock(deadlinesLock);
@@ -184,11 +186,15 @@ void Burst::Miner::nonceSubmitterThread()
 					{
 						std::thread sendThread([this, deadline]()
 						{
+							static uint32_t submitThreads = 0;
+
 							std::unique_lock<std::mutex> innerLock(deadlinesToSendMutex);
 
 							++submitThreads;
 							deadlinesToSend.emplace(deadline);
 							innerLock.unlock();
+
+							MinerLogger::write(std::to_string(submitThreads) + " submitter-threads running", TextType::Debug);
 
 							auto nonce = deadline->getNonce();
 							auto deadlineValue = deadline->getDeadline();
@@ -206,6 +212,8 @@ void Burst::Miner::nonceSubmitterThread()
 							}
 
 							--submitThreads;
+
+							MinerLogger::write(std::to_string(submitThreads) + " submitter-threads running", TextType::Debug);
 						});
 
 						sendThread.detach();
@@ -220,8 +228,6 @@ void Burst::Miner::nonceSubmitterThread()
 
 			lock.unlock();
 		}
-
-		MinerLogger::write(std::to_string(submitThreads) + " submitter-threads running", TextType::Debug);
 
 		//MinerLogger::write("submitter-thread: finished block", TextType::System);
 	}

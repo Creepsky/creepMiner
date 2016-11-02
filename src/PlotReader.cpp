@@ -187,7 +187,7 @@ void Burst::PlotReader::verifierThread()
 }
 
 Burst::PlotListReader::PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress)
-	: done(false), miner(&miner), progress(progress)
+	: done(false), miner(&miner), progress(progress), stopped(false)
 {}
 
 Burst::PlotListReader::~PlotListReader()
@@ -195,16 +195,18 @@ Burst::PlotListReader::~PlotListReader()
 	stop();
 }
 
-void Burst::PlotListReader::read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
+void Burst::PlotListReader::read(std::string&& dir, std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
 {
 	done = false;
+	stopped = false;
+	this->dir = std::move(dir);
 	plotFileList = std::move(plotFiles);
 	readerThreadObj = std::thread(&PlotListReader::readThread, this);
 }
 
 void Burst::PlotListReader::stop()
 {
-	done = true;
+	stopped = true;
 
 	if (readerThreadObj.joinable())
 		readerThreadObj.join();
@@ -221,14 +223,35 @@ void Burst::PlotListReader::readThread()
 		return;
 
 	PlotReader plotReader { *miner };
-	
-	for (auto iter = plotFileList.begin(); iter != plotFileList.end() && !done; ++iter)
+	auto iter = plotFileList.begin();
+
+	while (iter != plotFileList.end() && !done)
 	{
-		plotReader.read((*iter)->getPath());
-		
+		auto path = (*iter)->getPath();
+
+		// we create a new thread, which will run the plot-reader
+		std::thread readThread([&plotReader, path]()
+		{
+			plotReader.read(path);
+		});
+
+		// we have to react to the stop-flag
+		while (!plotReader.isDone() && stopped)
+		{
+			plotReader.stop();
+			MinerLogger::write("stopped single plot reader", TextType::Debug);
+		}
+
+		if (readThread.joinable())
+			readThread.join();
+
 		if (progress != nullptr && MinerConfig::getConfig().output.progress)
 			progress->add((*iter)->getSize());
+
+		++iter;
 	}
+
+	MinerLogger::write("plot list reader finished reading plot-dir " + dir, TextType::Debug);
 
 	done = true;
 }

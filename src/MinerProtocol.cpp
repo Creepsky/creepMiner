@@ -205,7 +205,10 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 	NxtAddress addr(accountId);
 
 	if (targetDeadline > 0 && deadline > targetDeadline)
+	{
+		MinerLogger::write("Submitted deadline too high " + deadlineFormat(deadline), TextType::Debug);
 		return SubmitResponse::TooHigh;
+	}
 
 	//MinerLogger::write("submitting nonce " + std::to_string(nonce) + " for " + addr.to_string());
 	MinerLogger::write(addr.to_string() + ": nonce submitted (" + deadlineFormat(deadline) + ")", TextType::Ok);
@@ -251,13 +254,14 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 
 void Burst::MinerProtocol::getMiningInfo()
 {
+
 	auto response = this->miningInfoSocket.httpPost("/burst?requestType=getMiningInfo", "");
 
 	if (response.length() > 0)
 	{
 		rapidjson::Document body;
 		body.Parse<0>(response.c_str());
-		
+				
 		if (body.GetParseError() == nullptr)
 		{
 			if (body.HasMember("baseTarget"))
@@ -286,6 +290,11 @@ void Burst::MinerProtocol::getMiningInfo()
 
 				this->currentBlockHeight = newBlockHeight;
 			}
+		}
+		else
+		{
+			MinerLogger::write("Error on getting new block-info!", TextType::Error);
+			MinerLogger::write(body.GetParseError(), TextType::Error);
 		}
 	}
 }

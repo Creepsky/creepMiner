@@ -69,7 +69,7 @@ namespace Burst
 		PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress);
 		~PlotListReader();
 
-		void read(std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
+		void read(std::string&& dir, std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
 		void stop();
 		bool isDone() const;
 
@@ -78,9 +78,10 @@ namespace Burst
 
 		std::vector<std::shared_ptr<PlotFile>> plotFileList;
 		std::thread readerThreadObj;
-		bool done;
+		bool done, stopped;
 		Miner* miner;
 		std::shared_ptr<PlotReadProgress> progress;
+		std::string dir;
 	};
 
 	class PlotReadProgress
