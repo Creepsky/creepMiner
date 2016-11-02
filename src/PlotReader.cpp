@@ -82,7 +82,7 @@ void Burst::PlotReader::readerThread()
 			auto scoopBufferCount = static_cast<size_t>(
 				std::ceil(static_cast<float>(this->staggerSize * Settings::ScoopSize) / static_cast<float>(scoopBufferSize)));
 			auto startByte = this->scoopNum * Settings::ScoopSize * this->staggerSize + chunkNum * this->staggerSize * Settings::PlotSize;
-			auto scoopDoneRead = 0;
+			auto scoopDoneRead = 0u;
 			size_t staggerOffset;
 
 			while (!this->done && !stopped && inputStream.good() && scoopDoneRead <= scoopBufferCount)
@@ -189,7 +189,7 @@ void Burst::PlotReader::verifierThread()
 }
 
 Burst::PlotListReader::PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress)
-	: done(false), miner(&miner), progress(progress), stopped(false)
+	: done(false), stopped(false), miner(&miner), progress(progress)
 {}
 
 Burst::PlotListReader::~PlotListReader()

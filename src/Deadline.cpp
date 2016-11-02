@@ -7,7 +7,7 @@ Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline)
 {}
 
 Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block)
-	: nonce(nonce), deadline(deadline), accountId(accountId), block(block)
+	: accountId(accountId), block(block), nonce(nonce), deadline(deadline)
 {}
 
 uint64_t Burst::Deadline::getNonce() const

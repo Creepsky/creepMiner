@@ -225,7 +225,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		{
 			auto& outputs = configDoc["output"];
 
-			for (auto i = 0; i < outputs.Size(); ++i)
+			for (auto i = 0u; i < outputs.Size(); ++i)
 			{
 				auto& setting = outputs[i];
 
