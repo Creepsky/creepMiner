@@ -1,2 +1,2 @@
-language: csharp
+language: cpp
 solution: burst-miner.sln
