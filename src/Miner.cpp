@@ -13,6 +13,7 @@
 #include "MinerUtil.h"
 #include "nxt/nxt_address.h"
 #include <deque>
+#include <algorithm>
 
 Burst::Miner::~Miner()
 {}

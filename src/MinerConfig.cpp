@@ -12,7 +12,10 @@
 #include <fstream>
 #include "rapidjson/document.h"
 #include <sstream>
-#include <win/dirent.h>
+#ifdef _WIN32
+#	include <win/dirent.h>
+#endif
+#include <sys/stat.h>
 #include "SocketDefinitions.hpp"
 
 void Burst::MinerConfig::rescan()

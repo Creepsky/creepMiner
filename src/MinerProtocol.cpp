@@ -298,25 +298,20 @@ void Burst::MinerProtocol::getMiningInfo()
 	}
 }
 
-std::string Burst::MinerProtocol::resolveHostname(const std::string host)
+std::string Burst::MinerProtocol::resolveHostname(const std::string& host)
 {
 	struct addrinfo* result = nullptr;
-	struct addrinfo hints;
-	struct in_addr addr;
+	struct sockaddr_in* addr;
 
-	ZeroMemory(&hints, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_protocol = IPPROTO_TCP;
-
-	auto retval = getaddrinfo(host.c_str(), nullptr, &hints, &result);
+	auto retval = getaddrinfo(host.c_str(), nullptr, nullptr, &result);
 
 	if (retval != 0)
 		return "";
 
 	char buf[INET_ADDRSTRLEN];
-	addr.S_un = reinterpret_cast<struct sockaddr_in*>(result->ai_addr)->sin_addr.S_un;
+	addr = reinterpret_cast<struct sockaddr_in*>(result->ai_addr);
 
-	if (inet_ntop(AF_INET, &addr, buf, INET_ADDRSTRLEN) == nullptr)
+	if (inet_ntop(AF_INET, &addr->sin_addr, buf, INET_ADDRSTRLEN) == nullptr)
 	{
 		MinerLogger::write("can not resolve hostname " + host, TextType::Error);
 		return "";

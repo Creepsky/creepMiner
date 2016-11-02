@@ -6,7 +6,8 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#include "Miner.h"
+#include "MinerShabal.h"
+#include "SocketDefinitions.hpp"
 
 Burst::Shabal256::Shabal256()
 {

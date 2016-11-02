@@ -15,6 +15,8 @@
 #include "MinerShabal.h"
 #include <mutex>
 #include "Declarations.hpp"
+#include <condition_variable>
+#include <cmath>
 
 namespace Burst
 {

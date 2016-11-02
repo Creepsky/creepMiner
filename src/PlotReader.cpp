@@ -12,6 +12,8 @@
 #include "MinerConfig.h"
 #include <fstream>
 #include "Miner.h"
+#include <cmath>
+#include <cstring>
 
 Burst::PlotReader::PlotReader(Miner& miner)
 	: Burst::PlotReader()

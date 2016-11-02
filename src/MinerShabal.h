@@ -9,6 +9,7 @@
 #pragma once
 
 #include "sphlib/sph_shabal.h"
+#include <cstdint>
 
 namespace Burst
 {

@@ -15,6 +15,8 @@
 #include "MinerProtocol.h"
 #include <set>
 #include "Deadline.hpp"
+#include <thread>
+#include <condition_variable>
 
 namespace Burst
 {
