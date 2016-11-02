@@ -1,6 +1,7 @@
 language: cpp
 solution: burst-miner.sln
 dist: precice
+compiler: g++
 
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
@@ -13,13 +14,3 @@ addons:
     - g++-6
 
 script: make
-sudo: false
-compiler:
-  - gcc
-  - clang
-addons:
-  apt:
-    packages:
-    - gcc-4.8
-    - g++-4.8
-    - clang
