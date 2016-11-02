@@ -12,6 +12,10 @@ It is designed multi-threaded to reach the best performance. While mining, only 
 This is a fork of the burst-miner found on [this github repository](https://github.com/uraymeiviar/burst-miner).
 The purpose of this fork is to optimize and beautify the original program and on this way make it more user friendly.
 
+## Build
+
+[![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=master)](https://travis-ci.org/Creepsky/burst-miner)
+
 ## Donations :moneybag:
 
 The orignal author is uray meiviar (uraymeiviar@gmail.com).
