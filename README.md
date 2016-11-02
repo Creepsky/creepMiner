@@ -14,7 +14,8 @@ The purpose of this fork is to optimize and beautify the original program and on
 
 ## Build
 
-[![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=master)](https://travis-ci.org/Creepsky/burst-miner)
+**master** [![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=master)](https://travis-ci.org/Creepsky/burst-miner)
+**development** [![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=development)](https://travis-ci.org/Creepsky/burst-miner)
 
 ## Donations :moneybag:
 
