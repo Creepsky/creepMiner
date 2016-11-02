@@ -1,3 +1,13 @@
 language: cpp
 solution: burst-miner.sln
 script: make
+sudo: false
+compiler:
+  - gcc
+  - clang
+addons:
+  apt:
+    packages:
+    - gcc-4.8
+    - g++-4.8
+    - clang
