@@ -68,9 +68,11 @@ namespace Burst
 		static void print(const std::string& text);
 		static void setColor(Color foreground, Color background = Color::Black);
 		static void setColor(ColorPair color);
+		static void setColor(TextType type);
 
 		static std::mutex consoleMutex;
 		static ColorPair currentColor;
+		static TextType currentTextType;
 		static std::map<TextType, ColorPair> typeColors;
 	};
 
