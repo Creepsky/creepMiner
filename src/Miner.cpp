@@ -84,12 +84,12 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	this->hash.close(&newGenSig[0]);
 	this->scoopNum = (static_cast<int>(newGenSig[newGenSig.size() - 2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size() - 1]);
 
-	MinerLogger::write(std::string(76, '-'), TextType::Information);
+	MinerLogger::write(std::string(50, '-'), TextType::Information);
 	MinerLogger::write("block#      " + std::to_string(blockHeight), TextType::Information);
 	MinerLogger::write("scoop#      " + std::to_string(scoopNum), TextType::Information);
 	MinerLogger::write("baseTarget# " + std::to_string(baseTarget), TextType::Information);
-	MinerLogger::write("gensig#     " + gensigStr, TextType::Information);
-	MinerLogger::write(std::string(76, '-'), TextType::Information);
+	//MinerLogger::write("gensig#     " + gensigStr, TextType::Information);
+	MinerLogger::write(std::string(50, '-'), TextType::Information);
 
 	// this block is closed in itself
 	// dont use the variables in it outside!

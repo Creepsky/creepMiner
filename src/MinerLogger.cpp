@@ -21,6 +21,7 @@
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
+Burst::TextType Burst::MinerLogger::currentTextType = Burst::TextType::Normal;
 
 std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
 	{
@@ -41,12 +42,12 @@ void Burst::MinerLogger::print(const std::string& text)
 	auto now = std::chrono::system_clock::now();
 	auto now_c = std::chrono::system_clock::to_time_t(now);
 
-	auto colorBefore = currentColor;
+	auto typeBefore = currentTextType;
 
-	setColor(getTextTypeColor(TextType::Normal));
+	setColor(TextType::Normal);
 	std::cout << std::put_time(std::localtime(&now_c), "%X") << ": ";
 
-	setColor(colorBefore);
+	setColor(typeBefore);
 	std::cout << text << std::endl;
 }
 
@@ -61,7 +62,7 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	}
 
 	std::lock_guard<std::mutex> lock(consoleMutex);
-	setColor(getTextTypeColor(type));
+	setColor(type);
 	print(text);
 }
 
@@ -76,9 +77,31 @@ void Burst::MinerLogger::setColor(Color foreground, Color background)
 	auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD color = ((static_cast<int32_t>(foreground) & 0x0F) + ((static_cast<int32_t>(background) & 0x0F) << 4));
 	SetConsoleTextAttribute(hConsole, color);
-
 	currentColor = { foreground, background };
 #endif
+}
+
+void Burst::MinerLogger::setColor(TextType type)
+{
+#ifdef _WIN32
+	setColor(getTextTypeColor(type));
+#elif __linux__
+	switch (type)
+	{
+	case TextType::Normal: std::cout << "\033[0;37m"; break;
+	case TextType::Information: std::cout << "\033[1;36m"; break;
+	case TextType::Error: std::cout << "\033[1;31m"; break;
+	case TextType::Success: std::cout << "\033[1;32m"; break;
+	case TextType::Warning: std::cout << "\033[0m"; break;
+	case TextType::Important: std::cout << "\033[1;47;37m"; break;
+	case TextType::System: std::cout << "\033[0;33m"; break;
+	case TextType::Unimportant: std::cout << "\033[2;37m"; break;
+	case TextType::Ok: std::cout << "\033[0;32m"; break;
+	case TextType::Debug: std::cout << "\033[0;35m"; break;
+	default: std::cout << "\033[0;37m"; break;
+	};
+#endif
+	currentTextType = type;
 }
 
 void Burst::MinerLogger::setColor(ColorPair color)
