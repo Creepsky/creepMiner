@@ -192,8 +192,8 @@ bool Burst::MinerProtocol::run(Miner* miner)
 		" (" + config.urlMiningInfo.getIp() + ")", TextType::System);
 
 	this->running = true;
-	this->miningInfoSocket.setRemote(config.urlMiningInfo.getIp(), config.urlPool.getPort());
-	this->nonceSubmitterSocket.setRemote(config.urlPool.getIp(), config.urlMiningInfo.getPort());
+	this->miningInfoSocket.setRemote(config.urlMiningInfo.getIp(), config.urlPool.getPort(), config.socketTimeout);
+	this->nonceSubmitterSocket.setRemote(config.urlPool.getIp(), config.urlMiningInfo.getPort(), config.socketTimeout);
 
 	while (this->running)
 	{

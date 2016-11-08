@@ -19,7 +19,7 @@ namespace Burst
 	class MinerSocket
 	{
 	public:
-		void setRemote(const std::string& ip, size_t port, size_t defaultTimeout = 60);
+		void setRemote(const std::string& ip, size_t port, size_t timeout);
 		std::string httpPost(const std::string& url, const std::string& body, const std::string& header = "");
 		std::string httpGet(const std::string& url);
 		void httpPostAsync(const std::string& url, const std::string& body, std::function<void (std::string)> responseCallback);
