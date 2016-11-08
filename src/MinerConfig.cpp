@@ -137,26 +137,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
-	if (configDoc.HasMember("submissionMaxDelay"))
-	{
-		if (configDoc["submissionMaxDelay"].IsNumber())
-		{
-			this->submissionMaxDelay = configDoc["submissionMaxDelay"].GetInt();
-		}
-		else
-		{
-			std::string maxDelayStr = configDoc["submissionMaxDelay"].GetString();
-			try
-			{
-				this->submissionMaxDelay = std::stoul(maxDelayStr);
-			}
-			catch (...)
-			{
-				this->submissionMaxDelay = 60;
-			}
-		}
-	}
-
 	if (configDoc.HasMember("submissionMaxRetry"))
 	{
 		if (configDoc["submissionMaxRetry"].IsNumber())

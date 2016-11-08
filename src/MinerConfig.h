@@ -52,7 +52,6 @@ namespace Burst
 		bool readConfigFile(const std::string& configPath);
 		void rescan();
 
-		size_t submissionMaxDelay = 60;
 		size_t submissionMaxRetry = 5;
 		Url urlPool;
 		Url urlMiningInfo;

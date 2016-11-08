@@ -183,7 +183,7 @@ bool Burst::MinerProtocol::run(Miner* miner)
 		config.urlMiningInfo.getIp().empty())
 		return false;
 
-	MinerLogger::write("Submission Max Delay : " + std::to_string(config.submissionMaxDelay), TextType::System);
+	//MinerLogger::write("Submission Max Delay : " + std::to_string(config.submissionMaxDelay), TextType::System);
 	MinerLogger::write("Submission Max Retry : " + std::to_string(config.submissionMaxRetry), TextType::System);
 	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
 	MinerLogger::write("Pool Host : " + config.urlPool.getCanonical() + ":" + std::to_string(config.urlPool.getPort()) +
