@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <algorithm>
 #include "Declarations.hpp"
+#include "MinerLogger.h"
 
 bool Burst::isNumberStr(const std::string& str)
 {

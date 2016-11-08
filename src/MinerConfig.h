@@ -10,6 +10,8 @@
 
 #include <memory>
 #include <vector>
+#include <string>
+#include "Url.hpp"
 
 /*
  {
@@ -52,8 +54,8 @@ namespace Burst
 
 		size_t submissionMaxDelay = 60;
 		size_t submissionMaxRetry = 5;
-		std::string poolHost = "burst-pool.cryptoport.io";
-		size_t poolPort = 80;
+		Url urlPool;
+		Url urlMiningInfo;
 		size_t socketTimeout = 30;
 		size_t maxBufferSizeMB = 64;
 		Output output;

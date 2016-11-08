@@ -54,7 +54,6 @@ namespace Burst
 		bool run(Miner* miner);
 		void stop();
 		SubmitResponse submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
-		static std::string resolveHostname(const std::string& host);
 
 	private:
 		Miner* miner;

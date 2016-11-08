@@ -184,6 +184,7 @@
     <ClCompile Include="src\nxt\nxt_address.cpp" />
     <ClCompile Include="src\PlotReader.cpp" />
     <ClCompile Include="src\sphlib\sph_shabal.cpp" />
+    <ClCompile Include="src\Url.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Deadline.hpp" />
@@ -206,6 +207,8 @@
     <ClInclude Include="src\SocketDefinitions.hpp" />
     <ClInclude Include="src\sphlib\sph_shabal.h" />
     <ClInclude Include="src\sphlib\sph_types.h" />
+    <ClInclude Include="src\Url.hpp" />
+    <ClInclude Include="src\win\dirent.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

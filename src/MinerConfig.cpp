@@ -81,38 +81,22 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	if (configDoc.HasMember("poolUrl"))
 	{
-		std::string poolUrl = configDoc["poolUrl"].GetString();
-		auto startPos = poolUrl.find("//");
-
-		if (startPos == std::string::npos)
-			startPos = 0;
-
-		auto hostEnd = poolUrl.find(":", startPos);
-
-		if (hostEnd == std::string::npos)
-		{
-			this->poolPort = 80;
-			this->poolHost = poolUrl.substr(startPos, poolUrl.length() - startPos);
-		}
-		else
-		{
-			this->poolHost = poolUrl.substr(startPos, hostEnd - startPos);
-			auto poolPortStr = poolUrl.substr(hostEnd + 1, poolUrl.length() - (hostEnd + 1));
-
-			try
-			{
-				this->poolPort = std::stoul(poolPortStr);
-			}
-			catch (...)
-			{
-				this->poolPort = 80;
-			}
-		}
+		urlPool = { configDoc["poolUrl"].GetString() };
 	}
 	else
 	{
 		MinerLogger::write("No poolUrl is defined in config file " + configPath, TextType::Error);
 		return false;
+	}
+
+	if (configDoc.HasMember("miningInfoUrl"))
+	{
+		urlMiningInfo = { configDoc["miningInfoUrl"].GetString() };
+	}
+	// if no getMiningInfoUrl and port are defined, we assume that the pool is the source
+	else
+	{
+		urlMiningInfo = urlPool;
 	}
 
 	if (configDoc.HasMember("plots"))

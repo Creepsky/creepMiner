@@ -16,6 +16,7 @@
       <Filter>sphlib</Filter>
     </ClCompile>
     <ClCompile Include="src\Deadline.cpp" />
+    <ClCompile Include="src\Url.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Miner.h" />
@@ -58,6 +59,8 @@
     <ClInclude Include="src\Declarations.hpp" />
     <ClInclude Include="src\SocketDefinitions.hpp" />
     <ClInclude Include="src\Deadline.hpp" />
+    <ClInclude Include="src\win\dirent.h" />
+    <ClInclude Include="src\Url.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sphlib">

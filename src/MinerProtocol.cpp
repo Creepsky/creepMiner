@@ -177,29 +177,32 @@ bool Burst::MinerProtocol::run(Miner* miner)
 {
 	auto& config = MinerConfig::getConfig();
 	this->miner = miner;
-	auto remoteIP = resolveHostname(config.poolHost);
 	auto loops = 0u;
 
-	if (remoteIP != "")
+	if (config.urlPool.getIp().empty() ||
+		config.urlMiningInfo.getIp().empty())
+		return false;
+
+	MinerLogger::write("Submission Max Delay : " + std::to_string(config.submissionMaxDelay), TextType::System);
+	MinerLogger::write("Submission Max Retry : " + std::to_string(config.submissionMaxRetry), TextType::System);
+	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
+	MinerLogger::write("Pool Host : " + config.urlPool.getCanonical() + ":" + std::to_string(config.urlPool.getPort()) +
+		" (" + config.urlPool.getIp() + ")", TextType::System);
+	MinerLogger::write("Mininginfo URL : " + config.urlMiningInfo.getCanonical() + ":" + std::to_string(config.urlMiningInfo.getPort()) +
+		" (" + config.urlMiningInfo.getIp() + ")", TextType::System);
+
+	this->running = true;
+	this->miningInfoSocket.setRemote(config.urlMiningInfo.getIp(), config.urlPool.getPort());
+	this->nonceSubmitterSocket.setRemote(config.urlPool.getIp(), config.urlMiningInfo.getPort());
+
+	while (this->running)
 	{
-		MinerLogger::write("Submission Max Delay : " + std::to_string(config.submissionMaxDelay), TextType::System);
-		MinerLogger::write("Submission Max Retry : " + std::to_string(config.submissionMaxRetry), TextType::System);
-		MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
-		MinerLogger::write("Pool Host : " + config.poolHost + ":" + std::to_string(config.poolPort) + " (" + remoteIP + ")", TextType::System);
+		this->getMiningInfo();
+		std::this_thread::sleep_for(std::chrono::seconds(3));
+		++loops;
 
-		this->running = true;
-		this->miningInfoSocket.setRemote(remoteIP, config.poolPort);
-		this->nonceSubmitterSocket.setRemote(remoteIP, config.poolPort);
-
-		while (this->running)
-		{
-			this->getMiningInfo();
-			std::this_thread::sleep_for(std::chrono::seconds(3));
-			++loops;
-
-			//if (loops % 3 == 0 && loops > 0)
-				//this->miner->updateGensig(this->gensig, this->currentBlockHeight, this->currentBaseTarget);
-		}
+		//if (loops % 3 == 0 && loops > 0)
+			//this->miner->updateGensig(this->gensig, this->currentBlockHeight, this->currentBaseTarget);
 	}
 
 	return false;
@@ -259,7 +262,7 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 
 void Burst::MinerProtocol::getMiningInfo()
 {
-	auto response = this->miningInfoSocket.httpPost("/burst?requestType=getMiningInfo", "");
+	auto response = this->miningInfoSocket.httpGet("/burst?requestType=getMiningInfo");
 
 	if (response.length() > 0)
 	{
@@ -301,28 +304,4 @@ void Burst::MinerProtocol::getMiningInfo()
 			MinerLogger::write(body.GetParseError(), TextType::Error);
 		}
 	}
-}
-
-std::string Burst::MinerProtocol::resolveHostname(const std::string& host)
-{
-	struct addrinfo* result = nullptr;
-	struct sockaddr_in* addr;
-
-	auto retval = getaddrinfo(host.c_str(), nullptr, nullptr, &result);
-
-	if (retval != 0)
-		return "";
-
-	char buf[INET_ADDRSTRLEN];
-	addr = reinterpret_cast<struct sockaddr_in*>(result->ai_addr);
-
-	if (inet_ntop(AF_INET, &addr->sin_addr, buf, INET_ADDRSTRLEN) == nullptr)
-	{
-		MinerLogger::write("can not resolve hostname " + host, TextType::Error);
-		return "";
-	}
-
-	freeaddrinfo(result);
-
-	return buf;
 }
