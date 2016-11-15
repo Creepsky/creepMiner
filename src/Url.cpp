@@ -1,7 +1,11 @@
 ﻿#include "Url.hpp"
 #include "MinerUtil.h"
-#include <ws2tcpip.h>
 #include "MinerLogger.h"
+#include <netdb.h>
+#include <arpa/inet.h>
+#ifdef WIN32
+#include <ws2tcpip.h>
+#endif
 
 Burst::Url::Url(const std::string& url)
 {
