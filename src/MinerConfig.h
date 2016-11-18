@@ -46,6 +46,8 @@ namespace Burst
 		bool debug = false;
 	};
 
+	class Socket;
+
 	class MinerConfig
 	{
 	public:
@@ -55,21 +57,27 @@ namespace Burst
 		size_t submissionMaxRetry = 5;
 		Url urlPool;
 		Url urlMiningInfo;
-		size_t socketTimeout = 30;
-		size_t maxBufferSizeMB = 64;
+		size_t maxBufferSizeMB = 128;
 		Output output;
 		const std::string& getPath() const;
 
 		const std::vector<std::shared_ptr<PlotFile>>& getPlotFiles() const;
 		uintmax_t getTotalPlotsize() const;
 
+		float getReceiveTimeout() const;
+		float getSendTimeout() const;
+
+		std::unique_ptr<Socket> createSocket() const;
+
 		static MinerConfig& getConfig();
 
 	private:
-		bool addPlotLocation(const std::string fileOrPath);
+		bool addPlotLocation(const std::string& fileOrPath);
 		std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
 
 		std::string configPath;
 		std::vector<std::shared_ptr<PlotFile>> plotList;
+		float receive_timeout_ = 3.f;
+		float send_timeout_ = 3.f;
 	};
 }

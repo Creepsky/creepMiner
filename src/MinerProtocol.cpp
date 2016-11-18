@@ -13,15 +13,23 @@
 #include "rapidjson/document.h"
 #include "Miner.h"
 #include "MinerUtil.h"
+#include "Request.hpp"
+#include "Response.hpp"
+#include "Socket.hpp"
 
-void Burst::MinerSocket::setRemote(const std::string& ip, size_t port, size_t defaultTimeout)
+void Burst::MinerSocket::setRemote(const std::string& ip, size_t port, size_t timeout)
 {
 	inet_pton(AF_INET, ip.c_str(), &this->remoteAddr.sin_addr);
 	this->remoteAddr.sin_family = AF_INET;
 	this->remoteAddr.sin_port = htons(static_cast<u_short>(port));
 
-	this->socketTimeout.tv_sec = static_cast<long>(defaultTimeout);
-	this->socketTimeout.tv_usec = static_cast<long>(defaultTimeout) * 1000;
+	setTimeout(timeout);
+}
+
+void Burst::MinerSocket::setTimeout(size_t timeout)
+{
+	socketTimeout.tv_sec = static_cast<long>(timeout);
+	socketTimeout.tv_usec = static_cast<long>(timeout) * 1000;
 }
 
 std::string Burst::MinerSocket::httpRequest(const std::string& method,
@@ -32,7 +40,7 @@ std::string Burst::MinerSocket::httpRequest(const std::string& method,
 	std::string response = "";
 	memset(static_cast<void*>(this->readBuffer), 0, readBufferSize);
 	auto sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
+	
 #ifdef WIN32
 	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char *>(&this->socketTimeout.tv_usec), sizeof(this->socketTimeout.tv_usec));
 #else
@@ -191,13 +199,13 @@ bool Burst::MinerProtocol::run(Miner* miner)
 	MinerLogger::write("Mininginfo URL : " + config.urlMiningInfo.getCanonical() + ":" + std::to_string(config.urlMiningInfo.getPort()) +
 		" (" + config.urlMiningInfo.getIp() + ")", TextType::System);
 
-	this->running = true;
-	this->miningInfoSocket.setRemote(config.urlMiningInfo.getIp(), config.urlPool.getPort(), config.socketTimeout);
-	this->nonceSubmitterSocket.setRemote(config.urlPool.getIp(), config.urlMiningInfo.getPort(), config.socketTimeout);
+	running = true;
+	//miningInfoSocket.setRemote(config.urlMiningInfo.getIp(), config.urlPool.getPort(), config.socketTimeout);
+	//nonceSubmitterSocket.setRemote(config.urlPool.getIp(), config.urlMiningInfo.getPort(), config.socketTimeout);
 
-	while (this->running)
+	while (running)
 	{
-		this->getMiningInfo();
+		getMiningInfo();
 		std::this_thread::sleep_for(std::chrono::seconds(3));
 		++loops;
 
@@ -221,22 +229,39 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 	//MinerLogger::write("submitting nonce " + std::to_string(nonce) + " for " + addr.to_string());
 	MinerLogger::write(addr.to_string() + ": nonce submitted (" + deadlineFormat(deadline) + ")", TextType::Ok);
 
-	auto request = "requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId) + "&secretPhrase=cryptoport";
-	auto url = "/burst?" + request;
+	auto requestData = "requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId) + "&secretPhrase=cryptoport";
+	auto url = "/burst?" + requestData;
 	auto tryCount = 0u;
-	std::string response = "";
+	std::string responseData;
+	Request request(MinerConfig::getConfig().createSocket());
+	
+	std::stringstream requestHead;
+
+	requestHead << "Connection: close" << "\r\n" <<
+		"X-Capacity: " << MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024 << "\r\n"
+		"X-Miner: creepsky-uray-" + versionToString();
+
+	auto received = false;
 
 	do
 	{
-		response = this->nonceSubmitterSocket.httpPost(url, "",
-													   "\r\nX-Capacity: " + std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
+		//response = this->nonceSubmitterSocket.httpPost(url, "",
+		//											   "\r\nX-Capacity: " + std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
+
+		auto response = request.sendPost(url, "", requestHead.str());
+
+		if (response.receive(responseData))
+			received = true;
+
 		++tryCount;
 	}
-	while (response.empty() && tryCount < MinerConfig::getConfig().submissionMaxRetry);
+	while (!received && tryCount < MinerConfig::getConfig().submissionMaxRetry);
 
 	//MinerLogger::write(response);
+
+	HttpResponse httpResponse(responseData);
 	rapidjson::Document body;
-	body.Parse<0>(response.c_str());
+	body.Parse<0>(httpResponse.getMessage().c_str());
 
 	if (body.GetParseError() == nullptr)
 	{
@@ -253,7 +278,7 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 			return SubmitResponse::Error;
 		}
 
-		MinerLogger::write(response, TextType::Error);
+		MinerLogger::write(responseData, TextType::Error);
 		return SubmitResponse::Error;
 	}
 
@@ -262,12 +287,20 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 
 void Burst::MinerProtocol::getMiningInfo()
 {
-	auto response = this->miningInfoSocket.httpGet("/burst?requestType=getMiningInfo");
+	Request request(MinerConfig::getConfig().createSocket());
 
-	if (response.length() > 0)
+	auto response = request.sendGet("/burst?requestType=getMiningInfo");
+
+	std::string responseData;
+
+	//auto response = this->miningInfoSocket.httpGet("/burst?requestType=getMiningInfo");
+
+	if (response.receive(responseData))
 	{
+		HttpResponse httpResponse(responseData);
 		rapidjson::Document body;
-		body.Parse<0>(response.c_str());
+
+		body.Parse<0>(httpResponse.getMessage().c_str());
 
 		if (body.GetParseError() == nullptr)
 		{
@@ -303,5 +336,9 @@ void Burst::MinerProtocol::getMiningInfo()
 			MinerLogger::write("Error on getting new block-info!", TextType::Error);
 			MinerLogger::write(body.GetParseError(), TextType::Error);
 		}
+	}
+	else
+	{
+		MinerLogger::write("Could not get mining info!", TextType::Warning);
 	}
 }

@@ -17,6 +17,7 @@
 #endif
 #include <sys/stat.h>
 #include "SocketDefinitions.hpp"
+#include "Socket.hpp"
 
 void Burst::MinerConfig::rescan()
 {
@@ -158,6 +159,22 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		}
 	}
 
+	if (configDoc.HasMember("sendTimeout"))
+	{
+		if (configDoc["sendTimeout"].IsNumber())
+			send_timeout_ = static_cast<float>(configDoc["sendTimeout"].GetDouble());
+		else
+			send_timeout_ = 5.f;
+	}
+
+	if (configDoc.HasMember("receiveTimeout"))
+	{
+		if (configDoc["receiveTimeout"].IsNumber())
+			receive_timeout_ = static_cast<float>(configDoc["receiveTimeout"].GetDouble());
+		else
+			receive_timeout_ = 5.f;
+	}
+
 	if (configDoc.HasMember("maxBufferSizeMB"))
 	{
 		if (configDoc["maxBufferSizeMB"].IsNumber())
@@ -229,13 +246,30 @@ uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 	return sum;
 }
 
+float Burst::MinerConfig::getReceiveTimeout() const
+{
+	return receive_timeout_;
+}
+
+float Burst::MinerConfig::getSendTimeout() const
+{
+	return send_timeout_;
+}
+
+std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const
+{
+	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
+	socket->connect(urlPool.getIp(), urlPool.getPort());
+	return socket;
+}
+
 Burst::MinerConfig& Burst::MinerConfig::getConfig()
 {
 	static MinerConfig config;
 	return config;
 }
 
-bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
+bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 {
 	struct stat info;
 	auto statResult = stat(fileOrPath.c_str(), &info);

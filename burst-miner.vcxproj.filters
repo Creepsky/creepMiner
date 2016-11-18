@@ -17,6 +17,9 @@
     </ClCompile>
     <ClCompile Include="src\Deadline.cpp" />
     <ClCompile Include="src\Url.cpp" />
+    <ClCompile Include="src\Request.cpp" />
+    <ClCompile Include="src\Response.cpp" />
+    <ClCompile Include="src\Socket.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Miner.h" />
@@ -61,6 +64,9 @@
     <ClInclude Include="src\Deadline.hpp" />
     <ClInclude Include="src\win\dirent.h" />
     <ClInclude Include="src\Url.hpp" />
+    <ClInclude Include="src\Request.hpp" />
+    <ClInclude Include="src\Response.hpp" />
+    <ClInclude Include="src\Socket.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sphlib">

@@ -15,6 +15,7 @@
 namespace Burst
 {
 	class Miner;
+	class Socket;
 
 	class MinerSocket
 	{
@@ -24,6 +25,8 @@ namespace Burst
 		std::string httpGet(const std::string& url);
 		void httpPostAsync(const std::string& url, const std::string& body, std::function<void (std::string)> responseCallback);
 		void httpGetAsync(const std::string& url, std::function<void (std::string)> responseCallback);
+
+		void setTimeout(size_t timeout);
 
 	private:
 		std::string httpRequest(const std::string& method, const std::string& url,
@@ -64,7 +67,7 @@ namespace Burst
 		uint64_t targetDeadline = 0u;
 		std::string gensig;
 
-		MinerSocket miningInfoSocket;
-		MinerSocket nonceSubmitterSocket;
+		//MinerSocket miningInfoSocket;
+		//MinerSocket nonceSubmitterSocket;
 	};
 }

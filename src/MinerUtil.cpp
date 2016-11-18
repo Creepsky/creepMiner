@@ -13,6 +13,7 @@
 #include <algorithm>
 #include "Declarations.hpp"
 #include "MinerLogger.h"
+#include <iostream>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -31,6 +32,31 @@ std::vector<std::string> Burst::splitStr(const std::string& s, char delim)
 	std::vector<std::string> elems;
 	splitStr(s, delim, elems);
 	return elems;
+}
+
+std::vector<std::string> Burst::splitStr(const std::string& s, const std::string& delim)
+{
+	std::vector<std::string> tokens;
+	std::string::size_type pos, lastPos = 0, length = s.length();
+
+	using value_type = typename std::vector<std::string>::value_type;
+	using size_type  = typename std::vector<std::string>::size_type;
+
+	while(lastPos < length + 1)
+	{
+		pos = s.find_first_of(delim, lastPos);
+
+		if(pos == std::string::npos)
+			pos = length;
+
+		if(pos != lastPos)
+			tokens.push_back(std::string(s.data() + lastPos,
+			static_cast<size_type>(pos-lastPos)));
+
+		lastPos = pos + 1;
+	}
+
+	return tokens;
 }
 
 std::vector<std::string>& Burst::splitStr(const std::string& s, char delim, std::vector<std::string>& elems)
