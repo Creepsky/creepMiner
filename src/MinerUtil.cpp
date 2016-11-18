@@ -39,7 +39,6 @@ std::vector<std::string> Burst::splitStr(const std::string& s, const std::string
 	std::vector<std::string> tokens;
 	std::string::size_type pos, lastPos = 0, length = s.length();
 
-	using value_type = typename std::vector<std::string>::value_type;
 	using size_type  = typename std::vector<std::string>::size_type;
 
 	while(lastPos < length + 1)

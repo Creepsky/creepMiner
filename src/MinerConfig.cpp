@@ -18,6 +18,7 @@
 #include <sys/stat.h>
 #include "SocketDefinitions.hpp"
 #include "Socket.hpp"
+#include <memory>
 
 void Burst::MinerConfig::rescan()
 {

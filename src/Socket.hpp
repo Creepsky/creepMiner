@@ -8,7 +8,7 @@ namespace Burst
 	class Socket
 	{
 	public:
-		Socket() = default;
+		Socket();
 		Socket(float send_timeout, float receive_timeout);
 
 		bool connect(const std::string& ip, size_t port);
@@ -32,6 +32,6 @@ namespace Burst
 		bool connected_ = false;
 		std::string ip_;
 		size_t port_;
-		::SOCKET socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		SOCKET socket_ = socket(AF_INET, SOCK_STREAM, 0);
 	};
 }
