@@ -1,7 +1,11 @@
 language: cpp
+sudo: true
 solution: burst-miner.sln
-dist: precice
-compiler: g++
+dist: trusty
+compiler: gcc
+env: CXX=g++-6 CXXFLAGS="-std=c++11"
+os: linux
+group: stable
 
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi

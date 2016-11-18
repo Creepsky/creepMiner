@@ -1,12 +1,17 @@
 ﻿#include "Url.hpp"
 #include "MinerUtil.h"
-#include <ws2tcpip.h>
 #include "MinerLogger.h"
+#ifdef WIN32
+#include <ws2tcpip.h>
+#else
+#include <netdb.h>
+#include <arpa/inet.h>
+#endif
 
 Burst::Url::Url(const std::string& url)
 {
-	std::string _canonical;
-	auto _port = 0u;
+	std::string canonical;
+	unsigned int port;
 	auto startPos = url.find("//");
 
 	if (startPos == std::string::npos)
@@ -16,25 +21,25 @@ Burst::Url::Url(const std::string& url)
 
 	if (hostEnd == std::string::npos)
 	{
-		_port = 80;
-		_canonical = url.substr(startPos + 2, url.size() + 2 - startPos);
+		port = 80;
+		canonical = url.substr(startPos + 2, url.size() + 2 - startPos);
 	}
 	else
 	{
-		_canonical = url.substr(startPos, hostEnd - startPos);
+		canonical = url.substr(startPos, hostEnd - startPos);
 		auto poolPortStr = url.substr(hostEnd + 1, url.size() - (hostEnd + 1));
 
 		try
 		{
-			_port = std::stoul(poolPortStr);
+			port = std::stoul(poolPortStr);
 		}
 		catch (...)
 		{
-			_port = 80;
+			port = 80;
 		}
 	}
 
-	setUrl(_canonical, _port);
+	setUrl(canonical, port);
 }
 
 Burst::Url::Url(const std::string& canonical, uint32_t port)
