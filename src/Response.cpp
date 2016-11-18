@@ -1,7 +1,9 @@
 ﻿#include "Response.hpp"
 #include "Socket.hpp"
 #include "MinerUtil.h"
-#include <iterator>
+#include "MinerConfig.h"
+#include "rapidjson/document.h"
+#include "MinerLogger.h"
 
 Burst::Response::Response(std::unique_ptr<Socket> socket)
 	: socket_(std::move(socket))
@@ -23,6 +25,57 @@ bool Burst::Response::receive(std::string& data) const
 std::unique_ptr<Burst::Socket> Burst::Response::close()
 {
 	return std::move(socket_);
+}
+
+Burst::NonceResponse::NonceResponse(std::unique_ptr<Socket> socket)
+	: response_(std::move(socket))
+{}
+
+bool Burst::NonceResponse::canReceive() const
+{
+	return response_.canReceive();
+}
+
+Burst::NonceConfirmation Burst::NonceResponse::getConfirmation() const
+{
+	std::string response;
+	NonceConfirmation confirmation{ 0, SubmitResponse::None };
+
+	if (response_.receive(response))
+	{
+		HttpResponse httpResponse(response);
+		rapidjson::Document body;
+		body.Parse<0>(httpResponse.getMessage().c_str());
+
+		if (body.GetParseError() == nullptr)
+		{
+			if (body.HasMember("deadline"))
+			{
+				confirmation.deadline = body["deadline"].GetUint64();
+				confirmation.errorCode = SubmitResponse::Submitted;
+			}
+			else if (body.HasMember("errorCode"))
+			{
+				MinerLogger::write(std::string("error: ") + body["errorDescription"].GetString(), TextType::Error);
+				// we send true so we dont send it again and again
+				confirmation.errorCode = SubmitResponse::Error;
+			}
+			else
+			{
+				MinerLogger::write(response, TextType::Error);
+				confirmation.errorCode = SubmitResponse::Error;
+			}
+		}
+		else
+			confirmation.errorCode = SubmitResponse::None;
+	}
+
+	return confirmation;
+}
+
+std::unique_ptr<Burst::Socket> Burst::NonceResponse::close()
+{
+	return response_.close();
 }
 
 Burst::HttpResponse::HttpResponse(const std::string& response)

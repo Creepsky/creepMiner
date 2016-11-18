@@ -40,14 +40,6 @@ namespace Burst
 		struct timeval socketTimeout;
 	};
 
-	enum class SubmitResponse
-	{
-		Submitted,
-		TooHigh,
-		Error,
-		None
-	};
-
 	class MinerProtocol
 	{
 	public:
@@ -56,7 +48,8 @@ namespace Burst
 
 		bool run(Miner* miner);
 		void stop();
-		SubmitResponse submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
+		uint64_t getTargetDeadline() const;
+		//SubmitResponse submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
 
 	private:
 		Miner* miner;

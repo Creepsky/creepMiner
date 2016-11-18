@@ -181,6 +181,11 @@ void Burst::MinerProtocol::stop()
 	this->running = false;
 }
 
+uint64_t Burst::MinerProtocol::getTargetDeadline() const
+{
+	return targetDeadline;
+}
+
 bool Burst::MinerProtocol::run(Miner* miner)
 {
 	auto& config = MinerConfig::getConfig();
@@ -192,7 +197,11 @@ bool Burst::MinerProtocol::run(Miner* miner)
 		return false;
 
 	//MinerLogger::write("Submission Max Delay : " + std::to_string(config.submissionMaxDelay), TextType::System);
-	MinerLogger::write("Submission Max Retry : " + std::to_string(config.submissionMaxRetry), TextType::System);
+	MinerLogger::write("Submission Max Retry : " + std::to_string(config.getSubmissionMaxRetry()), TextType::System);
+	MinerLogger::write("Receive Max Retry : " + std::to_string(config.getReceiveMaxRetry()), TextType::System);
+	MinerLogger::write("Send Max Retry : " + std::to_string(config.getSendMaxRetry()), TextType::System);
+	MinerLogger::write("Send-Timeout : " + std::to_string(config.getSendTimeout()) + " seconds", TextType::System);
+	MinerLogger::write("Receive-Timeout : " + std::to_string(config.getReceiveTimeout()) + " seconds", TextType::System);
 	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
 	MinerLogger::write("Pool Host : " + config.urlPool.getCanonical() + ":" + std::to_string(config.urlPool.getPort()) +
 		" (" + config.urlPool.getIp() + ")", TextType::System);
@@ -216,13 +225,13 @@ bool Burst::MinerProtocol::run(Miner* miner)
 	return false;
 }
 
-Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline)
+/*Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline)
 {
 	NxtAddress addr(accountId);
 
 	if (targetDeadline > 0 && deadline > targetDeadline)
 	{
-		MinerLogger::write("Submitted deadline too high " + deadlineFormat(deadline), TextType::Debug);
+		MinerLogger::write("Submitted deadline is too high " + deadlineFormat(deadline), TextType::Debug);
 		return SubmitResponse::TooHigh;
 	}
 
@@ -255,7 +264,7 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 
 		++tryCount;
 	}
-	while (!received && tryCount < MinerConfig::getConfig().submissionMaxRetry);
+	while (!received && tryCount < MinerConfig::getConfig().getSubmissionMaxRetry());
 
 	//MinerLogger::write(response);
 
@@ -283,7 +292,7 @@ Burst::SubmitResponse Burst::MinerProtocol::submitNonce(uint64_t nonce, uint64_t
 	}
 
 	return SubmitResponse::None;
-}
+}*/
 
 void Burst::MinerProtocol::getMiningInfo()
 {

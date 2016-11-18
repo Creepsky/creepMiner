@@ -100,14 +100,14 @@ bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, uint64_t block)
 	return true;
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestDeadline()
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestDeadline() const
 {
 	if (deadlines.empty())
 		return nullptr;
 	return deadlines.front();
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed()
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed() const
 {
 	for (auto& deadline : deadlines)
 		if (deadline->isConfirmed())

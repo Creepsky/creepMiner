@@ -21,6 +21,34 @@ namespace Burst
 		std::unique_ptr<Socket> socket_;
 	};
 
+	enum class SubmitResponse
+	{
+		Submitted,
+		TooHigh,
+		Error,
+		None
+	};
+
+	struct NonceConfirmation
+	{
+		uint64_t deadline;
+		SubmitResponse errorCode;
+	};
+
+	class NonceResponse
+	{
+	public:
+		NonceResponse(std::unique_ptr<Socket> socket);
+
+		bool canReceive() const;
+		NonceConfirmation getConfirmation() const;
+
+		std::unique_ptr<Socket> close();
+
+	private:
+		Response response_;
+	};
+
 	class HttpResponse
 	{
 	public:

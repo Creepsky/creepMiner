@@ -42,8 +42,8 @@ namespace Burst
 		bool confirm(Nonce nonce);
 		bool confirm(Nonce nonce, AccountId accountId, uint64_t block);
 
-		std::shared_ptr<Deadline> getBestDeadline();
-		std::shared_ptr<Deadline> getBestConfirmed();
+		std::shared_ptr<Deadline> getBestDeadline() const;
+		std::shared_ptr<Deadline> getBestConfirmed() const;
 
 	private:
 		std::vector<std::shared_ptr<Deadline>> deadlines;

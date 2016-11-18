@@ -24,4 +24,17 @@ namespace Burst
 
 		std::unique_ptr<Socket> socket_;
 	};
+
+	class NonceRequest
+	{
+	public:
+		NonceRequest(std::unique_ptr<Socket> socket);
+
+		NonceResponse submit(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
+
+		std::unique_ptr<Socket> close();
+
+	private:
+		Request request_;
+	};
 }

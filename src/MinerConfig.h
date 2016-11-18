@@ -54,7 +54,6 @@ namespace Burst
 		bool readConfigFile(const std::string& configPath);
 		void rescan();
 
-		size_t submissionMaxRetry = 5;
 		Url urlPool;
 		Url urlMiningInfo;
 		size_t maxBufferSizeMB = 128;
@@ -66,6 +65,10 @@ namespace Burst
 
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
+
+		size_t getReceiveMaxRetry() const;
+		size_t getSendMaxRetry() const;
+		size_t getSubmissionMaxRetry() const;
 
 		std::unique_ptr<Socket> createSocket() const;
 
@@ -79,5 +82,8 @@ namespace Burst
 		std::vector<std::shared_ptr<PlotFile>> plotList;
 		float receive_timeout_ = 3.f;
 		float send_timeout_ = 3.f;
+		size_t send_max_retry_ = 3;
+		size_t receive_max_retry_ = 3;
+		size_t submission_max_retry_ = 3;
 	};
 }

@@ -141,22 +141,25 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	if (configDoc.HasMember("submissionMaxRetry"))
 	{
 		if (configDoc["submissionMaxRetry"].IsNumber())
-		{
-			this->submissionMaxRetry = configDoc["submissionMaxRetry"].GetInt();
-		}
+			submission_max_retry_ = configDoc["submissionMaxRetry"].GetInt();
 		else
-		{
-			std::string submissionMaxRetryStr = configDoc["submissionMaxRetry"].GetString();
+			submission_max_retry_ = 3;
+	}
 
-			try
-			{
-				this->submissionMaxRetry = std::stoul(submissionMaxRetryStr);
-			}
-			catch (...)
-			{
-				this->submissionMaxRetry = 3;
-			}
-		}
+	if (configDoc.HasMember("sendMaxRetry"))
+	{
+		if (configDoc["sendMaxRetry"].IsNumber())
+			send_max_retry_ = configDoc["sendMaxRetry"].GetInt();
+		else
+			send_max_retry_ = 3;
+	}
+
+	if (configDoc.HasMember("receiveMaxRetry"))
+	{
+		if (configDoc["receiveMaxRetry"].IsNumber())
+			receive_max_retry_ = configDoc["receiveMaxRetry"].GetInt();
+		else
+			receive_max_retry_ = 3;
 	}
 
 	if (configDoc.HasMember("sendTimeout"))
@@ -254,6 +257,21 @@ float Burst::MinerConfig::getReceiveTimeout() const
 float Burst::MinerConfig::getSendTimeout() const
 {
 	return send_timeout_;
+}
+
+size_t Burst::MinerConfig::getReceiveMaxRetry() const
+{
+	return receive_max_retry_;
+}
+
+size_t Burst::MinerConfig::getSendMaxRetry() const
+{
+	return send_max_retry_;
+}
+
+size_t Burst::MinerConfig::getSubmissionMaxRetry() const
+{
+	return submission_max_retry_;
 }
 
 std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const

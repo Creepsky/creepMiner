@@ -14,6 +14,9 @@
 #include "nxt/nxt_address.h"
 #include <deque>
 #include <algorithm>
+#include "Response.hpp"
+#include "Request.hpp"
+#include "Socket.hpp"
 
 Burst::Miner::~Miner()
 {}
@@ -165,7 +168,7 @@ void Burst::Miner::nonceSubmitterThread()
 
 			//MinerLogger::write("submitter-thread: inner loop", TextType::System);
 
-			for (auto accountDeadlines : deadlines)
+			for (auto& accountDeadlines : deadlines)
 			{
 				auto deadline = accountDeadlines.second.getBestDeadline();
 
@@ -178,9 +181,20 @@ void Burst::Miner::nonceSubmitterThread()
 					static std::mutex deadlinesToSendMutex;
 					std::unique_lock<std::mutex> _lock(deadlinesToSendMutex);
 					auto createSendThread = true;
-
-					if (deadlinesToSend.find(deadline) != deadlinesToSend.end())
+					
+					if (createSendThread &&
+						deadlinesToSend.find(deadline) != deadlinesToSend.end())
+					{
 						createSendThread = false;
+						MinerLogger::write("Nonce already submitting.", TextType::Debug);
+					}
+
+					if (createSendThread &&
+						deadline->getDeadline() >= protocol.getTargetDeadline())
+					{
+						createSendThread = false;
+						MinerLogger::write("Nonce is higher then the target deadline of the pool.", TextType::Debug);
+					}
 
 					_lock.unlock();
 
@@ -191,7 +205,6 @@ void Burst::Miner::nonceSubmitterThread()
 												   static uint32_t submitThreads = 0;
 
 												   std::unique_lock<std::mutex> innerLock(deadlinesToSendMutex);
-
 												   ++submitThreads;
 												   deadlinesToSend.emplace(deadline);
 												   innerLock.unlock();
@@ -203,10 +216,44 @@ void Burst::Miner::nonceSubmitterThread()
 												   auto accountId = deadline->getAccountId();
 
 												   //MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
+												   
+												   NxtAddress addr(accountId);
+												   MinerLogger::write(addr.to_string() +  ": nonce on the way (" + deadline->deadlineToReadableString() + ")");
 
-												   if (protocol.submitNonce(nonce, accountId, deadlineValue) == SubmitResponse::Submitted)
+												   NonceRequest request(MinerConfig::getConfig().createSocket());
+												   NonceConfirmation confirmation{ 0, SubmitResponse::None };
+												   size_t submitTryCount = 0;
+
+												   while (submitTryCount < MinerConfig::getConfig().getSubmissionMaxRetry() &&
+													   confirmation.errorCode != SubmitResponse::Submitted &&
+													   deadline->getBlock() == blockHeight)
+													   //(bestConfirmedDeadline != nullptr &&
+														   //bestConfirmedDeadline->getBlock() ==  &&
+														   //deadline->getDeadline() < bestConfirmedDeadline->getDeadline()))
 												   {
-													   this->nonceSubmitReport(nonce, accountId, deadlineValue);
+													   auto sendTryCount = 0u;
+
+													   while (sendTryCount < MinerConfig::getConfig().getSendMaxRetry())
+													   {
+														   auto response = request.submit(nonce, accountId, deadlineValue);
+														   auto receiveTryCount = 0u;
+
+														   while (receiveTryCount < MinerConfig::getConfig().getReceiveMaxRetry() &&
+															   confirmation.errorCode != SubmitResponse::Submitted)
+														   {
+															   confirmation = response.getConfirmation();
+															   ++receiveTryCount;
+														   }
+
+														   ++sendTryCount;
+													   }
+													   
+													   ++submitTryCount;
+												   }
+
+												   if (confirmation.errorCode == SubmitResponse::Submitted)
+												   {
+													   nonceSubmitReport(nonce, accountId, deadlineValue);
 
 													   innerLock.lock();
 													   deadlinesToSend.erase(deadline);
@@ -245,7 +292,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
 	{
 		deadlines[accountId].add({ nonce, deadline, accountId, blockHeight });
-		MinerLogger::write(NxtAddress(accountId).to_string() + ": deadline found (" + Burst::deadlineFormat(deadline) + ")", TextType::Unimportant);
+		MinerLogger::write(NxtAddress(accountId).to_string() + ": nonce found (" + Burst::deadlineFormat(deadline) + ")", TextType::Unimportant);
 	}
 }
 
@@ -255,5 +302,5 @@ void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_
 
 	if (deadlines[accountId].confirm(nonce, accountId, blockHeight))
 		if (deadlines[accountId].getBestConfirmed()->getDeadline() == deadline)
-			MinerLogger::write(NxtAddress(accountId).to_string() + ": deadline confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
+			MinerLogger::write(NxtAddress(accountId).to_string() + ": nonce confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
 }

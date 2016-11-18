@@ -134,48 +134,28 @@ std::string Burst::getStartNonceFromPlotFile(const std::string& path)
 
 std::string Burst::deadlineFormat(uint64_t seconds)
 {
-	size_t secs = seconds;
-	size_t min = 0;
-	size_t hour = 0;
-	size_t day = 0;
+	auto secs = seconds;
+	auto mins = secs / 60;
+	auto hours = mins / 60;
+	auto day = hours / 24;
+	auto months = day / 30;
+	auto years = months / 12;
+	
+	std::stringstream ss;
+	
+	ss.imbue(std::locale(""));
+	ss << std::fixed;
+	
+	if (years > 0)
+		ss << years << "y ";
+	if (months > 0)
+		ss << months % 12 << "m ";
 
-	if (secs > 59)
-	{
-		min = secs / 60;
-		secs = secs - min * 60;
-	}
+	ss << day % 30 << "d ";
+	ss << std::setw(2) << std::setfill('0');
+	ss << hours % 24 << ':' << mins % 60 << ':' << secs % 60;
 
-	if (min > 59)
-	{
-		hour = min / 60;
-		min = min - hour * 60;
-	}
-
-	if (hour > 23)
-	{
-		day = hour / 24;
-		hour = hour - day * 24;
-	}
-
-	std::string hourStr = std::to_string(hour);
-	if (hour < 10)
-	{
-		hourStr = "0" + hourStr;
-	}
-
-	std::string minStr = std::to_string(min);
-	if (min < 10)
-	{
-		minStr = "0" + minStr;
-	}
-
-	std::string secStr = std::to_string(secs);
-	if (secs < 10)
-	{
-		secStr = "0" + secStr;
-	}
-
-	return std::to_string(day) + " days " + hourStr + ":" + minStr + ":" + secStr;
+	return ss.str();
 }
 
 std::string Burst::gbToString(uint64_t size)
