@@ -17,29 +17,6 @@ namespace Burst
 	class Miner;
 	class Socket;
 
-	class MinerSocket
-	{
-	public:
-		void setRemote(const std::string& ip, size_t port, size_t timeout);
-		std::string httpPost(const std::string& url, const std::string& body, const std::string& header = "");
-		std::string httpGet(const std::string& url);
-		void httpPostAsync(const std::string& url, const std::string& body, std::function<void (std::string)> responseCallback);
-		void httpGetAsync(const std::string& url, std::function<void (std::string)> responseCallback);
-
-		void setTimeout(size_t timeout);
-
-	private:
-		std::string httpRequest(const std::string& method, const std::string& url,
-								const std::string& body, const std::string& header);
-		void httpRequestAsync(const std::string& method, const std::string& url,
-							  const std::string& body, const std::string& header,
-							  std::function<void (std::string)> responseCallback);
-		static const size_t readBufferSize = 2048;
-		char readBuffer[readBufferSize];
-		struct sockaddr_in remoteAddr;
-		struct timeval socketTimeout;
-	};
-
 	class MinerProtocol
 	{
 	public:
@@ -54,7 +31,7 @@ namespace Burst
 	private:
 		Miner* miner;
 		bool running;
-		void getMiningInfo();
+		bool getMiningInfo();
 		uint64_t currentBlockHeight;
 		uint64_t currentBaseTarget;
 		uint64_t targetDeadline = 0u;
