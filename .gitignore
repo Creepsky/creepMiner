@@ -273,3 +273,4 @@ __pycache__/
 
 # Custom files and dirs
 mining.conf
+*.graphml
