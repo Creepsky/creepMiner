@@ -190,7 +190,8 @@ void Burst::Miner::nonceSubmitterThread()
 						deadline->getDeadline() >= protocol.getTargetDeadline())
 					{
 						createSendThread = false;
-						MinerLogger::write("Nonce is higher then the target deadline of the pool.", TextType::Debug);
+						MinerLogger::write("Nonce is higher then the target deadline of the pool (" +
+							deadlineFormat(protocol.getTargetDeadline()) + ")", TextType::Debug);
 					}
 
 					deadline->send();
@@ -208,8 +209,6 @@ void Burst::Miner::nonceSubmitterThread()
 												});
 
 			lock.unlock();
-
-			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 
 		//MinerLogger::write("submitter-thread: finished block", TextType::System);
