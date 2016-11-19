@@ -12,6 +12,12 @@ namespace Burst
 	{
 	public:
 		Request(std::unique_ptr<Socket> socket);
+		Request(const Request& rhs) = delete;
+		Request(Request&& rhs) = default;
+		~Request();
+
+		Request& operator=(const Request& rhs) = delete;
+		Request& operator=(Request&& rhs) = default;
 
 		bool canSend() const;
 		Response sendPost(const std::string& url, const std::string& body, const std::string& header);

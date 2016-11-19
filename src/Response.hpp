@@ -11,6 +11,12 @@ namespace Burst
 	{
 	public:
 		Response(std::unique_ptr<Socket> socket);
+		Response(const Response& rhs) = delete;
+		Response(Response&& rhs) = default;
+		~Response();
+
+		Response& operator=(const Response& rhs) = delete;
+		Response& operator=(Response&& rhs) = default;
 
 		bool canReceive() const;
 		bool receive(std::string& data) const;

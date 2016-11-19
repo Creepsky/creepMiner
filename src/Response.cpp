@@ -9,6 +9,12 @@ Burst::Response::Response(std::unique_ptr<Socket> socket)
 	: socket_(std::move(socket))
 {}
 
+Burst::Response::~Response()
+{
+	if (socket_ != nullptr)
+		socket_->disconnect();
+}
+
 bool Burst::Response::canReceive() const
 {
 	return socket_ != nullptr && socket_->isConnected();

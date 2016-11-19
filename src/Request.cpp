@@ -11,6 +11,12 @@ Burst::Request::Request(std::unique_ptr<Socket> socket)
 	: socket_(std::move(socket))
 {}
 
+Burst::Request::~Request()
+{
+	if (socket_ != nullptr)
+		socket_->disconnect();
+}
+
 bool Burst::Request::canSend() const
 {
 	return socket_ != nullptr && socket_->isConnected();
@@ -19,7 +25,7 @@ bool Burst::Request::canSend() const
 Burst::Response Burst::Request::sendPost(const std::string& url, const std::string& body, const std::string& header)
 {
 	if (!send(url, "POST", body, header))
-		return { nullptr };
+		return Response{ nullptr };
 	return { close() };
 }
 
