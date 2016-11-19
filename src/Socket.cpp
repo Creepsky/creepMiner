@@ -14,10 +14,6 @@ bool Burst::Socket::connect(const std::string& ip, size_t port)
 	if (isConnected())
 		disconnect();
 
-	// refresh the timeouts
-	setReceiveTimeout(receive_timeout_);
-	setSendTimeout(send_timeout_);
-
 	// initialize connection-data
 	struct sockaddr_in sock_data;
 	//
@@ -31,6 +27,10 @@ bool Burst::Socket::connect(const std::string& ip, size_t port)
 	ip_ = ip;
 	port_ = port;
 	connected_ = true;
+
+	// refresh the timeouts
+	setReceiveTimeout(receive_timeout_);
+	setSendTimeout(send_timeout_);
 
 	return true;
 }

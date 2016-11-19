@@ -23,6 +23,7 @@ namespace Burst
 	class PlotListReader;
 	class MinerConfig;
 	class PlotReadProgress;
+	class Deadline;
 
 	class Miner
 	{
@@ -35,9 +36,12 @@ namespace Burst
 
 		size_t getScoopNum() const;
 		uint64_t getBaseTarget() const;
+		uint64_t getBlockheight() const;
 		const GensigData& getGensig() const;
 		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
 		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline);
+
+		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 
 	private:
 		void nonceSubmitterThread();

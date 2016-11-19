@@ -20,6 +20,7 @@
     <ClCompile Include="src\Request.cpp" />
     <ClCompile Include="src\Response.cpp" />
     <ClCompile Include="src\Socket.cpp" />
+    <ClCompile Include="src\NonceSubmitter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Miner.h" />
@@ -67,6 +68,7 @@
     <ClInclude Include="src\Request.hpp" />
     <ClInclude Include="src\Response.hpp" />
     <ClInclude Include="src\Socket.hpp" />
+    <ClInclude Include="src\NonceSubmitter.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sphlib">

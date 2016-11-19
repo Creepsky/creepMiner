@@ -78,10 +78,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 	auto response = request_.sendPost(url, "", requestHead.str());
 
 	if (response.canReceive())
-	{
-		MinerLogger::write(addr.to_string() + ": nonce submitted (" + deadlineFormat(deadline) + ")", TextType::Ok);
 		return {response.close()};
-	}
 
 	return {nullptr};
 }

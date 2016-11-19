@@ -17,6 +17,7 @@
 #include "Response.hpp"
 #include "Request.hpp"
 #include "Socket.hpp"
+#include "NonceSubmitter.hpp"
 
 Burst::Miner::~Miner()
 {}
@@ -42,6 +43,11 @@ void Burst::Miner::stop()
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
+	// setup new block-data
+	this->gensigStr = gensigStr;
+	this->blockHeight = blockHeight;
+	this->baseTarget = baseTarget;
+
 	MinerLogger::write("stopping plot readers...", TextType::Debug);
 
 	// stop all reading processes if any
@@ -69,10 +75,6 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 	MinerLogger::write("plot readers stopped", TextType::Debug);
 	std::lock_guard<std::mutex> lock(deadlinesLock);
-
-	this->gensigStr = gensigStr;
-	this->blockHeight = blockHeight;
-	this->baseTarget = baseTarget;
 	this->deadlines.clear();
 
 	for (auto i = 0; i < 32; ++i)
@@ -144,6 +146,11 @@ uint64_t Burst::Miner::getBaseTarget() const
 	return this->baseTarget;
 }
 
+uint64_t Burst::Miner::getBlockheight() const
+{
+	return blockHeight;
+}
+
 size_t Burst::Miner::getScoopNum() const
 {
 	return this->scoopNum;
@@ -170,25 +177,15 @@ void Burst::Miner::nonceSubmitterThread()
 
 			for (auto& accountDeadlines : deadlines)
 			{
-				auto deadline = accountDeadlines.second.getBestDeadline();
+				auto deadline = accountDeadlines.second.getBest();
 
 				if (deadline == nullptr)
 					continue;
 
-				if (!deadline->isConfirmed())
+				if (!deadline->isOnTheWay())
 				{
-					static std::set<std::shared_ptr<Deadline>> deadlinesToSend;
-					static std::mutex deadlinesToSendMutex;
-					std::unique_lock<std::mutex> _lock(deadlinesToSendMutex);
 					auto createSendThread = true;
 					
-					if (createSendThread &&
-						deadlinesToSend.find(deadline) != deadlinesToSend.end())
-					{
-						createSendThread = false;
-						MinerLogger::write("Nonce already submitting.", TextType::Debug);
-					}
-
 					if (createSendThread &&
 						deadline->getDeadline() >= protocol.getTargetDeadline())
 					{
@@ -196,76 +193,11 @@ void Burst::Miner::nonceSubmitterThread()
 						MinerLogger::write("Nonce is higher then the target deadline of the pool.", TextType::Debug);
 					}
 
-					_lock.unlock();
+					deadline->send();
 
 					if (createSendThread)
 					{
-						std::thread sendThread([this, deadline]()
-											   {
-												   static uint32_t submitThreads = 0;
-
-												   std::unique_lock<std::mutex> innerLock(deadlinesToSendMutex);
-												   ++submitThreads;
-												   deadlinesToSend.emplace(deadline);
-												   innerLock.unlock();
-
-												   MinerLogger::write(std::to_string(submitThreads) + " submitter-threads running", TextType::Debug);
-
-												   auto nonce = deadline->getNonce();
-												   auto deadlineValue = deadline->getDeadline();
-												   auto accountId = deadline->getAccountId();
-
-												   //MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
-												   
-												   NxtAddress addr(accountId);
-												   MinerLogger::write(addr.to_string() +  ": nonce on the way (" + deadline->deadlineToReadableString() + ")");
-
-												   NonceRequest request(MinerConfig::getConfig().createSocket());
-												   NonceConfirmation confirmation{ 0, SubmitResponse::None };
-												   size_t submitTryCount = 0;
-
-												   while (submitTryCount < MinerConfig::getConfig().getSubmissionMaxRetry() &&
-													   confirmation.errorCode != SubmitResponse::Submitted &&
-													   deadline->getBlock() == blockHeight)
-													   //(bestConfirmedDeadline != nullptr &&
-														   //bestConfirmedDeadline->getBlock() ==  &&
-														   //deadline->getDeadline() < bestConfirmedDeadline->getDeadline()))
-												   {
-													   auto sendTryCount = 0u;
-
-													   while (sendTryCount < MinerConfig::getConfig().getSendMaxRetry())
-													   {
-														   auto response = request.submit(nonce, accountId, deadlineValue);
-														   auto receiveTryCount = 0u;
-
-														   while (receiveTryCount < MinerConfig::getConfig().getReceiveMaxRetry() &&
-															   confirmation.errorCode != SubmitResponse::Submitted)
-														   {
-															   confirmation = response.getConfirmation();
-															   ++receiveTryCount;
-														   }
-
-														   ++sendTryCount;
-													   }
-													   
-													   ++submitTryCount;
-												   }
-
-												   if (confirmation.errorCode == SubmitResponse::Submitted)
-												   {
-													   nonceSubmitReport(nonce, accountId, deadlineValue);
-
-													   innerLock.lock();
-													   deadlinesToSend.erase(deadline);
-													   innerLock.unlock();
-												   }
-
-												   --submitThreads;
-
-												   MinerLogger::write(std::to_string(submitThreads) + " submitter-threads running", TextType::Debug);
-											   });
-
-						sendThread.detach();
+						NonceSubmitter{ *this, deadline }.startSubmit();
 					}
 				}
 			}
@@ -276,6 +208,8 @@ void Burst::Miner::nonceSubmitterThread()
 												});
 
 			lock.unlock();
+
+			std::this_thread::sleep_for(std::chrono::seconds(1));
 		}
 
 		//MinerLogger::write("submitter-thread: finished block", TextType::System);
@@ -286,7 +220,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 {
 	std::lock_guard<std::mutex> mutex(deadlinesLock);
 
-	auto bestDeadline = deadlines[accountId].getBestDeadline();
+	auto bestDeadline = deadlines[accountId].getBest();
 
 	// is the new nonce better then the best one we already have?
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
@@ -303,4 +237,14 @@ void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_
 	if (deadlines[accountId].confirm(nonce, accountId, blockHeight))
 		if (deadlines[accountId].getBestConfirmed()->getDeadline() == deadline)
 			MinerLogger::write(NxtAddress(accountId).to_string() + ": nonce confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
+}
+
+std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, uint64_t blockHeight)
+{
+	std::lock_guard<std::mutex> mutex(deadlinesLock);
+
+	if (blockHeight != this->blockHeight)
+		return nullptr;
+
+	return deadlines[accountId].getBestSent();
 }

@@ -8,7 +8,6 @@ namespace Burst
 	class Socket
 	{
 	public:
-		Socket();
 		Socket(float send_timeout, float receive_timeout);
 
 		bool connect(const std::string& ip, size_t port);
