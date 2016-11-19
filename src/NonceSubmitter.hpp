@@ -16,7 +16,6 @@ namespace Burst
 
 	private:
 		void submitThread() const;
-		bool loopConditionHelper(size_t tryCount, size_t maxTryCount, SubmitResponse response) const;
 
 	private:
 		Miner* miner_;
