@@ -152,7 +152,11 @@ std::string Burst::deadlineFormat(uint64_t seconds)
 
 	ss << day % 30 << "d ";
 	ss << std::setw(2) << std::setfill('0');
-	ss << hours % 24 << ':' << mins % 60 << ':' << secs % 60;
+	ss << hours % 24 << ':';
+	ss << std::setw(2) << std::setfill('0');
+	ss << mins % 60 << ':';
+	ss << std::setw(2) << std::setfill('0');
+	ss << secs % 60;
 
 	return ss.str();
 }
