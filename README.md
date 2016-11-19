@@ -14,9 +14,9 @@ The purpose of this fork is to optimize and beautify the original program and on
 
 ## Build
 
-**master** [![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=master)](https://travis-ci.org/Creepsky/burst-miner)
-
-**development** [![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=development)](https://travis-ci.org/Creepsky/burst-miner)
+| Master | Development |
+| ------ | ----------- |
+| [![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=master)](https://travis-ci.org/Creepsky/burst-miner) | [![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=development)](https://travis-ci.org/Creepsky/burst-miner) |
 
 ## Donations :moneybag:
 
@@ -46,13 +46,16 @@ Inside the config-file, you can define the following settings:
  {
     "poolUrl" : "burst-pool.cryptoport.io",
     "submissionMaxRetry" : 3,
-    "socketTimeout" : 60,
+    "sendMaxRetry" : 3,
+    "receiveMaxRetry" : 3,
+    "receiveTimeout" : 5,
+    "sendTimeout" : 5,
     "maxBufferSizeMB" : 128,
-	"output" : ["debug", "progress"],
+    "output" : ["debug", "progress"],
     "plots" : 
     [
-    	"/Users/uraymeiviar/plots",
-    	"/Users/uraymeiviar/Documents/plots"
+        "/Users/uraymeiviar/plots",
+	"/Users/uraymeiviar/Documents/plots"
 	]
  }
 ```
@@ -61,10 +64,40 @@ Inside the config-file, you can define the following settings:
 
 **submissionMaxRetry** : the max tries to resend a message to the server.
 
-**socketTimeout** : the max time to wait for a response from the server.
+**sendMaxRetry** : the max tries to send the nonce per submission-retry
+
+**receiveMaxRetry** : the max tries to receive the answer for a nonce from server per submission-retry
+
+**receiveTimeout** : the max time to wait for a response from the server.
+
+**sendTimeout** : the max time to wait for sending a message to the server.
 
 **maxBufferSizeMB** : the buffer size while reading the plot files.
 
 **output** : decides, what messages will be seen in the output. Possible values: progress (the progress in percent while reading the plot files), debug (debug messages).
 
 **plots** : the paths to the directories, where to search for plot files. plot files are searched every new block.
+
+## Submit-Process
+
+To have a better understanding for the settings in mining.conf, have a look at the submit-process.
+
+![Submit-Process](retry_settings.png "Submit-Process")
+
+A nonce is submitted max **submissionMaxRetry** times, before the submission gets aborted. In each submission first the nonce is send to the server max **sendMaxRetry** times, then for each sending a response received max **receiveMaxRetry** times.
+
+If you have the settings
+
+| option             | value |
+| ------------------ | ---- |
+| submissionMaxRetry | 3    |
+| sendMaxRetry       | 3    |
+| receiveMaxRetry    | 3    |
+
+you get the following max retries:
+
+| process     | retries |
+| ----------- | ---- |
+| submissions | 3 = submissionMaxRetry   |
+| sendings    | 9 = sendMaxRetry * submissionMaxRetry |
+| receivings  | 27 = sendings * receiveMaxRetry |
