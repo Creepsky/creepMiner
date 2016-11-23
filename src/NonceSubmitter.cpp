@@ -2,13 +2,10 @@
 #include "MinerLogger.h"
 #include "Deadline.hpp"
 #include "MinerUtil.h"
-#include "Response.hpp"
 #include "nxt/nxt_address.h"
 #include "Request.hpp"
 #include "MinerConfig.h"
 #include "Miner.h"
-#include "MinerLogger.h"
-#include "Socket.hpp"
 
 Burst::NonceSubmitter::NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline)
 	: miner_(&miner), deadline_(deadline)
@@ -16,14 +13,13 @@ Burst::NonceSubmitter::NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> de
 
 void Burst::NonceSubmitter::startSubmit()
 {
-	std::thread(&NonceSubmitter::submitThread, this).detach();
+	std::thread t(&NonceSubmitter::submitThread, this, miner_, deadline_);
+    t.detach();
 }
 
-void Burst::NonceSubmitter::submitThread() const
+void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline> deadline) const
 {
 	static uint32_t submitThreads = 0;
-	auto miner = miner_;
-	auto deadline = deadline_;
 
 	++submitThreads;
 
@@ -132,3 +128,4 @@ void Burst::NonceSubmitter::submitThread() const
 
 	MinerLogger::write(std::to_string(submitThreads) + " submitter-threads running", TextType::Debug);
 }
+

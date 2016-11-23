@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include <memory>
 #include "Response.hpp"
 
@@ -11,11 +12,11 @@ namespace Burst
 	{
 	public:
 		NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline);
-		
+
 		void startSubmit();
 
 	private:
-		void submitThread() const;
+		void submitThread(Miner* miner, std::shared_ptr<Deadline> deadline) const;
 
 	private:
 		Miner* miner_;
