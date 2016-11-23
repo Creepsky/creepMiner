@@ -65,10 +65,10 @@ void Burst::NonceSubmitter::submitThread() const
 	NxtAddress addr(accountId);
 	MinerLogger::write(addr.to_string() + ": nonce on the way (" + deadline->deadlineToReadableString() + ")");
 
-	NonceRequest request(MinerConfig::getConfig().createSocket());
+	NonceRequest request(miner->getSocket());
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
-	bool firstSendAttempt = true;
+	auto firstSendAttempt = true;
 
 	// submit-loop
 	while (loopConditionHelper(submitTryCount,
@@ -119,8 +119,13 @@ void Burst::NonceSubmitter::submitThread() const
 	if (confirmation.errorCode == SubmitResponse::Submitted)
 	{
 		deadline->confirm();
-
 		MinerLogger::write(NxtAddress(accountId).to_string() + ": nonce confirmed (" + deadlineFormat(deadlineValue) + ")", TextType::Success);
+	}
+	// sent, but not confirmed
+	else if (firstSendAttempt &&
+		confirmation.errorCode == SubmitResponse::None)
+	{
+		MinerLogger::write(NxtAddress(accountId).to_string() + ": got no confirmation from server! busy?", TextType::Normal);
 	}
 
 	--submitThreads;

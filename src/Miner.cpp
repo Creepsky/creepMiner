@@ -12,7 +12,6 @@
 #include "PlotReader.h"
 #include "MinerUtil.h"
 #include "nxt/nxt_address.h"
-#include <deque>
 #include <algorithm>
 #include "Response.hpp"
 #include "Request.hpp"
@@ -28,6 +27,9 @@ void Burst::Miner::run()
 	std::thread submitter(&Miner::nonceSubmitterThread, this);
 
 	progress = std::make_shared<PlotReadProgress>();
+
+	sockets_ = PoolSockets{5};
+	sockets_.fill();
 
 	if (!this->protocol.run(this))
 		MinerLogger::write("Mining networking failed", TextType::Error);
@@ -72,7 +74,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 			}
 		}
 	}
-
+	
 	MinerLogger::write("plot readers stopped", TextType::Debug);
 	std::lock_guard<std::mutex> lock(deadlinesLock);
 	this->deadlines.clear();
@@ -211,6 +213,8 @@ void Burst::Miner::nonceSubmitterThread()
 			lock.unlock();
 		}
 
+		sockets_.fill();
+
 		//MinerLogger::write("submitter-thread: finished block", TextType::System);
 	}
 }
@@ -246,4 +250,10 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 		return nullptr;
 
 	return deadlines[accountId].getBestSent();
+}
+
+std::unique_ptr<Burst::Socket> Burst::Miner::getSocket()
+{
+	return MinerConfig::getConfig().createSocket();
+	//return sockets_.getSocket();
 }

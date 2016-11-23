@@ -17,6 +17,7 @@
 #include "Deadline.hpp"
 #include <thread>
 #include <condition_variable>
+#include "PoolSockets.hpp"
 
 namespace Burst
 {
@@ -42,6 +43,7 @@ namespace Burst
 		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
+		std::unique_ptr<Socket> getSocket();
 
 	private:
 		void nonceSubmitterThread();
@@ -62,5 +64,6 @@ namespace Burst
 		std::vector<std::thread> sendNonceThreads;
 		std::condition_variable newBlockIncoming;
 		bool submitThreadNotified = false;
+		PoolSockets sockets_;
 	};
 }
