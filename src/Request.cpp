@@ -52,7 +52,7 @@ bool Burst::Request::send(const std::string& url, const std::string& method, con
 
 	// TODO: \r\n to std::endl
 	std::stringstream request;
-	request << method << " " << url << " HTTP/1.0" << "\r\n" << header << "\r\n\r\n" << body;
+	request << method << " " << url << " HTTP/1.1" << "\r\n" << header << "\r\n\r\n" << body;
 	
 	return socket_->send(request.str());
 }
