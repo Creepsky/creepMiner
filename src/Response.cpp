@@ -85,12 +85,14 @@ std::unique_ptr<Burst::Socket> Burst::NonceResponse::close()
 }
 
 Burst::HttpResponse::HttpResponse(const std::string& response)
-	: response_(response)
-{}
+{
+	setResponse(response);
+}
 
 void Burst::HttpResponse::setResponse(const std::string& response)
 {
 	response_ = response;
+	tokens_ = splitStr(response_, "\r\n");
 }
 
 const std::string& Burst::HttpResponse::getResponse() const
@@ -98,37 +100,37 @@ const std::string& Burst::HttpResponse::getResponse() const
 	return response_;
 }
 
-std::string Burst::HttpResponse::getStatus() const
+const std::string& Burst::HttpResponse::getStatus() const
 {
 	return getPart(0);
 }
 
-std::string Burst::HttpResponse::getContentLength() const
+const std::string& Burst::HttpResponse::getContentLength() const
 {
 	return getPart(1);
 }
 
-std::string Burst::HttpResponse::getContentType() const
+const std::string& Burst::HttpResponse::getContentType() const
 {
 	return getPart(2);
 }
 
-std::string Burst::HttpResponse::getDate() const
+const std::string& Burst::HttpResponse::getDate() const
 {
-	return getPart(3);
+	return getPart(tokens_.size() - 2);
 }
 
-std::string Burst::HttpResponse::getMessage() const
+const std::string& Burst::HttpResponse::getMessage() const
 {
-	return getPart(4);
+	return getPart(tokens_.size() - 1);
 }
 
-std::string Burst::HttpResponse::getPart(size_t index) const
+const std::string& Burst::HttpResponse::getPart(size_t index) const
 {
-	auto tokens = Burst::splitStr(response_, "\r\n");
+	static std::string empty = "";
 
-	if (index >= tokens.size())
-		return "";
+	if (index >= tokens_.size())
+		return empty;
 
-	return tokens[index];
+	return tokens_[index];
 }

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace Burst
 {
@@ -63,15 +64,16 @@ namespace Burst
 		void setResponse(const std::string& response);
 
 		const std::string& getResponse() const;
-		std::string getStatus() const;
-		std::string getContentLength() const;
-		std::string getContentType() const;
-		std::string getDate() const;
-		std::string getMessage() const;
+		const std::string& getStatus() const;
+		const std::string& getContentLength() const;
+		const std::string& getContentType() const;
+		const std::string& getDate() const;
+		const std::string& getMessage() const;
 
 	private:
-		std::string getPart(size_t index) const;
+		const std::string& getPart(size_t index) const;
 
 		std::string response_;
+		std::vector<std::string> tokens_;
 	};
 }
