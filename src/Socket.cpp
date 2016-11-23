@@ -1,5 +1,6 @@
 ﻿#include "Socket.hpp"
 #include "SocketDefinitions.hpp"
+#include "MinerLogger.h"
 #include <sstream>
 
 Burst::Socket::Socket(float send_timeout, float receive_timeout)
@@ -99,7 +100,7 @@ bool Burst::Socket::receive(std::string& data) const
 		return false;
 
 	auto totalBytesRead = 0;
-	int bytesRead;
+	ssize_t bytesRead;
 	constexpr auto readBufferSize = 2048;
 	char readBuffer[readBufferSize];
 	std::stringstream response;
@@ -128,6 +129,11 @@ bool Burst::Socket::receive(std::string& data) const
 void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet) const
 {
 	auto timeout_microseconds = static_cast<long>(seconds * 1000);
+
+	struct timeval timeout;
+	timeout.tv_sec = static_cast<long>(seconds);
+	timeout.tv_usec = static_cast<long>((seconds - timeout.tv_sec) * 1000);
+
 	*fieldToSet = seconds;
 	auto sendOrReceiveFlag = 0;
 
@@ -137,5 +143,6 @@ void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet) const
 		sendOrReceiveFlag = SO_RCVTIMEO;
 
 	if (isConnected() && sendOrReceiveFlag != 0)
-		setsockopt(socket_, SOL_SOCKET, sendOrReceiveFlag, reinterpret_cast<char *>(&timeout_microseconds), sizeof(timeout_microseconds));
+		if (setsockopt(socket_, SOL_SOCKET, sendOrReceiveFlag, reinterpret_cast<char *>(&timeout), sizeof(timeout)) < 0)
+			MinerLogger::write("Failed to set timeout for socket!", TextType::Debug);
 }
