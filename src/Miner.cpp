@@ -188,8 +188,7 @@ void Burst::Miner::nonceSubmitterThread()
 				{
 					auto createSendThread = true;
 					
-					if (createSendThread &&
-						deadline->getDeadline() >= protocol.getTargetDeadline())
+					if (deadline->getDeadline() >= protocol.getTargetDeadline())
 					{
 						createSendThread = false;
 						MinerLogger::write("Nonce is higher then the target deadline of the pool (" +
@@ -200,7 +199,7 @@ void Burst::Miner::nonceSubmitterThread()
 
 					if (createSendThread)
 					{
-						NonceSubmitter{ *this, deadline }.startSubmit();
+						NonceSubmitter{*this, deadline}.startSubmit();
 					}
 				}
 			}
