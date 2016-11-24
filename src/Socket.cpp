@@ -99,6 +99,10 @@ bool Burst::Socket::receive(std::string& data) const
 	if (!isConnected())
 		return false;
 
+#ifdef WIN32
+	using ssize_t = unsigned long;
+#endif
+
 	auto totalBytesRead = 0;
 	ssize_t bytesRead;
 	constexpr auto readBufferSize = 2048;
@@ -128,8 +132,6 @@ bool Burst::Socket::receive(std::string& data) const
 
 void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet) const
 {
-	auto timeout_microseconds = static_cast<long>(seconds * 1000);
-
 	struct timeval timeout;
 	timeout.tv_sec = static_cast<long>(seconds);
 	timeout.tv_usec = static_cast<long>((seconds - timeout.tv_sec) * 1000);
