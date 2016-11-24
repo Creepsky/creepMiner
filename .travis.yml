@@ -3,11 +3,11 @@ sudo: true
 solution: burst-miner.sln
 dist: trusty
 compiler: gcc
-env: CXX=g++-6 CXXFLAGS="-std=c++14"
+env: CXX=g++-5 CXXFLAGS="-std=c++14"
 os: linux
 group: stable
 install:
-- if [ "$CXX" = "g++" ]; then export CXX="g++-6" CC="gcc-6"; fi
+- if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 addons:
   apt:
     sources:
