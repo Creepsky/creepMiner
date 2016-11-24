@@ -29,7 +29,7 @@ std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::Min
 			{ TextType::Error, { Color::LightRed, Color::Black } },
 			{ TextType::Information, { Color::LightCyan, Color::Black } },
 			{ TextType::Success, { Color::LightGreen, Color::Black } },
-			{ TextType::Warning, { Color::Yellow, Color::Black } },
+			{ TextType::Warning, { Color::Brown, Color::Black } },
 			{ TextType::Important, { Color::Black, Color::White } },
 			{ TextType::System, { Color::Yellow, Color::Black } },
 			{ TextType::Unimportant, { Color::DarkGray, Color::Black } },

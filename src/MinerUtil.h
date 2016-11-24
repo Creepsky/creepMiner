@@ -30,6 +30,7 @@ namespace Burst
 	std::string getFileNameFromPath(const std::string& strPath);
 	std::vector<std::string>& splitStr(const std::string& s, char delim, std::vector<std::string>& elems);
 	std::vector<std::string> splitStr(const std::string& s, char delim);
+	std::vector<std::string> splitStr(const std::string& s, const std::string& delim);
 	bool isValidPlotFile(const std::string& filePath);
 	std::string getAccountIdFromPlotFile(const std::string& path);
 	std::string getStartNonceFromPlotFile(const std::string& path);
@@ -39,4 +40,13 @@ namespace Burst
 	std::string gbToString(uint64_t size);
 	std::string versionToString();
 	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);
+
+	template <typename T, typename U>
+	void transferSocket(T& from, U& to)
+	{
+		auto socket = from.close();
+
+		if (socket != nullptr)
+			to = std::move(socket);
+	}
 }

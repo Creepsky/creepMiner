@@ -12,6 +12,8 @@
 #include <iomanip>
 #include <algorithm>
 #include "Declarations.hpp"
+#include "MinerLogger.h"
+#include <iostream>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -30,6 +32,30 @@ std::vector<std::string> Burst::splitStr(const std::string& s, char delim)
 	std::vector<std::string> elems;
 	splitStr(s, delim, elems);
 	return elems;
+}
+
+std::vector<std::string> Burst::splitStr(const std::string& s, const std::string& delim)
+{
+	std::vector<std::string> tokens;
+	std::string::size_type pos, lastPos = 0, length = s.length();
+
+	using size_type  = typename std::vector<std::string>::size_type;
+
+	while(lastPos < length + 1)
+	{
+		pos = s.find_first_of(delim, lastPos);
+
+		if(pos == std::string::npos)
+			pos = length;
+
+		if(pos != lastPos)
+			tokens.push_back(std::string(s.data() + lastPos,
+			static_cast<size_type>(pos-lastPos)));
+
+		lastPos = pos + 1;
+	}
+
+	return tokens;
 }
 
 std::vector<std::string>& Burst::splitStr(const std::string& s, char delim, std::vector<std::string>& elems)
@@ -107,48 +133,32 @@ std::string Burst::getStartNonceFromPlotFile(const std::string& path)
 
 std::string Burst::deadlineFormat(uint64_t seconds)
 {
-	size_t secs = seconds;
-	size_t min = 0;
-	size_t hour = 0;
-	size_t day = 0;
+	auto secs = seconds;
+	auto mins = secs / 60;
+	auto hours = mins / 60;
+	auto day = hours / 24;
+	auto months = day / 30;
+	auto years = months / 12;
+	
+	std::stringstream ss;
+	
+	ss.imbue(std::locale(""));
+	ss << std::fixed;
+	
+	if (years > 0)
+		ss << years << "y ";
+	if (months > 0)
+		ss << months % 12 << "m ";
 
-	if (secs > 59)
-	{
-		min = secs / 60;
-		secs = secs - min * 60;
-	}
+	ss << day % 30 << "d ";
+	ss << std::setw(2) << std::setfill('0');
+	ss << hours % 24 << ':';
+	ss << std::setw(2) << std::setfill('0');
+	ss << mins % 60 << ':';
+	ss << std::setw(2) << std::setfill('0');
+	ss << secs % 60;
 
-	if (min > 59)
-	{
-		hour = min / 60;
-		min = min - hour * 60;
-	}
-
-	if (hour > 23)
-	{
-		day = hour / 24;
-		hour = hour - day * 24;
-	}
-
-	std::string hourStr = std::to_string(hour);
-	if (hour < 10)
-	{
-		hourStr = "0" + hourStr;
-	}
-
-	std::string minStr = std::to_string(min);
-	if (min < 10)
-	{
-		minStr = "0" + minStr;
-	}
-
-	std::string secStr = std::to_string(secs);
-	if (secs < 10)
-	{
-		secStr = "0" + secStr;
-	}
-
-	return std::to_string(day) + " days " + hourStr + ":" + minStr + ":" + secStr;
+	return ss.str();
 }
 
 std::string Burst::gbToString(uint64_t size)

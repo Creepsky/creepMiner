@@ -30,6 +30,11 @@ uint64_t Burst::Deadline::getBlock() const
 	return block;
 }
 
+bool Burst::Deadline::isOnTheWay() const
+{
+	return sent;
+}
+
 bool Burst::Deadline::isConfirmed() const
 {
 	return confirmed;
@@ -42,6 +47,11 @@ bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
 
 Burst::Deadline::~Deadline()
 {}
+
+void Burst::Deadline::send()
+{
+	sent = true;
+}
 
 void Burst::Deadline::confirm()
 {
@@ -100,17 +110,25 @@ bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, uint64_t block)
 	return true;
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestDeadline()
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBest() const
 {
 	if (deadlines.empty())
 		return nullptr;
 	return deadlines.front();
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed()
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed() const
 {
 	for (auto& deadline : deadlines)
 		if (deadline->isConfirmed())
+			return deadline;
+	return nullptr;
+}
+
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestSent() const
+{
+	for (auto& deadline : deadlines)
+		if (deadline->isOnTheWay())
 			return deadline;
 	return nullptr;
 }

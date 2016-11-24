@@ -15,35 +15,7 @@
 namespace Burst
 {
 	class Miner;
-
-	class MinerSocket
-	{
-	public:
-		void setRemote(const std::string& ip, size_t port, size_t defaultTimeout = 60);
-		std::string httpPost(const std::string& url, const std::string& body, const std::string& header = "");
-		std::string httpGet(const std::string& url);
-		void httpPostAsync(const std::string& url, const std::string& body, std::function<void (std::string)> responseCallback);
-		void httpGetAsync(const std::string& url, std::function<void (std::string)> responseCallback);
-
-	private:
-		std::string httpRequest(const std::string& method, const std::string& url,
-								const std::string& body, const std::string& header);
-		void httpRequestAsync(const std::string& method, const std::string& url,
-							  const std::string& body, const std::string& header,
-							  std::function<void (std::string)> responseCallback);
-		static const size_t readBufferSize = 2048;
-		char readBuffer[readBufferSize];
-		struct sockaddr_in remoteAddr;
-		struct timeval socketTimeout;
-	};
-
-	enum class SubmitResponse
-	{
-		Submitted,
-		TooHigh,
-		Error,
-		None
-	};
+	class Socket;
 
 	class MinerProtocol
 	{
@@ -53,19 +25,19 @@ namespace Burst
 
 		bool run(Miner* miner);
 		void stop();
-		SubmitResponse submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
-		static std::string resolveHostname(const std::string& host);
+		uint64_t getTargetDeadline() const;
+		//SubmitResponse submitNonce(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
 
 	private:
 		Miner* miner;
 		bool running;
-		void getMiningInfo();
+		bool getMiningInfo();
 		uint64_t currentBlockHeight;
 		uint64_t currentBaseTarget;
 		uint64_t targetDeadline = 0u;
 		std::string gensig;
 
-		MinerSocket miningInfoSocket;
-		MinerSocket nonceSubmitterSocket;
+		//MinerSocket miningInfoSocket;
+		//MinerSocket nonceSubmitterSocket;
 	};
 }

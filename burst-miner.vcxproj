@@ -173,6 +173,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\NonceSubmitter.cpp" />
+    <ClCompile Include="src\PoolSockets.cpp" />
+    <ClCompile Include="src\Request.cpp" />
+    <ClCompile Include="src\Response.cpp" />
+    <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\Deadline.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Miner.cpp" />
@@ -184,8 +189,14 @@
     <ClCompile Include="src\nxt\nxt_address.cpp" />
     <ClCompile Include="src\PlotReader.cpp" />
     <ClCompile Include="src\sphlib\sph_shabal.cpp" />
+    <ClCompile Include="src\Url.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\NonceSubmitter.hpp" />
+    <ClInclude Include="src\PoolSockets.hpp" />
+    <ClInclude Include="src\Request.hpp" />
+    <ClInclude Include="src\Response.hpp" />
+    <ClInclude Include="src\Socket.hpp" />
     <ClInclude Include="src\Deadline.hpp" />
     <ClInclude Include="src\Declarations.hpp" />
     <ClInclude Include="src\Miner.h" />
@@ -206,6 +217,8 @@
     <ClInclude Include="src\SocketDefinitions.hpp" />
     <ClInclude Include="src\sphlib\sph_shabal.h" />
     <ClInclude Include="src\sphlib\sph_types.h" />
+    <ClInclude Include="src\Url.hpp" />
+    <ClInclude Include="src\win\dirent.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

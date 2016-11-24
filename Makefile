@@ -1,4 +1,4 @@
-CFLAGS    := -O3 -march=native -std=c++0x -Wall -D_REENTRANT
+CFLAGS    := -O3 -march=native -std=c++14 -Wall -D_REENTRANT
 CC        := $(CXX) $(CFLAGS)
 LD        := $(CXX) -pthread
 

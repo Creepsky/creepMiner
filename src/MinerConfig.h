@@ -10,6 +10,8 @@
 
 #include <memory>
 #include <vector>
+#include <string>
+#include "Url.hpp"
 
 /*
  {
@@ -44,31 +46,44 @@ namespace Burst
 		bool debug = false;
 	};
 
+	class Socket;
+
 	class MinerConfig
 	{
 	public:
 		bool readConfigFile(const std::string& configPath);
 		void rescan();
 
-		size_t submissionMaxDelay = 60;
-		size_t submissionMaxRetry = 5;
-		std::string poolHost = "burst-pool.cryptoport.io";
-		size_t poolPort = 80;
-		size_t socketTimeout = 30;
-		size_t maxBufferSizeMB = 64;
+		Url urlPool;
+		Url urlMiningInfo;
+		size_t maxBufferSizeMB = 128;
 		Output output;
 		const std::string& getPath() const;
 
 		const std::vector<std::shared_ptr<PlotFile>>& getPlotFiles() const;
 		uintmax_t getTotalPlotsize() const;
 
+		float getReceiveTimeout() const;
+		float getSendTimeout() const;
+
+		size_t getReceiveMaxRetry() const;
+		size_t getSendMaxRetry() const;
+		size_t getSubmissionMaxRetry() const;
+
+		std::unique_ptr<Socket> createSocket() const;
+
 		static MinerConfig& getConfig();
 
 	private:
-		bool addPlotLocation(const std::string fileOrPath);
+		bool addPlotLocation(const std::string& fileOrPath);
 		std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
 
 		std::string configPath;
 		std::vector<std::shared_ptr<PlotFile>> plotList;
+		float receive_timeout_ = 3.f;
+		float send_timeout_ = 3.f;
+		size_t send_max_retry_ = 3;
+		size_t receive_max_retry_ = 3;
+		size_t submission_max_retry_ = 3;
 	};
 }

@@ -17,6 +17,8 @@
 #endif
 #include <sys/stat.h>
 #include "SocketDefinitions.hpp"
+#include "Socket.hpp"
+#include <memory>
 
 void Burst::MinerConfig::rescan()
 {
@@ -81,38 +83,22 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	if (configDoc.HasMember("poolUrl"))
 	{
-		std::string poolUrl = configDoc["poolUrl"].GetString();
-		auto startPos = poolUrl.find("//");
-
-		if (startPos == std::string::npos)
-			startPos = 0;
-
-		auto hostEnd = poolUrl.find(":", startPos);
-
-		if (hostEnd == std::string::npos)
-		{
-			this->poolPort = 80;
-			this->poolHost = poolUrl.substr(startPos, poolUrl.length() - startPos);
-		}
-		else
-		{
-			this->poolHost = poolUrl.substr(startPos, hostEnd - startPos);
-			auto poolPortStr = poolUrl.substr(hostEnd + 1, poolUrl.length() - (hostEnd + 1));
-
-			try
-			{
-				this->poolPort = std::stoul(poolPortStr);
-			}
-			catch (...)
-			{
-				this->poolPort = 80;
-			}
-		}
+		urlPool = { configDoc["poolUrl"].GetString() };
 	}
 	else
 	{
 		MinerLogger::write("No poolUrl is defined in config file " + configPath, TextType::Error);
 		return false;
+	}
+
+	if (configDoc.HasMember("miningInfoUrl"))
+	{
+		urlMiningInfo = { configDoc["miningInfoUrl"].GetString() };
+	}
+	// if no getMiningInfoUrl and port are defined, we assume that the pool is the source
+	else
+	{
+		urlMiningInfo = urlPool;
 	}
 
 	if (configDoc.HasMember("plots"))
@@ -153,45 +139,44 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
-	if (configDoc.HasMember("submissionMaxDelay"))
-	{
-		if (configDoc["submissionMaxDelay"].IsNumber())
-		{
-			this->submissionMaxDelay = configDoc["submissionMaxDelay"].GetInt();
-		}
-		else
-		{
-			std::string maxDelayStr = configDoc["submissionMaxDelay"].GetString();
-			try
-			{
-				this->submissionMaxDelay = std::stoul(maxDelayStr);
-			}
-			catch (...)
-			{
-				this->submissionMaxDelay = 60;
-			}
-		}
-	}
-
 	if (configDoc.HasMember("submissionMaxRetry"))
 	{
 		if (configDoc["submissionMaxRetry"].IsNumber())
-		{
-			this->submissionMaxRetry = configDoc["submissionMaxRetry"].GetInt();
-		}
+			submission_max_retry_ = configDoc["submissionMaxRetry"].GetInt();
 		else
-		{
-			std::string submissionMaxRetryStr = configDoc["submissionMaxRetry"].GetString();
+			submission_max_retry_ = 3;
+	}
 
-			try
-			{
-				this->submissionMaxRetry = std::stoul(submissionMaxRetryStr);
-			}
-			catch (...)
-			{
-				this->submissionMaxRetry = 3;
-			}
-		}
+	if (configDoc.HasMember("sendMaxRetry"))
+	{
+		if (configDoc["sendMaxRetry"].IsNumber())
+			send_max_retry_ = configDoc["sendMaxRetry"].GetInt();
+		else
+			send_max_retry_ = 3;
+	}
+
+	if (configDoc.HasMember("receiveMaxRetry"))
+	{
+		if (configDoc["receiveMaxRetry"].IsNumber())
+			receive_max_retry_ = configDoc["receiveMaxRetry"].GetInt();
+		else
+			receive_max_retry_ = 3;
+	}
+
+	if (configDoc.HasMember("sendTimeout"))
+	{
+		if (configDoc["sendTimeout"].IsNumber())
+			send_timeout_ = static_cast<float>(configDoc["sendTimeout"].GetDouble());
+		else
+			send_timeout_ = 5.f;
+	}
+
+	if (configDoc.HasMember("receiveTimeout"))
+	{
+		if (configDoc["receiveTimeout"].IsNumber())
+			receive_timeout_ = static_cast<float>(configDoc["receiveTimeout"].GetDouble());
+		else
+			receive_timeout_ = 5.f;
 	}
 
 	if (configDoc.HasMember("maxBufferSizeMB"))
@@ -265,13 +250,45 @@ uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 	return sum;
 }
 
+float Burst::MinerConfig::getReceiveTimeout() const
+{
+	return receive_timeout_;
+}
+
+float Burst::MinerConfig::getSendTimeout() const
+{
+	return send_timeout_;
+}
+
+size_t Burst::MinerConfig::getReceiveMaxRetry() const
+{
+	return receive_max_retry_;
+}
+
+size_t Burst::MinerConfig::getSendMaxRetry() const
+{
+	return send_max_retry_;
+}
+
+size_t Burst::MinerConfig::getSubmissionMaxRetry() const
+{
+	return submission_max_retry_;
+}
+
+std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const
+{
+	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
+	socket->connect(urlPool.getIp(), urlPool.getPort());
+	return socket;
+}
+
 Burst::MinerConfig& Burst::MinerConfig::getConfig()
 {
 	static MinerConfig config;
 	return config;
 }
 
-bool Burst::MinerConfig::addPlotLocation(const std::string fileOrPath)
+bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 {
 	struct stat info;
 	auto statResult = stat(fileOrPath.c_str(), &info);
