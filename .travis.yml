@@ -22,7 +22,7 @@ deploy:
   file:
     bin/mining.conf
     bin/burstminer
-    skip_cleanup: true
+  skip_cleanup: true
   on:
     repo: Creepsky/burst-miner
     branch: master
