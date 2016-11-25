@@ -28,8 +28,8 @@ void Burst::Miner::run()
 
 	progress = std::make_shared<PlotReadProgress>();
 
-	sockets_ = PoolSockets{5};
-	sockets_.fill();
+	//sockets_ = PoolSockets{5};
+	//sockets_.fill();
 
 	if (!this->protocol.run(this))
 		MinerLogger::write("Mining networking failed", TextType::Error);
@@ -212,7 +212,7 @@ void Burst::Miner::nonceSubmitterThread()
 			lock.unlock();
 		}
 
-		sockets_.fill();
+		//sockets_.fill();
 
 		//MinerLogger::write("submitter-thread: finished block", TextType::System);
 	}
