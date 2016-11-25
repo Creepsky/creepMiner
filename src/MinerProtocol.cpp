@@ -92,7 +92,13 @@ bool Burst::MinerProtocol::getMiningInfo()
 
 	std::string responseData;
 
-	if (response.receive(responseData))
+	auto tryCount = 0u;
+
+	while (!response.receive(responseData) &&
+		tryCount <= MinerConfig::getConfig().getReceiveMaxRetry())
+		++tryCount;
+
+	if (!responseData.empty())
 	{
 		HttpResponse httpResponse(responseData);
 		rapidjson::Document body;
