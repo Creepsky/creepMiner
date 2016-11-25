@@ -227,6 +227,10 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		}
 	}
 
+	if (configDoc.HasMember("http"))
+		if (configDoc["http"].IsNumber())
+			http_ = configDoc["http"].GetUint();
+
 	return true;
 }
 
@@ -273,6 +277,11 @@ size_t Burst::MinerConfig::getSendMaxRetry() const
 size_t Burst::MinerConfig::getSubmissionMaxRetry() const
 {
 	return submission_max_retry_;
+}
+
+size_t Burst::MinerConfig::getHttp() const
+{
+	return http_;
 }
 
 std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const

@@ -69,6 +69,7 @@ namespace Burst
 		size_t getReceiveMaxRetry() const;
 		size_t getSendMaxRetry() const;
 		size_t getSubmissionMaxRetry() const;
+		size_t getHttp() const;
 
 		std::unique_ptr<Socket> createSocket() const;
 
@@ -85,5 +86,6 @@ namespace Burst
 		size_t send_max_retry_ = 3;
 		size_t receive_max_retry_ = 3;
 		size_t submission_max_retry_ = 3;
+		size_t http_ = 0;
 	};
 }
