@@ -100,11 +100,11 @@ bool Burst::Socket::receive(std::string& data) const
 		return false;
 
 #ifdef WIN32
-	using ssize_t = unsigned long;
+	using ssize_t = long;
 #endif
 
-	auto totalBytesRead = 0;
-	ssize_t bytesRead;
+	ssize_t totalBytesRead = 0;
+	ssize_t bytesRead = 0;
 	constexpr auto readBufferSize = 2048;
 	char readBuffer[readBufferSize];
 	std::stringstream response;
@@ -132,9 +132,13 @@ bool Burst::Socket::receive(std::string& data) const
 
 void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet) const
 {
+#ifdef WIN32
+	auto timeout = static_cast<int>(seconds * 1000);
+#else
 	struct timeval timeout;
 	timeout.tv_sec = static_cast<long>(seconds);
 	timeout.tv_usec = static_cast<long>((seconds - timeout.tv_sec) * 1000);
+#endif
 
 	*fieldToSet = seconds;
 	auto sendOrReceiveFlag = 0;
@@ -145,6 +149,10 @@ void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet) const
 		sendOrReceiveFlag = SO_RCVTIMEO;
 
 	if (isConnected() && sendOrReceiveFlag != 0)
+#ifdef WIN32
 		if (setsockopt(socket_, SOL_SOCKET, sendOrReceiveFlag, reinterpret_cast<char *>(&timeout), sizeof(timeout)) < 0)
+#else
+		if (setsockopt(socket_, SOL_SOCKET, sendOrReceiveFlag, reinterpret_cast<char *>(&timeout), sizeof(timeout)) < 0)
+#endif
 			MinerLogger::write("Failed to set timeout for socket!", TextType::Debug);
 }
