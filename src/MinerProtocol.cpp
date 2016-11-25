@@ -134,6 +134,8 @@ bool Burst::MinerProtocol::getMiningInfo()
 
 		MinerLogger::write("Error on getting new block-info!", TextType::Error);
 		MinerLogger::write(body.GetParseError(), TextType::Error);
+		MinerLogger::write("Full response:", TextType::Error);
+		MinerLogger::write(httpResponse.getResponse(), TextType::Error);
 
 		return false;
 	}
