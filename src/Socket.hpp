@@ -22,7 +22,9 @@ namespace Burst
 		float getReceiveTimeout() const;
 
 		bool send(const std::string& data) const;
-		bool receive(std::string& data) const;
+		bool receive(std::string& data);
+
+		int getError() const;
 
 	private:
 		void setTimeoutHelper(float seconds, float* fieldToSet) const;
@@ -31,6 +33,6 @@ namespace Burst
 		bool connected_ = false;
 		std::string ip_;
 		size_t port_;
-		SOCKET socket_ = socket(AF_INET, SOCK_STREAM, 0);
+		SOCKET socket_;
 	};
 }

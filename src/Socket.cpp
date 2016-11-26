@@ -2,6 +2,11 @@
 #include "SocketDefinitions.hpp"
 #include "MinerLogger.h"
 #include <sstream>
+#include "MinerConfig.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
 Burst::Socket::Socket(float send_timeout, float receive_timeout)
 {
@@ -14,13 +19,15 @@ bool Burst::Socket::connect(const std::string& ip, size_t port)
 	// disconnect first before new connection
 	if (isConnected())
 		disconnect();
-
+	
 	// initialize connection-data
 	struct sockaddr_in sock_data;
 	//
 	inet_pton(AF_INET, ip.c_str(), &sock_data.sin_addr);
 	sock_data.sin_family = AF_INET;
 	sock_data.sin_port = htons(static_cast<u_short>(port));
+	
+	socket_ = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (::connect(socket_, reinterpret_cast<struct sockaddr*>(&sock_data), sizeof(struct sockaddr_in)) != 0)
 		return false;
@@ -94,7 +101,7 @@ bool Burst::Socket::send(const std::string& data) const
 	return (sendLength == 0);
 }
 
-bool Burst::Socket::receive(std::string& data) const
+bool Burst::Socket::receive(std::string& data)
 {
 	if (!isConnected())
 		return false;
@@ -104,22 +111,20 @@ bool Burst::Socket::receive(std::string& data) const
 #endif
 
 	ssize_t totalBytesRead = 0;
-	ssize_t bytesRead = 0;
-	constexpr auto readBufferSize = 2048;
+	ssize_t bytesRead;
+	constexpr auto readBufferSize = 4096;
 	char readBuffer[readBufferSize];
 	std::stringstream response;
 
 	do
 	{
-		bytesRead = recv(socket_, &readBuffer[totalBytesRead], readBufferSize - totalBytesRead - 1, 0);
+		bytesRead = recv(socket_, &readBuffer[0], readBufferSize - totalBytesRead - 1, 0);
 
 		if (bytesRead > 0)
 		{
 			totalBytesRead += bytesRead;
-			readBuffer[totalBytesRead] = 0;
+			readBuffer[bytesRead] = 0;
 			response << &readBuffer[0];
-			totalBytesRead = 0;
-			readBuffer[totalBytesRead] = 0;
 		}
 	}
 	while ((bytesRead > 0) &&
@@ -127,7 +132,26 @@ bool Burst::Socket::receive(std::string& data) const
 
 	data = response.str();
 
-	return (!data.empty());
+	// if totalBytesRead is 0, the connection got closed by server
+	if (totalBytesRead == 0)
+	{
+		MinerLogger::write("Connection got closed by server!", TextType::Debug);
+		disconnect();
+	}
+
+	return (totalBytesRead > 0);
+}
+
+int Burst::Socket::getError() const
+{
+#ifdef WIN32
+	return WSAGetLastError();
+#else
+	int error = 0;
+	int erroropt = sizeof(error);
+	getsockopt(socket_, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error), &erroropt);
+	return error;
+#endif
 }
 
 void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet) const
@@ -149,10 +173,6 @@ void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet) const
 		sendOrReceiveFlag = SO_RCVTIMEO;
 
 	if (isConnected() && sendOrReceiveFlag != 0)
-#ifdef WIN32
 		if (setsockopt(socket_, SOL_SOCKET, sendOrReceiveFlag, reinterpret_cast<char *>(&timeout), sizeof(timeout)) < 0)
-#else
-		if (setsockopt(socket_, SOL_SOCKET, sendOrReceiveFlag, reinterpret_cast<char *>(&timeout), sizeof(timeout)) < 0)
-#endif
 			MinerLogger::write("Failed to set timeout for socket!", TextType::Debug);
 }
