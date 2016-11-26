@@ -35,8 +35,6 @@ set(SOURCE_FILES
     src/MinerConfig.h
     src/MinerLogger.cpp
     src/MinerLogger.h
-    src/MinerProtocol.cpp
-    src/MinerProtocol.h
     src/MinerShabal.cpp
     src/MinerShabal.h
     src/MinerUtil.cpp
