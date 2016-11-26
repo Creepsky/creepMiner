@@ -12,12 +12,12 @@
 #include <unordered_map>
 #include "MinerShabal.h"
 #include "Declarations.hpp"
-#include "MinerProtocol.h"
 #include <set>
 #include "Deadline.hpp"
 #include <thread>
 #include <condition_variable>
 #include "PoolSockets.hpp"
+#include <memory>
 
 namespace Burst
 {
@@ -38,6 +38,7 @@ namespace Burst
 		size_t getScoopNum() const;
 		uint64_t getBaseTarget() const;
 		uint64_t getBlockheight() const;
+		uint64_t getTargetDeadline() const;
 		const GensigData& getGensig() const;
 		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
 		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline);
@@ -48,22 +49,25 @@ namespace Burst
 	private:
 		void nonceSubmitterThread();
 		void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
+		bool getMiningInfo();
 
-		bool running;
-		size_t scoopNum;
-		uint64_t baseTarget;
-		uint64_t blockHeight;
-		std::string gensigStr;
-		MinerProtocol protocol;
+		bool running_;
+		size_t scoopNum_;
+		uint64_t baseTarget_;
+		uint64_t blockHeight_;
+		std::string gensigStr_;
 		Shabal256 hash;
-		GensigData gensig;
-		std::vector<std::shared_ptr<PlotListReader>> plotReaders;
-		std::unordered_map<AccountId, Deadlines> deadlines;
-		std::mutex deadlinesLock;
-		std::shared_ptr<PlotReadProgress> progress;
-		std::vector<std::thread> sendNonceThreads;
-		std::condition_variable newBlockIncoming;
-		bool submitThreadNotified = false;
+		GensigData gensig_;
+		std::vector<std::shared_ptr<PlotListReader>> plotReaders_;
+		std::unordered_map<AccountId, Deadlines> deadlines_;
+		std::mutex deadlinesLock_;
+		std::shared_ptr<PlotReadProgress> progress_;
+		std::vector<std::thread> sendNonceThreads_;
+		std::condition_variable newBlockIncoming_;
+		bool submitThreadNotified_ = false;
+		uint64_t currentBlockHeight_ = 0u;
+		uint64_t currentBaseTarget_ = 0u;
+		uint64_t targetDeadline_ = 0u;
 		PoolSockets sockets_;
 	};
 }
