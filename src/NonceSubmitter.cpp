@@ -61,7 +61,7 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 	NxtAddress addr(accountId);
 	MinerLogger::write(addr.to_string() + ": nonce on the way (" + deadline->deadlineToReadableString() + ")");
 
-	NonceRequest request(miner->getSocket());
+	
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
 	auto firstSendAttempt = true;
@@ -81,6 +81,8 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 								   MinerConfig::getConfig().getSendMaxRetry(),
 								   confirmation.errorCode))
 		{
+			NonceRequest request(miner->getSocket());
+
 			auto response = request.submit(nonce, accountId, deadlineValue);
 			auto receiveTryCount = 0u;
 
@@ -90,16 +92,16 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 				firstSendAttempt = false;
 			}
 
-			MinerLogger::write("Send-loop " + std::to_string(sendTryCount + 1) + " (" + deadline->deadlineToReadableString() + ") ["
-							   + std::to_string(reinterpret_cast<uintptr_t>(deadline.get())) + "]", TextType::Debug);
+			MinerLogger::write("Send-loop " + std::to_string(sendTryCount + 1) + " (" + deadline->deadlineToReadableString() + ")",
+				TextType::Debug);
 
 			// receive-loop
 			while (loopConditionHelper(receiveTryCount,
 									   MinerConfig::getConfig().getReceiveMaxRetry(),
 									   confirmation.errorCode))
 			{
-				MinerLogger::write("Receive-loop " + std::to_string(receiveTryCount + 1) + " (" + deadline->deadlineToReadableString() + ") ["
-								   + std::to_string(reinterpret_cast<uintptr_t>(deadline.get())) + "]", TextType::Debug);
+				MinerLogger::write("Receive-loop " + std::to_string(receiveTryCount + 1) + " (" + deadline->deadlineToReadableString() + ")",
+					TextType::Debug);
 				confirmation = response.getConfirmation();
 				++receiveTryCount;
 			}
