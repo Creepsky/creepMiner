@@ -148,7 +148,7 @@ int Burst::Socket::getError() const
 	return WSAGetLastError();
 #else
 	int error = 0;
-	int erroropt = sizeof(error);
+	auto erroropt = sizeof(error);
 	getsockopt(socket_, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error), &erroropt);
 	return error;
 #endif
