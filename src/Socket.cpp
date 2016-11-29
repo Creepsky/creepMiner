@@ -32,6 +32,11 @@ bool Burst::Socket::connect(const std::string& ip, size_t port)
 	if (::connect(socket_, reinterpret_cast<struct sockaddr*>(&sock_data), sizeof(struct sockaddr_in)) != 0)
 		return false;
 
+	auto errorNr = getError();
+
+	if (errorNr != 0)
+		return false;
+
 	ip_ = ip;
 	port_ = port;
 	connected_ = true;
@@ -135,8 +140,16 @@ bool Burst::Socket::receive(std::string& data)
 	// if totalBytesRead is 0, the connection got closed by server
 	if (totalBytesRead == 0)
 	{
-		MinerLogger::write("Connection got closed by server!", TextType::Debug);
-		disconnect();
+		auto errorNr = getError();
+
+		// dont react to timeout
+		if (errorNr != WSAETIMEDOUT)
+		{
+			MinerLogger::write("Error while receiving on socket!", TextType::Debug);
+			MinerLogger::write("Error-Code: " + std::to_string(errorNr), TextType::Debug);
+			MinerLogger::write("Disconnecting socket...", TextType::Debug);
+			disconnect();
+		}
 	}
 
 	return (totalBytesRead > 0);
