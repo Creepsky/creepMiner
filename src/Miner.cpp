@@ -54,14 +54,16 @@ void Burst::Miner::run()
 	MinerLogger::write("Mininginfo URL : " + config.urlMiningInfo.getCanonical() + ":" + std::to_string(config.urlMiningInfo.getPort()) +
 		" (" + config.urlMiningInfo.getIp() + ")", TextType::System);
 
-	running_ = true;
 	const auto sleepTime = std::chrono::seconds(3);
+	running_ = true;
 
 	while (running_)
 	{
 		std::string data;
 
-		if (!getMiningInfo())
+		if (getMiningInfo())
+			errors = 0;
+		else
 			++errors;
 
 		// we have a tollerance of 3 times of not being able to fetch mining infos, before its a real error
@@ -292,16 +294,10 @@ bool Burst::Miner::getMiningInfo()
 	Request request(MinerConfig::getConfig().createSocket());
 
 	auto response = request.sendGet("/burst?requestType=getMiningInfo");
-
 	std::string responseData;
-
 	auto tryCount = 0u;
-
-	while (!response.receive(responseData) &&
-		tryCount <= MinerConfig::getConfig().getReceiveMaxRetry())
-		++tryCount;
-
-	if (!responseData.empty())
+	
+	if (response.receive(responseData))
 	{
 		HttpResponse httpResponse(responseData);
 		rapidjson::Document body;
