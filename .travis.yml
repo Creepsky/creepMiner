@@ -15,16 +15,3 @@ addons:
     packages:
     - g++-5
 script: make
-deploy:
-  provider: releases
-  api_key:
-    secure: V5FxuLylmPsWXb6NzuWYEo17yVNSanXwhtbUWm8OdsC/3aw+S7NsIjQbeWY0riOP04xVEfxwl5VefVix9bVYb9bEzGYd/zkU9X05qx1+gOwbpof1e9gbz2Nm6sA/3MIvW3gZ+dtzqkZnXBxBbiO3FXhHbaR53qeMcQYybgxPYR3FqumnTcYn9kw5DjQH3/dg0srh9yANXEGxlxaoJ2M6/5tcHhmfXvu6MSNtsGZPvz1YM8LU7UzhZ4VKFLS4e5XDh6u17lzCPzICQaEN0txJiTBcvCoTcf4w2CshorZL3TIWNn3Fs1ZYiUPoDmHk+ZuaNGTAgKVs5EncEPo9nuTxCEHkQALPTKTL0cO6V7TJcA/FwGENEqRHK3XtrJ3RoIMlGimWjSt3BEna1aAMlEMIgos8cSScfV1eKHKUoyDwdGOAdUBv2VgXzkVbS+texgacdom+J3nq9GakxcLSVGKiEBzMDuvIwMkM5+02ffb8NW2787m+Xns5HcyHU12b7DNFFYMJ9PYn2BazGNxuEsAm8DxwKB0jbIucuN/CW5f7RuvNiB8b1zkl4id7n5/zKe0XTok+8ku3cHBoJKNk5FR2mM2fpqlC0qje9F2OTNdfJxrzo7ILYWiCG6D72IwGxylxEDTfgiSfuvhegfzY5OnFpXYeuKe/HzqWQCPC2/yCCV0=
-  file:
-    - "bin/burstminer"
-    - "bin/mining.conf"
-  skip_cleanup: true
-  on:
-    repo: Creepsky/burst-miner
-    branch: master
-    tags: true
-    all_branches: false
