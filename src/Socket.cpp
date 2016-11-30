@@ -3,6 +3,9 @@
 #include "MinerLogger.h"
 #include <sstream>
 #include "MinerConfig.h"
+#ifndef WIN32
+#include <errno.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,7 +146,12 @@ bool Burst::Socket::receive(std::string& data)
 		auto errorNr = getError();
 
 		// dont react to timeout
+#ifdef WIN32
 		if (errorNr != WSAETIMEDOUT)
+#else
+        if (errorNr != ETIMEDOUT)
+#endif
+		MinerLogger::write(std::to_string(errorNr));
 		{
 			MinerLogger::write("Error while receiving on socket!", TextType::Debug);
 			MinerLogger::write("Error-Code: " + std::to_string(errorNr), TextType::Debug);
