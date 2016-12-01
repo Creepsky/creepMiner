@@ -66,6 +66,11 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation() const
 				// we send true so we dont send it again and again
 				confirmation.errorCode = SubmitResponse::Error;
 			}
+			else if (body.HasMember("result"))
+			{
+				MinerLogger::write(std::string("error: ") + body["result"].GetString(), TextType::Error);
+				confirmation.errorCode = SubmitResponse::Error;
+			}
 			else
 			{
 				MinerLogger::write(response, TextType::Error);
