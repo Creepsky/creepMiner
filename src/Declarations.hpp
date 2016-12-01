@@ -37,6 +37,6 @@ namespace Burst
 	class Version
 	{
 	public:
-		static const uint32_t Major = 1u, Minor = 4u, Build = 1u;
+		static const uint32_t Major = 1u, Minor = 4u, Build = 3u;
 	};
 }
