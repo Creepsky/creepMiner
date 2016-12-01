@@ -16,14 +16,30 @@ Burst::Url::Url(const std::string& url)
 	auto startPos = url.find("//");
 
 	if (startPos == std::string::npos)
-		startPos = 0;
+	{
+		// maybe there is a single "/" in the url
+		// even if the url is not valid with a single "/", we are tolerant ;)
+		startPos = url.find('/');
+		
+		if (startPos == std::string::npos)
+			startPos = 0;
+		else
+			startPos += 1; // 1 is the size of "/"
+	}
+	// if "//" is in the url, add length of "//" to the start position
+	// this would be the case, if for example the url starts with "http://"
+	else
+		startPos += 2; // 2 is the size of "//"
 
+	// ":" splits the url from the port
 	auto hostEnd = url.find(":", startPos);
 
+	// if no port is given, we try it with the default port 8124
 	if (hostEnd == std::string::npos)
 	{
-		port = 80;
-		canonical = url.substr(startPos + 2, url.size() + 2 - startPos);
+		port = 8124;
+		auto portStr = std::to_string(port);
+		canonical = url.substr(startPos + portStr.size(), url.size() + portStr.size() - startPos);
 	}
 	else
 	{
@@ -34,9 +50,10 @@ Burst::Url::Url(const std::string& url)
 		{
 			port = std::stoul(poolPortStr);
 		}
+		// if we can not convert the given port to a number, we try it with the default port 8124
 		catch (...)
 		{
-			port = 80;
+			port = 8124;
 		}
 	}
 
