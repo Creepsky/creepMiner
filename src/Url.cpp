@@ -1,6 +1,7 @@
 ﻿#include "Url.hpp"
 #include "MinerUtil.h"
 #include "MinerLogger.h"
+#include <errno.h>
 #ifdef WIN32
 #include <ws2tcpip.h>
 #else
@@ -77,7 +78,11 @@ std::string Burst::Url::resolveHostname(const std::string& url)
 	auto retval = getaddrinfo(url.c_str(), nullptr, nullptr, &result);
 
 	if (retval != 0)
+	{
+		MinerLogger::write("can not resolve hostname " + url, TextType::Error);
+		MinerLogger::write("error code: " + std::to_string(retval), TextType::Error);
 		return "";
+	}
 
 	char buf[INET_ADDRSTRLEN];
 	addr = reinterpret_cast<struct sockaddr_in*>(result->ai_addr);
@@ -85,6 +90,7 @@ std::string Burst::Url::resolveHostname(const std::string& url)
 	if (inet_ntop(AF_INET, &addr->sin_addr, buf, INET_ADDRSTRLEN) == nullptr)
 	{
 		MinerLogger::write("can not resolve hostname " + url, TextType::Error);
+		MinerLogger::write("error code: " + std::to_string(errno), TextType::Error);
 		return "";
 	}
 
