@@ -151,7 +151,6 @@ bool Burst::Socket::receive(std::string& data)
 #else
         if (errorNr != ETIMEDOUT)
 #endif
-		MinerLogger::write(std::to_string(errorNr));
 		{
 			MinerLogger::write("Error while receiving on socket!", TextType::Debug);
 			MinerLogger::write("Error-Code: " + std::to_string(errorNr), TextType::Debug);

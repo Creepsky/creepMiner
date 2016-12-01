@@ -128,6 +128,9 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 			if (firstSendAttempt)
 				MinerLogger::write(NxtAddress(accountId).to_string() + ": could not submit nonce! network issues?" +
 								   " (" + deadlineFormat(deadlineValue) + ")", TextType::Error);
+			else if (confirmation.errorCode == SubmitResponse::Error)
+				MinerLogger::write(NxtAddress(accountId).to_string() + ": error on submitting nonce!" +
+					" (" + deadlineFormat(deadlineValue) + ")", TextType::Error);
 			else
 				MinerLogger::write(NxtAddress(accountId).to_string() + ": got no confirmation from server! busy?" +
 								   " (" + deadlineFormat(deadlineValue) + ")", TextType::Error);
