@@ -45,11 +45,7 @@ void Burst::MinerLogger::print(const std::string& text)
 	auto typeBefore = currentTextType;
 
 	setColor(TextType::Normal);
-	
-	struct tm newtime;
-	localtime_s(&newtime, &now_c);
-	
-	std::cout << std::put_time(&newtime, "%X") << ": ";
+	std::cout << std::put_time(std::localtime(&now_c), "%X") << ": ";
 
 	setColor(typeBefore);
 	std::cout << text << std::endl;
