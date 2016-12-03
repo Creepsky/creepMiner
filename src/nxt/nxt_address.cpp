@@ -98,7 +98,7 @@ bool NxtAddress::set(char *adr)
             
 			if(digits == 20 && *adr != '1') return false;
 			
-			if(sscanf(adr, "%llu", (unsigned long long*)&acc) == 1)
+			if(sscanf(adr, "%llu", (unsigned long long*)(&acc)) == 1)
 			{
 				*this = acc; return true;
 			}
