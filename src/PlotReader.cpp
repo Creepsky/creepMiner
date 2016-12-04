@@ -110,16 +110,17 @@ void Burst::PlotReader::readerThread()
 					//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
 					
 					std::swap(this->readBuffer, this->writeBuffer);
-					nonceOffset = chunkNum * this->staggerSize + scoopDoneRead * (scoopBufferSize / Settings::ScoopSize);
 					verifySignaled = true;
 					verifySignal.notify_one();
 					verifyLock.unlock();
 
 					while (this->verifySignaled)
 					{
-						std::this_thread::sleep_for(std::chrono::microseconds(1));
+						std::this_thread::sleep_for(std::chrono::microseconds(100));
 						this->verifySignal.notify_one();
 					};
+
+					nonceOffset = chunkNum * this->staggerSize + scoopDoneRead * (scoopBufferSize / Settings::ScoopSize);
 				}
 				//else
 				//{
@@ -165,6 +166,7 @@ void Burst::PlotReader::verifierThread()
 		}
 		while (!this->verifySignaled && runVerify);
 
+		auto nonceReadCopy = nonceRead;
 		this->verifySignaled = false;
 
 		for (size_t i = 0; i < this->readBuffer->size() && runVerify; i++)
@@ -179,7 +181,7 @@ void Burst::PlotReader::verifierThread()
 			memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
 			auto deadline = targetResult / this->miner->getBaseTarget();
 
-			auto nonceNum = this->nonceStart + this->nonceOffset + i;
+			auto nonceNum = nonceStart + nonceReadCopy + i;
 			miner->submitNonce(nonceNum, this->accountId, deadline);
 			++nonceRead;
 		}
