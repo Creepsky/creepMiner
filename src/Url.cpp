@@ -38,8 +38,7 @@ Burst::Url::Url(const std::string& url)
 	if (hostEnd == std::string::npos)
 	{
 		port = 8124;
-		auto portStr = std::to_string(port);
-		canonical = url.substr(startPos + portStr.size(), url.size() + portStr.size() - startPos);
+		canonical = url;
 	}
 	else
 	{
