@@ -80,6 +80,29 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		MinerLogger::write("--> " + configContentStr.substr(parseErrorLoc, sampleLen) + "...", TextType::Error);
 		return false;
 	}
+	
+	if (configDoc.HasMember("output"))
+	{
+		if (configDoc["output"].IsArray())
+		{
+			auto& outputs = configDoc["output"];
+
+			for (auto i = 0u; i < outputs.Size(); ++i)
+			{
+				auto& setting = outputs[i];
+
+				if (!setting.IsString())
+					continue;
+
+				std::string value(setting.GetString());
+
+				if (value == "progress")
+					this->output.progress = true;
+				if (value == "debug")
+					this->output.debug = true;
+			}
+		}
+	}
 
 	if (configDoc.HasMember("poolUrl"))
 	{
@@ -201,29 +224,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (this->maxBufferSizeMB < 1)
 		{
 			this->maxBufferSizeMB = 1;
-		}
-	}
-
-	if (configDoc.HasMember("output"))
-	{
-		if (configDoc["output"].IsArray())
-		{
-			auto& outputs = configDoc["output"];
-
-			for (auto i = 0u; i < outputs.Size(); ++i)
-			{
-				auto& setting = outputs[i];
-
-				if (!setting.IsString())
-					continue;
-
-				std::string value(setting.GetString());
-
-				if (value == "progress")
-					this->output.progress = true;
-				if (value == "debug")
-					this->output.debug = true;
-			}
 		}
 	}
 
