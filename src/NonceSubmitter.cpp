@@ -6,6 +6,7 @@
 #include "Request.hpp"
 #include "MinerConfig.h"
 #include "Miner.h"
+#include <fstream>
 
 Burst::NonceSubmitter::NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline)
 	: miner_(&miner), deadline_(deadline)
@@ -29,6 +30,7 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 	auto deadlineValue = deadline->getDeadline();
 	auto accountId = deadline->getAccountId();
 	auto betterDeadlineInPipeline = false;
+	auto plotFile = deadline->getPlotFile();
 
 	auto loopConditionHelper = [deadline, miner, &betterDeadlineInPipeline](size_t tryCount, size_t maxTryCount, SubmitResponse response)
 			{
@@ -116,8 +118,36 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 		if (confirmation.errorCode == SubmitResponse::Submitted)
 		{
 			deadline->confirm();
-			MinerLogger::write(NxtAddress(accountId).to_string() + ": nonce confirmed (" + deadlineFormat(deadlineValue) + ")",
-							   TextType::Success);
+
+			auto confirmedDeadlinesPath = MinerConfig::getConfig().getConfirmedDeadlinesPath();
+
+			if (!confirmedDeadlinesPath.empty())
+			{
+				std::ofstream file;
+
+				file.open(MinerConfig::getConfig().getConfirmedDeadlinesPath(), std::ios_base::out | std::ios_base::app);
+
+				if (file.is_open())
+				{
+					file << deadline->getAccountId() << ";"
+						<< deadline->getPlotFile() << ";"
+						<< deadline->getDeadline() << std::endl;
+
+					file.close();
+				}
+				else
+				{
+					MinerLogger::write("Error on logging confirmed deadline!", TextType::Error);
+					MinerLogger::write("Path: '" + confirmedDeadlinesPath + "'", TextType::Error);
+				}
+			}
+
+			auto message = NxtAddress(accountId).to_string() + ": nonce confirmed (" + deadlineFormat(deadlineValue) + ")";
+
+			if (MinerConfig::getConfig().output.nonceConfirmedPlot)
+				message += " in " + plotFile;
+
+			MinerLogger::write(message, TextType::Success);
 		}
 		else if (betterDeadlineInPipeline)
 			MinerLogger::write("Better deadline in pipeline, stop submitting! (" + deadlineFormat(deadline->getDeadline()) + ")",
