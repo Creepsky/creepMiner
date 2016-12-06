@@ -2,42 +2,47 @@
 #include "MinerUtil.h"
 #include <algorithm>
 
-Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline)
+/*Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline)
 	: nonce(nonce), deadline(deadline)
-{}
+{}*/
 
-Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block)
-	: accountId(accountId), block(block), nonce(nonce), deadline(deadline)
+Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block, std::string plotFile)
+	: accountId_(accountId), block_(block), nonce_(nonce), deadline_(deadline), plotFile_(std::move(plotFile))
 {}
 
 uint64_t Burst::Deadline::getNonce() const
 {
-	return nonce;
+	return nonce_;
 }
 
 uint64_t Burst::Deadline::getDeadline() const
 {
-	return deadline;
+	return deadline_;
 }
 
 Burst::AccountId Burst::Deadline::getAccountId() const
 {
-	return accountId;
+	return accountId_;
 }
 
 uint64_t Burst::Deadline::getBlock() const
 {
-	return block;
+	return block_;
 }
 
 bool Burst::Deadline::isOnTheWay() const
 {
-	return sent;
+	return sent_;
 }
 
 bool Burst::Deadline::isConfirmed() const
 {
-	return confirmed;
+	return confirmed_;
+}
+
+const std::string& Burst::Deadline::getPlotFile() const
+{
+	return plotFile_;
 }
 
 bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
@@ -50,22 +55,22 @@ Burst::Deadline::~Deadline()
 
 void Burst::Deadline::send()
 {
-	sent = true;
+	sent_ = true;
 }
 
 void Burst::Deadline::confirm()
 {
-	confirmed = true;
+	confirmed_ = true;
 }
 
 std::string Burst::Deadline::deadlineToReadableString() const
 {
-	return deadlineFormat(deadline);
+	return deadlineFormat(deadline_);
 }
 
 bool Burst::Deadline::operator()(const Deadline& lhs, const Deadline& rhs) const
 {
-	return lhs.deadline < rhs.deadline;
+	return lhs.deadline_ < rhs.deadline_;
 }
 
 void Burst::Deadlines::add(Deadline&& deadline)
