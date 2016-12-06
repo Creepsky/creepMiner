@@ -4,14 +4,15 @@
 #include <memory>
 #include <vector>
 #include "Declarations.hpp"
+#include <string>
 
 namespace Burst
 {
 	class Deadline
 	{
 	public:
-		Deadline(uint64_t nonce, uint64_t deadline);
-		Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block);
+		//Deadline(uint64_t nonce, uint64_t deadline);
+		Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block, std::string plotFile);
 		Deadline(Deadline&& rhs) = default;
 		~Deadline();
 
@@ -24,17 +25,19 @@ namespace Burst
 		uint64_t getBlock() const;
 		bool isOnTheWay() const;
 		bool isConfirmed() const;
+		const std::string& getPlotFile() const;
 
 		bool operator<(const Deadline& rhs) const;
 		bool operator()(const Deadline& lhs, const Deadline& rhs) const;
 
 	private:
-		AccountId accountId = 0;
-		uint64_t block = 0;
-		uint64_t nonce = 0;
-		uint64_t deadline = 0;
-		bool sent = false;
-		bool confirmed = false;
+		AccountId accountId_ = 0;
+		uint64_t block_ = 0;
+		uint64_t nonce_ = 0;
+		uint64_t deadline_ = 0;
+		std::string plotFile_ = "";
+		bool sent_ = false;
+		bool confirmed_ = false;
 	};
 
 	class Deadlines

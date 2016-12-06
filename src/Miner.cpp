@@ -117,7 +117,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 			}
 		}
 	}
-	
+
 	MinerLogger::write("plot readers stopped", TextType::Debug);
 	std::lock_guard<std::mutex> lock(deadlinesLock_);
 	deadlines_.clear();
@@ -239,6 +239,7 @@ void Burst::Miner::nonceSubmitterThread()
 					if (getTargetDeadline() > 0 && deadline->getDeadline() >= getTargetDeadline())
 					{
 						createSendThread = false;
+
 						MinerLogger::write("Nonce is higher then the target deadline of the pool (" +
 							deadlineFormat(getTargetDeadline()) + ")", TextType::Debug);
 					}
@@ -266,7 +267,7 @@ void Burst::Miner::nonceSubmitterThread()
 	}
 }
 
-void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline)
+void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile)
 {
 	std::lock_guard<std::mutex> mutex(deadlinesLock_);
 
@@ -275,8 +276,17 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 	// is the new nonce better then the best one we already have?
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
 	{
-		deadlines_[accountId].add({ nonce, deadline, accountId, blockHeight_ });
-		MinerLogger::write(NxtAddress(accountId).to_string() + ": nonce found (" + Burst::deadlineFormat(deadline) + ")", TextType::Unimportant);
+		deadlines_[accountId].add({ nonce, deadline, accountId, blockHeight_, plotFile });
+
+		if (MinerConfig::getConfig().output.nonceFound)
+		{
+			auto message = NxtAddress(accountId).to_string() + ": nonce found (" + Burst::deadlineFormat(deadline) + ")";
+			
+			if (MinerConfig::getConfig().output.nonceFoundPlot)
+				message += " in " + plotFile;
+			
+			MinerLogger::write(message, TextType::Unimportant);
+		}
 	}
 }
 
@@ -295,7 +305,6 @@ bool Burst::Miner::getMiningInfo()
 
 	auto response = request.sendGet("/burst?requestType=getMiningInfo");
 	std::string responseData;
-	auto tryCount = 0u;
 	
 	if (response.receive(responseData))
 	{

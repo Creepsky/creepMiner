@@ -53,7 +53,8 @@ namespace Burst
 			System,
 			Unimportant,
 			Ok,
-			Debug
+			Debug,
+			Progress
 		};
 
 		static void write(const std::string& text, TextType type = TextType::Normal);
@@ -74,6 +75,7 @@ namespace Burst
 		static ColorPair currentColor;
 		static TextType currentTextType;
 		static std::map<TextType, ColorPair> typeColors;
+		static bool progressFlag_;
 	};
 
 	using TextType = MinerLogger::TextType;

@@ -44,40 +44,55 @@ If you leave the config-file-parameter empty, the config-file with the name mini
 Inside the config-file, you can define the following settings:
 
 ```
- {
-    "poolUrl" : "burst-pool.cryptoport.io",
+{
+    "poolUrl" : "burst-pool.cryptoport.io:8124",
     "submissionMaxRetry" : 3,
     "sendMaxRetry" : 3,
     "receiveMaxRetry" : 3,
     "receiveTimeout" : 5,
     "sendTimeout" : 5,
     "maxBufferSizeMB" : 128,
-    "output" : ["debug", "progress"],
-    "plots" : 
-    [
+    "output" : [
+        "debug",
+        "+progress",
+        "-nonce found"
+    ],
+    "plots" : [
         "/Users/uraymeiviar/plots",
-	"/Users/uraymeiviar/Documents/plots"
-	]
- }
+        "/Users/uraymeiviar/Documents/plots"
+    ]
+}
 ```
 
-**poolUrl** : the host, to whom the miner will connect.
+|  setting  |  description  |
+| --------- | ------------- |
+| **poolUrl** | the host, to whom the miner will connect. |
+| **submissionMaxRetry** | the max tries to resend a message to the server. |
+| **sendMaxRetry** | the max tries to send the nonce per submission-retry. |
+| **receiveMaxRetry** | the max tries to receive the answer for a nonce from server per submission-retry. |
+| **receiveTimeout** | the max time to wait for a response from the server. |
+| **sendTimeout** | the max time to wait for sending a message to the server. |
+| **maxBufferSizeMB** | the buffer size while reading the plot files. |
+| **output** | decides, what messages will be printed in the output. For possible values see [Output-Flags](#output-flags).  |
+| **plots** | the paths to the directories, where to search for plot files. plot files are searched every new block. |
 
-**submissionMaxRetry** : the max tries to resend a message to the server.
+## Output-Flags
 
-**sendMaxRetry** : the max tries to send the nonce per submission-retry
+Output-Flags can be set in the **output** block in the configuration file.
+If a flag is given, it will be set in the miner application.
 
-**receiveMaxRetry** : the max tries to receive the answer for a nonce from server per submission-retry
+It is possible to explicit set flags with the prefix **+** (for example "+nonce found") or unset with the prefix **-** (for example "-nonce found").
+If no prefix is set, the **+** prefix is set implicitly.
 
-**receiveTimeout** : the max time to wait for a response from the server.
-
-**sendTimeout** : the max time to wait for sending a message to the server.
-
-**maxBufferSizeMB** : the buffer size while reading the plot files.
-
-**output** : decides, what messages will be seen in the output. Possible values: progress (the progress in percent while reading the plot files), debug (debug messages).
-
-**plots** : the paths to the directories, where to search for plot files. plot files are searched every new block.
+| flag | description |
+| ---- | ----------- |
+| progress | the progress in percent while reading the plot files |
+| debug | debug messages |
+| nonce found | shows every found nonce with the deadline |
+| nonce found plot | (only in comination with **nonce found**) shows the plot file of found nonce |
+| nonce confirmed plot | shows the plot file of confirmed nonces |
+| plot done | shows done plot files while searching for nonces |
+| dir done | shows done dirs while searching for nonces |
 
 ## Submit-Process
 
