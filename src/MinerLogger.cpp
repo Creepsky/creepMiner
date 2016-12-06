@@ -22,6 +22,7 @@
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
 Burst::TextType Burst::MinerLogger::currentTextType = Burst::TextType::Normal;
+bool Burst::MinerLogger::progressFlag_ = false;
 
 std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
 	{
@@ -35,6 +36,7 @@ std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::Min
 			{ TextType::Unimportant, { Color::DarkGray, Color::Black } },
 			{ TextType::Ok, { Color::Green, Color::Black } },
 			{ TextType::Debug, { Color::LightMagenta, Color::Black } },
+			{ TextType::Progress, { Color::DarkGray, Color::Black } },
 	};
 
 void Burst::MinerLogger::print(const std::string& text)
@@ -48,7 +50,10 @@ void Burst::MinerLogger::print(const std::string& text)
 	std::cout << std::put_time(std::localtime(&now_c), "%X") << ": ";
 
 	setColor(typeBefore);
-	std::cout << text << std::endl;
+	std::cout << text;
+
+	if (!progressFlag_)
+		std::cout << std::endl;
 }
 
 void Burst::MinerLogger::write(const std::string& text, TextType type)
@@ -60,9 +65,20 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 			return;
 	default: break;
 	}
-
+	
 	std::lock_guard<std::mutex> lock(consoleMutex);
 	setColor(type);
+
+	if (progressFlag_)
+	{
+		if (type == TextType::Progress)
+			std::cout << '\r' << std::flush;
+		else
+			std::cout << std::endl;
+	}
+
+	progressFlag_ = type == TextType::Progress;
+
 	print(text);
 }
 
@@ -98,6 +114,7 @@ void Burst::MinerLogger::setColor(TextType type)
 	case TextType::Unimportant: std::cout << "\033[2;37m"; break;
 	case TextType::Ok: std::cout << "\033[0;32m"; break;
 	case TextType::Debug: std::cout << "\033[0;35m"; break;
+	case TextType::Progress: std::cout << "\033[2;37m"; break;
 	default: std::cout << "\033[0;37m"; break;
 	};
 #endif

@@ -44,6 +44,11 @@ namespace Burst
 	{
 		bool progress = false;
 		bool debug = false;
+		bool nonceFound = true;
+		bool nonceFoundPlot = false;
+		bool nonceConfirmedPlot = false;
+		bool plotDone = false;
+		bool dirDone = false;
 	};
 
 	class Socket;
@@ -70,6 +75,7 @@ namespace Burst
 		size_t getSendMaxRetry() const;
 		size_t getSubmissionMaxRetry() const;
 		size_t getHttp() const;
+		const std::string& getConfirmedDeadlinesPath() const;
 
 		std::unique_ptr<Socket> createSocket() const;
 
@@ -87,5 +93,6 @@ namespace Burst
 		size_t receive_max_retry_ = 3;
 		size_t submission_max_retry_ = 3;
 		size_t http_ = 0;
+		std::string confirmedDeadlinesPath_ = "";
 	};
 }

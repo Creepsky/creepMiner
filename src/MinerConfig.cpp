@@ -96,10 +96,49 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 				std::string value(setting.GetString());
 
-				if (value == "progress")
-					this->output.progress = true;
-				if (value == "debug")
-					this->output.debug = true;
+				auto set = true;
+				auto start = 0u;
+
+				// if the first char is a '-', the output needs to be unset
+				if (!value.empty())
+				{
+					auto firstCharacter = *value.begin();
+
+					if (firstCharacter == '-')
+					{
+						set = false;
+						start = 1;
+					}
+					else if (firstCharacter == '+')
+					{
+						set = true;
+						start = 1;
+					}
+					else
+					{
+						set = true;
+					}
+				}
+
+				if (value.size() > start)
+				{
+					auto realValue = value.substr(start);
+
+					if (realValue == "progress")
+						this->output.progress = set;
+					else if (realValue == "debug")
+						this->output.debug = set;
+					else if (realValue == "nonce found")
+						output.nonceFound = set;
+					else if (realValue == "nonce found plot")
+						output.nonceFoundPlot = set;
+					else if (realValue == "nonce confirmed plot")
+						output.nonceConfirmedPlot = set;
+					else if (realValue == "plot done")
+						output.plotDone = set;
+					else if (realValue == "dir done")
+						output.dirDone = set;
+				}
 			}
 		}
 	}
@@ -231,6 +270,10 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (configDoc["http"].IsNumber())
 			http_ = configDoc["http"].GetUint();
 
+	if (configDoc.HasMember("confirmed deadlines"))
+		if (configDoc["confirmed deadlines"].IsString())
+			confirmedDeadlinesPath_ = configDoc["confirmed deadlines"].GetString();
+
 	return true;
 }
 
@@ -282,6 +325,11 @@ size_t Burst::MinerConfig::getSubmissionMaxRetry() const
 size_t Burst::MinerConfig::getHttp() const
 {
 	return http_;
+}
+
+const std::string& Burst::MinerConfig::getConfirmedDeadlinesPath() const
+{
+	return confirmedDeadlinesPath_;
 }
 
 std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const

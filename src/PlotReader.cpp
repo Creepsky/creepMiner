@@ -182,12 +182,15 @@ void Burst::PlotReader::verifierThread()
 			auto deadline = targetResult / this->miner->getBaseTarget();
 
 			auto nonceNum = nonceStart + nonceReadCopy + i;
-			miner->submitNonce(nonceNum, this->accountId, deadline);
+			miner->submitNonce(nonceNum, this->accountId, deadline, inputPath);
 			++nonceRead;
 		}
 		//MinerLogger::write("verifier processed "+std::to_string(this->nonceRead)+" readsize "+std::to_string(this->readBuffer->size()));
 	}
 	//MinerLogger::write("plot read done. "+std::to_string(this->nonceRead)+" nonces ");
+
+	if (MinerConfig::getConfig().output.plotDone)
+		MinerLogger::write("Plot " + inputPath + " done", TextType::Unimportant);
 }
 
 Burst::PlotListReader::PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress)
@@ -258,6 +261,9 @@ void Burst::PlotListReader::readThread()
 
 	MinerLogger::write("plot list reader finished reading plot-dir " + dir, TextType::Debug);
 
+	if (MinerConfig::getConfig().output.dirDone)
+		MinerLogger::write("Dir " + dir + " done", TextType::Unimportant);
+
 	done = true;
 }
 
@@ -274,7 +280,7 @@ void Burst::PlotReadProgress::add(uintmax_t value)
 
 	if (max > 0 && MinerConfig::getConfig().output.progress)
 		MinerLogger::write("progress: " + std::to_string(progress * 1.f / max * 100) + " %",
-						   TextType::Unimportant);
+						   TextType::Progress);
 }
 
 void Burst::PlotReadProgress::set(uintmax_t value)

@@ -41,7 +41,7 @@ namespace Burst
 		uint64_t getTargetDeadline() const;
 		const GensigData& getGensig() const;
 		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
-		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline);
+		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile);
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 		std::unique_ptr<Socket> getSocket();
