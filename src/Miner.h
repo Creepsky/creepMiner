@@ -45,6 +45,7 @@ namespace Burst
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 		std::unique_ptr<Socket> getSocket();
+		std::unique_ptr<Socket> getMiningInfoSocket();
 
 	private:
 		void nonceSubmitterThread();

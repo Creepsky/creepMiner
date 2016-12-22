@@ -78,6 +78,7 @@ namespace Burst
 		const std::string& getConfirmedDeadlinesPath() const;
 
 		std::unique_ptr<Socket> createSocket() const;
+		std::unique_ptr<Socket> createMiningInfoSocket() const;
 
 		static MinerConfig& getConfig();
 
