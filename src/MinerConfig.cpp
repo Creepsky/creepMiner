@@ -339,6 +339,13 @@ std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const
 	return socket;
 }
 
+std::unique_ptr<Burst::Socket> Burst::MinerConfig::createMiningInfoSocket() const
+{
+	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
+	socket->connect(urlMiningInfo.getIp(), urlMiningInfo.getPort());
+	return socket;
+}
+
 Burst::MinerConfig& Burst::MinerConfig::getConfig()
 {
 	static MinerConfig config;

@@ -67,6 +67,7 @@ Inside the config-file, you can define the following settings:
 |  setting  |  description  |
 | --------- | ------------- |
 | **poolUrl** | the host, to whom the miner will connect. |
+| **miningInfoUrl** | the host, where the miner will get the mining info. If empty, its set to poolUrl. |
 | **submissionMaxRetry** | the max tries to resend a message to the server. |
 | **sendMaxRetry** | the max tries to send the nonce per submission-retry. |
 | **receiveMaxRetry** | the max tries to receive the answer for a nonce from server per submission-retry. |

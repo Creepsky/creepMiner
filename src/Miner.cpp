@@ -301,7 +301,7 @@ void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_
 
 bool Burst::Miner::getMiningInfo()
 {
-	Request request(MinerConfig::getConfig().createSocket());
+	Request request(MinerConfig::getConfig().createMiningInfoSocket());
 
 	auto response = request.sendGet("/burst?requestType=getMiningInfo");
 	std::string responseData;
@@ -374,4 +374,9 @@ std::unique_ptr<Burst::Socket> Burst::Miner::getSocket()
 {
 	return MinerConfig::getConfig().createSocket();
 	//return sockets_.getSocket();
+}
+
+std::unique_ptr<Burst::Socket> Burst::Miner::getMiningInfoSocket()
+{
+	return MinerConfig::getConfig().createMiningInfoSocket();
 }
