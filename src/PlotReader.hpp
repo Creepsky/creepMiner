@@ -16,6 +16,7 @@
 #include <mutex>
 #include "Declarations.hpp"
 #include <cmath>
+#include <condition_variable>
 
 namespace Burst
 {
