@@ -1,9 +1,9 @@
 ﻿#include "Response.hpp"
 #include "Socket.hpp"
-#include "MinerUtil.h"
-#include "MinerConfig.h"
+#include "MinerUtil.hpp"
+#include "MinerConfig.hpp"
 #include "rapidjson/document.h"
-#include "MinerLogger.h"
+#include "MinerLogger.hpp"
 
 Burst::Response::Response(std::unique_ptr<Socket> socket)
 	: socket_(std::move(socket))

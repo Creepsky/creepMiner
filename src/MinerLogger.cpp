@@ -6,11 +6,11 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#include "MinerLogger.h"
+#include "MinerLogger.hpp"
 #include <iostream>
 #include <iomanip>
 #include <mutex>
-#include "MinerConfig.h"
+#include "MinerConfig.hpp"
 #include <iomanip>
 
 #ifdef _WIN32

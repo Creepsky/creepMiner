@@ -1,8 +1,8 @@
 ﻿#include "Socket.hpp"
 #include "SocketDefinitions.hpp"
-#include "MinerLogger.h"
+#include "MinerLogger.hpp"
 #include <sstream>
-#include "MinerConfig.h"
+#include "MinerConfig.hpp"
 #ifndef WIN32
 #include <errno.h>
 #endif

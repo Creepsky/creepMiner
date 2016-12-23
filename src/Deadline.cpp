@@ -1,5 +1,5 @@
 ﻿#include "Deadline.hpp"
-#include "MinerUtil.h"
+#include "MinerUtil.hpp"
 #include <algorithm>
 
 /*Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline)

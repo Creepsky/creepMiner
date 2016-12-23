@@ -3,9 +3,9 @@
 #include <sstream>
 #include "Response.hpp"
 #include "nxt/nxt_address.h"
-#include "MinerLogger.h"
-#include "MinerUtil.h"
-#include "MinerConfig.h"
+#include "MinerLogger.hpp"
+#include "MinerUtil.hpp"
+#include "MinerConfig.hpp"
 
 Burst::Request::Request(std::unique_ptr<Socket> socket)
 	: socket_(std::move(socket))

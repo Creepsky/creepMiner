@@ -12,10 +12,9 @@
 #include <vector>
 #include <memory>
 #include <thread>
-#include "MinerShabal.h"
+#include "MinerShabal.hpp"
 #include <mutex>
 #include "Declarations.hpp"
-#include <condition_variable>
 #include <cmath>
 
 namespace Burst

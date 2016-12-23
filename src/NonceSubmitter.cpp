@@ -1,11 +1,11 @@
 ﻿#include "NonceSubmitter.hpp"
-#include "MinerLogger.h"
+#include "MinerLogger.hpp"
 #include "Deadline.hpp"
-#include "MinerUtil.h"
+#include "MinerUtil.hpp"
 #include "nxt/nxt_address.h"
 #include "Request.hpp"
-#include "MinerConfig.h"
-#include "Miner.h"
+#include "MinerConfig.hpp"
+#include "Miner.hpp"
 #include <fstream>
 
 Burst::NonceSubmitter::NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline)

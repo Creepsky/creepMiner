@@ -1,6 +1,6 @@
 ﻿#include "Url.hpp"
-#include "MinerUtil.h"
-#include "MinerLogger.h"
+#include "MinerUtil.hpp"
+#include "MinerLogger.hpp"
 #include <errno.h>
 #ifdef WIN32
 #include <ws2tcpip.h>

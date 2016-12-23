@@ -1,6 +1,6 @@
 ﻿#include "PoolSockets.hpp"
 #include "Socket.hpp"
-#include "MinerConfig.h"
+#include "MinerConfig.hpp"
 
 Burst::PoolSockets::PoolSockets(size_t maxSockets)
 	: maxSockets_(maxSockets)

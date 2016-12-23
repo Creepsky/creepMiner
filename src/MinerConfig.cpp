@@ -6,9 +6,9 @@
 //  Copyright (c) 2014 Miner. All rights reserved.
 //
 
-#include "MinerConfig.h"
-#include "MinerLogger.h"
-#include "MinerUtil.h"
+#include "MinerConfig.hpp"
+#include "MinerLogger.hpp"
+#include "MinerUtil.hpp"
 #include <fstream>
 #include "rapidjson/document.h"
 #include <sstream>

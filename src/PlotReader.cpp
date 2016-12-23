@@ -6,12 +6,12 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#include "PlotReader.h"
-#include "MinerUtil.h"
-#include "MinerLogger.h"
-#include "MinerConfig.h"
+#include "PlotReader.hpp"
+#include "MinerUtil.hpp"
+#include "MinerLogger.hpp"
+#include "MinerConfig.hpp"
 #include <fstream>
-#include "Miner.h"
+#include "Miner.hpp"
 #include <cmath>
 #include <cstring>
 

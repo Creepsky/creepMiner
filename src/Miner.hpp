@@ -10,7 +10,7 @@
 
 #include <mutex>
 #include <unordered_map>
-#include "MinerShabal.h"
+#include "MinerShabal.hpp"
 #include "Declarations.hpp"
 #include <set>
 #include "Deadline.hpp"

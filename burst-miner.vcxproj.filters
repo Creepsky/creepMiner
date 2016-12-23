@@ -23,12 +23,6 @@
     <ClCompile Include="src\PoolSockets.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Miner.h" />
-    <ClInclude Include="src\MinerConfig.h" />
-    <ClInclude Include="src\MinerLogger.h" />
-    <ClInclude Include="src\MinerShabal.h" />
-    <ClInclude Include="src\MinerUtil.h" />
-    <ClInclude Include="src\PlotReader.h" />
     <ClInclude Include="src\rapidjson\document.h">
       <Filter>rapidjson</Filter>
     </ClInclude>
@@ -69,6 +63,12 @@
     <ClInclude Include="src\Socket.hpp" />
     <ClInclude Include="src\NonceSubmitter.hpp" />
     <ClInclude Include="src\PoolSockets.hpp" />
+    <ClInclude Include="src\Miner.hpp" />
+    <ClInclude Include="src\MinerConfig.hpp" />
+    <ClInclude Include="src\MinerLogger.hpp" />
+    <ClInclude Include="src\MinerShabal.hpp" />
+    <ClInclude Include="src\MinerUtil.hpp" />
+    <ClInclude Include="src\PlotReader.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sphlib">
