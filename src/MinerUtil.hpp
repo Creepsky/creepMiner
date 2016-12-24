@@ -12,6 +12,7 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <Poco/Timespan.h>
 
 namespace Burst
 {
@@ -42,11 +43,13 @@ namespace Burst
 	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);
 
 	template <typename T, typename U>
-	void transferSocket(T& from, U& to)
+	void transferSession(T& from, U& to)
 	{
-		auto socket = from.close();
+		auto socket = from.transferSession();
 
 		if (socket != nullptr)
 			to = std::move(socket);
 	}
+
+	Poco::Timespan secondsToTimespan(float seconds);
 }

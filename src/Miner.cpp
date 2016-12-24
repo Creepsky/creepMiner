@@ -15,9 +15,13 @@
 #include <algorithm>
 #include "Response.hpp"
 #include "Request.hpp"
-#include "Socket.hpp"
 #include "NonceSubmitter.hpp"
 #include "rapidjson/document.h"
+#include <Poco/URI.h>
+#include <Poco/Net/HTTPClientSession.h>
+#include <Poco/Net/HTTPSClientSession.h>
+#include <Poco/Net/HTTPResponse.h>
+#include <Poco/Net/HTTPRequest.h>
 
 Burst::Miner::~Miner()
 {}
@@ -53,6 +57,9 @@ void Burst::Miner::run()
 		" (" + config.urlPool.getIp() + ")", TextType::System);
 	MinerLogger::write("Mininginfo URL : " + config.urlMiningInfo.getCanonical() + ":" + std::to_string(config.urlMiningInfo.getPort()) +
 		" (" + config.urlMiningInfo.getIp() + ")", TextType::System);
+
+	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
+	miningInfoSession_->setKeepAlive(true);
 
 	const auto sleepTime = std::chrono::seconds(3);
 	running_ = true;
@@ -301,17 +308,22 @@ void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_
 
 bool Burst::Miner::getMiningInfo()
 {
-	Request request(MinerConfig::getConfig().createMiningInfoSocket());
+	using namespace Poco::Net;
 
-	auto response = request.sendGet("/burst?requestType=getMiningInfo");
+	Request request(MinerConfig::getConfig().createSession(HostType::MiningInfo));
+
+	HTTPRequest requestData{HTTPRequest::HTTP_GET, "/burst?requestType=getMiningInfo", HTTPRequest::HTTP_1_1};
+	requestData.setKeepAlive(true);
+
+	auto response = request.send(requestData);
 	std::string responseData;
-	
+
 	if (response.receive(responseData))
 	{
 		HttpResponse httpResponse(responseData);
 		rapidjson::Document body;
 
-		body.Parse<0>(httpResponse.getMessage().c_str());
+		body.Parse<0>(httpResponse.getMessage().c_str());	
 
 		if (body.GetParseError() == nullptr)
 		{
@@ -348,6 +360,7 @@ bool Burst::Miner::getMiningInfo()
 			//if (MinerConfig::getConfig().getHttp() == 1)
 			//transferSocket(response, miningInfoSocket_);
 
+			transferSession(response, miningInfoSession_);
 			return true;
 		}
 
@@ -356,6 +369,9 @@ bool Burst::Miner::getMiningInfo()
 		MinerLogger::write("Full response:", TextType::Error);
 		MinerLogger::write(httpResponse.getResponse(), TextType::Error);
 	}
+	
+	transferSession(request, miningInfoSession_);
+	transferSession(response, miningInfoSession_);
 
 	return false;
 }
@@ -370,13 +386,32 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 	return deadlines_[accountId].getBestSent();
 }
 
-std::unique_ptr<Burst::Socket> Burst::Miner::getSocket()
+/*std::unique_ptr<Burst::Socket> Burst::Miner::getSocket()
 {
 	return MinerConfig::getConfig().createSocket();
 	//return sockets_.getSocket();
 }
 
-std::unique_ptr<Burst::Socket> Burst::Miner::getMiningInfoSocket()
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Miner::createSession()
 {
-	return MinerConfig::getConfig().createMiningInfoSocket();
+	static auto ip = MinerConfig::getConfig().urlPool.getIp();
+	static auto port = static_cast<Poco::UInt16>(MinerConfig::getConfig().urlPool.getPort());
+	static auto timeout = secondsToTimespan(MinerConfig::getConfig().getTimeout());
+
+	auto session = std::make_unique<Poco::Net::HTTPClientSession>(ip, port);
+	session->setTimeout(timeout);
+
+	return session;
 }
+
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Miner::createWalletSession()
+{
+	static auto ip = MinerConfig::getConfig().getWalletUrl().getIp();
+	static auto port = static_cast<Poco::UInt16>(MinerConfig::getConfig().getWalletUrl().getPort());
+	static auto timeout = secondsToTimespan(MinerConfig::getConfig().getTimeout());
+
+	std::unique_ptr<Poco::Net::HTTPClientSession> session = std::make_unique<Poco::Net::HTTPSClientSession>(ip, port);
+	session->setTimeout(timeout);
+
+	return session;
+}*/

@@ -22,17 +22,18 @@ bool Burst::Socket::connect(const std::string& ip, size_t port)
 	// disconnect first before new connection
 	if (isConnected())
 		disconnect();
-	
-	// initialize connection-data
-	struct sockaddr_in sock_data;
-	//
-	inet_pton(AF_INET, ip.c_str(), &sock_data.sin_addr);
-	sock_data.sin_family = AF_INET;
-	sock_data.sin_port = htons(static_cast<u_short>(port));
-	
-	socket_ = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (::connect(socket_, reinterpret_cast<struct sockaddr*>(&sock_data), sizeof(struct sockaddr_in)) != 0)
+	try
+	{
+		socket_.connect(Poco::Net::SocketAddress{ip, static_cast<Poco::UInt16>(port)});
+	}
+	catch(Poco::Exception& exc)
+	{
+		MinerLogger::write(std::string("error on connecting to host: ") + exc.what());
+		return false;
+	}
+
+	if (!socket_.poll({ 1, 0 }, Poco::Net::StreamSocket::SELECT_READ | Poco::Net::StreamSocket::SELECT_WRITE))
 		return false;
 
 	auto errorNr = getError();
@@ -55,8 +56,7 @@ void Burst::Socket::disconnect()
 {
 	if (isConnected())
 	{
-		shutdown(socket_, SHUT_RDWR);
-		closesocket(socket_);
+		socket_.shutdown();
 		connected_ = false;
 	}
 }
@@ -86,7 +86,7 @@ float Burst::Socket::getReceiveTimeout() const
 	return receive_timeout_;
 }
 
-bool Burst::Socket::send(const std::string& data) const
+bool Burst::Socket::send(const std::string& data)
 {
 	if (!isConnected())
 		return false;
@@ -97,7 +97,7 @@ bool Burst::Socket::send(const std::string& data) const
 	// send, until all data is on the other side
 	while (sendLength > 0)
 	{
-		auto result = ::send(socket_, ptr, sendLength, MSG_NOSIGNAL);
+		auto result = socket_.sendBytes(ptr, sendLength);
 
 		if (result < 1)
 			break;
@@ -126,8 +126,8 @@ bool Burst::Socket::receive(std::string& data)
 
 	do
 	{
-		bytesRead = recv(socket_, &readBuffer[0], readBufferSize - totalBytesRead - 1, 0);
-
+		bytesRead = socket_.receiveBytes(&readBuffer[0], readBufferSize - totalBytesRead - 1);
+		
 		if (bytesRead > 0)
 		{
 			totalBytesRead += bytesRead;
@@ -164,35 +164,35 @@ bool Burst::Socket::receive(std::string& data)
 
 int Burst::Socket::getError() const
 {
-#ifdef WIN32
-	return WSAGetLastError();
-#else
-	int error = 0;
-	socklen_t erroropt = sizeof(error);
-	getsockopt(socket_, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error), &erroropt);
+	auto error = 0;
+	socket_.getOption(SOL_SOCKET, SO_ERROR, error);
 	return error;
-#endif
 }
 
-void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet) const
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Socket::createSession() const
 {
-#ifdef WIN32
-	auto timeout = static_cast<int>(seconds * 1000);
-#else
-	struct timeval timeout;
-	timeout.tv_sec = static_cast<long>(seconds);
-	timeout.tv_usec = static_cast<long>((seconds - timeout.tv_sec) * 1000);
-#endif
+	return std::make_unique<Poco::Net::HTTPClientSession>(socket_);
+}
+
+void Burst::Socket::setTimeoutHelper(float seconds, float* fieldToSet)
+{
+	auto secondsLong = static_cast<long>(seconds);
+	auto microSecondsLong = static_cast<long>(seconds - secondsLong);
 
 	*fieldToSet = seconds;
-	auto sendOrReceiveFlag = 0;
 
 	if (fieldToSet == &send_timeout_)
-		sendOrReceiveFlag = SO_SNDTIMEO;
-	else if (fieldToSet == &receive_timeout_)
-		sendOrReceiveFlag = SO_RCVTIMEO;
+	{
+		//sendOrReceiveFlag = SO_SNDTIMEO;
 
-	if (isConnected() && sendOrReceiveFlag != 0)
-		if (setsockopt(socket_, SOL_SOCKET, sendOrReceiveFlag, reinterpret_cast<char *>(&timeout), sizeof(timeout)) < 0)
-			MinerLogger::write("Failed to set timeout for socket!", TextType::Debug);
+		if (isConnected())
+			socket_.setSendTimeout({secondsLong, microSecondsLong});
+	}
+	else if (fieldToSet == &receive_timeout_)
+	{
+		//sendOrReceiveFlag = SO_RCVTIMEO;
+		
+		if (isConnected())
+			socket_.setReceiveTimeout({secondsLong, microSecondsLong});
+	}
 }

@@ -20,7 +20,6 @@
     <ClCompile Include="src\Response.cpp" />
     <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
-    <ClCompile Include="src\PoolSockets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rapidjson\document.h">
@@ -62,7 +61,6 @@
     <ClInclude Include="src\Response.hpp" />
     <ClInclude Include="src\Socket.hpp" />
     <ClInclude Include="src\NonceSubmitter.hpp" />
-    <ClInclude Include="src\PoolSockets.hpp" />
     <ClInclude Include="src\Miner.hpp" />
     <ClInclude Include="src\MinerConfig.hpp" />
     <ClInclude Include="src\MinerLogger.hpp" />

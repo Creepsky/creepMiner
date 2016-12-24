@@ -332,18 +332,37 @@ const std::string& Burst::MinerConfig::getConfirmedDeadlinesPath() const
 	return confirmedDeadlinesPath_;
 }
 
-std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const
+std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostType) const
 {
 	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
-	socket->connect(urlPool.getIp(), urlPool.getPort());
+	const Url* url;
+	
+	if (hostType == HostType::Pool)
+		url = &urlPool;
+	else if (hostType == HostType::MiningInfo)
+		url = &urlMiningInfo;
+	else if (hostType == HostType::Wallet)
+		// TODO: wallet-url
+		url = nullptr;
+	else
+		url = nullptr;
+
+	if (url != nullptr)
+		socket->connect(url->getIp(), url->getPort());
+
 	return socket;
 }
 
-std::unique_ptr<Burst::Socket> Burst::MinerConfig::createMiningInfoSocket() const
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(HostType hostType) const
 {
-	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
-	socket->connect(urlMiningInfo.getIp(), urlMiningInfo.getPort());
-	return socket;
+	return createSocket(hostType)->createSession();
+}
+
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(const std::string& url) const
+{
+	// return appropriate session for the type of url
+	// for example https, http(, ftp maybe)
+	return nullptr;
 }
 
 Burst::MinerConfig& Burst::MinerConfig::getConfig()

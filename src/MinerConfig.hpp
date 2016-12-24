@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include "Url.hpp"
+#include <Poco/Net/HTTPClientSession.h>
 
 /*
  {
@@ -27,6 +28,13 @@
 
 namespace Burst
 {
+	enum class HostType
+	{
+		Pool,
+		Wallet,
+		MiningInfo
+	};
+
 	class PlotFile
 	{
 	public:
@@ -77,8 +85,9 @@ namespace Burst
 		size_t getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
 
-		std::unique_ptr<Socket> createSocket() const;
-		std::unique_ptr<Socket> createMiningInfoSocket() const;
+		std::unique_ptr<Socket> createSocket(HostType hostType) const;
+		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
+		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const std::string& url) const;
 
 		static MinerConfig& getConfig();
 
