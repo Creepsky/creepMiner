@@ -16,8 +16,9 @@
 #include "Deadline.hpp"
 #include <thread>
 #include <condition_variable>
-#include "PoolSockets.hpp"
 #include <memory>
+
+namespace Poco { namespace Net { class HTTPClientSession; } }
 
 namespace Burst
 {
@@ -44,8 +45,6 @@ namespace Burst
 		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile);
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
-		std::unique_ptr<Socket> getSocket();
-		std::unique_ptr<Socket> getMiningInfoSocket();
 
 	private:
 		void nonceSubmitterThread();
@@ -69,6 +68,6 @@ namespace Burst
 		uint64_t currentBlockHeight_ = 0u;
 		uint64_t currentBaseTarget_ = 0u;
 		uint64_t targetDeadline_ = 0u;
-		PoolSockets sockets_;
+		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_ = nullptr;
 	};
 }

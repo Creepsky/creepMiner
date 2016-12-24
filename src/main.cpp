@@ -10,6 +10,25 @@
 #include "MinerLogger.hpp"
 #include "MinerConfig.hpp"
 #include "MinerUtil.hpp"
+#include <Poco/Net/SSLManager.h>
+#include "Poco/Net/ConsoleCertificateHandler.h"
+#include "Poco/Net/HTTPSStreamFactory.h"
+#include "Poco/Net/PrivateKeyPassphraseHandler.h"
+#include "Poco/Net/AcceptCertificateHandler.h"
+
+class SSLInitializer
+{
+public:
+	SSLInitializer()
+	{
+		Poco::Net::initializeSSL();
+	}
+
+	~SSLInitializer()
+	{
+		Poco::Net::uninitializeSSL();
+	}
+};
 
 int main(int argc, const char* argv[])
 {
@@ -48,10 +67,28 @@ int main(int argc, const char* argv[])
 
 	Burst::MinerLogger::write("using config file : " + configFile, Burst::TextType::System);
 
-	if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
-		Burst::Miner().run();
-	else
-		Burst::MinerLogger::write("Aborting program due to invalid configuration", Burst::TextType::Error);
+	try
+	{
+		using namespace Poco;
+		using namespace Net;
+
+		SSLInitializer sslInitializer;
+		HTTPSStreamFactory::registerFactory();
+
+		SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
+		Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "", "", "rootcert.pem",
+			Context::VERIFY_NONE, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
+
+		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
+			Burst::Miner().run();
+		else
+			Burst::MinerLogger::write("Aborting program due to invalid configuration", Burst::TextType::Error);
+	}
+	catch (Poco::Exception& exc)
+	{
+		Burst::MinerLogger::write(std::string("Aborting program due to exceptional state: ") + exc.what());
+	}
 
 #ifdef WIN32
 	WSACleanup();

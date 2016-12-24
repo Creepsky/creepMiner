@@ -190,3 +190,10 @@ std::string Burst::getInformationFromPlotFile(const std::string& path, uint8_t i
 
 	return fileNamePart[index];
 }
+
+Poco::Timespan Burst::secondsToTimespan(float seconds)
+{
+	auto secondsInt = static_cast<long>(seconds);
+	auto microSeconds = static_cast<long>((seconds - secondsInt) * 100000);
+	return Poco::Timespan{secondsInt, microSeconds};
+}

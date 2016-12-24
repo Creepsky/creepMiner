@@ -3,15 +3,14 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <Poco/Net/HTTPClientSession.h>
 
 namespace Burst
 {
-	class Socket;
-
 	class Response
 	{
 	public:
-		Response(std::unique_ptr<Socket> socket);
+		Response(std::unique_ptr<Poco::Net::HTTPClientSession> session);
 		Response(const Response& rhs) = delete;
 		Response(Response&& rhs) = default;
 		~Response();
@@ -20,12 +19,14 @@ namespace Burst
 		Response& operator=(Response&& rhs) = default;
 
 		bool canReceive() const;
-		bool receive(std::string& data) const;
+		bool receive(std::string& data);
 
-		std::unique_ptr<Socket> close();
+		std::unique_ptr<Poco::Net::HTTPClientSession> transferSession();
+		const Poco::Exception* getLastError() const;
+		bool isDataThere() const;
 
 	private:
-		std::unique_ptr<Socket> socket_;
+		std::unique_ptr<Poco::Net::HTTPClientSession> session_;
 	};
 
 	enum class SubmitResponse
@@ -45,12 +46,14 @@ namespace Burst
 	class NonceResponse
 	{
 	public:
-		NonceResponse(std::unique_ptr<Socket> socket);
+		NonceResponse(std::unique_ptr<Poco::Net::HTTPClientSession> session);
 
 		bool canReceive() const;
-		NonceConfirmation getConfirmation() const;
+		NonceConfirmation getConfirmation();
+		bool isDataThere();
 
-		std::unique_ptr<Socket> close();
+		std::unique_ptr<Poco::Net::HTTPClientSession> transferSession();
+		const Poco::Exception* getLastError() const;
 
 	private:
 		Response response_;

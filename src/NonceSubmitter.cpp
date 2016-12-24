@@ -80,9 +80,9 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 								   MinerConfig::getConfig().getSendMaxRetry(),
 								   confirmation.errorCode))
 		{
-			NonceRequest request(miner->getSocket());
+			NonceRequest request(MinerConfig::getConfig().createSession(HostType::Pool));
 
-			auto response = request.submit(nonce, accountId, deadlineValue);
+			auto response = request.submit(nonce, accountId);
 			auto receiveTryCount = 0u;
 
 			if (response.canReceive() && firstSendAttempt)
