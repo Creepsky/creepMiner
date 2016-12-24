@@ -164,14 +164,9 @@ bool Burst::Socket::receive(std::string& data)
 
 int Burst::Socket::getError() const
 {
-#ifdef WIN32
-	return WSAGetLastError();
-#else
-	int error = 0;
-	socklen_t erroropt = sizeof(error);
-	getsockopt(socket_, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&error), &erroropt);
+	auto error = 0;
+	socket_.getOption(SOL_SOCKET, SO_ERROR, error);
 	return error;
-#endif
 }
 
 std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Socket::createSession() const
