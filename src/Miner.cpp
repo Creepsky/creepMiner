@@ -12,7 +12,6 @@
 #include "PlotReader.hpp"
 #include "MinerUtil.hpp"
 #include "nxt/nxt_address.h"
-#include <algorithm>
 #include "Response.hpp"
 #include "Request.hpp"
 #include "NonceSubmitter.hpp"
@@ -29,12 +28,7 @@ Burst::Miner::~Miner()
 void Burst::Miner::run()
 {
 	running_ = true;
-	std::thread submitter(&Miner::nonceSubmitterThread, this);
-
 	progress_ = std::make_shared<PlotReadProgress>();
-
-	//sockets_ = PoolSockets{5};
-	//sockets_.fill();
 
 	auto& config = MinerConfig::getConfig();
 	auto errors = 0u;
@@ -66,15 +60,13 @@ void Burst::Miner::run()
 
 	while (running_)
 	{
-		std::string data;
-
 		if (getMiningInfo())
 			errors = 0;
 		else
 			++errors;
 
-		// we have a tollerance of 3 times of not being able to fetch mining infos, before its a real error
-		if (errors >= 3)
+		// we have a tollerance of 5 times of not being able to fetch mining infos, before its a real error
+		if (errors >= 5)
 		{
 			// reset error-counter and show error-message in console
 			MinerLogger::write("Could not get block infos!", TextType::Error);
@@ -85,7 +77,6 @@ void Burst::Miner::run()
 	}
 
 	running_ = false;
-	submitter.join();
 }
 
 void Burst::Miner::stop()
@@ -96,9 +87,9 @@ void Burst::Miner::stop()
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
 	// setup new block-data
-	this->gensigStr_ = gensigStr;
-	this->blockHeight_ = blockHeight;
-	this->baseTarget_ = baseTarget;
+	gensigStr_ = gensigStr;
+	blockHeight_ = blockHeight;
+	baseTarget_ = baseTarget;
 
 	MinerLogger::write("stopping plot readers...", TextType::Debug);
 
@@ -183,9 +174,6 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 			plotReaders_.emplace_back(reader);
 		}
 	}
-
-	submitThreadNotified_ = true;
-	newBlockIncoming_.notify_one();
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const
@@ -213,67 +201,6 @@ size_t Burst::Miner::getScoopNum() const
 	return this->scoopNum_;
 }
 
-void Burst::Miner::nonceSubmitterThread()
-{
-	while (running_)
-	{
-		std::unique_lock<std::mutex> lock(deadlinesLock_);
-
-		while (!submitThreadNotified_)
-			newBlockIncoming_.wait(lock);
-
-		//MinerLogger::write("submitter-thread: outer loop", TextType::System);
-		lock.unlock();
-
-		while (running_ && submitThreadNotified_)
-		{
-			lock.lock();
-			newBlockIncoming_.wait_for(lock, std::chrono::seconds(1));
-
-			//MinerLogger::write("submitter-thread: inner loop", TextType::System);
-
-			for (auto& accountDeadlines : deadlines_)
-			{
-				auto deadline = accountDeadlines.second.getBest();
-
-				if (deadline == nullptr)
-					continue;
-
-				if (!deadline->isOnTheWay())
-				{
-					auto createSendThread = true;
-
-					if (getTargetDeadline() > 0 && deadline->getDeadline() >= getTargetDeadline())
-					{
-						createSendThread = false;
-
-						MinerLogger::write("Nonce is higher then the target deadline of the pool (" +
-							deadlineFormat(getTargetDeadline()) + ")", TextType::Debug);
-					}
-
-					deadline->send();
-
-					if (createSendThread)
-					{
-						NonceSubmitter{*this, deadline}.startSubmit();
-					}
-				}
-			}
-
-			submitThreadNotified_ = !std::all_of(plotReaders_.begin(), plotReaders_.end(), [](const std::shared_ptr<PlotListReader>& reader)
-												{
-													return reader->isDone();
-												});
-
-			lock.unlock();
-		}
-
-		//sockets_.fill();
-
-		//MinerLogger::write("submitter-thread: finished block", TextType::System);
-	}
-}
-
 void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile)
 {
 	std::lock_guard<std::mutex> mutex(deadlinesLock_);
@@ -283,7 +210,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 	// is the new nonce better then the best one we already have?
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
 	{
-		deadlines_[accountId].add({ nonce, deadline, accountId, blockHeight_, plotFile });
+		auto newDeadline = deadlines_[accountId].add({ nonce, deadline, accountId, blockHeight_, plotFile });
 
 		if (MinerConfig::getConfig().output.nonceFound)
 		{
@@ -294,6 +221,21 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 			
 			MinerLogger::write(message, TextType::Unimportant);
 		}
+
+		auto createSendThread = true;
+
+		if (getTargetDeadline() > 0 && deadline >= getTargetDeadline())
+		{
+			createSendThread = false;
+
+			MinerLogger::write("Nonce is higher then the target deadline of the pool (" +
+				deadlineFormat(getTargetDeadline()) + ")", TextType::Debug);
+		}
+
+		newDeadline->send();
+
+		if (createSendThread)
+			NonceSubmitter{*this, newDeadline }.startSubmit();
 	}
 }
 
@@ -309,8 +251,8 @@ void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_
 bool Burst::Miner::getMiningInfo()
 {
 	using namespace Poco::Net;
-
-	Request request(MinerConfig::getConfig().createSession(HostType::MiningInfo));
+	
+	Request request(std::move(miningInfoSession_));
 
 	HTTPRequest requestData{HTTPRequest::HTTP_GET, "/burst?requestType=getMiningInfo", HTTPRequest::HTTP_1_1};
 	requestData.setKeepAlive(true);

@@ -43,7 +43,7 @@ namespace Burst
 	class Deadlines
 	{
 	public:
-		void add(Deadline&& deadline);
+		std::shared_ptr<Deadline> add(Deadline&& deadline);
 		void clear();
 		bool confirm(Nonce nonce);
 		bool confirm(Nonce nonce, AccountId accountId, uint64_t block);

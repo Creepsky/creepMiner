@@ -73,13 +73,17 @@ bool Burst::Deadline::operator()(const Deadline& lhs, const Deadline& rhs) const
 	return lhs.deadline_ < rhs.deadline_;
 }
 
-void Burst::Deadlines::add(Deadline&& deadline)
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(Deadline&& deadline)
 {
-	deadlines.emplace_back(std::make_shared<Deadline>(std::move(deadline)));
+	auto deadlinePtr = std::make_shared<Deadline>(std::move(deadline));
+
+	deadlines.emplace_back(deadlinePtr);
 	std::sort(deadlines.begin(), deadlines.end(), [](std::shared_ptr<Deadline> lhs, std::shared_ptr<Deadline> rhs)
 			  {
 				  return *lhs < *rhs;
 			  });
+
+	return deadlinePtr;
 }
 
 void Burst::Deadlines::clear()
