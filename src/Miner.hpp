@@ -15,7 +15,6 @@
 #include <set>
 #include "Deadline.hpp"
 #include <thread>
-#include <condition_variable>
 #include <memory>
 
 namespace Poco { namespace Net { class HTTPClientSession; } }
@@ -47,7 +46,6 @@ namespace Burst
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 
 	private:
-		void nonceSubmitterThread();
 		void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 		bool getMiningInfo();
 
@@ -63,8 +61,6 @@ namespace Burst
 		std::mutex deadlinesLock_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		std::vector<std::thread> sendNonceThreads_;
-		std::condition_variable newBlockIncoming_;
-		bool submitThreadNotified_ = false;
 		uint64_t currentBlockHeight_ = 0u;
 		uint64_t currentBaseTarget_ = 0u;
 		uint64_t targetDeadline_ = 0u;
