@@ -57,6 +57,7 @@ namespace Burst
 		bool nonceConfirmedPlot = false;
 		bool plotDone = false;
 		bool dirDone = false;
+		bool lastWinner = true;
 	};
 
 	class Socket;

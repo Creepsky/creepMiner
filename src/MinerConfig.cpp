@@ -138,6 +138,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 						output.plotDone = set;
 					else if (realValue == "dir done")
 						output.dirDone = set;
+					else if (realValue == "last winner")
+						output.lastWinner = set;
 				}
 			}
 		}

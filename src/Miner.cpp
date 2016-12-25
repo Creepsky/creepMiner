@@ -94,7 +94,9 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	// why we start a new thread to gather the last winner:
 	// it could be slow and is not necessary for the whole process
 	// so show it when it's done
-	if (blockHeight_ > 0 && !MinerConfig::getConfig().getWalletUrl().getIp().empty())
+	if (blockHeight_ > 0 &&
+		!MinerConfig::getConfig().getWalletUrl().getIp().empty() &&
+		MinerConfig::getConfig().output.lastWinner)
 	{
 		// copy blockheight temporary for lambda arg capture
 		auto block = blockHeight_;
