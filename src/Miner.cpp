@@ -18,8 +18,6 @@
 #include "rapidjson/document.h"
 #include <Poco/URI.h>
 #include <Poco/Net/HTTPClientSession.h>
-#include <Poco/Net/HTTPSClientSession.h>
-#include <Poco/Net/HTTPResponse.h>
 #include <Poco/Net/HTTPRequest.h>
 
 Burst::Miner::~Miner()
@@ -51,12 +49,19 @@ void Burst::Miner::run()
 		" (" + config.urlPool.getIp() + ")", TextType::System);
 	MinerLogger::write("Mininginfo URL : " + config.urlMiningInfo.getCanonical() + ":" + std::to_string(config.urlMiningInfo.getPort()) +
 		" (" + config.urlMiningInfo.getIp() + ")", TextType::System);
+	if (!config.getWalletUrl().getCanonical().empty())
+		MinerLogger::write("Wallet URL : " + config.getWalletUrl().getCanonical() + ":" + std::to_string(config.getWalletUrl().getPort()) +
+			" (" + config.getWalletUrl().getIp() + ")", TextType::System);
 
 	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
 	miningInfoSession_->setKeepAlive(true);
 
+	wallet_ = MinerConfig::getConfig().getWalletUrl();
+
 	const auto sleepTime = std::chrono::seconds(3);
 	running_ = true;
+
+	wallet_.getLastBlock(blockHeight_);
 
 	while (running_)
 	{
@@ -86,6 +91,42 @@ void Burst::Miner::stop()
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
+	// why we start a new thread to gather the last winner:
+	// it could be slow and is not necessary for the whole process
+	// so show it when it's done
+	if (blockHeight_ > 0 && !MinerConfig::getConfig().getWalletUrl().getIp().empty())
+	{
+		// copy blockheight temporary for lambda arg capture
+		auto block = blockHeight_;
+
+		std::thread threadLastWinner([this, block]()
+		{
+			AccountId lastWinner;
+
+			if (wallet_.getWinnerOfBlock(block, lastWinner))
+			{
+				std::string name;
+				wallet_.getNameOfAccount(lastWinner, name);
+
+				// if we dont fetched the winner of the last block
+				// we exit this thread function
+				if (blockHeight_ - 1 != block)
+					return;
+
+				MinerLogger::write(std::string(50, '-'), TextType::Ok);
+				MinerLogger::write("last block winner: ", TextType::Ok);
+				MinerLogger::write("block#             " + std::to_string(block), TextType::Ok);
+				MinerLogger::write("winner-numeric     " + std::to_string(lastWinner), TextType::Ok);
+				MinerLogger::write("winner-address     " + NxtAddress(lastWinner).to_string(), TextType::Ok);
+				if (!name.empty())
+					MinerLogger::write("winner-name        " + name, TextType::Ok);
+				MinerLogger::write(std::string(50, '-'), TextType::Ok);
+			}
+		});
+		
+		threadLastWinner.detach();
+	}
+
 	// setup new block-data
 	gensigStr_ = gensigStr;
 	blockHeight_ = blockHeight;
@@ -210,15 +251,16 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 	// is the new nonce better then the best one we already have?
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
 	{
-		auto newDeadline = deadlines_[accountId].add({ nonce, deadline, accountId, blockHeight_, plotFile });
+		auto newDeadline = deadlines_[accountId].add({ nonce, deadline, accountId, blockHeight_, plotFile,
+			accountNames_.getName(accountId, wallet_) });
 
 		if (MinerConfig::getConfig().output.nonceFound)
 		{
-			auto message = NxtAddress(accountId).to_string() + ": nonce found (" + Burst::deadlineFormat(deadline) + ")";
+			auto message = newDeadline->getAccountName() + ": nonce found (" + Burst::deadlineFormat(deadline) + ")";
 			
 			if (MinerConfig::getConfig().output.nonceFoundPlot)
 				message += " in " + plotFile;
-			
+
 			MinerLogger::write(message, TextType::Unimportant);
 		}
 
@@ -298,10 +340,6 @@ bool Burst::Miner::getMiningInfo()
 				currentBlockHeight_ = newBlockHeight;
 			}
 
-			// on HTTP/1.1 connection get not close so we need to use it further
-			//if (MinerConfig::getConfig().getHttp() == 1)
-			//transferSocket(response, miningInfoSocket_);
-
 			transferSession(response, miningInfoSession_);
 			return true;
 		}
@@ -327,33 +365,3 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 
 	return deadlines_[accountId].getBestSent();
 }
-
-/*std::unique_ptr<Burst::Socket> Burst::Miner::getSocket()
-{
-	return MinerConfig::getConfig().createSocket();
-	//return sockets_.getSocket();
-}
-
-std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Miner::createSession()
-{
-	static auto ip = MinerConfig::getConfig().urlPool.getIp();
-	static auto port = static_cast<Poco::UInt16>(MinerConfig::getConfig().urlPool.getPort());
-	static auto timeout = secondsToTimespan(MinerConfig::getConfig().getTimeout());
-
-	auto session = std::make_unique<Poco::Net::HTTPClientSession>(ip, port);
-	session->setTimeout(timeout);
-
-	return session;
-}
-
-std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Miner::createWalletSession()
-{
-	static auto ip = MinerConfig::getConfig().getWalletUrl().getIp();
-	static auto port = static_cast<Poco::UInt16>(MinerConfig::getConfig().getWalletUrl().getPort());
-	static auto timeout = secondsToTimespan(MinerConfig::getConfig().getTimeout());
-
-	std::unique_ptr<Poco::Net::HTTPClientSession> session = std::make_unique<Poco::Net::HTTPSClientSession>(ip, port);
-	session->setTimeout(timeout);
-
-	return session;
-}*/

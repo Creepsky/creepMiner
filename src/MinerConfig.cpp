@@ -22,7 +22,7 @@
 
 void Burst::MinerConfig::rescan()
 {
-	this->readConfigFile(this->configPath);
+	this->readConfigFile(this->configPath_);
 }
 
 Burst::PlotFile::PlotFile(std::string&& path, size_t size)
@@ -41,10 +41,10 @@ size_t Burst::PlotFile::getSize() const
 
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 {
-	this->configPath = configPath;
+	configPath_ = configPath;
 	std::ifstream inputFileStream;
 
-	plotList.clear();
+	plotList_.clear();
 
 	auto exceptionMask = inputFileStream.exceptions() | std::ios::failbit;
 	inputFileStream.exceptions(exceptionMask);
@@ -153,6 +153,11 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
+	if (configDoc.HasMember("walletUrl"))
+	{
+		urlWallet_ = { configDoc["walletUrl"].GetString() };
+	}
+
 	if (configDoc.HasMember("miningInfoUrl"))
 	{
 		urlMiningInfo = { configDoc["miningInfoUrl"].GetString() };
@@ -184,7 +189,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		uint64_t totalSize = 0;
 
-		for (auto plotFile : plotList)
+		for (auto plotFile : plotList_)
 			totalSize += plotFile->getSize();
 
 		MinerLogger::write("Total plots size: " + gbToString(totalSize) + " GB", TextType::System);
@@ -195,7 +200,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
-	if (this->plotList.empty())
+	if (plotList_.empty())
 	{
 		MinerLogger::write("No valid plot file or directory in config file " + configPath, TextType::Error);
 		return false;
@@ -279,19 +284,19 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 const std::string& Burst::MinerConfig::getPath() const
 {
-	return configPath;
+	return configPath_;
 }
 
 const std::vector<std::shared_ptr<Burst::PlotFile>>& Burst::MinerConfig::getPlotFiles() const
 {
-	return plotList;
+	return plotList_;
 }
 
 uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 {
 	uintmax_t sum = 0;
 
-	for (auto plotFile : plotList)
+	for (auto plotFile : plotList_)
 		sum += plotFile->getSize();
 
 	return sum;
@@ -305,6 +310,11 @@ float Burst::MinerConfig::getReceiveTimeout() const
 float Burst::MinerConfig::getSendTimeout() const
 {
 	return send_timeout_;
+}
+
+const Burst::Url& Burst::MinerConfig::getWalletUrl() const
+{
+	return urlWallet_;
 }
 
 size_t Burst::MinerConfig::getReceiveMaxRetry() const
@@ -343,7 +353,7 @@ std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostTyp
 		url = &urlMiningInfo;
 	else if (hostType == HostType::Wallet)
 		// TODO: wallet-url
-		url = nullptr;
+		url = &urlWallet_;
 	else
 		url = nullptr;
 
@@ -386,7 +396,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 	if (info.st_mode & S_IFDIR)
 	{
 		auto dirPath = fileOrPath;
-		auto sizeBefore = plotList.size();
+		auto sizeBefore = plotList_.size();
 
 		if (dirPath[dirPath.length() - 1] != PATH_SEPARATOR)
 			dirPath += PATH_SEPARATOR;
@@ -414,7 +424,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 			return false;
 		}
 
-		MinerLogger::write(std::to_string(this->plotList.size() - sizeBefore) + " plot(s) found at " + fileOrPath
+		MinerLogger::write(std::to_string(this->plotList_.size() - sizeBefore) + " plot(s) found at " + fileOrPath
 						   + ", total size: " + gbToString(size) + " GB", TextType::System);
 	}
 	// its a single plot file
@@ -433,15 +443,15 @@ std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const std::stri
 {
 	if (isValidPlotFile(path))
 	{
-		for (size_t i = 0; i < this->plotList.size(); i++)
-			if (this->plotList[i]->getPath() == path)
-				return this->plotList[i];
+		for (size_t i = 0; i < this->plotList_.size(); i++)
+			if (this->plotList_[i]->getPath() == path)
+				return this->plotList_[i];
 
 		std::ifstream in(path, std::ifstream::ate | std::ifstream::binary);
 
 		auto plotFile = std::make_shared<PlotFile>(std::string(path), in.tellg());
 
-		this->plotList.emplace_back(plotFile);
+		plotList_.emplace_back(plotFile);
 
 		in.close();
 

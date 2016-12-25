@@ -13,6 +13,13 @@
 #include <sstream>
 #include <iomanip>
 #include <Poco/Timespan.h>
+#include <memory>
+
+namespace Poco
+{
+	class URI;
+	namespace Net { class HTTPClientSession; }
+}
 
 namespace Burst
 {
@@ -52,4 +59,5 @@ namespace Burst
 	}
 
 	Poco::Timespan secondsToTimespan(float seconds);
+	std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Poco::URI& uri);
 }

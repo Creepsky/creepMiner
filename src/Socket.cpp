@@ -33,9 +33,6 @@ bool Burst::Socket::connect(const std::string& ip, size_t port)
 		return false;
 	}
 
-	if (!socket_.poll({ 1, 0 }, Poco::Net::StreamSocket::SELECT_READ | Poco::Net::StreamSocket::SELECT_WRITE))
-		return false;
-
 	auto errorNr = getError();
 
 	if (errorNr != 0)

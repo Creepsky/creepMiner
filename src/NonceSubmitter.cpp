@@ -7,6 +7,7 @@
 #include "MinerConfig.hpp"
 #include "Miner.hpp"
 #include <fstream>
+#include <atomic>
 
 Burst::NonceSubmitter::NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline)
 	: miner_(&miner), deadline_(deadline)
@@ -20,7 +21,7 @@ void Burst::NonceSubmitter::startSubmit()
 
 void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline> deadline) const
 {
-	static uint32_t submitThreads = 0;
+	static std::atomic_uint submitThreads = 0;
 
 	++submitThreads;
 
@@ -29,6 +30,7 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 	auto nonce = deadline->getNonce();
 	auto deadlineValue = deadline->getDeadline();
 	auto accountId = deadline->getAccountId();
+	auto accountName = deadline->getAccountName();
 	auto betterDeadlineInPipeline = false;
 	auto plotFile = deadline->getPlotFile();
 
@@ -58,8 +60,7 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 
 	//MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
 
-	NxtAddress addr(accountId);
-	MinerLogger::write(addr.to_string() + ": nonce on the way (" + deadline->deadlineToReadableString() + ")");
+	MinerLogger::write(accountName + ": nonce on the way (" + deadline->deadlineToReadableString() + ")");
 
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
@@ -85,11 +86,11 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 			auto response = request.submit(nonce, accountId);
 			auto receiveTryCount = 0u;
 
-			if (response.canReceive() && firstSendAttempt)
-			{
-				MinerLogger::write(addr.to_string() + ": nonce submitted (" + deadlineFormat(deadlineValue) + ")", TextType::Ok);
-				firstSendAttempt = false;
-			}
+		if (response.canReceive() && firstSendAttempt)
+		{
+			MinerLogger::write(accountName + ": nonce submitted (" + deadlineFormat(deadlineValue) + ")", TextType::Ok);
+			firstSendAttempt = false;
+		}
 
 			MinerLogger::write("Send-loop " + std::to_string(sendTryCount + 1) + " (" + deadline->deadlineToReadableString() + ")",
 							   TextType::Debug);
@@ -142,7 +143,7 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 				}
 			}
 
-			auto message = NxtAddress(accountId).to_string() + ": nonce confirmed (" + deadlineFormat(deadlineValue) + ")";
+			auto message = accountName + ": nonce confirmed (" + deadlineFormat(deadlineValue) + ")";
 
 			if (MinerConfig::getConfig().output.nonceConfirmedPlot)
 				message += " in " + plotFile;
@@ -156,13 +157,13 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 		{
 			// sent, but not confirmed
 			if (firstSendAttempt)
-				MinerLogger::write(NxtAddress(accountId).to_string() + ": could not submit nonce! network issues?" +
+				MinerLogger::write(accountName + ": could not submit nonce! network issues?" +
 								   " (" + deadlineFormat(deadlineValue) + ")", TextType::Error);
 			else if (confirmation.errorCode == SubmitResponse::Error)
-				MinerLogger::write(NxtAddress(accountId).to_string() + ": error on submitting nonce!" +
+				MinerLogger::write(accountName + ": error on submitting nonce!" +
 					" (" + deadlineFormat(deadlineValue) + ")", TextType::Error);
 			else
-				MinerLogger::write(NxtAddress(accountId).to_string() + ": got no confirmation from server! busy?" +
+				MinerLogger::write(accountName + ": got no confirmation from server! busy?" +
 								   " (" + deadlineFormat(deadlineValue) + ")", TextType::Error);
 		}
 	}

@@ -12,7 +12,8 @@ namespace Burst
 	{
 	public:
 		//Deadline(uint64_t nonce, uint64_t deadline);
-		Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block, std::string plotFile);
+		Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block, std::string plotFile,
+			const std::string& accountName);
 		Deadline(Deadline&& rhs) = default;
 		~Deadline();
 
@@ -22,6 +23,7 @@ namespace Burst
 		uint64_t getNonce() const;
 		uint64_t getDeadline() const;
 		AccountId getAccountId() const;
+		std::string getAccountName() const;
 		uint64_t getBlock() const;
 		bool isOnTheWay() const;
 		bool isConfirmed() const;
@@ -38,6 +40,7 @@ namespace Burst
 		std::string plotFile_ = "";
 		bool sent_ = false;
 		bool confirmed_ = false;
+		std::string accountName_ = "";
 	};
 
 	class Deadlines

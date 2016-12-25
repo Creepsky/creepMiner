@@ -16,6 +16,8 @@
 #include "Deadline.hpp"
 #include <thread>
 #include <memory>
+#include "AccountNames.hpp"
+#include "Wallet.hpp"
 
 namespace Poco { namespace Net { class HTTPClientSession; } }
 
@@ -65,5 +67,7 @@ namespace Burst
 		uint64_t currentBaseTarget_ = 0u;
 		uint64_t targetDeadline_ = 0u;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_ = nullptr;
+		AccountNames accountNames_;
+		Wallet wallet_;
 	};
 }

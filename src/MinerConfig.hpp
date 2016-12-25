@@ -78,6 +78,7 @@ namespace Burst
 
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
+		const Url& getWalletUrl() const;
 
 		size_t getReceiveMaxRetry() const;
 		size_t getSendMaxRetry() const;
@@ -95,8 +96,8 @@ namespace Burst
 		bool addPlotLocation(const std::string& fileOrPath);
 		std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
 
-		std::string configPath;
-		std::vector<std::shared_ptr<PlotFile>> plotList;
+		std::string configPath_;
+		std::vector<std::shared_ptr<PlotFile>> plotList_;
 		float receive_timeout_ = 3.f;
 		float send_timeout_ = 3.f;
 		size_t send_max_retry_ = 3;
@@ -104,5 +105,6 @@ namespace Burst
 		size_t submission_max_retry_ = 3;
 		size_t http_ = 0;
 		std::string confirmedDeadlinesPath_ = "";
+		Url urlWallet_;
 	};
 }

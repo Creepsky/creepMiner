@@ -192,7 +192,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSLL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
@@ -432,6 +432,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\AccountNames.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
     <ClCompile Include="src\Request.cpp" />
     <ClCompile Include="src\Response.cpp" />
@@ -447,8 +448,10 @@
     <ClCompile Include="src\PlotReader.cpp" />
     <ClCompile Include="src\sphlib\sph_shabal.cpp" />
     <ClCompile Include="src\Url.cpp" />
+    <ClCompile Include="src\Wallet.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AccountNames.hpp" />
     <ClInclude Include="src\NonceSubmitter.hpp" />
     <ClInclude Include="src\Request.hpp" />
     <ClInclude Include="src\Response.hpp" />
@@ -474,6 +477,7 @@
     <ClInclude Include="src\sphlib\sph_types.h" />
     <ClInclude Include="src\Url.hpp" />
     <ClInclude Include="src\win\dirent.h" />
+    <ClInclude Include="src\Wallet.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

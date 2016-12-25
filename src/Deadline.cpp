@@ -1,13 +1,16 @@
 ﻿#include "Deadline.hpp"
 #include "MinerUtil.hpp"
 #include <algorithm>
+#include "nxt/nxt_address.h"
 
 /*Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline)
 	: nonce(nonce), deadline(deadline)
 {}*/
 
-Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block, std::string plotFile)
-	: accountId_(accountId), block_(block), nonce_(nonce), deadline_(deadline), plotFile_(std::move(plotFile))
+Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block, std::string plotFile,
+	const std::string& accountName)
+	: accountId_(accountId), block_(block), nonce_(nonce), deadline_(deadline), plotFile_(std::move(plotFile)),
+	accountName_(accountName)
 {}
 
 uint64_t Burst::Deadline::getNonce() const
@@ -23,6 +26,13 @@ uint64_t Burst::Deadline::getDeadline() const
 Burst::AccountId Burst::Deadline::getAccountId() const
 {
 	return accountId_;
+}
+
+std::string Burst::Deadline::getAccountName() const
+{
+	if (accountName_.empty())
+		return NxtAddress(getAccountId()).to_string();
+	return accountName_;
 }
 
 uint64_t Burst::Deadline::getBlock() const
