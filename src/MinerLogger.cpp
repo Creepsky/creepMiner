@@ -16,6 +16,7 @@
 #ifdef _WIN32
 #include <win/dirent.h>
 #include <wincon.h>
+#include <windows.h>
 #endif
 
 
@@ -23,6 +24,8 @@ Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White,
 std::mutex Burst::MinerLogger::consoleMutex;
 Burst::TextType Burst::MinerLogger::currentTextType = Burst::TextType::Normal;
 bool Burst::MinerLogger::progressFlag_ = false;
+float Burst::MinerLogger::lastProgress_ = 0.f;
+size_t Burst::MinerLogger::lastPipeCount_ = 0u;
 
 std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
 	{
@@ -41,13 +44,10 @@ std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::Min
 
 void Burst::MinerLogger::print(const std::string& text)
 {
-	auto now = std::chrono::system_clock::now();
-	auto now_c = std::chrono::system_clock::to_time_t(now);
-
 	auto typeBefore = currentTextType;
 
 	setColor(TextType::Normal);
-	std::cout << std::put_time(std::localtime(&now_c), "%X") << ": ";
+	printTime();
 
 	setColor(typeBefore);
 	std::cout << text;
@@ -69,17 +69,27 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	std::lock_guard<std::mutex> lock(consoleMutex);
 	setColor(type);
 
-	if (progressFlag_)
-	{
-		if (type == TextType::Progress)
-			std::cout << '\r' << std::flush;
-		else
-			std::cout << std::endl;
-	}
+	auto wasProgress = progressFlag_;
+
+	if (wasProgress)
+		clearLine();
 
 	progressFlag_ = type == TextType::Progress;
 
 	print(text);
+
+	if (wasProgress && lastProgress_ < 100.f)
+		printProgress(lastProgress_, lastPipeCount_);
+}
+
+void Burst::MinerLogger::writeProgress(float progress, size_t pipes)
+{
+	std::lock_guard<std::mutex> lock(consoleMutex);
+
+	if (progressFlag_)
+		clearLine();
+
+	printProgress(progress, pipes);
 }
 
 void Burst::MinerLogger::nextLine()
@@ -119,6 +129,57 @@ void Burst::MinerLogger::setColor(TextType type)
 	};
 #endif
 	currentTextType = type;
+}
+
+void Burst::MinerLogger::clearLine()
+{
+	static auto consoleLength = 0u;
+
+	if (consoleLength == 0)
+	{
+#ifdef WIN32
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+		consoleLength = csbi.srWindow.Right - csbi.srWindow.Left;
+#else
+		struct winsize size;
+		ioctl(STDOUT_FILENO,TIOCGWINSZ,&size);
+		consoleLength = size.ws_col;
+#endif
+	}
+
+	std::cout << '\r' << std::string(consoleLength, ' ') << '\r' << std::flush;
+}
+
+void Burst::MinerLogger::printTime()
+{
+	auto now = std::chrono::system_clock::now();
+	auto now_c = std::chrono::system_clock::to_time_t(now);
+	std::cout << std::put_time(std::localtime(&now_c), "%X") << ": ";
+}
+
+void Burst::MinerLogger::printProgress(float progress, size_t pipes)
+{
+	auto done = static_cast<size_t>(pipes * (progress / 100));
+	auto notDone = pipes - done;
+	lastProgress_ = progress;
+	lastPipeCount_ = pipes;
+	progressFlag_ = true;
+
+	setColor(TextType::Normal);
+	printTime();
+
+	setColor(TextType::Unimportant);
+	std::cout << '[';
+
+	setColor(TextType::Success);
+	std::cout << std::string(done, '+');
+
+	setColor(TextType::Normal);
+	std::cout << std::string(notDone, '-');
+
+	setColor(TextType::Unimportant);
+	std::cout << ']' << ' ' << static_cast<size_t>(progress) << '%';
 }
 
 void Burst::MinerLogger::setColor(ColorPair color)

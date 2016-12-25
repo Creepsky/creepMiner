@@ -50,7 +50,7 @@ namespace Burst
 
 	struct Output
 	{
-		bool progress = false;
+		bool progress = true;
 		bool debug = false;
 		bool nonceFound = true;
 		bool nonceFoundPlot = false;

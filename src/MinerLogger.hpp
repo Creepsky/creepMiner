@@ -58,6 +58,7 @@ namespace Burst
 		};
 
 		static void write(const std::string& text, TextType type = TextType::Normal);
+		static void writeProgress(float progress, size_t pipes);
 
 		static void nextLine();
 
@@ -70,12 +71,17 @@ namespace Burst
 		static void setColor(Color foreground, Color background = Color::Black);
 		static void setColor(ColorPair color);
 		static void setColor(TextType type);
+		static void clearLine();
+		static void printTime();
+		static void printProgress(float progress, size_t pipes);
 
 		static std::mutex consoleMutex;
 		static ColorPair currentColor;
 		static TextType currentTextType;
 		static std::map<TextType, ColorPair> typeColors;
 		static bool progressFlag_;
+		static float lastProgress_;
+		static size_t lastPipeCount_;
 	};
 
 	using TextType = MinerLogger::TextType;

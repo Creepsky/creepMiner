@@ -39,30 +39,30 @@ namespace Burst
 		void readerThread();
 		void verifierThread();
 
-		size_t nonceStart;
-		size_t scoopNum;
-		size_t nonceCount;
-		size_t nonceOffset;
-		size_t nonceRead;
-		size_t staggerSize;
-		uint64_t accountId;
-		GensigData gensig;
+		size_t nonceStart_;
+		size_t scoopNum_;
+		size_t nonceCount_;
+		size_t nonceOffset_;
+		size_t nonceRead_;
+		size_t staggerSize_;
+		uint64_t accountId_;
+		GensigData gensig_;
 
-		bool done = false, stopped = false;
-		bool runVerify;
-		std::string inputPath;
+		bool done_ = false, stopped_ = false;
+		bool runVerify_;
+		std::string inputPath_;
 
-		Miner* miner;
-		std::thread readerThreadObj;
+		Miner* miner_;
+		std::thread readerThreadObj_;
 
-		std::vector<ScoopData> buffer[2];
+		std::vector<ScoopData> buffer_[2];
 
 		Shabal256 hash;
-		bool verifySignaled;
-		std::mutex verifyMutex;
-		std::condition_variable verifySignal;
-		std::vector<ScoopData>* readBuffer;
-		std::vector<ScoopData>* writeBuffer;
+		bool verifySignaled_;
+		std::mutex verifyMutex_;
+		std::condition_variable verifySignal_;
+		std::vector<ScoopData>* readBuffer_;
+		std::vector<ScoopData>* writeBuffer_;
 	};
 
 	class PlotListReader
@@ -78,12 +78,12 @@ namespace Burst
 	private:
 		void readThread();
 
-		std::vector<std::shared_ptr<PlotFile>> plotFileList;
-		std::thread readerThreadObj;
-		bool done, stopped;
-		Miner* miner;
-		std::shared_ptr<PlotReadProgress> progress;
-		std::string dir;
+		std::vector<std::shared_ptr<PlotFile>> plotFileList_;
+		std::thread readerThreadObj_;
+		bool done_, stopped_;
+		Miner* miner_;
+		std::shared_ptr<PlotReadProgress> progress_;
+		std::string dir_;
 	};
 
 	class PlotReadProgress
@@ -96,7 +96,7 @@ namespace Burst
 		bool isReady() const;
 
 	private:
-		uintmax_t progress = 0, max = 0;
-		std::mutex lock;
+		uintmax_t progress_ = 0, max_ = 0;
+		std::mutex lock_;
 	};
 }
