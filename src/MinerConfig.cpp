@@ -145,7 +145,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	if (configDoc.HasMember("poolUrl"))
 	{
-		urlPool = { configDoc["poolUrl"].GetString() };
+		urlPool_ = { configDoc["poolUrl"].GetString() };
 	}
 	else
 	{
@@ -160,12 +160,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	if (configDoc.HasMember("miningInfoUrl"))
 	{
-		urlMiningInfo = { configDoc["miningInfoUrl"].GetString() };
+		urlMiningInfo_ = { configDoc["miningInfoUrl"].GetString() };
 	}
 	// if no getMiningInfoUrl and port are defined, we assume that the pool is the source
 	else
 	{
-		urlMiningInfo = urlPool;
+		urlMiningInfo_ = urlPool_;
 	}
 
 	if (configDoc.HasMember("plots"))
@@ -312,6 +312,16 @@ float Burst::MinerConfig::getSendTimeout() const
 	return send_timeout_;
 }
 
+const Burst::Url& Burst::MinerConfig::getPoolUrl() const
+{
+	return urlPool_;
+}
+
+const Burst::Url& Burst::MinerConfig::getMiningInfoUrl() const
+{
+	return urlMiningInfo_;
+}
+
 const Burst::Url& Burst::MinerConfig::getWalletUrl() const
 {
 	return urlWallet_;
@@ -348,11 +358,10 @@ std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostTyp
 	const Url* url;
 	
 	if (hostType == HostType::Pool)
-		url = &urlPool;
+		url = &urlPool_;
 	else if (hostType == HostType::MiningInfo)
-		url = &urlMiningInfo;
+		url = &urlMiningInfo_;
 	else if (hostType == HostType::Wallet)
-		// TODO: wallet-url
 		url = &urlWallet_;
 	else
 		url = nullptr;

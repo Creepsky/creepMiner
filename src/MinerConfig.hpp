@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "Url.hpp"
 #include <Poco/Net/HTTPClientSession.h>
+#include "Url.hpp"
 
 /*
  {
@@ -67,8 +67,6 @@ namespace Burst
 		bool readConfigFile(const std::string& configPath);
 		void rescan();
 
-		Url urlPool;
-		Url urlMiningInfo;
 		size_t maxBufferSizeMB = 128;
 		Output output;
 		const std::string& getPath() const;
@@ -78,6 +76,8 @@ namespace Burst
 
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
+		const Url& getPoolUrl() const;
+		const Url& getMiningInfoUrl() const;
 		const Url& getWalletUrl() const;
 
 		size_t getReceiveMaxRetry() const;
@@ -105,6 +105,8 @@ namespace Burst
 		size_t submission_max_retry_ = 3;
 		size_t http_ = 0;
 		std::string confirmedDeadlinesPath_ = "";
+		Url urlPool_;
+		Url urlMiningInfo_;
 		Url urlWallet_;
 	};
 }

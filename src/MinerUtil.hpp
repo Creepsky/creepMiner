@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <Poco/Timespan.h>
 #include <memory>
+#include <Poco/Net/SocketAddress.h>
 
 namespace Poco
 {
@@ -60,4 +61,5 @@ namespace Burst
 
 	Poco::Timespan secondsToTimespan(float seconds);
 	std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Poco::URI& uri);
+	Poco::Net::SocketAddress getHostAddress(const Poco::URI& uri);
 }

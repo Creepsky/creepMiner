@@ -14,6 +14,8 @@
 #include "Declarations.hpp"
 #include "MinerLogger.hpp"
 #include <iostream>
+#include <Poco/URI.h>
+#include <Poco/Net/HTTPClientSession.h>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -196,4 +198,16 @@ Poco::Timespan Burst::secondsToTimespan(float seconds)
 	auto secondsInt = static_cast<long>(seconds);
 	auto microSeconds = static_cast<long>((seconds - secondsInt) * 100000);
 	return Poco::Timespan{secondsInt, microSeconds};
+}
+
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::createSession(const Poco::URI& uri)
+{
+	return nullptr;
+}
+
+Poco::Net::SocketAddress Burst::getHostAddress(const Poco::URI& uri)
+{
+	Poco::Net::SocketAddress address{uri.getHost() + ':' + std::to_string(uri.getPort())};
+	MinerLogger::write(address.toString());
+	return address;
 }

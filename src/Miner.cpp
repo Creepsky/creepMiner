@@ -31,8 +31,8 @@ void Burst::Miner::run()
 	auto& config = MinerConfig::getConfig();
 	auto errors = 0u;
 
-	if (config.urlPool.getIp().empty() ||
-		config.urlMiningInfo.getIp().empty())
+	if (config.getPoolUrl().empty() ||
+		config.getMiningInfoUrl().empty())
 	{
 		MinerLogger::write("Mining networking failed", TextType::Error);
 		return;
@@ -45,10 +45,10 @@ void Burst::Miner::run()
 	MinerLogger::write("Send-Timeout : " + std::to_string(config.getSendTimeout()) + " seconds", TextType::System);
 	MinerLogger::write("Receive-Timeout : " + std::to_string(config.getReceiveTimeout()) + " seconds", TextType::System);
 	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
-	MinerLogger::write("Pool Host : " + config.urlPool.getCanonical() + ":" + std::to_string(config.urlPool.getPort()) +
-		" (" + config.urlPool.getIp() + ")", TextType::System);
-	MinerLogger::write("Mininginfo URL : " + config.urlMiningInfo.getCanonical() + ":" + std::to_string(config.urlMiningInfo.getPort()) +
-		" (" + config.urlMiningInfo.getIp() + ")", TextType::System);
+	MinerLogger::write("Pool Host : " + config.getPoolUrl().getCanonical() + ":" + std::to_string(config.getPoolUrl().getPort()) +
+		" (" + config.getPoolUrl().getIp() + ")", TextType::System);
+	MinerLogger::write("Mininginfo URL : " + config.getMiningInfoUrl().getCanonical() + ":" + std::to_string(config.getMiningInfoUrl().getPort()) +
+		" (" + config.getMiningInfoUrl().getIp() + ")", TextType::System);
 	if (!config.getWalletUrl().getCanonical().empty())
 		MinerLogger::write("Wallet URL : " + config.getWalletUrl().getCanonical() + ":" + std::to_string(config.getWalletUrl().getPort()) +
 			" (" + config.getWalletUrl().getIp() + ")", TextType::System);

@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include <string>
+#include <Poco/URI.h>
+#include <Poco/Net/IPAddress.h>
 
 namespace Burst
 {
@@ -9,20 +11,15 @@ namespace Burst
 	public:
 		Url() = default;
 		Url(const std::string& url);
-		Url(const std::string& canonical, uint32_t port);
-
-		void setUrl(const std::string& canonical, uint32_t port);
 
 		const std::string& getCanonical() const;
-		const std::string& getIp() const;
-		uint32_t getPort() const;
+		std::string getIp() const;
+		uint16_t getPort() const;
+		const Poco::URI& getUri() const;
+		bool empty() const;
 
 	private:
-		static std::string resolveHostname(const std::string& url);
-
-	private:
-		std::string canonical;
-		std::string ip;
-		uint32_t port;
+		Poco::URI uri_;
+		Poco::Net::IPAddress ip_;
 	};
 }
