@@ -31,7 +31,6 @@ const std::string& Burst::AccountNames::getName(AccountId accountId, Wallet& wal
 
 			if (wallet.getNameOfAccount(accountId, name))
 			{
-				MinerLogger::write(name);
 				std::lock_guard<std::mutex> nameLock(mutexName);
 				names_[accountId] = name;
 			}

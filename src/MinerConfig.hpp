@@ -91,7 +91,6 @@ namespace Burst
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
-		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const std::string& url) const;
 
 		static MinerConfig& getConfig();
 

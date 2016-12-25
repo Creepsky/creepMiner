@@ -4,6 +4,7 @@
 #include "Declarations.hpp"
 #include <Poco/Types.h>
 #include "rapidjson/document.h"
+#include "Url.hpp"
 
 namespace Poco { namespace Net { class HTTPClientSession; } }
 
@@ -15,7 +16,6 @@ namespace Burst
 	{
 	public:
 		Wallet();
-		Wallet(const std::string& ip, Poco::UInt16 port);
 		Wallet(const Url& url);
 		Wallet(const Wallet& rhs) = delete;
 		Wallet(Wallet&& rhs) = default;
@@ -32,5 +32,6 @@ namespace Burst
 		bool sendWalletRequest(const std::string& uri, rapidjson::Document& json);
 
 		std::unique_ptr<Poco::Net::HTTPClientSession> walletSession_ = nullptr;
+		Url url_;
 	};
 }

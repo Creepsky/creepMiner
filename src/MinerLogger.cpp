@@ -56,7 +56,7 @@ void Burst::MinerLogger::print(const std::string& text)
 		std::cout << std::endl;
 }
 
-void Burst::MinerLogger::write(const std::string& text, TextType type)
+void Burst::MinerLogger::writeAndFunc(TextType type, std::function<void()> func)
 {
 	switch (type)
 	{
@@ -65,7 +65,7 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 			return;
 	default: break;
 	}
-	
+		
 	std::lock_guard<std::mutex> lock(consoleMutex);
 	setColor(type);
 
@@ -76,10 +76,27 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 
 	progressFlag_ = type == TextType::Progress;
 
-	print(text);
+	func();
 
 	if (wasProgress && lastProgress_ < 100.f)
 		printProgress(lastProgress_, lastPipeCount_);
+}
+
+void Burst::MinerLogger::write(const std::string& text, TextType type)
+{
+	writeAndFunc(type, [text]()
+	{
+		print(text);
+	});
+}
+
+void Burst::MinerLogger::write(const std::vector<std::string>& lines, TextType type)
+{
+	writeAndFunc(type, [lines]()
+	{
+		for (const auto& line : lines)
+			print(line);
+	});
 }
 
 void Burst::MinerLogger::writeProgress(float progress, size_t pipes)

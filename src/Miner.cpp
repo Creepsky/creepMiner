@@ -115,14 +115,20 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 				if (blockHeight_ - 1 != block)
 					return;
 
-				MinerLogger::write(std::string(50, '-'), TextType::Ok);
-				MinerLogger::write("last block winner: ", TextType::Ok);
-				MinerLogger::write("block#             " + std::to_string(block), TextType::Ok);
-				MinerLogger::write("winner-numeric     " + std::to_string(lastWinner), TextType::Ok);
-				MinerLogger::write("winner-address     " + NxtAddress(lastWinner).to_string(), TextType::Ok);
+				std::vector<std::string> lines = {
+					std::string(50, '-'),
+					"last block winner: ",
+					"block#             " + std::to_string(block),
+					"winner-numeric     " + std::to_string(lastWinner),
+					"winner-address     " + NxtAddress(lastWinner).to_string()
+				};
+
 				if (!name.empty())
-					MinerLogger::write("winner-name        " + name, TextType::Ok);
-				MinerLogger::write(std::string(50, '-'), TextType::Ok);
+					lines.emplace_back("winner-name        " + name);
+
+				lines.emplace_back(std::string(50, '-'));
+
+				MinerLogger::write(lines, TextType::Ok);
 			}
 		});
 		
@@ -366,4 +372,14 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 		return nullptr;
 
 	return deadlines_[accountId].getBestSent();
+}
+
+std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(uint64_t accountId, uint64_t blockHeight)
+{
+	std::lock_guard<std::mutex> mutex(deadlinesLock_);
+
+	if (blockHeight != this->blockHeight_)
+		return nullptr;
+
+	return deadlines_[accountId].getBestConfirmed();
 }

@@ -11,6 +11,8 @@
 #include <string>
 #include <mutex>
 #include <map>
+#include <atomic>
+#include <vector>
 
 namespace Burst
 {
@@ -58,6 +60,7 @@ namespace Burst
 		};
 
 		static void write(const std::string& text, TextType type = TextType::Normal);
+		static void write(const std::vector<std::string>& lines, TextType type = TextType::Normal);
 		static void writeProgress(float progress, size_t pipes);
 
 		static void nextLine();
@@ -68,6 +71,7 @@ namespace Burst
 	private:
 		static MinerLogger& getInstance();
 		static void print(const std::string& text);
+		static void writeAndFunc(Burst::MinerLogger::TextType type, std::function<void()> func);
 		static void setColor(Color foreground, Color background = Color::Black);
 		static void setColor(ColorPair color);
 		static void setColor(TextType type);

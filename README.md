@@ -45,12 +45,14 @@ Inside the config-file, you can define the following settings:
 
 ```
 {
-    "poolUrl" : "burst-pool.cryptoport.io:8124",
+    "poolUrl" : "http://pool.burst-team.us:8124",
+	"miningUrl" : "http://pool.burst-team.us:8124",
+	"walletUrl" : "https://wallet.burst-team.us:8128",
     "submissionMaxRetry" : 3,
-    "sendMaxRetry" : 3,
     "receiveMaxRetry" : 3,
     "receiveTimeout" : 5,
     "sendTimeout" : 5,
+    "timeout" : 30,
     "maxBufferSizeMB" : 128,
     "output" : [
         "debug",
@@ -68,11 +70,12 @@ Inside the config-file, you can define the following settings:
 | --------- | ------------- |
 | **poolUrl** | the host, to whom the miner will connect. |
 | **miningInfoUrl** | the host, where the miner will get the mining info. If empty, its set to poolUrl. |
+| **walletUrl** | the host, where the miner will get the wallet infos. **Optional**! |
 | **submissionMaxRetry** | the max tries to resend a message to the server. |
-| **sendMaxRetry** | the max tries to send the nonce per submission-retry. |
-| **receiveMaxRetry** | the max tries to receive the answer for a nonce from server per submission-retry. |
-| **receiveTimeout** | the max time to wait for a response from the server. |
-| **sendTimeout** | the max time to wait for sending a message to the server. |
+| **receiveMaxRetry** | the max tries to receive the answer for a nonce from server per submission-retry. (**depricated**) |
+| **receiveTimeout** | the max time to wait for a response from the server. (**depricated**, see timeout) |
+| **sendTimeout** | the max time to wait for sending a message to the server. (**depricated**, see timeout) |
+| **timeout** | the max time to wait for a response from the server. |
 | **maxBufferSizeMB** | the buffer size while reading the plot files. |
 | **output** | decides, what messages will be printed in the output. For possible values see [Output-Flags](#output-flags).  |
 | **plots** | the paths to the directories, where to search for plot files. plot files are searched every new block. |
@@ -94,27 +97,8 @@ If no prefix is set, the **+** prefix is set implicitly.
 | nonce confirmed plot | shows the plot file of confirmed nonces |
 | plot done | shows done plot files while searching for nonces |
 | dir done | shows done dirs while searching for nonces |
+| last winner | shows the winner of the last block (only with a valid wallet url) |
 
 ## Submit-Process
 
-To have a better understanding for the settings in mining.conf, have a look at the submit-process.
-
-![Submit-Process](retry_settings.png "Submit-Process")
-
-A nonce is submitted max **submissionMaxRetry** times, before the submission gets aborted. In each submission first the nonce is send to the server max **sendMaxRetry** times, then for each sending a response received max **receiveMaxRetry** times.
-
-If you have the settings
-
-| option             | value |
-| ------------------ | ---- |
-| submissionMaxRetry | 3    |
-| sendMaxRetry       | 3    |
-| receiveMaxRetry    | 3    |
-
-you get the following max retries:
-
-| process     | retries |
-| ----------- | ---- |
-| submissions | 3 = submissionMaxRetry   |
-| sendings    | 9 = sendMaxRetry * submissionMaxRetry |
-| receivings  | 27 = sendings * receiveMaxRetry |
+The nonce is submitted maximal **submissionMaxRetry** times, with a maximal wait time of **timeout** seconds.

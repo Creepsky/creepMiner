@@ -394,13 +394,20 @@ std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostTyp
 
 std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(HostType hostType) const
 {
-	return createSocket(hostType)->createSession();
-}
+	const Url* url;
 
-std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(const std::string& url) const
-{
-	// return appropriate session for the type of url
-	// for example https, http(, ftp maybe)
+	if (hostType == HostType::Pool)
+		url = &urlPool_;
+	else if (hostType == HostType::MiningInfo)
+		url = &urlMiningInfo_;
+	else if (hostType == HostType::Wallet)
+		url = &urlWallet_;
+	else
+		url = nullptr;
+
+	if (url != nullptr)
+		return url->createSession();
+
 	return nullptr;
 }
 

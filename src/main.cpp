@@ -15,6 +15,7 @@
 #include "Poco/Net/HTTPSStreamFactory.h"
 #include "Poco/Net/PrivateKeyPassphraseHandler.h"
 #include "Poco/Net/AcceptCertificateHandler.h"
+#include <Poco/Net/HTTPSSessionInstantiator.h>
 
 class SSLInitializer
 {
@@ -79,6 +80,9 @@ int main(int argc, const char* argv[])
 		Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "", "", "",
 			Context::VERIFY_NONE, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
+
+		Poco::Net::HTTPSessionInstantiator::registerInstantiator();
+		Poco::Net::HTTPSSessionInstantiator::registerInstantiator();
 
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 			Burst::Miner().run();

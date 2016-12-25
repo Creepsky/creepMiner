@@ -113,8 +113,6 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 	{
 		if (confirmation.errorCode == SubmitResponse::Submitted)
 		{
-			deadline->confirm();
-
 			auto confirmedDeadlinesPath = MinerConfig::getConfig().getConfirmedDeadlinesPath();
 
 			if (!confirmedDeadlinesPath.empty())
@@ -143,7 +141,20 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 			if (MinerConfig::getConfig().output.nonceConfirmedPlot)
 				message += " in " + plotFile;
 
-			MinerLogger::write(message, TextType::Success);
+			auto bestConfirmed = miner->getBestConfirmed(accountId, deadline->getBlock());
+			auto showConfirmation = true;
+
+			// only show the confirmation, if the confirmed deadline is better then the best already confirmed
+			if (bestConfirmed != nullptr)
+				showConfirmation = bestConfirmed->getDeadline() > deadline->getDeadline();
+
+			if (showConfirmation)
+				MinerLogger::write(message, TextType::Success);
+
+			// we have to confirm it at the very last position
+			// because we work with the best confirmed deadline so far before
+			// this point
+			deadline->confirm();
 		}
 		else if (betterDeadlineInPipeline)
 			MinerLogger::write("Better deadline in pipeline, stop submitting! (" + deadlineFormat(deadline->getDeadline()) + ")",

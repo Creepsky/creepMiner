@@ -3,6 +3,13 @@
 #include <string>
 #include <Poco/URI.h>
 #include <Poco/Net/IPAddress.h>
+#include <memory>
+
+namespace Poco { namespace Net
+{
+	class HTTPClientSession;
+	class HTTPSessionFactory;
+} }
 
 namespace Burst
 {
@@ -17,6 +24,10 @@ namespace Burst
 		uint16_t getPort() const;
 		const Poco::URI& getUri() const;
 		bool empty() const;
+		std::unique_ptr<Poco::Net::HTTPClientSession> createSession() const;
+
+	private:
+		static void initHTTPSessionFactory();
 
 	private:
 		Poco::URI uri_;

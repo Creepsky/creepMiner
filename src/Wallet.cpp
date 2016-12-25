@@ -13,13 +13,11 @@ using namespace Poco::Net;
 Burst::Wallet::Wallet()
 {}
 
-Burst::Wallet::Wallet(const std::string& ip, Poco::UInt16 port)
-	: walletSession_(new HTTPSClientSession{ip, port})
-{}
-
 Burst::Wallet::Wallet(const Url& url)
-	: Wallet{url.getIp(), url.getPort()}
-{}
+	: url_(url)
+{
+	walletSession_ = url_.createSession();
+}
 
 Burst::Wallet::~Wallet()
 {}
@@ -28,7 +26,7 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId)
 {
 	winnerId = 0;
 
-	if (walletSession_ == nullptr)
+	if (url_.empty())
 		return false;
 
 	rapidjson::Document json;
@@ -53,7 +51,7 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 	rapidjson::Document json;
 	name = "";
 
-	if (walletSession_ == nullptr)
+	if (url_.empty())
 		return false;
 
 	if (sendWalletRequest("/burst?requestType=getAccount&account=" + std::to_string(account), json))
@@ -76,7 +74,7 @@ bool Burst::Wallet::getLastBlock(uint64_t& block)
 	rapidjson::Document json;
 	block = 0;
 
-	if (walletSession_ == nullptr)
+	if (url_.empty())
 		return false;
 
 	if (sendWalletRequest("/burst?requestType=getBlock", json))
@@ -98,6 +96,9 @@ bool Burst::Wallet::sendWalletRequest(const std::string& uri, rapidjson::Documen
 {
 	HTTPRequest request{ HTTPRequest::HTTP_GET, uri, HTTPRequest::HTTP_1_1};
 	request.setKeepAlive(true);
+
+	if (walletSession_ == nullptr)
+		walletSession_ = url_.createSession();
 	
 	Request req{std::move(walletSession_)};
 	auto resp = req.send(request);

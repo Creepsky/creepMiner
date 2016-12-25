@@ -46,6 +46,7 @@ namespace Burst
 		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile);
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
+		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
 
 	private:
 		void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
