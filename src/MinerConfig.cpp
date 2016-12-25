@@ -279,6 +279,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (configDoc["confirmed deadlines"].IsString())
 			confirmedDeadlinesPath_ = configDoc["confirmed deadlines"].GetString();
 
+	if (configDoc.HasMember("max submit threads"))
+		if (configDoc["max submit threads"].IsUint())
+			maxSubmitThreads_ = configDoc["max submit threads"].GetUint();
+
+	if (configDoc.HasMember("timeout"))
+		if (configDoc["timeout"].IsNumber())
+			timeout_ = static_cast<float>(configDoc["timeout"].GetDouble());
+
 	return true;
 }
 
@@ -310,6 +318,11 @@ float Burst::MinerConfig::getReceiveTimeout() const
 float Burst::MinerConfig::getSendTimeout() const
 {
 	return send_timeout_;
+}
+
+float Burst::MinerConfig::getTimeout() const
+{
+	return timeout_;
 }
 
 const Burst::Url& Burst::MinerConfig::getPoolUrl() const
@@ -350,6 +363,11 @@ size_t Burst::MinerConfig::getHttp() const
 const std::string& Burst::MinerConfig::getConfirmedDeadlinesPath() const
 {
 	return confirmedDeadlinesPath_;
+}
+
+size_t Burst::MinerConfig::getMaxSubmitThreads() const
+{
+	return maxSubmitThreads_;
 }
 
 std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostType) const

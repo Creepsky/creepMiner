@@ -25,6 +25,18 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 
 	++submitThreads;
 
+	// if max submit threads is set, check current amount of submit threads
+	if (MinerConfig::getConfig().getMaxSubmitThreads() > 0 &&
+		submitThreads > MinerConfig::getConfig().getMaxSubmitThreads())
+	{
+		// we cant start another submit thread, because all slots are designated
+		MinerLogger::write(NxtAddress(deadline->getAccountId()).to_string() + ": too many submit threads running! (" +
+			std::to_string(submitThreads) + ")");
+		--submitThreads;
+		// stop submitting
+		return;
+	}
+
 	MinerLogger::write(std::to_string(submitThreads) + " submitter-threads running", TextType::Debug);
 
 	auto nonce = deadline->getNonce();
@@ -71,20 +83,13 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 							   MinerConfig::getConfig().getSubmissionMaxRetry(),
 							   confirmation.errorCode))
 	{
-		auto sendTryCount = 0u;
-
 		MinerLogger::write("Submit-loop " + std::to_string(submitTryCount + 1) + " (" + deadline->deadlineToReadableString() + ")",
 						   TextType::Debug);
 
-		// send-loop
-		while (loopConditionHelper(sendTryCount,
-								   MinerConfig::getConfig().getSendMaxRetry(),
-								   confirmation.errorCode))
-		{
-			NonceRequest request(MinerConfig::getConfig().createSession(HostType::Pool));
+		NonceRequest request{MinerConfig::getConfig().createSession(HostType::Pool)};
 
-			auto response = request.submit(nonce, accountId);
-			auto receiveTryCount = 0u;
+		auto response = request.submit(nonce, accountId);
+		auto receiveTryCount = 0u;
 
 		if (response.canReceive() && firstSendAttempt)
 		{
@@ -92,22 +97,12 @@ void Burst::NonceSubmitter::submitThread(Miner* miner, std::shared_ptr<Deadline>
 			firstSendAttempt = false;
 		}
 
-			MinerLogger::write("Send-loop " + std::to_string(sendTryCount + 1) + " (" + deadline->deadlineToReadableString() + ")",
-							   TextType::Debug);
-
-			// receive-loop
-			while (response.canReceive() &&
-				loopConditionHelper(receiveTryCount,
-									MinerConfig::getConfig().getReceiveMaxRetry(),
-									confirmation.errorCode))
-			{
-				MinerLogger::write("Receive-loop " + std::to_string(receiveTryCount + 1) + " (" + deadline->deadlineToReadableString() + ")",
-								   TextType::Debug);
-				confirmation = response.getConfirmation();
-				++receiveTryCount;
-			}
-
-			++sendTryCount;
+		while (loopConditionHelper(receiveTryCount,
+								   MinerConfig::getConfig().getReceiveMaxRetry(),
+								   confirmation.errorCode))
+		{
+			confirmation = response.getConfirmation();
+			++receiveTryCount;
 		}
 
 		++submitTryCount;

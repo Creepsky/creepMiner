@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <memory>
-#include "Response.hpp"
 
 namespace Burst
 {

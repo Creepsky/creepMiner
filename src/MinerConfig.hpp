@@ -76,6 +76,7 @@ namespace Burst
 
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
+		float getTimeout() const;
 		const Url& getPoolUrl() const;
 		const Url& getMiningInfoUrl() const;
 		const Url& getWalletUrl() const;
@@ -85,6 +86,7 @@ namespace Burst
 		size_t getSubmissionMaxRetry() const;
 		size_t getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
+		size_t getMaxSubmitThreads() const;
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -100,6 +102,7 @@ namespace Burst
 		std::vector<std::shared_ptr<PlotFile>> plotList_;
 		float receive_timeout_ = 3.f;
 		float send_timeout_ = 3.f;
+		float timeout_ = 30.f;
 		size_t send_max_retry_ = 3;
 		size_t receive_max_retry_ = 3;
 		size_t submission_max_retry_ = 3;
@@ -108,5 +111,6 @@ namespace Burst
 		Url urlPool_;
 		Url urlMiningInfo_;
 		Url urlWallet_;
+		size_t maxSubmitThreads_ = 0;
 	};
 }
