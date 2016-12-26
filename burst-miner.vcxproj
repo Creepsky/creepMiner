@@ -288,7 +288,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
       <CompileAsManaged>false</CompileAsManaged>
@@ -315,7 +315,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>Ws2_32.lib;PocoNet.lib;PocoFoundation.lib;PocoNetSSL.lib;PocoCrypto.lib;PocoUtil.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <FullProgramDatabaseFile>false</FullProgramDatabaseFile>
     </Link>
