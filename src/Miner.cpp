@@ -104,31 +104,39 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		std::thread threadLastWinner([this, block]()
 		{
 			AccountId lastWinner;
+			auto fetched = false;
 
-			if (wallet_.getWinnerOfBlock(block, lastWinner))
+			for (auto loop = 0;
+				!fetched && loop < MinerConfig::getConfig().getSubmissionMaxRetry();
+				++loop)
 			{
-				std::string name;
-				wallet_.getNameOfAccount(lastWinner, name);
+				if (wallet_.getWinnerOfBlock(block, lastWinner))
+				{
+					std::string name;
+					wallet_.getNameOfAccount(lastWinner, name);
 
-				// if we dont fetched the winner of the last block
-				// we exit this thread function
-				if (blockHeight_ - 1 != block)
-					return;
+					// if we dont fetched the winner of the last block
+					// we exit this thread function
+					if (blockHeight_ - 1 != block)
+						return;
 
-				std::vector<std::string> lines = {
-					std::string(50, '-'),
-					"last block winner: ",
-					"block#             " + std::to_string(block),
-					"winner-numeric     " + std::to_string(lastWinner),
-					"winner-address     " + NxtAddress(lastWinner).to_string()
-				};
+					std::vector<std::string> lines = {
+						std::string(50, '-'),
+						"last block winner: ",
+						"block#             " + std::to_string(block),
+						"winner-numeric     " + std::to_string(lastWinner),
+						"winner-address     " + NxtAddress(lastWinner).to_string()
+					};
 
-				if (!name.empty())
-					lines.emplace_back("winner-name        " + name);
+					if (!name.empty())
+						lines.emplace_back("winner-name        " + name);
 
-				lines.emplace_back(std::string(50, '-'));
+					lines.emplace_back(std::string(50, '-'));
 
-				MinerLogger::write(lines, TextType::Ok);
+					MinerLogger::write(lines, TextType::Ok);
+
+					fetched = true;
+				}
 			}
 		});
 		
