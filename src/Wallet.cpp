@@ -1,6 +1,6 @@
 ﻿#include "Wallet.hpp"
 #include "MinerUtil.hpp"
-#include <Poco/Net/HTTPSClientSession.h>
+#include <Poco/Net/HTTPClientSession.h>
 #include "MinerConfig.hpp"
 #include "Request.hpp"
 #include "rapidjson/reader.h"

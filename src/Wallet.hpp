@@ -31,7 +31,7 @@ namespace Burst
 	private:
 		bool sendWalletRequest(const std::string& uri, rapidjson::Document& json);
 
-		std::unique_ptr<Poco::Net::HTTPClientSession> walletSession_ = nullptr;
+		std::unique_ptr<Poco::Net::HTTPClientSession> walletSession_;
 		Url url_;
 	};
 }
