@@ -42,7 +42,7 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId)
 		return false;
 	}
 
-	MinerLogger::write(std::string("Could not get last winner!"), TextType::Error);
+	MinerLogger::write(std::string("Could not get last winner!"), TextType::Debug);
 	return false;
 }
 
@@ -65,7 +65,7 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 		return false;
 	}
 
-	MinerLogger::write(std::string("Could not get name of account!"), TextType::Error);
+	MinerLogger::write(std::string("Could not get name of account!"), TextType::Debug);
 	return false;
 }
 
@@ -88,7 +88,7 @@ bool Burst::Wallet::getLastBlock(uint64_t& block)
 		return false;
 	}
 
-	MinerLogger::write(std::string("Could not get last blockheight!"), TextType::Error);
+	MinerLogger::write(std::string("Could not get last blockheight!"), TextType::Debug);
 	return false;
 }
 
