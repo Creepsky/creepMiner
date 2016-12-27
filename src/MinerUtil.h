@@ -12,6 +12,7 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
+#include <array>
 
 namespace Burst
 {
