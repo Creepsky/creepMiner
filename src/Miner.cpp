@@ -16,9 +16,9 @@
 #include "Request.hpp"
 #include "NonceSubmitter.hpp"
 #include "rapidjson/document.h"
-#include <Poco/URI.h>
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
+#include <Poco/Observer.h>
 
 Burst::Miner::~Miner()
 {}
@@ -62,7 +62,7 @@ void Burst::Miner::run()
 	running_ = true;
 
 	wallet_.getLastBlock(blockHeight_);
-
+	
 	while (running_)
 	{
 		if (getMiningInfo())
@@ -293,17 +293,8 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		newDeadline->send();
 
 		if (createSendThread)
-			NonceSubmitter{*this, newDeadline }.startSubmit();
+			taskManager_.start(new NonceSubmitter{*this, newDeadline});
 	}
-}
-
-void Burst::Miner::nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline)
-{
-	std::lock_guard<std::mutex> mutex(deadlinesLock_);
-
-	if (deadlines_[accountId].confirm(nonce, accountId, blockHeight_))
-		if (deadlines_[accountId].getBestConfirmed()->getDeadline() == deadline)
-			MinerLogger::write(NxtAddress(accountId).to_string() + ": nonce confirmed (" + deadlineFormat(deadline) + ")", TextType::Success);
 }
 
 bool Burst::Miner::getMiningInfo()

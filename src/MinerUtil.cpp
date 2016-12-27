@@ -16,6 +16,7 @@
 #include <iostream>
 #include <Poco/URI.h>
 #include <Poco/Net/HTTPClientSession.h>
+#include "Deadline.hpp"
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -210,4 +211,12 @@ Poco::Net::SocketAddress Burst::getHostAddress(const Poco::URI& uri)
 	Poco::Net::SocketAddress address{uri.getHost() + ':' + std::to_string(uri.getPort())};
 	MinerLogger::write(address.toString());
 	return address;
+}
+
+std::string Burst::serializeDeadline(const Deadline& deadline, std::string delimiter)
+{
+	return deadline.getAccountName() + delimiter +
+		std::to_string(deadline.getBlock()) + delimiter +
+		std::to_string(deadline.getDeadline()) + delimiter +
+		std::to_string(deadline.getNonce());
 }

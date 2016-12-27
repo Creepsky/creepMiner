@@ -18,8 +18,15 @@
 #include <memory>
 #include "AccountNames.hpp"
 #include "Wallet.hpp"
+#include <Poco/TaskManager.h>
 
-namespace Poco { namespace Net { class HTTPClientSession; } }
+namespace Poco
+{
+	namespace Net
+	{
+		class HTTPClientSession;
+	}
+}
 
 namespace Burst
 {
@@ -49,7 +56,6 @@ namespace Burst
 		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
 
 	private:
-		void nonceSubmitReport(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 		bool getMiningInfo();
 
 		bool running_;
@@ -70,5 +76,6 @@ namespace Burst
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_ = nullptr;
 		AccountNames accountNames_;
 		Wallet wallet_;
+		Poco::TaskManager taskManager_;
 	};
 }

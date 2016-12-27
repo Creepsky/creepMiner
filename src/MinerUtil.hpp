@@ -24,6 +24,8 @@ namespace Poco
 
 namespace Burst
 {
+	class Deadline;
+
 	template <typename T, size_t SZ>
 	std::string byteArrayToStr(const std::array<T, SZ>& arr)
 	{
@@ -62,4 +64,5 @@ namespace Burst
 	Poco::Timespan secondsToTimespan(float seconds);
 	std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Poco::URI& uri);
 	Poco::Net::SocketAddress getHostAddress(const Poco::URI& uri);
+	std::string serializeDeadline(const Deadline& deadline, std::string delimiter = ":");
 }
