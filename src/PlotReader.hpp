@@ -18,6 +18,9 @@
 #include <cmath>
 #include <condition_variable>
 #include <Poco/Task.h>
+#include <Poco/TaskManager.h>
+#include <Poco/TaskNotification.h>
+#include <atomic>
 
 namespace Burst
 {
@@ -25,41 +28,36 @@ namespace Burst
 	class PlotFile;
 	class PlotReadProgress;
 
-	class PlotReader
+	class PlotReader : public Poco::Task
 	{
 	public:
-		PlotReader() = default;
-		explicit PlotReader(Miner& miner);
-		~PlotReader();
+		PlotReader(Miner& miner, const std::string& path);
+		~PlotReader() override = default;
 
-		void read(const std::string& path);
-		void stop();
-		bool isDone() const;
+		void runTask() override;
 
 	private:
-		void readerThread();
 		void verifierThread();
 
-		size_t nonceStart_;
-		size_t scoopNum_;
-		size_t nonceCount_;
-		size_t nonceOffset_;
-		size_t nonceRead_;
-		size_t staggerSize_;
-		uint64_t accountId_;
+		size_t nonceStart_ = 0;
+		size_t scoopNum_ = 0;
+		size_t nonceCount_ = 0;
+		size_t nonceOffset_ = 0;
+		size_t nonceRead_ = 0;
+		size_t staggerSize_ = 0;
+		uint64_t accountId_ = 0;
 		GensigData gensig_;
 
-		bool done_ = false, stopped_ = false;
-		bool runVerify_;
-		std::string inputPath_;
+		bool runVerify_ = false;
+		std::string inputPath_ = "";
 
-		Miner* miner_;
+		Miner& miner_;
 		std::thread readerThreadObj_;
 
 		std::vector<ScoopData> buffer_[2];
 
 		Shabal256 hash;
-		bool verifySignaled_;
+		bool verifySignaled_ = false;
 		std::mutex verifyMutex_;
 		std::condition_variable verifySignal_;
 		std::vector<ScoopData>* readBuffer_;
@@ -76,9 +74,12 @@ namespace Burst
 		void runTask() override;
 
 	private:
+		void plotReaderFinished(Poco::TaskFinishedNotification* task);
+
 		std::vector<std::shared_ptr<PlotFile>> plotFileList_;
-		std::thread readerThreadObj_;
-		Miner* miner_;
+		Poco::TaskManager plotReaderManager_;
+		std::atomic_bool plotReaderReady_;
+			Miner* miner_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		std::string dir_;
 	};
