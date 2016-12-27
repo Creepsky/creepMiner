@@ -13,7 +13,6 @@
 #include <fstream>
 #include "Miner.hpp"
 #include <cmath>
-#include <cstring>
 
 Burst::PlotReader::PlotReader(Miner& miner)
 	: Burst::PlotReader()
@@ -193,45 +192,20 @@ void Burst::PlotReader::verifierThread()
 		MinerLogger::write("Plot " + inputPath_ + " done", TextType::Unimportant);
 }
 
-Burst::PlotListReader::PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress)
-	: done_(false), stopped_(false), miner_(&miner), progress_(progress)
+Burst::PlotListReader::PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
+	std::string&& dir, std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
+	: Task(""),
+	miner_(&miner), progress_(progress), dir_{std::move(dir)}, plotFileList_{std::move(plotFiles)}
 {}
 
-Burst::PlotListReader::~PlotListReader()
-{
-	stop();
-}
-
-void Burst::PlotListReader::read(std::string&& dir, std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
-{
-	done_ = false;
-	stopped_ = false;
-	dir_ = std::move(dir);
-	plotFileList_ = std::move(plotFiles);
-	readerThreadObj_ = std::thread(&PlotListReader::readThread, this);
-}
-
-void Burst::PlotListReader::stop()
-{
-	stopped_ = true;
-
-	if (readerThreadObj_.joinable())
-		readerThreadObj_.join();
-}
-
-bool Burst::PlotListReader::isDone() const
-{
-	return done_;
-}
-
-void Burst::PlotListReader::readThread()
+void Burst::PlotListReader::runTask()
 {
 	if (miner_ == nullptr)
 		return;
 
 	auto iter = plotFileList_.begin();
 
-	while (iter != plotFileList_.end() && !stopped_)
+	while (iter != plotFileList_.end() && !isCancelled())
 	{
 		auto path = (*iter)->getPath();
 		PlotReader plotReader { *miner_ };
@@ -242,7 +216,7 @@ void Burst::PlotListReader::readThread()
 		// we have to react to the stop-flag
 		while (!plotReader.isDone())
 		{
-			if (stopped_)
+			if (isCancelled())
 			{
 				MinerLogger::write("stopping single plot reader", TextType::Debug);
 				plotReader.stop();
@@ -263,8 +237,6 @@ void Burst::PlotListReader::readThread()
 
 	if (MinerConfig::getConfig().output.dirDone)
 		MinerLogger::write("Dir " + dir_ + " done", TextType::Unimportant);
-
-	done_ = true;
 }
 
 void Burst::PlotReadProgress::reset()

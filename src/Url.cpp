@@ -50,7 +50,7 @@ std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Url::createSession() const
 			Poco::Net::HTTPSessionFactory::defaultFactory().createClientSession(uri_)
 		};
 	}
-	catch (Poco::Exception& exc)
+	catch (...)
 	{
 		auto lines = {
 			std::string("could not send request to host: unknown protocol ") + uri_.getScheme() + "!",

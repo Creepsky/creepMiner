@@ -65,17 +65,16 @@ namespace Burst
 		std::string gensigStr_;
 		Shabal256 hash;
 		GensigData gensig_;
-		std::vector<std::shared_ptr<PlotListReader>> plotReaders_;
 		std::unordered_map<AccountId, Deadlines> deadlines_;
 		std::mutex deadlinesLock_;
 		std::shared_ptr<PlotReadProgress> progress_;
-		std::vector<std::thread> sendNonceThreads_;
 		uint64_t currentBlockHeight_ = 0u;
 		uint64_t currentBaseTarget_ = 0u;
 		uint64_t targetDeadline_ = 0u;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_ = nullptr;
 		AccountNames accountNames_;
 		Wallet wallet_;
-		Poco::TaskManager taskManager_;
+		Poco::TaskManager nonceSubmitterManager_;
+		Poco::TaskManager plotReaderManager_;
 	};
 }

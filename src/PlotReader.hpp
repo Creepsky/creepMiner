@@ -17,6 +17,7 @@
 #include "Declarations.hpp"
 #include <cmath>
 #include <condition_variable>
+#include <Poco/Task.h>
 
 namespace Burst
 {
@@ -65,22 +66,18 @@ namespace Burst
 		std::vector<ScoopData>* writeBuffer_;
 	};
 
-	class PlotListReader
+	class PlotListReader : public Poco::Task
 	{
 	public:
-		PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress);
-		~PlotListReader();
+		PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
+			std::string&& dir, std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
+		~PlotListReader() override = default;
 
-		void read(std::string&& dir, std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
-		void stop();
-		bool isDone() const;
+		void runTask() override;
 
 	private:
-		void readThread();
-
 		std::vector<std::shared_ptr<PlotFile>> plotFileList_;
 		std::thread readerThreadObj_;
-		bool done_, stopped_;
 		Miner* miner_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		std::string dir_;

@@ -148,32 +148,15 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	blockHeight_ = blockHeight;
 	baseTarget_ = baseTarget;
 
-	MinerLogger::write("stopping plot readers...", TextType::Debug);
-
 	// stop all reading processes if any
-	for (auto& plotReader : plotReaders_)
-		plotReader->stop();
-
-	MinerLogger::write("waiting plot readers to stop...", TextType::Debug);
+	MinerLogger::write("stopping plot readers...", TextType::Debug);
+	plotReaderManager_.cancelAll();
 
 	// wait for all plotReaders to stop
-	auto stopped = false;
-	//
-	while (!stopped)
-	{
-		stopped = true;
-
-		for (auto& plotReader : plotReaders_)
-		{
-			if (!plotReader->isDone())
-			{
-				stopped = false;
-				break;
-			}
-		}
-	}
-
+	MinerLogger::write("waiting plot readers to stop...", TextType::Debug);
+	plotReaderManager_.joinAll();
 	MinerLogger::write("plot readers stopped", TextType::Debug);
+
 	std::lock_guard<std::mutex> lock(deadlinesLock_);
 	deadlines_.clear();
 
@@ -189,12 +172,16 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	hash.close(&newGenSig[0]);
 	scoopNum_ = (static_cast<int>(newGenSig[newGenSig.size() - 2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size() - 1]);
 
-	MinerLogger::write(std::string(50, '-'), TextType::Information);
-	MinerLogger::write("block#      " + std::to_string(blockHeight), TextType::Information);
-	MinerLogger::write("scoop#      " + std::to_string(scoopNum_), TextType::Information);
-	MinerLogger::write("baseTarget# " + std::to_string(baseTarget), TextType::Information);
-	//MinerLogger::write("gensig#     " + gensigStr, TextType::Information);
-	MinerLogger::write(std::string(50, '-'), TextType::Information);
+	auto lines = {
+		std::string(50, '-'),
+		std::string("block#      " + std::to_string(blockHeight)),
+		std::string("scoop#      " + std::to_string(scoopNum_)),
+		std::string("baseTarget# " + std::to_string(baseTarget)),
+		//std::string("gensig#     " + gensigStr),
+		std::string(50, '-')
+	};
+
+	MinerLogger::write(lines, TextType::Information);
 
 	// this block is closed in itself
 	// dont use the variables in it outside!
@@ -204,6 +191,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 		for (const auto plotFile : MinerConfig::getConfig().getPlotFiles())
 		{
+			Poco::URI path{plotFile->getPath()};
+
 			auto last_slash_idx = plotFile->getPath().find_last_of("/\\");
 
 			std::string dir;
@@ -225,11 +214,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
 
 		for (auto& plotDir : plotDirs)
-		{
-			auto reader = std::make_shared<PlotListReader>(*this, progress_);
-			reader->read(std::string(plotDir.first), std::move(plotDir.second));
-			plotReaders_.emplace_back(reader);
-		}
+			plotReaderManager_.start(new PlotListReader{*this, progress_,
+				std::string(plotDir.first), std::move(plotDir.second)});
 	}
 }
 
@@ -293,7 +279,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		newDeadline->send();
 
 		if (createSendThread)
-			taskManager_.start(new NonceSubmitter{*this, newDeadline});
+			nonceSubmitterManager_.start(new NonceSubmitter{*this, newDeadline});
 	}
 }
 
