@@ -15,6 +15,7 @@
 #include <Poco/Timespan.h>
 #include <memory>
 #include <Poco/Net/SocketAddress.h>
+#include <array>
 
 namespace Poco
 {
