@@ -151,7 +151,7 @@ Release_AVX2: release mode with AVX2 instruction set
 
 ## Contribution
 
-We are glad about every contribution to the project. Dont hesitate to open an issue, if you found a bugfix or have an idea for a new feature!
+We are glad about every contribution to the project. Dont hesitate to open an issue, if you found a bug (with or without fix) or have an idea for a new feature!
 
 If you want to share your own code, please follow these steps:
 - create a fork of this repository
