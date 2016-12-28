@@ -12,6 +12,7 @@
 #include <mutex>
 #include "MinerConfig.h"
 #include <iomanip>
+#include <cmath>
 
 #ifdef _WIN32
 #include <win/dirent.h>
@@ -41,13 +42,26 @@ std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::Min
 
 void Burst::MinerLogger::print(const std::string& text)
 {
-	auto now = std::chrono::system_clock::now();
-	auto now_c = std::chrono::system_clock::to_time_t(now);
-
 	auto typeBefore = currentTextType;
 
 	setColor(TextType::Normal);
+
+#if defined(__linux__) && __GNUC__ < 5 
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer [80];
+
+	time (&rawtime);
+	timeinfo = localtime (&rawtime);
+
+	strftime (buffer, 80, "%X",timeinfo);
+
+	std::cout << buffer << ": ";
+#else 
+	auto now = std::chrono::system_clock::now();
+	auto now_c = std::chrono::system_clock::to_time_t(now);
 	std::cout << std::put_time(std::localtime(&now_c), "%X") << ": ";
+#endif
 
 	setColor(typeBefore);
 	std::cout << text;
