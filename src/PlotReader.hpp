@@ -37,7 +37,7 @@ namespace Burst
 		void runTask() override;
 
 	private:
-		void verifierThread();
+		//void verifierThread();
 
 		size_t nonceStart_ = 0;
 		size_t scoopNum_ = 0;
@@ -48,20 +48,20 @@ namespace Burst
 		uint64_t accountId_ = 0;
 		GensigData gensig_;
 
-		bool runVerify_ = false;
+		//bool runVerify_ = false;
 		std::string inputPath_ = "";
 
 		Miner& miner_;
-		std::thread readerThreadObj_;
+		//std::thread readerThreadObj_;
 
-		std::vector<ScoopData> buffer_[2];
+		//std::vector<ScoopData> buffer_[2];
 
 		Shabal256 hash;
-		bool verifySignaled_ = false;
-		std::mutex verifyMutex_;
-		std::condition_variable verifySignal_;
-		std::vector<ScoopData>* readBuffer_;
-		std::vector<ScoopData>* writeBuffer_;
+		//bool verifySignaled_ = false;
+		//std::mutex verifyMutex_;
+		//std::condition_variable verifySignal_;
+		//std::vector<ScoopData>* readBuffer_;
+		//std::vector<ScoopData>* writeBuffer_;
 	};
 
 	class PlotListReader : public Poco::Task
@@ -74,12 +74,8 @@ namespace Burst
 		void runTask() override;
 
 	private:
-		void plotReaderFinished(Poco::TaskFinishedNotification* task);
-
 		std::vector<std::shared_ptr<PlotFile>> plotFileList_;
-		Poco::TaskManager plotReaderManager_;
-		std::atomic_bool plotReaderReady_;
-			Miner* miner_;
+		Miner* miner_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		std::string dir_;
 	};
