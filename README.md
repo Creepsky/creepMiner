@@ -118,3 +118,47 @@ you get the following max retries:
 | submissions | 3 = submissionMaxRetry   |
 | sendings    | 9 = sendMaxRetry * submissionMaxRetry |
 | receivings  | 27 = sendings * receiveMaxRetry |
+
+## Compiling
+
+If you want to compile the project by yourself, please note the following informations.
+
+**Dependencies**
+
+There are no real dependencies, everything is included directly in the project.
+
+**Linux**
+
+In the root directory, you can call the following commands:
+
+```
+make (all): build the project, output dir is /bin
+make clean: remove the compiled data in /bin
+```
+
+Alternativly you can build with CMake. Just use the CMakeLists in the root directory.
+
+**Windows**
+
+Use the Visual Studio project to compile the sources. Everything is set up already.
+You find the configurations:
+
+```
+Release: release mode with SSE2 instruction set
+Release_AVX: release mode with AVX instruction set
+Release_AVX2: release mode with AVX2 instruction set
+```
+
+## Contribution
+
+We are glad about every contribution to the project. Dont hesitate to open an issue, if you found a bugfix or have an idea for a new feature!
+
+If you want to share your own code, please follow these steps:
+- create a fork of this repository
+- add a new branch for your changings
+- add your changes to the code
+- dont forget to mention the issue number in the commit messages (just write something like ```<message> #<id>```)
+- open a pull request and try to describe what the change is for
+- done :)
+
+Here you can find a good tutorial about [Contributing](https://akrabat.com/the-beginners-guide-to-contributing-to-a-github-project/).
