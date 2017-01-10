@@ -12,14 +12,9 @@
 #include <vector>
 #include <memory>
 #include <thread>
-#include "MinerShabal.hpp"
 #include <mutex>
 #include "Declarations.hpp"
-#include <cmath>
-#include <condition_variable>
 #include <Poco/Task.h>
-#include <Poco/TaskManager.h>
-#include <Poco/TaskNotification.h>
 #include <atomic>
 
 namespace Burst
@@ -32,36 +27,41 @@ namespace Burst
 	{
 	public:
 		PlotReader(Miner& miner, const std::string& path);
+		PlotReader(Miner& miner, std::unique_ptr<std::istream> stream, size_t accountId,
+			size_t nonceStart, size_t nonceCount, size_t staggerSize);
 		~PlotReader() override = default;
 
 		void runTask() override;
 
 	private:
-		//void verifierThread();
+		class PlotVerifier : public Task
+		{
+		public:
+			PlotVerifier(Miner &miner, std::vector<ScoopData>&& buffer, uint64_t nonceRead, const GensigData& gensig,
+				uint64_t nonceStart, const std::string& inputPath, uint64_t accountId);
+			void runTask() override;
 
-		size_t nonceStart_ = 0;
-		size_t scoopNum_ = 0;
-		size_t nonceCount_ = 0;
-		size_t nonceOffset_ = 0;
-		size_t nonceRead_ = 0;
-		size_t staggerSize_ = 0;
+		private:
+			Miner* miner_;
+			std::vector<ScoopData> buffer_;
+			uint64_t nonceRead_;
+			const GensigData* gensig_;
+			uint64_t nonceStart_;
+			const std::string* inputPath_;
+			uint64_t accountId_;
+		};
+
+		uint64_t nonceStart_ = 0;
+		uint64_t scoopNum_ = 0;
+		uint64_t nonceCount_ = 0;
+		uint64_t nonceOffset_ = 0;
+		uint64_t nonceRead_ = 0;
+		uint64_t staggerSize_ = 0;
 		uint64_t accountId_ = 0;
 		GensigData gensig_;
-
-		//bool runVerify_ = false;
 		std::string inputPath_ = "";
-
+		std::unique_ptr<std::istream> inputStream_;
 		Miner& miner_;
-		//std::thread readerThreadObj_;
-
-		//std::vector<ScoopData> buffer_[2];
-
-		Shabal256 hash;
-		//bool verifySignaled_ = false;
-		//std::mutex verifyMutex_;
-		//std::condition_variable verifySignal_;
-		//std::vector<ScoopData>* readBuffer_;
-		//std::vector<ScoopData>* writeBuffer_;
 	};
 
 	class PlotListReader : public Poco::Task
@@ -88,6 +88,8 @@ namespace Burst
 		void set(uintmax_t value);
 		void setMax(uintmax_t value);
 		bool isReady() const;
+		uintmax_t getValue() const;
+		float getProgress() const;
 
 	private:
 		uintmax_t progress_ = 0, max_ = 0;
