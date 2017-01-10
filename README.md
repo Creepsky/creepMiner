@@ -1,68 +1,26 @@
-burst-miner
-===========
-
-## What is burst-miner
-
-burst-miner is a client application for mining Burst on a pool. For more informations about Burst follow [this link](https://www.burst-team.us/).
-It is written in C++ and therefore can be compiled on different operating systems.
-It is designed multi-threaded to reach the best performance. While mining, only the CPU is used.
-
-## Fork
-
-This is a fork of the burst-miner found on [this github repository](https://github.com/uraymeiviar/burst-miner).
-The purpose of this fork is to optimize and beautify the original program and on this way make it more user friendly.
-
-## Build
-
-| Platform | Master | Development |
-| -------- | ------ | ----------- |
-|   Linux   | [![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=master)](https://travis-ci.org/Creepsky/burst-miner) | [![Build Status](https://travis-ci.org/Creepsky/burst-miner.svg?branch=development)](https://travis-ci.org/Creepsky/burst-miner) |
-|   Windows   | [![Build status](https://ci.appveyor.com/api/projects/status/f78q7xbf4lh6q491/branch/master?svg=true)](https://ci.appveyor.com/project/Creepsky75522/burst-miner/branch/master) | [![Build status](https://ci.appveyor.com/api/projects/status/f78q7xbf4lh6q491/branch/master?svg=true)](https://ci.appveyor.com/project/Creepsky75522/burst-miner/branch/development) |
-
-## Donations :moneybag:
-
-The orignal author is uray meiviar (uraymeiviar@gmail.com).
-
-If you want to support him, you can donate to:
-
-```
-- [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
-- [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
-```
-
-If you want to support me, you can donate to:
-
-```
-- [ Burst   ] BURST-JBKL-ZUAV-UXMB-2G795
-```
-
-## Config
-
-You can use a custom config-file by explicit naming it on call: ```burst-miner.exe <config-file>```.
-If you leave the config-file-parameter empty, the config-file with the name mining.conf in the execution-path will be used.
 
 Inside the config-file, you can define the following settings:
 
 ```
 {
     "poolUrl" : "http://pool.burst-team.us:8124",
-	"miningUrl" : "http://pool.burst-team.us:8124",
-	"walletUrl" : "https://wallet.burst-team.us:8128",
+    "miningInfoUrl" : "http://pool.burst-team.us:8124",
+    "walletUrl" : "https://wallet.burst-team.us:8128",
     "submissionMaxRetry" : 3,
-    "receiveMaxRetry" : 3,
-    "receiveTimeout" : 5,
-    "sendTimeout" : 5,
     "timeout" : 30,
     "maxBufferSizeMB" : 128,
-    "output" : [
-        "debug",
-        "+progress",
-        "-nonce found"
+    "output" :
+    [
+		"+progress",
+		"-debug"
     ],
-    "plots" : [
-        "/Users/uraymeiviar/plots",
+    "plots" : 
+    [
+        "C:\\plots",
         "/Users/uraymeiviar/Documents/plots"
-    ]
+    ],
+    "Start Server": true,
+    "serverUrl" : "http://localhost:80"
 }
 ```
 
@@ -72,13 +30,12 @@ Inside the config-file, you can define the following settings:
 | **miningInfoUrl** | the host, where the miner will get the mining info. If empty, its set to poolUrl. |
 | **walletUrl** | the host, where the miner will get the wallet infos. **Optional**! |
 | **submissionMaxRetry** | the max tries to resend a message to the server. |
-| **receiveMaxRetry** | the max tries to receive the answer for a nonce from server per submission-retry. (**depricated**) |
-| **receiveTimeout** | the max time to wait for a response from the server. (**depricated**, see timeout) |
-| **sendTimeout** | the max time to wait for sending a message to the server. (**depricated**, see timeout) |
 | **timeout** | the max time to wait for a response from the server. |
 | **maxBufferSizeMB** | the buffer size while reading the plot files. |
 | **output** | decides, what messages will be printed in the output. For possible values see [Output-Flags](#output-flags).  |
 | **plots** | the paths to the directories, where to search for plot files. plot files are searched every new block. |
+| **Start Server** | the miner will run a local HTTP server and transfer the mining process to all clients. (true|false) |
+| **serverUrl** | the uri and port, where the miner will deploy the HTTP server. only if Start Server == true. the chosen port must be not used already! |
 
 ## Output-Flags
 
@@ -99,6 +56,66 @@ If no prefix is set, the **+** prefix is set implicitly.
 | dir done | shows done dirs while searching for nonces |
 | last winner | shows the winner of the last block (only with a valid wallet url) |
 
-## Submit-Process
+## Local HTTP server
 
-The nonce is submitted maximal **submissionMaxRetry** times, with a maximal wait time of **timeout** seconds.
+If you start the miner with the settings **Start Server : true** and a valid **serverUrl**, the miner will run a HTTP server.
+Simply use your favorite browser and go to the location where the server is running (serverUrl).
+
+The HTTP server shows the intern mining process and some additional informations.
+
+## Compiling
+
+If you want to compile the project by yourself, please note the following informations.
+
+**Dependencies**
+
+The project uses the following POCO C++ libraries:
+- Net
+- Foundation
+- NetSSL
+- Crypto
+- Util
+- JSON
+
+You have to build them on your system to compile the project by yourself.
+
+**Important**: On **Windows**, the static versions are used, on **Linux** the shared ones.
+
+The sources can be found on the [Homepage of POCO](https://pocoproject.org/download/index.html).
+Be sure to download the Complete Edition.
+
+**Linux**
+
+In the root directory, you can call the following commands:
+
+```
+make (all): build the project, output dir is /bin
+make clean: remove the compiled data in /bin
+```
+
+Alternativly you can build with CMake. Just use the CMakeLists in the root directory.
+
+**Windows**
+
+Use the Visual Studio project to compile the sources. Everything is set up already.
+You find the configurations:
+
+```
+Release: release mode with SSE2 instruction set
+Release_AVX: release mode with AVX instruction set
+Release_AVX2: release mode with AVX2 instruction set
+```
+
+## Contribution
+
+We are glad about every contribution to the project. Dont hesitate to open an issue, if you found a bug (with or without fix) or have an idea for a new feature!
+
+If you want to share your own code, please follow these steps:
+- create a fork of this repository
+- add a new branch for your changings
+- add your changes to the code
+- dont forget to mention the issue number in the commit messages (just write something like ```<message> #<id>```)
+- open a pull request and try to describe what the change is for
+- done :)
+
+Here you can find a good tutorial about [Contributing](https://akrabat.com/the-beginners-guide-to-contributing-to-a-github-project/).
