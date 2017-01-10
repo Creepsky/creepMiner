@@ -7,6 +7,7 @@
 #include <Poco/Net/HTTPRequest.h>
 #include "MinerLogger.hpp"
 #include <Poco/NumberParser.h>
+#include "rapidjson/stringbuffer.h"
 
 using namespace Poco::Net;
 
@@ -69,6 +70,29 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 	return false;
 }
 
+bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient)
+{
+	rapidjson::Document json;
+	rewardRecipient = 0;
+
+	if (url_.empty())
+		return false;
+
+	if (sendWalletRequest("/burst?requestType=getRewardRecipient&account=" + std::to_string(account), json))
+	{
+		if (json.HasMember("rewardRecipient"))
+		{
+			rewardRecipient = Poco::NumberParser::parseUnsigned64(json["rewardRecipient"].GetString());
+			return true;
+		}
+
+		return false;
+	}
+
+	MinerLogger::write(std::string("Could not get name of account!"), TextType::Debug);
+	return false;
+}
+
 bool Burst::Wallet::getLastBlock(uint64_t& block)
 {
 	rapidjson::Document json;
@@ -90,6 +114,20 @@ bool Burst::Wallet::getLastBlock(uint64_t& block)
 
 	MinerLogger::write(std::string("Could not get last blockheight!"), TextType::Debug);
 	return false;
+}
+
+bool Burst::Wallet::getAccount(AccountId id, Account& account)
+{
+	rapidjson::Document json;
+
+	if (url_.empty())
+		return false;
+
+	account.id = id;
+	auto successName = getNameOfAccount(id, account.name);
+	auto successRecipient = getRewardRecipientOfAccount(id, account.rewardRecipient);
+
+	return successName && successRecipient;
 }
 
 bool Burst::Wallet::sendWalletRequest(const std::string& uri, rapidjson::Document& json)

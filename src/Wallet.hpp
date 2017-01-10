@@ -12,6 +12,13 @@ namespace Burst
 {
 	class Url;
 
+	struct Account
+	{
+		AccountId id;
+		std::string name;
+		AccountId rewardRecipient;
+	};
+
 	class Wallet
 	{
 	public:
@@ -23,7 +30,9 @@ namespace Burst
 
 		bool getWinnerOfBlock(uint64_t block, AccountId& winnerId);
 		bool getNameOfAccount(AccountId account, std::string& name);
+		bool getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient);
 		bool getLastBlock(uint64_t& block);
+		bool getAccount(AccountId id, Account& account);
 
 		Wallet& operator=(const Wallet& rhs) = delete;
 		Wallet& operator=(Wallet&& rhs) = default;
