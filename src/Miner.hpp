@@ -8,17 +8,18 @@
 
 #pragma once
 
-#include <mutex>
 #include <unordered_map>
 #include "MinerShabal.hpp"
 #include "Declarations.hpp"
-#include <set>
 #include "Deadline.hpp"
-#include <thread>
 #include <memory>
 #include "AccountNames.hpp"
 #include "Wallet.hpp"
 #include <Poco/TaskManager.h>
+#include <vector>
+#include <Poco/Observer.h>
+#include <Poco/JSON/Object.h>
+#include "MinerData.hpp"
 
 namespace Poco
 {
@@ -38,7 +39,7 @@ namespace Burst
 	class Miner
 	{
 	public:
-		Miner() = default;
+		Miner();
 		~Miner();
 
 		void run();
@@ -54,27 +55,28 @@ namespace Burst
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
+		std::vector<Poco::JSON::Object> getBlockData() const;
+		MinerData& getData();
 
 	private:
 		bool getMiningInfo();
 
-		bool running_;
-		size_t scoopNum_;
-		uint64_t baseTarget_;
-		uint64_t blockHeight_;
-		std::string gensigStr_;
+		bool running_ = false;
+		MinerData data_;
 		Shabal256 hash;
 		GensigData gensig_;
 		std::unordered_map<AccountId, Deadlines> deadlines_;
-		std::mutex deadlinesLock_;
+		Poco::FastMutex deadlinesLock_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		uint64_t currentBlockHeight_ = 0u;
 		uint64_t currentBaseTarget_ = 0u;
+		// TODO: target deadline should be adjusted only if the config file has a entry 'auto adjust target deadline'
 		uint64_t targetDeadline_ = 0u;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_ = nullptr;
 		AccountNames accountNames_;
 		Wallet wallet_;
 		Poco::TaskManager nonceSubmitterManager_;
-		Poco::TaskManager plotReaderManager_;
+		std::unique_ptr<Poco::TaskManager> plotReaderManager_;
+		std::unique_ptr<Poco::ThreadPool> plotReaderThreadPool_;
 	};
 }

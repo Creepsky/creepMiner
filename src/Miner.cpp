@@ -14,11 +14,14 @@
 #include "nxt/nxt_address.h"
 #include "Response.hpp"
 #include "Request.hpp"
-#include "NonceSubmitter.hpp"
 #include "rapidjson/document.h"
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
-#include <Poco/Observer.h>
+#include <Poco/JSON/Object.h>
+#include <Poco/Path.h>
+
+Burst::Miner::Miner()
+{}
 
 Burst::Miner::~Miner()
 {}
@@ -49,27 +52,37 @@ void Burst::Miner::run()
 		" (" + config.getPoolUrl().getIp() + ")", TextType::System);
 	MinerLogger::write("Mininginfo URL : " + config.getMiningInfoUrl().getCanonical() + ":" + std::to_string(config.getMiningInfoUrl().getPort()) +
 		" (" + config.getMiningInfoUrl().getIp() + ")", TextType::System);
-	if (!config.getWalletUrl().getCanonical().empty())
+	if (!config.getWalletUrl().empty())
 		MinerLogger::write("Wallet URL : " + config.getWalletUrl().getCanonical() + ":" + std::to_string(config.getWalletUrl().getPort()) +
 			" (" + config.getWalletUrl().getIp() + ")", TextType::System);
+	if (config.getStartServer() && !config.getServerUrl().empty())
+		MinerLogger::write("Server URL : " + config.getServerUrl().getCanonical() + ":" + std::to_string(config.getServerUrl().getPort()) +
+			" (" + config.getServerUrl().getIp() + ")", TextType::System);
+		
 
-	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
-	miningInfoSession_->setKeepAlive(true);
+	
+	auto plotFileSize = static_cast<int32_t>(config.getPlotFiles().size());
+
+	plotReaderThreadPool_ = std::make_unique<Poco::ThreadPool>(plotFileSize, plotFileSize);
+	plotReaderManager_ = std::make_unique<Poco::TaskManager>(*plotReaderThreadPool_);
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
 
 	const auto sleepTime = std::chrono::seconds(3);
 	running_ = true;
 
-	wallet_.getLastBlock(blockHeight_);
+	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
+	miningInfoSession_->setKeepAlive(true);
 	
+	wallet_.getLastBlock(currentBlockHeight_);
+
 	while (running_)
 	{
 		if (getMiningInfo())
 			errors = 0;
 		else
 			++errors;
-
+		
 		// we have a tollerance of 5 times of not being able to fetch mining infos, before its a real error
 		if (errors >= 5)
 		{
@@ -91,73 +104,16 @@ void Burst::Miner::stop()
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
-	// why we start a new thread to gather the last winner:
-	// it could be slow and is not necessary for the whole process
-	// so show it when it's done
-	if (blockHeight_ > 0 &&
-		!MinerConfig::getConfig().getWalletUrl().getIp().empty() &&
-		MinerConfig::getConfig().output.lastWinner)
-	{
-		// copy blockheight temporary for lambda arg capture
-		auto block = blockHeight_;
-
-		std::thread threadLastWinner([this, block]()
-		{
-			AccountId lastWinner;
-			auto fetched = false;
-
-			for (auto loop = 0;
-				!fetched && loop < MinerConfig::getConfig().getSubmissionMaxRetry();
-				++loop)
-			{
-				if (wallet_.getWinnerOfBlock(block, lastWinner))
-				{
-					std::string name;
-					wallet_.getNameOfAccount(lastWinner, name);
-
-					// if we dont fetched the winner of the last block
-					// we exit this thread function
-					if (blockHeight_ - 1 != block)
-						return;
-
-					std::vector<std::string> lines = {
-						std::string(50, '-'),
-						"last block winner: ",
-						"block#             " + std::to_string(block),
-						"winner-numeric     " + std::to_string(lastWinner),
-						"winner-address     " + NxtAddress(lastWinner).to_string()
-					};
-
-					if (!name.empty())
-						lines.emplace_back("winner-name        " + name);
-
-					lines.emplace_back(std::string(50, '-'));
-
-					MinerLogger::write(lines, TextType::Ok);
-
-					fetched = true;
-				}
-			}
-		});
-		
-		threadLastWinner.detach();
-	}
-
-	// setup new block-data
-	gensigStr_ = gensigStr;
-	blockHeight_ = blockHeight;
-	baseTarget_ = baseTarget;
-
 	// stop all reading processes if any
 	MinerLogger::write("stopping plot readers...", TextType::Debug);
-	plotReaderManager_.cancelAll();
+	plotReaderManager_->cancelAll();
 
 	// wait for all plotReaders to stop
 	MinerLogger::write("waiting plot readers to stop...", TextType::Debug);
-	plotReaderManager_.joinAll();
+	plotReaderManager_->joinAll();
 	MinerLogger::write("plot readers stopped", TextType::Debug);
 
-	std::lock_guard<std::mutex> lock(deadlinesLock_);
+	Poco::ScopedLock<Poco::FastMutex> lock{ deadlinesLock_ };
 	deadlines_.clear();
 
 	for (auto i = 0; i < 32; ++i)
@@ -170,37 +126,115 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	hash.update(&gensig_[0], gensig_.size());
 	hash.update(blockHeight);
 	hash.close(&newGenSig[0]);
-	scoopNum_ = (static_cast<int>(newGenSig[newGenSig.size() - 2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size() - 1]);
+	auto scoopNum = (static_cast<int>(newGenSig[newGenSig.size() - 2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size() - 1]);
 
-	auto lines = {
-		std::string(50, '-'),
-		std::string("block#      " + std::to_string(blockHeight)),
-		std::string("scoop#      " + std::to_string(scoopNum_)),
-		std::string("baseTarget# " + std::to_string(baseTarget)),
-		//std::string("gensig#     " + gensigStr),
-		std::string(50, '-')
-	};
+	// setup new block-data
+	data_.startNewBlock(blockHeight, scoopNum, baseTarget, gensigStr);
 
-	MinerLogger::write(lines, TextType::Information);
+	// why we start a new thread to gather the last winner:
+	// it could be slow and is not necessary for the whole process
+	// so show it when it's done
+	if (currentBlockHeight_ > 0 &&
+		!MinerConfig::getConfig().getWalletUrl().getIp().empty() &&
+		MinerConfig::getConfig().output.lastWinner)
+	{
+		// copy blockheight temporary for lambda arg capture
+		auto block = data_.getCurrentBlock() - 1;
 
-	// this block is closed in itself
-	// dont use the variables in it outside!
+		std::thread threadLastWinner([this, block]()
+		{
+			AccountId lastWinner;
+			auto fetched = false;
+
+			// we cheat here a little bit and use the submission max retry set in config
+			// for max retry fetching the last winner
+			for (auto loop = 0;
+				!fetched && loop < MinerConfig::getConfig().getSubmissionMaxRetry();
+				++loop)
+			{
+				if (wallet_.getWinnerOfBlock(block, lastWinner))
+				{
+					std::string name;
+
+					wallet_.getNameOfAccount(lastWinner, name);
+
+					// if we dont fetched the winner of the last block
+					// we exit this thread function
+					if (data_.getCurrentBlock() - 1 != block)
+						return;
+
+					auto address = NxtAddress(lastWinner).to_string();
+
+					std::vector<std::string> lines = {
+						std::string(50, '-'),
+						"last block winner: ",
+						"block#             " + std::to_string(block),
+						"winner-numeric     " + std::to_string(lastWinner),
+						"winner-address     " + address
+					};
+
+					auto lastWinnerPtr = std::make_shared<Poco::JSON::Object>();
+					lastWinnerPtr->set("type", "lastWinner");
+					lastWinnerPtr->set("numeric", lastWinner);
+					lastWinnerPtr->set("address", address);
+
+					if (!name.empty())
+					{
+						lines.emplace_back("winner-name        " + name);
+						lastWinnerPtr->set("name", name);
+					}
+					
+					lines.emplace_back(std::string(50, '-'));
+
+					MinerLogger::write(lines, TextType::Ok);
+					data_.getBlockData()->lastWinner = lastWinnerPtr;
+					data_.addBlockEntry(*lastWinnerPtr);
+
+					fetched = true;
+				}
+			}
+		});
+
+		threadLastWinner.detach();
+	}
+
+	// printing block info and transfer it to local server
+	{
+		auto lines = {
+			std::string(50, '-'),
+			std::string("block#      " + std::to_string(blockHeight)),
+			std::string("scoop#      " + std::to_string(scoopNum)),
+			std::string("baseTarget# " + std::to_string(baseTarget)),
+			//std::string("gensig#     " + gensigStr),
+			std::string(50, '-')
+		};
+
+		MinerLogger::write(lines, TextType::Information);
+		
+		data_.addBlockEntry(createJsonNewBlock(data_));
+	}
+
+	// find all plotfiles and create plotlistreader for every device
 	{
 		using PlotList = std::vector<std::shared_ptr<PlotFile>>;
 		std::unordered_map<std::string, PlotList> plotDirs;
 
 		for (const auto plotFile : MinerConfig::getConfig().getPlotFiles())
 		{
-			Poco::URI path{plotFile->getPath()};
+			Poco::Path path{ plotFile->getPath() };
 
-			auto last_slash_idx = plotFile->getPath().find_last_of("/\\");
+			auto dir = path.getDevice();
 
-			std::string dir;
+			if (dir.empty())
+			{
+				auto lines = {
+					std::string("Plotfile with invalid path!"),
+					plotFile->getPath()
+				};
 
-			if (last_slash_idx == std::string::npos)
+				MinerLogger::write(lines, TextType::Debug);
 				continue;
-
-			dir = plotFile->getPath().substr(0, last_slash_idx);
+			}
 
 			auto iter = plotDirs.find(dir);
 
@@ -214,7 +248,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
 
 		for (auto& plotDir : plotDirs)
-			plotReaderManager_.start(new PlotListReader{*this, progress_,
+			plotReaderManager_->start(new PlotListReader{*this, progress_,
 				std::string(plotDir.first), std::move(plotDir.second)});
 	}
 }
@@ -226,12 +260,14 @@ const Burst::GensigData& Burst::Miner::getGensig() const
 
 uint64_t Burst::Miner::getBaseTarget() const
 {
-	return this->baseTarget_;
+	//return this->baseTarget_;
+	return data_.getBlockData()->baseTarget;
 }
 
 uint64_t Burst::Miner::getBlockheight() const
 {
-	return blockHeight_;
+	//return blockHeight_;
+	return data_.getCurrentBlock();
 }
 
 uint64_t Burst::Miner::getTargetDeadline() const
@@ -241,19 +277,22 @@ uint64_t Burst::Miner::getTargetDeadline() const
 
 size_t Burst::Miner::getScoopNum() const
 {
-	return this->scoopNum_;
+	//return this->scoopNum_;
+	return data_.getBlockData()->scoop;
 }
 
 void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile)
 {
-	std::lock_guard<std::mutex> mutex(deadlinesLock_);
+	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
 
 	auto bestDeadline = deadlines_[accountId].getBest();
+
+	//MinerLogger::write("nonce found with deadline: " + deadlineFormat(deadline), TextType::Debug);
 
 	// is the new nonce better then the best one we already have?
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
 	{
-		auto newDeadline = deadlines_[accountId].add({ nonce, deadline, accountId, blockHeight_, plotFile,
+		auto newDeadline = deadlines_[accountId].add({ nonce, deadline, accountId, data_.getCurrentBlock(), plotFile,
 			accountNames_.getName(accountId, wallet_) });
 
 		if (MinerConfig::getConfig().output.nonceFound)
@@ -262,6 +301,8 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 			
 			if (MinerConfig::getConfig().output.nonceFoundPlot)
 				message += " in " + plotFile;
+			
+			data_.addBlockEntry(createJsonDeadline(newDeadline, "nonce found"));
 
 			MinerLogger::write(message, TextType::Unimportant);
 		}
@@ -279,7 +320,11 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		newDeadline->send();
 
 		if (createSendThread)
-			nonceSubmitterManager_.start(new NonceSubmitter{*this, newDeadline});
+#ifdef NDEBUG
+			nonceSubmitterManager_.start(new NonceSubmitter{ *this, newDeadline });
+#else
+			{} // in debug mode we dont submit nonces
+#endif
 	}
 }
 
@@ -351,9 +396,9 @@ bool Burst::Miner::getMiningInfo()
 
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, uint64_t blockHeight)
 {
-	std::lock_guard<std::mutex> mutex(deadlinesLock_);
+	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
 
-	if (blockHeight != this->blockHeight_)
+	if (blockHeight != data_.getCurrentBlock())
 		return nullptr;
 
 	return deadlines_[accountId].getBestSent();
@@ -361,10 +406,31 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(uint64_t accountId, uint64_t blockHeight)
 {
-	std::lock_guard<std::mutex> mutex(deadlinesLock_);
+	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
 
-	if (blockHeight != this->blockHeight_)
+	if (blockHeight != data_.getCurrentBlock())
 		return nullptr;
 
 	return deadlines_[accountId].getBestConfirmed();
+}
+
+std::vector<Poco::JSON::Object> Burst::Miner::getBlockData() const
+{
+	std::vector<Poco::JSON::Object> entries;
+	auto blockData = data_.getBlockData();
+
+	if (blockData == nullptr)
+		return{};
+
+	entries.reserve(blockData->entries.size());
+
+	for (auto& entry : blockData->entries)
+		entries.emplace_back(entry);
+
+	return entries;
+}
+
+Burst::MinerData& Burst::Miner::getData()
+{
+	return data_;
 }
