@@ -21,11 +21,15 @@ namespace Poco
 {
 	class URI;
 	namespace Net { class HTTPClientSession; }
+	namespace JSON { class Object; }
 }
 
 namespace Burst
 {
+	class PlotReadProgress;
+	struct BlockData;
 	class Deadline;
+	class MinerData;
 
 	template <typename T, size_t SZ>
 	std::string byteArrayToStr(const std::array<T, SZ>& arr)
@@ -66,4 +70,13 @@ namespace Burst
 	std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Poco::URI& uri);
 	Poco::Net::SocketAddress getHostAddress(const Poco::URI& uri);
 	std::string serializeDeadline(const Deadline& deadline, std::string delimiter = ":");
+
+	Poco::JSON::Object createJsonDeadline(std::shared_ptr<Deadline> deadline);
+	Poco::JSON::Object createJsonDeadline(std::shared_ptr<Deadline> deadline, const std::string& type);
+	Poco::JSON::Object createJsonNewBlock(const MinerData& data);
+	Poco::JSON::Object createJsonConfig();
+	Poco::JSON::Object createJsonProgress(float progress);
+	Poco::JSON::Object createJsonLastWinner(const MinerData& data);
+
+	std::string getTime();
 }

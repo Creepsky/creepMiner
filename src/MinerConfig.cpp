@@ -12,21 +12,21 @@
 #include <fstream>
 #include "rapidjson/document.h"
 #include <sstream>
-#ifdef _WIN32
-#	include <win/dirent.h>
-#endif
 #include <sys/stat.h>
 #include "SocketDefinitions.hpp"
 #include "Socket.hpp"
 #include <memory>
+#include <Poco/File.h>
+#include <Poco/Path.h>
+#include <Poco/DirectoryIterator.h>
 
 void Burst::MinerConfig::rescan()
 {
-	this->readConfigFile(this->configPath_);
+	readConfigFile(configPath_);
 }
 
 Burst::PlotFile::PlotFile(std::string&& path, size_t size)
-	: path(std::move(path)), size(size)
+	: path(move(path)), size(size)
 {}
 
 const std::string& Burst::PlotFile::getPath() const
@@ -41,7 +41,6 @@ size_t Burst::PlotFile::getSize() const
 
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 {
-	configPath_ = configPath;
 	std::ifstream inputFileStream;
 
 	plotList_.clear();
@@ -289,6 +288,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (configDoc["timeout"].IsNumber())
 			timeout_ = static_cast<float>(configDoc["timeout"].GetDouble());
 
+	if (configDoc.HasMember("Start Server"))
+		if (configDoc["Start Server"].IsBool())
+			startServer_ = configDoc["Start Server"].GetBool();
+
+	if (configDoc.HasMember("serverUrl"))
+		if (configDoc["serverUrl"].IsString())
+			serverUrl_ = {configDoc["serverUrl"].GetString()};
+
 	return true;
 }
 
@@ -372,6 +379,16 @@ size_t Burst::MinerConfig::getMaxSubmitThreads() const
 	return maxSubmitThreads_;
 }
 
+bool Burst::MinerConfig::getStartServer() const
+{
+	return startServer_;
+}
+
+const Burst::Url& Burst::MinerConfig::getServerUrl() const
+{
+	return serverUrl_;
+}
+
 std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostType) const
 {
 	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
@@ -419,6 +436,77 @@ Burst::MinerConfig& Burst::MinerConfig::getConfig()
 
 bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 {
+	Poco::Path path;
+
+	if (!path.tryParse(fileOrPath))
+	{
+		MinerLogger::write(fileOrPath + " is an invalid dir (syntax), skipping it!", TextType::Error);
+		return false;
+	}
+
+	Poco::File fileOrDir{ path };
+	
+	// its a single plot file, add it if its really a plot file
+	if (fileOrDir.isFile())
+	{
+		return addPlotFile(fileOrPath) != nullptr;
+	}
+
+	// its a dir, so we need to parse all plot files in it and add them
+	if (fileOrDir.isDirectory())
+	{
+		Poco::DirectoryIterator iter{ fileOrDir };
+		Poco::DirectoryIterator end;
+
+		while (iter != end)
+		{
+			if (iter->isFile())
+				addPlotFile(*iter);
+			
+			++iter;
+		}
+
+		return true;
+	}
+
+	return false;
+
+	/*if (path.isDirectory())
+	{
+		auto sizeBefore = plotList_.size();
+
+		if (dirPath[dirPath.length() - 1] != PATH_SEPARATOR)
+			dirPath += PATH_SEPARATOR;
+
+		DIR* dir;
+		struct dirent* ent;
+		size_t size = 0;
+
+		if ((dir = opendir(dirPath.c_str())) != nullptr)
+		{
+			while ((ent = readdir(dir)) != nullptr)
+			{
+				auto plotFile = addPlotFile(dirPath + std::string(ent->d_name));
+
+				if (plotFile != nullptr)
+					size += plotFile->getSize();
+			}
+
+			closedir(dir);
+		}
+		else
+		{
+			MinerLogger::write("failed reading file or directory " + fileOrPath, TextType::Error);
+			closedir(dir);
+			return false;
+		}
+
+		MinerLogger::write(std::to_string(this->plotList_.size() - sizeBefore) + " plot(s) found at " + fileOrPath
+			+ ", total size: " + gbToString(size) + " GB", TextType::System);
+
+		return false;
+	}
+
 	struct stat info;
 	auto statResult = stat(fileOrPath.c_str(), &info);
 
@@ -472,24 +560,20 @@ bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 			MinerLogger::write("plot found at " + fileOrPath + ", total size: " + gbToString(plotFile->getSize()) + " GB", TextType::System);
 	}
 
-	return true;
+	return true;*/
 }
 
-std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const std::string& path)
+std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const Poco::File& file)
 {
-	if (isValidPlotFile(path))
+	if (isValidPlotFile(file.path()))
 	{
-		for (size_t i = 0; i < this->plotList_.size(); i++)
-			if (this->plotList_[i]->getPath() == path)
-				return this->plotList_[i];
+		// plot file is already in our list
+		for (size_t i = 0; i < plotList_.size(); i++)
+			if (plotList_[i]->getPath() == file.path())
+				return plotList_[i];
 
-		std::ifstream in(path, std::ifstream::ate | std::ifstream::binary);
-
-		auto plotFile = std::make_shared<PlotFile>(std::string(path), in.tellg());
-
+		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()), file.getSize());
 		plotList_.emplace_back(plotFile);
-
-		in.close();
 
 		// MinerLogger::write("Plot " + std::to_string(this->plotList.size()) + ": " + file);
 

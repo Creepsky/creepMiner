@@ -26,6 +26,10 @@
  }
  */
 
+namespace Poco {
+	class File;
+}
+
 namespace Burst
 {
 	enum class HostType
@@ -88,6 +92,8 @@ namespace Burst
 		size_t getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
 		size_t getMaxSubmitThreads() const;
+		bool getStartServer() const;
+		const Url& getServerUrl() const;
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -96,7 +102,7 @@ namespace Burst
 
 	private:
 		bool addPlotLocation(const std::string& fileOrPath);
-		std::shared_ptr<PlotFile> addPlotFile(const std::string& file);
+		std::shared_ptr<PlotFile> addPlotFile(const Poco::File& file);
 
 		std::string configPath_;
 		std::vector<std::shared_ptr<PlotFile>> plotList_;
@@ -112,5 +118,7 @@ namespace Burst
 		Url urlMiningInfo_;
 		Url urlWallet_;
 		size_t maxSubmitThreads_ = 0;
+		bool startServer_ = false;
+		Url serverUrl_ = {"127.0.0.1:9999"};
 	};
 }

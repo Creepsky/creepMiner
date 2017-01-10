@@ -13,9 +13,10 @@
 #include <Poco/Net/SSLManager.h>
 #include "Poco/Net/ConsoleCertificateHandler.h"
 #include "Poco/Net/HTTPSStreamFactory.h"
-#include "Poco/Net/PrivateKeyPassphraseHandler.h"
 #include "Poco/Net/AcceptCertificateHandler.h"
 #include <Poco/Net/HTTPSSessionInstantiator.h>
+#include <Poco/Net/PrivateKeyPassphraseHandler.h>
+#include "MinerServer.hpp"
 
 class SSLInitializer
 {
@@ -46,14 +47,6 @@ int main(int argc, const char* argv[])
 	Burst::MinerLogger::write(" [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b", Burst::TextType::Unimportant);
 	Burst::MinerLogger::write("----------------------------------------------");
 
-#ifdef WIN32
-	WSADATA wsadata;
-	if (WSAStartup(MAKEWORD(2, 2), &wsadata) != 0)
-	{
-		Burst::MinerLogger::write("failed to initalize networking system", Burst::TextType::Error);
-	}
-#endif
-
 	std::string configFile = "mining.conf";
 
 	if (argc > 1)
@@ -67,7 +60,7 @@ int main(int argc, const char* argv[])
 	}
 
 	Burst::MinerLogger::write("using config file : " + configFile, Burst::TextType::System);
-
+	
 	try
 	{
 		using namespace Poco;
@@ -85,17 +78,27 @@ int main(int argc, const char* argv[])
 		Poco::Net::HTTPSSessionInstantiator::registerInstantiator();
 
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
-			Burst::Miner().run();
+		{
+			Burst::Miner miner;
+			Burst::MinerServer server;
+
+			if (Burst::MinerConfig::getConfig().getStartServer())
+			{
+				server.connectToMinerData(miner.getData());
+				server.run(Burst::MinerConfig::getConfig().getServerUrl().getPort());
+			}
+
+			miner.run();
+		}
 		else
+		{
 			Burst::MinerLogger::write("Aborting program due to invalid configuration", Burst::TextType::Error);
+		}
 	}
-	catch (Poco::Exception& exc)
+	catch (std::exception& exc)
 	{
 		Burst::MinerLogger::write(std::string("Aborting program due to exceptional state: ") + exc.what());
 	}
 
-#ifdef WIN32
-	WSACleanup();
-#endif
 	return 0;
 }

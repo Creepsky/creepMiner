@@ -13,10 +13,14 @@
 #include <algorithm>
 #include "Declarations.hpp"
 #include "MinerLogger.hpp"
-#include <iostream>
 #include <Poco/URI.h>
 #include <Poco/Net/HTTPClientSession.h>
 #include "Deadline.hpp"
+#include <Poco/JSON/Object.h>
+#include "MinerConfig.hpp"
+#include "MinerData.hpp"
+#include "PlotReader.hpp"
+#include <Poco/JSON/Parser.h>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -42,7 +46,7 @@ std::vector<std::string> Burst::splitStr(const std::string& s, const std::string
 	std::vector<std::string> tokens;
 	std::string::size_type pos, lastPos = 0, length = s.length();
 
-	using size_type  = typename std::vector<std::string>::size_type;
+	using size_type  = std::vector<std::string>::size_type;
 
 	while(lastPos < length + 1)
 	{
@@ -219,4 +223,106 @@ std::string Burst::serializeDeadline(const Deadline& deadline, std::string delim
 		std::to_string(deadline.getBlock()) + delimiter +
 		std::to_string(deadline.getDeadline()) + delimiter +
 		std::to_string(deadline.getNonce());
+}
+
+Poco::JSON::Object Burst::createJsonDeadline(std::shared_ptr<Deadline> deadline)
+{
+	Poco::JSON::Object json;
+	json.set("nonce", deadline->getNonce());
+	json.set("deadline", deadlineFormat(deadline->getDeadline()));
+	json.set("account", deadline->getAccountName());
+	json.set("plotfile", deadline->getPlotFile());
+	json.set("deadlineNum", deadline->getDeadline());
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonDeadline(std::shared_ptr<Deadline> deadline, const std::string& type)
+{
+	auto json = createJsonDeadline(deadline);
+	json.set("type", type);
+	json.set("time", getTime());
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
+{
+	Poco::JSON::Object json;
+	auto blockPtr = data.getBlockData();
+
+	if (blockPtr == nullptr)
+		return json;
+
+	auto block = *blockPtr;
+	auto bestOverall = data.getBestDeadlineOverall();
+
+	json.set("type", "new block");
+	json.set("block", block.block);
+	json.set("scoop", block.scoop);
+	json.set("baseTarget", block.baseTarget);
+	json.set("gensigStr", block.genSig);
+	json.set("time", getTime());
+	json.set("blocksMined", data.getBlocksMined());
+	if (bestOverall != nullptr)
+	{
+		json.set("bestOverallNum", bestOverall->getDeadline());
+		json.set("bestOverall", deadlineFormat(bestOverall->getDeadline()));
+	}
+	json.set("deadlinesConfirmed", data.getConfirmedDeadlines());
+	json.set("deadlinesAvg", deadlineFormat(data.getAverageDeadline()));
+		
+	Poco::JSON::Array bestDeadlines;
+
+	for (auto& historicalDeadline : data.getAllHistoricalBlockData())
+	{
+		if (historicalDeadline->bestDeadline != nullptr)
+		{
+			Poco::JSON::Array jsonBestDeadline;
+			jsonBestDeadline.add(historicalDeadline->block);
+			jsonBestDeadline.add(historicalDeadline->bestDeadline->getDeadline());
+			bestDeadlines.add(jsonBestDeadline);
+		}
+	}
+
+	json.set("bestDeadlines", bestDeadlines);
+
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonConfig()
+{
+	Poco::JSON::Object json;
+	json.set("type", "config");
+	json.set("poolUrl", MinerConfig::getConfig().getPoolUrl().getCanonical(true));
+	json.set("miningInfoUrl", MinerConfig::getConfig().getMiningInfoUrl().getCanonical(true));
+	json.set("walletUrl", MinerConfig::getConfig().getWalletUrl().getCanonical(true));
+	json.set("totalPlotSize", MinerConfig::getConfig().getTotalPlotsize());
+	json.set("timeout", MinerConfig::getConfig().getTimeout());
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonProgress(float progress)
+{
+	Poco::JSON::Object json;
+	json.set("type", "progress");
+	json.set("value", progress);
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonLastWinner(const MinerData& data)
+{
+	auto block = data.getBlockData();
+
+	if (block == nullptr || block->lastWinner == nullptr)
+		return Poco::JSON::Object{};
+
+	return *block->lastWinner;
+}
+
+std::string Burst::getTime()
+{
+	auto now = std::chrono::system_clock::now();
+	auto now_c = std::chrono::system_clock::to_time_t(now);
+	std::stringstream ss;
+	ss << std::put_time(std::localtime(&now_c), "%X");
+	return ss.str();
 }
