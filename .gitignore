@@ -397,4 +397,4 @@ buildNumber.properties
 # Custom files and dirs
 mining.conf
 *.graphml
-!/bin/rootcert.pem
+!/bin/*.dll
