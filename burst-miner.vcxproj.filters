@@ -22,6 +22,10 @@
     <ClCompile Include="src\NonceSubmitter.cpp" />
     <ClCompile Include="src\Wallet.cpp" />
     <ClCompile Include="src\AccountNames.cpp" />
+    <ClCompile Include="src\RequestHandler.cpp" />
+    <ClCompile Include="src\MinerServer.cpp" />
+    <ClCompile Include="src\MinerData.cpp" />
+    <ClCompile Include="src\PlotGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rapidjson\document.h">
@@ -57,7 +61,6 @@
     <ClInclude Include="src\Declarations.hpp" />
     <ClInclude Include="src\SocketDefinitions.hpp" />
     <ClInclude Include="src\Deadline.hpp" />
-    <ClInclude Include="src\win\dirent.h" />
     <ClInclude Include="src\Url.hpp" />
     <ClInclude Include="src\Request.hpp" />
     <ClInclude Include="src\Response.hpp" />
@@ -71,6 +74,10 @@
     <ClInclude Include="src\PlotReader.hpp" />
     <ClInclude Include="src\Wallet.hpp" />
     <ClInclude Include="src\AccountNames.hpp" />
+    <ClInclude Include="src\RequestHandler.hpp" />
+    <ClInclude Include="src\MinerServer.hpp" />
+    <ClInclude Include="src\MinerData.hpp" />
+    <ClInclude Include="src\PlotGenerator.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sphlib">
