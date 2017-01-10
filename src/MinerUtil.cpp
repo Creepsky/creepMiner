@@ -156,8 +156,9 @@ std::string Burst::deadlineFormat(uint64_t seconds)
 		ss << years << "y ";
 	if (months > 0)
 		ss << months % 12 << "m ";
+	if (day > 0)
+		ss << day % 30 << "d ";
 
-	ss << day % 30 << "d ";
 	ss << std::setw(2) << std::setfill('0');
 	ss << hours % 24 << ':';
 	ss << std::setw(2) << std::setfill('0');
