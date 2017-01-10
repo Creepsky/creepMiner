@@ -16,9 +16,9 @@ Burst::Url::Url(const std::string& url)
 	{}
 }
 
-const std::string& Burst::Url::getCanonical() const
+std::string Burst::Url::getCanonical(bool withScheme) const
 {
-	return uri_.getHost();
+	return (withScheme ? uri_.getScheme() + "://" : "") + uri_.getHost();
 }
 
 std::string Burst::Url::getIp() const

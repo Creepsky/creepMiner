@@ -19,7 +19,7 @@ namespace Burst
 		Url() = default;
 		Url(const std::string& url);
 
-		const std::string& getCanonical() const;
+		std::string getCanonical(bool withScheme = false) const;
 		std::string getIp() const;
 		uint16_t getPort() const;
 		const Poco::URI& getUri() const;
