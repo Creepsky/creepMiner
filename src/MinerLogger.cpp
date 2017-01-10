@@ -14,7 +14,6 @@
 #include <iomanip>
 
 #ifdef _WIN32
-#include <win/dirent.h>
 #include <wincon.h>
 #include <windows.h>
 #endif
