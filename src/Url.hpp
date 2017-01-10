@@ -27,9 +27,6 @@ namespace Burst
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession() const;
 
 	private:
-		static void initHTTPSessionFactory();
-
-	private:
 		Poco::URI uri_;
 		Poco::Net::IPAddress ip_;
 	};
