@@ -91,7 +91,6 @@ namespace Burst
 		size_t getSubmissionMaxRetry() const;
 		size_t getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
-		size_t getMaxSubmitThreads() const;
 		bool getStartServer() const;
 		const Url& getServerUrl() const;
 
@@ -106,8 +105,6 @@ namespace Burst
 
 		std::string configPath_;
 		std::vector<std::shared_ptr<PlotFile>> plotList_;
-		float receive_timeout_ = 3.f;
-		float send_timeout_ = 3.f;
 		float timeout_ = 30.f;
 		size_t send_max_retry_ = 3;
 		size_t receive_max_retry_ = 3;
@@ -117,7 +114,6 @@ namespace Burst
 		Url urlPool_;
 		Url urlMiningInfo_;
 		Url urlWallet_;
-		size_t maxSubmitThreads_ = 0;
 		bool startServer_ = false;
 		Url serverUrl_ = {"127.0.0.1:9999"};
 	};

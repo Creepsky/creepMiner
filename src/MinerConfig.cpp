@@ -215,38 +215,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			submission_max_retry_ = 3;
 	}
 
-	if (configDoc.HasMember("sendMaxRetry"))
-	{
-		if (configDoc["sendMaxRetry"].IsNumber())
-			send_max_retry_ = configDoc["sendMaxRetry"].GetInt();
-		else
-			send_max_retry_ = 3;
-	}
-
-	if (configDoc.HasMember("receiveMaxRetry"))
-	{
-		if (configDoc["receiveMaxRetry"].IsNumber())
-			receive_max_retry_ = configDoc["receiveMaxRetry"].GetInt();
-		else
-			receive_max_retry_ = 3;
-	}
-
-	if (configDoc.HasMember("sendTimeout"))
-	{
-		if (configDoc["sendTimeout"].IsNumber())
-			send_timeout_ = static_cast<float>(configDoc["sendTimeout"].GetDouble());
-		else
-			send_timeout_ = 5.f;
-	}
-
-	if (configDoc.HasMember("receiveTimeout"))
-	{
-		if (configDoc["receiveTimeout"].IsNumber())
-			receive_timeout_ = static_cast<float>(configDoc["receiveTimeout"].GetDouble());
-		else
-			receive_timeout_ = 5.f;
-	}
-
 	if (configDoc.HasMember("maxBufferSizeMB"))
 	{
 		if (configDoc["maxBufferSizeMB"].IsNumber())
@@ -279,10 +247,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	if (configDoc.HasMember("confirmed deadlines"))
 		if (configDoc["confirmed deadlines"].IsString())
 			confirmedDeadlinesPath_ = configDoc["confirmed deadlines"].GetString();
-
-	if (configDoc.HasMember("max submit threads"))
-		if (configDoc["max submit threads"].IsUint())
-			maxSubmitThreads_ = configDoc["max submit threads"].GetUint();
 
 	if (configDoc.HasMember("timeout"))
 		if (configDoc["timeout"].IsNumber())
@@ -321,12 +285,12 @@ uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 
 float Burst::MinerConfig::getReceiveTimeout() const
 {
-	return receive_timeout_;
+	return getTimeout();
 }
 
 float Burst::MinerConfig::getSendTimeout() const
 {
-	return send_timeout_;
+	return getTimeout();
 }
 
 float Burst::MinerConfig::getTimeout() const
@@ -374,10 +338,10 @@ const std::string& Burst::MinerConfig::getConfirmedDeadlinesPath() const
 	return confirmedDeadlinesPath_;
 }
 
-size_t Burst::MinerConfig::getMaxSubmitThreads() const
-{
-	return maxSubmitThreads_;
-}
+//size_t Burst::MinerConfig::getMaxSubmitThreads() const
+//{
+//	return 0;
+//}
 
 bool Burst::MinerConfig::getStartServer() const
 {

@@ -19,6 +19,7 @@
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/JSON/Object.h>
 #include <Poco/Path.h>
+#include "NonceSubmitter.hpp"
 
 Burst::Miner::Miner()
 {}
@@ -41,12 +42,7 @@ void Burst::Miner::run()
 		return;
 	}
 
-	//MinerLogger::write("Submission Max Delay : " + std::to_string(config.submissionMaxDelay), TextType::System);
 	MinerLogger::write("Submission Max Retry : " + std::to_string(config.getSubmissionMaxRetry()), TextType::System);
-	MinerLogger::write("Receive Max Retry : " + std::to_string(config.getReceiveMaxRetry()), TextType::System);
-	MinerLogger::write("Send Max Retry : " + std::to_string(config.getSendMaxRetry()), TextType::System);
-	MinerLogger::write("Send-Timeout : " + std::to_string(config.getSendTimeout()) + " seconds", TextType::System);
-	MinerLogger::write("Receive-Timeout : " + std::to_string(config.getReceiveTimeout()) + " seconds", TextType::System);
 	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
 	MinerLogger::write("Pool Host : " + config.getPoolUrl().getCanonical() + ":" + std::to_string(config.getPoolUrl().getPort()) +
 		" (" + config.getPoolUrl().getIp() + ")", TextType::System);
@@ -58,8 +54,6 @@ void Burst::Miner::run()
 	if (config.getStartServer() && !config.getServerUrl().empty())
 		MinerLogger::write("Server URL : " + config.getServerUrl().getCanonical() + ":" + std::to_string(config.getServerUrl().getPort()) +
 			" (" + config.getServerUrl().getIp() + ")", TextType::System);
-		
-
 	
 	auto plotFileSize = static_cast<int32_t>(config.getPlotFiles().size());
 
