@@ -168,7 +168,7 @@ bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string
 	try
 	{
 		auto n = websocket.sendFrame(data.data(), static_cast<int>(data.size()));
-		if (n != data.size())
+		if (n != static_cast<int>(data.size()))
 			MinerLogger::write("could not fully send: " + data, TextType::Error);
 		return true;
 	}

@@ -72,7 +72,7 @@ namespace Burst
 		uint64_t currentBaseTarget_ = 0u;
 		// TODO: target deadline should be adjusted only if the config file has a entry 'auto adjust target deadline'
 		uint64_t targetDeadline_ = 0u;
-		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_ = nullptr;
+		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
 		AccountNames accountNames_;
 		Wallet wallet_;
 		Poco::TaskManager nonceSubmitterManager_;

@@ -6,6 +6,7 @@
 #include "PlotReader.hpp"
 #include <random>
 #include "MinerLogger.hpp"
+#include <Poco/Net/HTTPClientSession.h>
 #include "Miner.hpp"
 
 Burst::PlotGenerator::PlotGenerator(uint64_t account, uint64_t staggerSize, uint64_t startNonce, uint64_t nonces, void* output)
@@ -14,7 +15,7 @@ Burst::PlotGenerator::PlotGenerator(uint64_t account, uint64_t staggerSize, uint
 
 void Burst::PlotGenerator::run()
 {
-	for (auto i = 0; i < nonces_; ++i)
+	for (auto i = 0u; i < nonces_; ++i)
 		generate(account_, staggerSize_, startNonce_, i, output_);
 }
 
@@ -59,11 +60,11 @@ void* Burst::PlotGenerator::generate(uint64_t account, uint64_t staggerSize, uin
 	shabal.close(&final);
 
 	// XOR with final
-	for (auto i = 0; i < Settings::PlotSize; i++)
+	for (auto i = 0u; i < Settings::PlotSize; i++)
 		gendata[i] ^= (final[i % 32]);
 
 	// Sort them:
-	for (auto i = 0; i < Settings::PlotSize; i += 64)
+	for (auto i = 0u; i < Settings::PlotSize; i += 64)
 		memmove(&cache[cachePos * 64 + static_cast<unsigned long long>(i) * staggerSize], &gendata[i], 64);
 	
 	return cache;
@@ -94,7 +95,7 @@ void Burst::RandomNonceGenerator::runTask()
 
 	auto scoopData = reinterpret_cast<char*>(&buffer[0]);
 
-	for (auto i = 0; (i < randomNonces_ || randomNonces_ == 0) && !isCancelled(); ++i)
+	for (auto i = 0u; (i < randomNonces_ || randomNonces_ == 0) && !isCancelled(); ++i)
 	{
 		auto startNonce = dist(mt);
 

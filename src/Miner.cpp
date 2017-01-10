@@ -142,7 +142,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 			// we cheat here a little bit and use the submission max retry set in config
 			// for max retry fetching the last winner
-			for (auto loop = 0;
+			for (auto loop = 0u;
 				!fetched && loop < MinerConfig::getConfig().getSubmissionMaxRetry();
 				++loop)
 			{
