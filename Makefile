@@ -2,7 +2,7 @@ MODULES   := rapidjson sphlib nxt
 SRC_DIR   := $(addprefix src/,$(MODULES)) src
 BUILD_DIR := $(addprefix bin/,$(MODULES)) bin
 
-POCO_MODULES := Net Foundation NetSSL_OpenSSL openssl Crypto Util
+POCO_MODULES := Net Foundation NetSSL_OpenSSL openssl Crypto Util JSON
 POCO_DIR     := $(addprefix Poco/,$(POCO_MODULES))
 
 SRC       := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.cpp))
@@ -14,7 +14,7 @@ EXECUTABLE_PATH   := bin/$(EXECUTABLE)
 
 CFLAGS    := -O3 -march=native -std=c++14 -Wall -D_REENTRANT
 CC        := $(CXX)
-LDFLAGS   := -L/usr/local/lib -pthread -lPocoFoundation -lPocoNetSSL -lPocoCrypto -lPocoUtil -lPocoNet
+LDFLAGS   := -L/usr/local/lib -pthread -lPocoFoundation -lPocoNetSSL -lPocoCrypto -lPocoUtil -lPocoNet -lPocoJSON
 
 vpath %.cpp $(SRC_DIR)
 
