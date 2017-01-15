@@ -3,6 +3,7 @@
 #include <Poco/Mutex.h>
 #include "Wallet.hpp"
 //#include "Wallet.hpp"
+#include <thread>
 
 Burst::Account::Account(): id_(0)
 						 , wallet_(nullptr)
@@ -88,7 +89,7 @@ std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, Wallet
 	auto iter = accounts_.find(id);
 
 	if (iter == accounts_.end())
-		accounts_.emplace(id, new Account{ wallet, id });
+		accounts_.emplace(id, std::make_shared<Account>(wallet, id));
 	else
 		*iter;
 
