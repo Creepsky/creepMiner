@@ -232,6 +232,7 @@ Poco::JSON::Object Burst::createJsonDeadline(std::shared_ptr<Deadline> deadline)
 	json.set("nonce", deadline->getNonce());
 	json.set("deadline", deadlineFormat(deadline->getDeadline()));
 	json.set("account", deadline->getAccountName());
+	json.set("accountId", deadline->getAccountId());
 	json.set("plotfile", deadline->getPlotFile());
 	json.set("deadlineNum", deadline->getDeadline());
 	return json;
@@ -317,6 +318,13 @@ Poco::JSON::Object Burst::createJsonLastWinner(const MinerData& data)
 		return Poco::JSON::Object{};
 
 	return *block->lastWinner;
+}
+
+Poco::JSON::Object Burst::createJsonShutdown()
+{
+	Poco::JSON::Object json;
+	json.set("shutdown", true);
+	return json;
 }
 
 std::string Burst::getTime()

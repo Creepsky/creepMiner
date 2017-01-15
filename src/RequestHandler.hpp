@@ -16,6 +16,7 @@ namespace Poco {namespace JSON {
 
 namespace Burst
 {
+	class Miner;
 	class MinerServer;
 
 	struct TemplateVariables
@@ -28,6 +29,7 @@ namespace Burst
 	class NotFoundHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
+		~NotFoundHandler() = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 	};
 
@@ -35,16 +37,30 @@ namespace Burst
 	{
 	public:
 		RootHandler(const TemplateVariables& variables);
+		~RootHandler() = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:
 		const TemplateVariables* variables_;
 	};
 
+	class ShutdownHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		ShutdownHandler(Miner& miner, MinerServer& server);
+		~ShutdownHandler() = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		Miner* miner_;
+		MinerServer* server_;
+	};
+
 	class AssetHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
 		AssetHandler(const TemplateVariables& variables);
+		~AssetHandler() = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:
@@ -54,6 +70,7 @@ namespace Burst
 	class BadRequestHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
+		~BadRequestHandler() = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 	};
 
@@ -61,6 +78,7 @@ namespace Burst
 	{
 	public:
 		explicit WebSocketHandler(MinerServer* server);
+		~WebSocketHandler() = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:

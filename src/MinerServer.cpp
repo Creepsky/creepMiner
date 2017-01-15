@@ -16,8 +16,8 @@
 using namespace Poco;
 using namespace Net;
 
-Burst::MinerServer::MinerServer()
-	: minerData_(nullptr), port_{0}
+Burst::MinerServer::MinerServer(Miner& miner)
+	: miner_{&miner}, minerData_(nullptr), port_{0}
 {
 	auto ip = MinerConfig::getConfig().getServerUrl().getCanonical();
 	auto port = std::to_string(MinerConfig::getConfig().getServerUrl().getPort());
@@ -47,14 +47,13 @@ void Burst::MinerServer::run(uint16_t port)
 	if (server_ != nullptr)
 		server_->stopAll(true);
 
-	server_ = std::make_unique<HTTPServer>(this, socket, params);
+	server_ = std::make_unique<HTTPServer>(new RequestFactory{*this}, threadPool_, socket, params);
 
 	if (server_ != nullptr)
 	{
 		try
 		{
 			server_->start();
-			variables_.variables["port"] = [port]() { return std::to_string(port); };
 		}
 		catch (std::exception& exc)
 		{
@@ -64,38 +63,12 @@ void Burst::MinerServer::run(uint16_t port)
 	}
 }
 
-void Burst::MinerServer::stop() const
+void Burst::MinerServer::stop()
 {
 	if (server_ != nullptr)
+	{
 		server_->stopAll(true);
-}
-
-Poco::Net::HTTPRequestHandler* Burst::MinerServer::createRequestHandler(const Poco::Net::HTTPServerRequest& request)
-{
-	if (request.find("Upgrade") != request.end() &&
-		icompare(request["Upgrade"], "websocket") == 0)
-		return new WebSocketHandler{this};
-
-	MinerLogger::write("request: " + request.getURI(), TextType::Debug);
-
-	try
-	{
-		URI uri{request.getURI()};
-
-		if (uri.getPath() == "/")
-			return new RootHandler{variables_};
-		
-		Path path{"public"};
-		path.append(uri.getPath());
-
-		if (Poco::File{ path }.exists())
-			return new AssetHandler{variables_};
-
-		return new NotFoundHandler;
-	}
-	catch (...)
-	{
-		return new BadRequestHandler;
+		threadPool_.stopAll();
 	}
 }
 
@@ -177,5 +150,41 @@ bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string
 		MinerLogger::write(std::string("could not send the data to the websocket!: ") + exc.what(),
 			TextType::Debug);
 		return false;
+	}
+}
+
+Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
+	: server_{&server}
+{}
+
+Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& request)
+{
+	if (request.find("Upgrade") != request.end() &&
+		icompare(request["Upgrade"], "websocket") == 0)
+		return new WebSocketHandler{server_};
+
+	MinerLogger::write("request: " + request.getURI(), TextType::Debug);
+
+	try
+	{
+		URI uri{request.getURI()};
+
+		if (uri.getPath() == "/")
+			return new RootHandler{server_->variables_};
+
+		if (uri.getPath() == "/shutdown")
+			return new ShutdownHandler(*server_->miner_, *server_);
+
+		Path path{"public"};
+		path.append(uri.getPath());
+
+		if (Poco::File{ path }.exists())
+			return new AssetHandler{server_->variables_};
+
+		return new NotFoundHandler;
+	}
+	catch (...)
+	{
+		return new BadRequestHandler;
 	}
 }

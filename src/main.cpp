@@ -80,7 +80,7 @@ int main(int argc, const char* argv[])
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 		{
 			Burst::Miner miner;
-			Burst::MinerServer server;
+			Burst::MinerServer server{miner};
 
 			if (Burst::MinerConfig::getConfig().getStartServer())
 			{
@@ -89,6 +89,7 @@ int main(int argc, const char* argv[])
 			}
 
 			miner.run();
+			server.stop();
 		}
 		else
 		{

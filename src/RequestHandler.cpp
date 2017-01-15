@@ -8,6 +8,7 @@
 #include "MinerUtil.hpp"
 #include <Poco/JSON/Object.h>
 #include "MinerServer.hpp"
+#include "Miner.hpp"
 
 void Burst::TemplateVariables::inject(std::string& source) const
 {
@@ -37,6 +38,35 @@ void Burst::RootHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Po
 	variables_->inject(str);
 
 	out << str;
+}
+
+Burst::ShutdownHandler::ShutdownHandler(Miner& miner, MinerServer& server)
+	: miner_{&miner}, server_{&server}
+{}
+
+void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	MinerLogger::write("Shutting down miner...", TextType::System);
+
+	// first we shut down the miner
+	miner_->stop();
+
+	// then we send a response to the client
+	std::stringstream ss;
+	createJsonShutdown().stringify(ss);
+	auto str = ss.str();
+
+	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+	response.setContentLength(str.size());
+	auto& output = response.send();
+	
+	output << ss.str();
+	output.flush();
+
+	// finally we shut down the server
+	server_->stop();
+
+	MinerLogger::write("Goodbye", TextType::System);
 }
 
 Burst::AssetHandler::AssetHandler(const TemplateVariables& variables)
