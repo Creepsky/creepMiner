@@ -726,6 +726,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Account.cpp" />
     <ClCompile Include="src\AccountNames.cpp" />
     <ClCompile Include="src\MinerData.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
@@ -749,6 +750,7 @@
     <ClCompile Include="src\Wallet.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Account.hpp" />
     <ClInclude Include="src\AccountNames.hpp" />
     <ClInclude Include="src\MinerData.hpp" />
     <ClInclude Include="src\NonceSubmitter.hpp" />

@@ -60,6 +60,9 @@ void Burst::Miner::run()
 	plotReaderThreadPool_ = std::make_unique<Poco::ThreadPool>(plotFileSize, plotFileSize);
 	plotReaderManager_ = std::make_unique<Poco::TaskManager>(*plotReaderThreadPool_);
 
+	nonceSubmitterThreadPool_ = std::make_unique<Poco::ThreadPool>();
+	nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>(*nonceSubmitterThreadPool_);
+
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
 
 	const auto sleepTime = std::chrono::seconds(3);
@@ -69,7 +72,7 @@ void Burst::Miner::run()
 	miningInfoSession_->setKeepAlive(true);
 	
 	wallet_.getLastBlock(currentBlockHeight_);
-
+	
 	while (running_)
 	{
 		if (getMiningInfo())
@@ -93,6 +96,10 @@ void Burst::Miner::run()
 
 void Burst::Miner::stop()
 {
+	plotReaderManager_->cancelAll();
+	plotReaderManager_->joinAll();
+	nonceSubmitterManager_->cancelAll();
+	nonceSubmitterManager_->joinAll();
 	this->running_ = false;
 }
 
@@ -286,8 +293,12 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 	// is the new nonce better then the best one we already have?
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
 	{
-		auto newDeadline = deadlines_[accountId].add({ nonce, deadline, accountId, data_.getCurrentBlock(), plotFile,
-			accountNames_.getName(accountId, wallet_) });
+		auto newDeadline = deadlines_[accountId].add({ nonce,
+			deadline,
+			accounts_.getAccount(accountId, wallet_),
+			data_.getCurrentBlock(),
+			plotFile
+		});
 
 		if (MinerConfig::getConfig().output.nonceFound)
 		{
@@ -315,7 +326,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 
 		if (createSendThread)
 #ifdef NDEBUG
-			nonceSubmitterManager_.start(new NonceSubmitter{ *this, newDeadline });
+			nonceSubmitterManager_->start(new NonceSubmitter{ *this, newDeadline });
 #else
 			{} // in debug mode we dont submit nonces
 #endif

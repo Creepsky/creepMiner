@@ -8,6 +8,7 @@
 #include "MinerLogger.hpp"
 #include <Poco/NumberParser.h>
 #include "rapidjson/stringbuffer.h"
+#include "Account.hpp"
 
 using namespace Poco::Net;
 
@@ -116,18 +117,12 @@ bool Burst::Wallet::getLastBlock(uint64_t& block)
 	return false;
 }
 
-bool Burst::Wallet::getAccount(AccountId id, Account& account)
+void Burst::Wallet::getAccount(AccountId id, Account& account)
 {
 	rapidjson::Document json;
 
-	if (url_.empty())
-		return false;
-
-	account.id = id;
-	auto successName = getNameOfAccount(id, account.name);
-	auto successRecipient = getRewardRecipientOfAccount(id, account.rewardRecipient);
-
-	return successName && successRecipient;
+	if (!url_.empty())
+		account = {*this, id};
 }
 
 bool Burst::Wallet::sendWalletRequest(const std::string& uri, rapidjson::Document& json)

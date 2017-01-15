@@ -13,7 +13,7 @@
 #include "Declarations.hpp"
 #include "Deadline.hpp"
 #include <memory>
-#include "AccountNames.hpp"
+#include "Account.hpp"
 #include "Wallet.hpp"
 #include <Poco/TaskManager.h>
 #include <vector>
@@ -73,9 +73,10 @@ namespace Burst
 		// TODO: target deadline should be adjusted only if the config file has a entry 'auto adjust target deadline'
 		uint64_t targetDeadline_ = 0u;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
-		AccountNames accountNames_;
+		Accounts accounts_;
 		Wallet wallet_;
-		Poco::TaskManager nonceSubmitterManager_;
+		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_;
+		std::unique_ptr<Poco::ThreadPool> nonceSubmitterThreadPool_;
 		std::unique_ptr<Poco::TaskManager> plotReaderManager_;
 		std::unique_ptr<Poco::ThreadPool> plotReaderThreadPool_;
 	};

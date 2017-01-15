@@ -2,7 +2,6 @@
 
 #include <memory>
 #include "Declarations.hpp"
-#include <Poco/Types.h>
 #include "rapidjson/document.h"
 #include "Url.hpp"
 
@@ -10,14 +9,8 @@ namespace Poco { namespace Net { class HTTPClientSession; } }
 
 namespace Burst
 {
+	class Account;
 	class Url;
-
-	struct Account
-	{
-		AccountId id;
-		std::string name;
-		AccountId rewardRecipient;
-	};
 
 	class Wallet
 	{
@@ -32,7 +25,7 @@ namespace Burst
 		bool getNameOfAccount(AccountId account, std::string& name);
 		bool getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient);
 		bool getLastBlock(uint64_t& block);
-		bool getAccount(AccountId id, Account& account);
+		void getAccount(AccountId id, Account& account);
 
 		Wallet& operator=(const Wallet& rhs) = delete;
 		Wallet& operator=(Wallet&& rhs) = default;
