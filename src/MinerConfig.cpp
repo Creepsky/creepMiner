@@ -275,10 +275,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			confirmedDeadlinesPath_ = configDoc["confirmed deadlines"].GetString();
 
 	if (configDoc.HasMember("targetDeadline"))
+	{
 		if (configDoc["targetDeadline"].IsUint64())
 			targetDeadline_ = configDoc["targetDeadline"].GetUint64();
 		else if (configDoc["targetDeadline"].IsString())
 			targetDeadline_ = formatDeadline(configDoc["targetDeadline"].GetString());
+	}
 
 	return true;
 }
