@@ -18,6 +18,7 @@
 #include "Socket.hpp"
 #include "NonceSubmitter.hpp"
 #include "rapidjson/document.h"
+#include <algorithm>
 
 Burst::Miner::~Miner()
 {}
@@ -236,9 +237,10 @@ void Burst::Miner::nonceSubmitterThread()
 				{
 					auto createSendThread = true;
 					auto targetDeadline = getTargetDeadline();
+					auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
 
-					if (MinerConfig::getConfig().getTargetDeadline() > 0)
-						targetDeadline = min(targetDeadline, MinerConfig::getConfig().getTargetDeadline());
+					if (manualTargetDeadline > 0)
+						targetDeadline = targetDeadline < manualTargetDeadline ? targetDeadline : manualTargetDeadline;
 
 					if (targetDeadline > 0 && deadline->getDeadline() >= targetDeadline)
 					{
