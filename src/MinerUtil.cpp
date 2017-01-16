@@ -14,6 +14,8 @@
 #include "Declarations.hpp"
 #include "MinerLogger.h"
 #include <iostream>
+#include <locale>
+#include <regex>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -159,6 +161,50 @@ std::string Burst::deadlineFormat(uint64_t seconds)
 	ss << secs % 60;
 
 	return ss.str();
+}
+
+uint64_t Burst::formatDeadline(const std::string& format)
+{
+	if (format.empty())
+		return 0;
+
+	auto tokens = splitStr(format, ' ');
+
+	if (tokens.empty())
+		return 0;
+
+	auto deadline = 0u;
+	std::locale loc;
+
+	std::regex years("\\d*y");
+	std::regex months("\\d*m");
+	std::regex days("\\d*d");
+	std::regex hms("\\d\\d:\\d\\d:\\d\\d");
+
+	const auto extractFunction = [](const std::string& token, uint32_t conversion, uint32_t postfixSize = 1)
+	{
+		return stoul(token.substr(0, token.size() - postfixSize)) * conversion;
+	};
+
+	for (auto& token : tokens)
+	{
+		if (regex_match(token, years))
+			deadline += extractFunction(token, 60 * 60 * 24 * 30 * 12);
+		else if (regex_match(token, months))
+			deadline += extractFunction(token, 60 * 60 * 24 * 30);
+		else if (regex_match(token, days))
+			deadline += extractFunction(token, 60 * 60 * 24);
+		else if (regex_match(token, hms))
+		{
+			auto subTokens = splitStr(token, ':');
+
+			deadline += extractFunction(subTokens[0], 60 * 60, 0);
+			deadline += extractFunction(subTokens[1], 60, 0);
+			deadline += extractFunction(subTokens[2], 1, 0);
+		}
+	}
+
+	return deadline;
 }
 
 std::string Burst::gbToString(uint64_t size)

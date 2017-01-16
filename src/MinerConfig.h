@@ -76,6 +76,7 @@ namespace Burst
 		size_t getSubmissionMaxRetry() const;
 		size_t getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
+		uint64_t getTargetDeadline() const;
 
 		std::unique_ptr<Socket> createSocket() const;
 		std::unique_ptr<Socket> createMiningInfoSocket() const;
@@ -95,5 +96,6 @@ namespace Burst
 		size_t submission_max_retry_ = 3;
 		size_t http_ = 0;
 		std::string confirmedDeadlinesPath_ = "";
+		uint64_t targetDeadline_ = 0;
 	};
 }

@@ -38,6 +38,7 @@ namespace Burst
 	std::string getNonceCountFromPlotFile(const std::string& path);
 	std::string getStaggerSizeFromPlotFile(const std::string& path);
 	std::string deadlineFormat(uint64_t seconds);
+	uint64_t formatDeadline(const std::string& format);
 	std::string gbToString(uint64_t size);
 	std::string versionToString();
 	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);

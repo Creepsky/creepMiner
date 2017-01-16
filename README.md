@@ -60,7 +60,8 @@ Inside the config-file, you can define the following settings:
     "plots" : [
         "/Users/uraymeiviar/plots",
         "/Users/uraymeiviar/Documents/plots"
-    ]
+    ],
+    "targetDeadline": "1m 2d 12:34:56"
 }
 ```
 
@@ -76,6 +77,7 @@ Inside the config-file, you can define the following settings:
 | **maxBufferSizeMB** | the buffer size while reading the plot files. |
 | **output** | decides, what messages will be printed in the output. For possible values see [Output-Flags](#output-flags).  |
 | **plots** | the paths to the directories, where to search for plot files. plot files are searched every new block. |
+| **targetDeadline** | found nonces need to have a lower deadline then this value to be submitted. If targetDeadline is 0 (default), this feature is ignored. The target deadline can be given as a number (for example "targetDeadline" : 12345), which represents the total seconds of the deadline, or as a formatted string (for example "targetDeadline" : "1y 2d 12:34:56"). |
 
 ## Output-Flags
 
