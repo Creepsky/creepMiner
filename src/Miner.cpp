@@ -235,13 +235,17 @@ void Burst::Miner::nonceSubmitterThread()
 				if (!deadline->isOnTheWay())
 				{
 					auto createSendThread = true;
+					auto targetDeadline = getTargetDeadline();
 
-					if (getTargetDeadline() > 0 && deadline->getDeadline() >= getTargetDeadline())
+					if (MinerConfig::getConfig().getTargetDeadline() > 0)
+						targetDeadline = min(targetDeadline, MinerConfig::getConfig().getTargetDeadline());
+
+					if (targetDeadline > 0 && deadline->getDeadline() >= targetDeadline)
 					{
 						createSendThread = false;
 
 						MinerLogger::write("Nonce is higher then the target deadline of the pool (" +
-							deadlineFormat(getTargetDeadline()) + ")", TextType::Debug);
+							deadlineFormat(targetDeadline) + ")", TextType::Debug);
 					}
 
 					deadline->send();

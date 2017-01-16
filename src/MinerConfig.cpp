@@ -274,6 +274,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (configDoc["confirmed deadlines"].IsString())
 			confirmedDeadlinesPath_ = configDoc["confirmed deadlines"].GetString();
 
+	if (configDoc.HasMember("targetDeadline"))
+		if (configDoc["targetDeadline"].IsUint64())
+			targetDeadline_ = configDoc["targetDeadline"].GetUint64();
+		else if (configDoc["targetDeadline"].IsString())
+			targetDeadline_ = formatDeadline(configDoc["targetDeadline"].GetString());
+
 	return true;
 }
 
@@ -330,6 +336,11 @@ size_t Burst::MinerConfig::getHttp() const
 const std::string& Burst::MinerConfig::getConfirmedDeadlinesPath() const
 {
 	return confirmedDeadlinesPath_;
+}
+
+uint64_t Burst::MinerConfig::getTargetDeadline() const
+{
+	return targetDeadline_;
 }
 
 std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const
