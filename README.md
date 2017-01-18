@@ -62,7 +62,8 @@ Inside the config-file, you can define the following settings:
         "/Users/uraymeiviar/Documents/plots"
     ],
     "Start Server": true,
-    "serverUrl" : "http://localhost:80"
+    "serverUrl" : "http://localhost:80",
+    "targetDeadline": "1m 2d 12:34:56"
 }
 ```
 
@@ -78,6 +79,7 @@ Inside the config-file, you can define the following settings:
 | **plots** | the paths to the directories, where to search for plot files. plot files are searched every new block. |
 | **Start Server** | the miner will run a local HTTP server and transfer the mining process to all clients. (true|false) |
 | **serverUrl** | the uri and port, where the miner will deploy the HTTP server. only if Start Server == true. the chosen port must be not used already! |
+| **targetDeadline** | found nonces need to have a lower deadline then this value to be submitted. If targetDeadline is 0 (default), this feature is ignored. The target deadline can be given as a number (for example "targetDeadline" : 12345), which represents the total seconds of the deadline, or as a formatted string (for example "targetDeadline" : "1y 2d 12:34:56"). |
 
 ## Output-Flags
 
@@ -160,4 +162,3 @@ If you want to share your own code, please follow these steps:
 - open a pull request and try to describe what the change is for
 - done :)
 
-Here you can find a good tutorial about [Contributing](https://akrabat.com/the-beginners-guide-to-contributing-to-a-github-project/).

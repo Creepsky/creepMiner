@@ -260,6 +260,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (configDoc["serverUrl"].IsString())
 			serverUrl_ = {configDoc["serverUrl"].GetString()};
 
+	if (configDoc.HasMember("targetDeadline"))
+	{
+		if (configDoc["targetDeadline"].IsUint64())
+			targetDeadline_ = configDoc["targetDeadline"].GetUint64();
+		else if (configDoc["targetDeadline"].IsString())
+			targetDeadline_ = formatDeadline(configDoc["targetDeadline"].GetString());
+	}
+
 	return true;
 }
 
@@ -338,14 +346,14 @@ const std::string& Burst::MinerConfig::getConfirmedDeadlinesPath() const
 	return confirmedDeadlinesPath_;
 }
 
-//size_t Burst::MinerConfig::getMaxSubmitThreads() const
-//{
-//	return 0;
-//}
-
 bool Burst::MinerConfig::getStartServer() const
 {
 	return startServer_;
+}
+
+uint64_t Burst::MinerConfig::getTargetDeadline() const
+{
+	return targetDeadline_;
 }
 
 const Burst::Url& Burst::MinerConfig::getServerUrl() const
@@ -434,97 +442,6 @@ bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 	}
 
 	return false;
-
-	/*if (path.isDirectory())
-	{
-		auto sizeBefore = plotList_.size();
-
-		if (dirPath[dirPath.length() - 1] != PATH_SEPARATOR)
-			dirPath += PATH_SEPARATOR;
-
-		DIR* dir;
-		struct dirent* ent;
-		size_t size = 0;
-
-		if ((dir = opendir(dirPath.c_str())) != nullptr)
-		{
-			while ((ent = readdir(dir)) != nullptr)
-			{
-				auto plotFile = addPlotFile(dirPath + std::string(ent->d_name));
-
-				if (plotFile != nullptr)
-					size += plotFile->getSize();
-			}
-
-			closedir(dir);
-		}
-		else
-		{
-			MinerLogger::write("failed reading file or directory " + fileOrPath, TextType::Error);
-			closedir(dir);
-			return false;
-		}
-
-		MinerLogger::write(std::to_string(this->plotList_.size() - sizeBefore) + " plot(s) found at " + fileOrPath
-			+ ", total size: " + gbToString(size) + " GB", TextType::System);
-
-		return false;
-	}
-
-	struct stat info;
-	auto statResult = stat(fileOrPath.c_str(), &info);
-
-	if (statResult != 0)
-	{
-		MinerLogger::write(fileOrPath + " does not exist or can not be read", TextType::Error);
-		return false;
-	}
-
-	// its a directory
-	if (info.st_mode & S_IFDIR)
-	{
-		auto dirPath = fileOrPath;
-		auto sizeBefore = plotList_.size();
-
-		if (dirPath[dirPath.length() - 1] != PATH_SEPARATOR)
-			dirPath += PATH_SEPARATOR;
-
-		DIR* dir;
-		struct dirent* ent;
-		size_t size = 0;
-
-		if ((dir = opendir(dirPath.c_str())) != nullptr)
-		{
-			while ((ent = readdir(dir)) != nullptr)
-			{
-				auto plotFile = addPlotFile(dirPath + std::string(ent->d_name));
-
-				if (plotFile != nullptr)
-					size += plotFile->getSize();
-			}
-
-			closedir(dir);
-		}
-		else
-		{
-			MinerLogger::write("failed reading file or directory " + fileOrPath, TextType::Error);
-			closedir(dir);
-			return false;
-		}
-
-		MinerLogger::write(std::to_string(this->plotList_.size() - sizeBefore) + " plot(s) found at " + fileOrPath
-						   + ", total size: " + gbToString(size) + " GB", TextType::System);
-	}
-	// its a single plot file
-	else
-	{
-		auto plotFile = this->addPlotFile(fileOrPath);
-
-		if (plotFile != nullptr)
-			MinerLogger::write("plot found at " + fileOrPath + ", total size: " + gbToString(plotFile->getSize()) + " GB", TextType::System);
-	}
-
-	return true;*/
 }
 
 std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const Poco::File& file)

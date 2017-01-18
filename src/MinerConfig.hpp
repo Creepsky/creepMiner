@@ -93,6 +93,7 @@ namespace Burst
 		const std::string& getConfirmedDeadlinesPath() const;
 		bool getStartServer() const;
 		const Url& getServerUrl() const;
+		uint64_t getTargetDeadline() const;
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -116,5 +117,6 @@ namespace Burst
 		Url urlWallet_;
 		bool startServer_ = false;
 		Url serverUrl_ = {"127.0.0.1:9999"};
+		uint64_t targetDeadline_ = 0;
 	};
 }

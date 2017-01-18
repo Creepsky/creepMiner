@@ -20,6 +20,7 @@
 #include <Poco/JSON/Object.h>
 #include <Poco/Path.h>
 #include "NonceSubmitter.hpp"
+#include <algorithm>
 
 Burst::Miner::Miner()
 {}
@@ -261,13 +262,11 @@ const Burst::GensigData& Burst::Miner::getGensig() const
 
 uint64_t Burst::Miner::getBaseTarget() const
 {
-	//return this->baseTarget_;
 	return data_.getBlockData()->baseTarget;
 }
 
 uint64_t Burst::Miner::getBlockheight() const
 {
-	//return blockHeight_;
 	return data_.getCurrentBlock();
 }
 
@@ -278,7 +277,6 @@ uint64_t Burst::Miner::getTargetDeadline() const
 
 size_t Burst::Miner::getScoopNum() const
 {
-	//return this->scoopNum_;
 	return data_.getBlockData()->scoop;
 }
 
@@ -313,13 +311,18 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		}
 
 		auto createSendThread = true;
+		auto targetDeadline = getTargetDeadline();
+		auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
 
-		if (getTargetDeadline() > 0 && deadline >= getTargetDeadline())
+		if (manualTargetDeadline > 0)
+			targetDeadline = targetDeadline < manualTargetDeadline ? targetDeadline : manualTargetDeadline;
+
+		if (targetDeadline > 0 && newDeadline->getDeadline() >= targetDeadline)
 		{
 			createSendThread = false;
 
 			MinerLogger::write("Nonce is higher then the target deadline of the pool (" +
-				deadlineFormat(getTargetDeadline()) + ")", TextType::Debug);
+				deadlineFormat(targetDeadline) + ")", TextType::Debug);
 		}
 
 		newDeadline->send();

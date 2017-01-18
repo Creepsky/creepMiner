@@ -12,6 +12,8 @@
 #include <mutex>
 #include "MinerConfig.hpp"
 #include <iomanip>
+#include <cmath>
+#include "MinerUtil.hpp"
 
 #ifdef _WIN32
 #include <wincon.h>
@@ -169,9 +171,7 @@ void Burst::MinerLogger::clearLine()
 
 void Burst::MinerLogger::printTime()
 {
-	auto now = std::chrono::system_clock::now();
-	auto now_c = std::chrono::system_clock::to_time_t(now);
-	std::cout << std::put_time(std::localtime(&now_c), "%X") << ": ";
+	std::cout << getTime() << ": ";
 }
 
 void Burst::MinerLogger::printProgress(float progress, size_t pipes)
