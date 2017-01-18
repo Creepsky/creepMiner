@@ -67,7 +67,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 
 	HTTPRequest request{HTTPRequest::HTTP_POST, url, HTTPRequest::HTTP_1_1};
 	request.set("X-Capacity", std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
-	request.set("X-Miner", "creepsky-uray-" + versionToString());
+	request.set("X-Miner", "creepMINER " + versionToString());
 	request.setKeepAlive(false);
 	request.setContentLength(0);
 
