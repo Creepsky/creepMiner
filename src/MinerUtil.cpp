@@ -311,6 +311,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	json.set("gensigStr", block.genSig);
 	json.set("time", getTime());
 	json.set("blocksMined", data.getBlocksMined());
+	json.set("blocksWon", data.getBlocksWon());
 	if (bestOverall != nullptr)
 	{
 		json.set("bestOverallNum", bestOverall->getDeadline());
@@ -371,6 +372,14 @@ Poco::JSON::Object Burst::createJsonShutdown()
 {
 	Poco::JSON::Object json;
 	json.set("shutdown", true);
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonWonBlocks(const MinerData& data)
+{
+	Poco::JSON::Object json;
+	json.set("type", "blocksWonUpdate");
+	json.set("blocksWon", data.getBlocksWon());
 	return json;
 }
 

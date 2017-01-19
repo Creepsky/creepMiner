@@ -84,14 +84,27 @@ Burst::Deadlines& Burst::Account::getDeadlines()
 	return deadlines_;
 }
 
-std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, Wallet& wallet)
+std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, Wallet& wallet, bool persistent)
 {
 	auto iter = accounts_.find(id);
 
+	// if the account is not in the cache, we have to fetch him
 	if (iter == accounts_.end())
-		accounts_.emplace(id, std::make_shared<Account>(wallet, id));
-	else
-		*iter;
+	{
+		auto account = std::make_shared<Account>(wallet, id);
 
+		// save the account in the cache if wanted
+		if (persistent)
+			accounts_.emplace(id, account);
+
+		return account;
+	}
+
+	// account is in the cache already
 	return accounts_[id];
+}
+
+bool Burst::Accounts::isLoaded(AccountId id) const
+{
+	return accounts_.find(id) != accounts_.end();
 }

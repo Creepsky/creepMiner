@@ -55,6 +55,8 @@ void Burst::Miner::run()
 	if (config.getStartServer() && !config.getServerUrl().empty())
 		MinerLogger::write("Server URL : " + config.getServerUrl().getCanonical() + ":" + std::to_string(config.getServerUrl().getPort()) +
 			" (" + config.getServerUrl().getIp() + ")", TextType::System);
+	if (config.getTargetDeadline() > 0)
+		MinerLogger::write("Target deadline : " + deadlineFormat(config.getTargetDeadline()), TextType::System);
 	
 	auto plotFileSize = static_cast<int32_t>(config.getPlotFiles().size());
 
@@ -157,6 +159,14 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 				if (wallet_.getWinnerOfBlock(block, lastWinner))
 				{
 					std::string name;
+
+					// we are the winner :)
+					if (accounts_.isLoaded(lastWinner))
+					{
+						data_.addWonBlock();
+						// we (re)send the good news to the local html server
+						data_.addBlockEntry(createJsonNewBlock(data_));
+					}
 
 					wallet_.getNameOfAccount(lastWinner, name);
 
@@ -293,7 +303,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 	{
 		auto newDeadline = deadlines_[accountId].add({ nonce,
 			deadline,
-			accounts_.getAccount(accountId, wallet_),
+			accounts_.getAccount(accountId, wallet_, true),
 			data_.getCurrentBlock(),
 			plotFile
 		});

@@ -40,6 +40,7 @@ namespace Burst
 		void addConfirmedDeadline();
 		void setTargetDeadline(uint64_t deadline);
 		void setBestDeadlineCurrent(std::shared_ptr<Deadline> deadline);
+		void addWonBlock();
 
 		std::shared_ptr<const Deadline> getBestDeadlineOverall() const;
 		const Poco::Timestamp& getStartTime() const;

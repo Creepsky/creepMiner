@@ -94,6 +94,12 @@ void Burst::MinerData::setBestDeadlineCurrent(std::shared_ptr<Deadline> deadline
 	}
 }
 
+void Burst::MinerData::addWonBlock()
+{
+	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	++blocksWon_;
+}
+
 std::shared_ptr<const Burst::Deadline> Burst::MinerData::getBestDeadlineOverall() const
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};

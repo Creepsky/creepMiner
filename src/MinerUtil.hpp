@@ -79,6 +79,7 @@ namespace Burst
 	Poco::JSON::Object createJsonProgress(float progress);
 	Poco::JSON::Object createJsonLastWinner(const MinerData& data);
 	Poco::JSON::Object createJsonShutdown();
+	Poco::JSON::Object createJsonWonBlocks(const MinerData& data);
 
 	std::string getTime();
 }

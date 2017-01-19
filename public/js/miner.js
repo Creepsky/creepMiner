@@ -56,7 +56,7 @@ function newBlock(block)
 	setProgress(0);
 	lastWinnerContainer.hide();
 	avgDeadline.html(block["deadlinesAvg"]);
-	wonBlocks.html(0);
+	wonBlocks.html(block["blocksWon"]);
 	plot.setData([block["bestDeadlines"]]);
 	plot.setupGrid();
 	plot.draw();
@@ -322,6 +322,9 @@ function connect()
 						break;
 					case "lastWinner":
 						setLastWinner(response);
+						break;
+					case "blocksWonUpdate":
+						wonBlocks.html(reponse["blocksWon"]);
 						break;
 					default:
 						console.log(response["type"]);

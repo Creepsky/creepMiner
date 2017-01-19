@@ -70,7 +70,6 @@ namespace Burst
 		std::shared_ptr<PlotReadProgress> progress_;
 		uint64_t currentBlockHeight_ = 0u;
 		uint64_t currentBaseTarget_ = 0u;
-		// TODO: target deadline should be adjusted only if the config file has a entry 'auto adjust target deadline'
 		uint64_t targetDeadline_ = 0u;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
 		Accounts accounts_;

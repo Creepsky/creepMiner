@@ -32,7 +32,8 @@ namespace Burst
 	class Accounts
 	{
 	public:
-		std::shared_ptr<Account> getAccount(AccountId id, Wallet& wallet);
+		std::shared_ptr<Account> getAccount(AccountId id, Wallet& wallet, bool persistent);
+		bool isLoaded(AccountId id) const;
 
 	private:
 		std::unordered_map<AccountId, std::shared_ptr<Account>> accounts_;
