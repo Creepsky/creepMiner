@@ -237,6 +237,11 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 			auto dir = path.getDevice();
 
+			// if its empty its unix and we have to look for the top dir
+			if (dir.empty() && path.depth() > 0)
+				dir = path.directory(0);
+
+			// if its now empty, we have a really weird plotfile and skip it
 			if (dir.empty())
 			{
 				auto lines = {
