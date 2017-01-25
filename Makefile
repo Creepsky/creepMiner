@@ -1,4 +1,4 @@
-MODULES   := rapidjson sphlib nxt
+MODULES   := sphlib nxt
 SRC_DIR   := $(addprefix src/,$(MODULES)) src
 BUILD_DIR := $(addprefix bin/,$(MODULES)) bin
 
