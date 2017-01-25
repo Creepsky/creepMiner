@@ -35,7 +35,18 @@ void Burst::MinerServer::run(uint16_t port)
 {
 	port_ = port;
 
-	ServerSocket socket{port_};
+	ServerSocket socket;
+
+	try
+	{
+		socket.bind(port_, true);
+		socket.listen();
+	}
+	catch (Poco::Exception& exc)
+	{
+		MinerLogger::write("error while creating local http server on port " + std::to_string(port_),
+						   TextType::Error);
+	}
 
 	auto params = new HTTPServerParams;
 
