@@ -12,6 +12,7 @@
 #include "Miner.hpp"
 #include "MinerConfig.hpp"
 #include <Poco/Path.h>
+#include <Poco/NestedDiagnosticContext.h>
 
 using namespace Poco;
 using namespace Net;
@@ -33,6 +34,8 @@ Burst::MinerServer::~MinerServer()
 
 void Burst::MinerServer::run(uint16_t port)
 {
+	poco_ndc(MinerServer::run);
+	
 	port_ = port;
 
 	ServerSocket socket;
@@ -76,6 +79,8 @@ void Burst::MinerServer::run(uint16_t port)
 
 void Burst::MinerServer::stop()
 {
+	poco_ndc(MinerServer::stop);
+	
 	if (server_ != nullptr)
 	{
 		server_->stopAll(true);
@@ -91,6 +96,8 @@ void Burst::MinerServer::connectToMinerData(MinerData& minerData)
 
 void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> websocket)
 {
+	poco_ndc(MinerServer::addWebsocket);
+	
 	ScopedLock<FastMutex> lock{mutex_};
 	auto blockData = minerData_->getBlockData();
 	bool error;
@@ -121,6 +128,7 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 
 void Burst::MinerServer::sendToWebsockets(const std::string& data)
 {
+	poco_ndc(MinerServer::sendToWebsockets);
 	ScopedLock<FastMutex> lock{mutex_};
 	
 	auto ws = websockets_.begin();
@@ -143,12 +151,15 @@ void Burst::MinerServer::sendToWebsockets(const JSON::Object& json)
 
 void Burst::MinerServer::blockDataChanged(BlockDataChangedNotification* notification)
 {
+	poco_ndc(MinerServer::blockDataChanged);
 	sendToWebsockets(*notification->blockData);
 	notification->release();
 }
 
 bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string& data) const
 {
+	poco_ndc(MinerServer::sendToWebsocket(WebSocket&, const std::string&));
+	
 	try
 	{
 		auto n = websocket.sendFrame(data.data(), static_cast<int>(data.size()));
@@ -170,6 +181,8 @@ Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
 
 Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& request)
 {
+	poco_ndc(MinerServer::RequestFactory::createRequestHandler);
+	
 	if (request.find("Upgrade") != request.end() &&
 		icompare(request["Upgrade"], "websocket") == 0)
 		return new WebSocketHandler{server_};

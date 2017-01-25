@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <array>
+#include <Poco/Platform.h>
 
 namespace Burst
 {
@@ -23,6 +24,16 @@ namespace Burst
 		static const size_t ScoopSize = HashPerScoop * HashSize; // 64 Bytes
 		static const size_t PlotSize = ScoopPerPlot * ScoopSize; // 256KB = 262144 Bytes
 		static const size_t PlotScoopSize = ScoopSize + HashSize; // 64 + 32 bytes
+
+#if defined POCO_OS_FAMILY_BSD
+		static constexpr auto OsFamily = "BSD";
+#elif defined POCO_OS_FAMILY_UNIX
+		static constexpr auto OsFamily = "Unix";
+#elif defined POCO_OS_FAMILY_WINDOWS
+		static constexpr auto OsFamily = "Windows";
+#else
+		static constexpr auto OsFamily = "";
+#endif
 	};
 
 	template <size_t SZ>

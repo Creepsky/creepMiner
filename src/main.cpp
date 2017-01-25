@@ -16,6 +16,7 @@
 #include "Poco/Net/AcceptCertificateHandler.h"
 #include <Poco/Net/HTTPSSessionInstantiator.h>
 #include <Poco/Net/PrivateKeyPassphraseHandler.h>
+#include <Poco/NestedDiagnosticContext.h>
 #include "MinerServer.hpp"
 
 class SSLInitializer
@@ -34,7 +35,9 @@ public:
 
 int main(int argc, const char* argv[])
 {
-	Burst::MinerLogger::write("Burst miner " + Burst::versionToString());
+	poco_ndc(main);
+	
+	Burst::MinerLogger::write("Burst miner " + Burst::versionToString() + " " + Burst::Settings::OsFamily);
 	Burst::MinerLogger::write("----------------------------------------------");
 	Burst::MinerLogger::write("Github:   https://github.com/Creepsky/burst-miner");
 	Burst::MinerLogger::write("Author:   Creepsky [creepsky@gmail.com]");
@@ -71,7 +74,7 @@ int main(int argc, const char* argv[])
 
 		SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
 		Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "", "", "",
-			Context::VERIFY_NONE, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+			Context::VERIFY_RELAXED, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
 
 		Poco::Net::HTTPSessionInstantiator::registerInstantiator();
@@ -96,9 +99,15 @@ int main(int argc, const char* argv[])
 			Burst::MinerLogger::write("Aborting program due to invalid configuration", Burst::TextType::Error);
 		}
 	}
+	catch (Poco::Exception& exc)
+	{
+		Burst::MinerLogger::write(std::string("Aborting program due to exceptional state: ") + exc.displayText(),
+								  Burst::TextType::Error);
+	}
 	catch (std::exception& exc)
 	{
-		Burst::MinerLogger::write(std::string("Aborting program due to exceptional state: ") + exc.what());
+		Burst::MinerLogger::write(std::string("Aborting program due to exceptional state: ") + exc.what(),
+								  Burst::TextType::Error);
 	}
 
 	return 0;
