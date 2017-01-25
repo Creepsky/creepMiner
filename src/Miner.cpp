@@ -14,13 +14,14 @@
 #include "nxt/nxt_address.h"
 #include "Response.hpp"
 #include "Request.hpp"
-#include "rapidjson/document.h"
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/JSON/Object.h>
 #include <Poco/Path.h>
 #include "NonceSubmitter.hpp"
 #include <algorithm>
+#include <Poco/JSON/Parser.h>
+#include <Poco/NestedDiagnosticContext.h>
 
 Burst::Miner::Miner()
 {}
@@ -30,6 +31,7 @@ Burst::Miner::~Miner()
 
 void Burst::Miner::run()
 {
+	poco_ndc(Miner::run);
 	running_ = true;
 	progress_ = std::make_shared<PlotReadProgress>();
 
@@ -39,10 +41,18 @@ void Burst::Miner::run()
 	if (config.getPoolUrl().empty() ||
 		config.getMiningInfoUrl().empty())
 	{
-		MinerLogger::write("Mining networking failed", TextType::Error);
+		std::vector<std::string> lines = {
+			"Pool URL and/or mininginfo URL is empty!",
+			"Pool URL: '" + config.getPoolUrl().getCanonical(false) + "'",
+			"Mininginfo URL: '" + config.getMiningInfoUrl().getCanonical(false) + "'"
+		};
+		
+		MinerLogger::write(lines, TextType::Error);
 		return;
 	}
 
+	MinerLogger::write("Total plots size: " + gbToString(MinerConfig::getConfig().getTotalPlotsize()) + " GB",
+					   TextType::System);
 	MinerLogger::write("Submission Max Retry : " + std::to_string(config.getSubmissionMaxRetry()), TextType::System);
 	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
 	MinerLogger::write("Pool Host : " + config.getPoolUrl().getCanonical() + ":" + std::to_string(config.getPoolUrl().getPort()) +
@@ -59,6 +69,9 @@ void Burst::Miner::run()
 		MinerLogger::write("Target deadline : " + deadlineFormat(config.getTargetDeadline()), TextType::System);
 	
 	auto plotFileSize = static_cast<int32_t>(config.getPlotFiles().size());
+	
+	if (plotFileSize <= 0)
+		plotFileSize = 1;
 
 	plotReaderThreadPool_ = std::make_unique<Poco::ThreadPool>(plotFileSize, plotFileSize);
 	plotReaderManager_ = std::make_unique<Poco::TaskManager>(*plotReaderThreadPool_);
@@ -99,6 +112,7 @@ void Burst::Miner::run()
 
 void Burst::Miner::stop()
 {
+	poco_ndc(Miner::stop);
 	plotReaderManager_->cancelAll();
 	plotReaderManager_->joinAll();
 	nonceSubmitterManager_->cancelAll();
@@ -108,6 +122,8 @@ void Burst::Miner::stop()
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
+	poco_ndc(Miner::updateGensig);
+	
 	// stop all reading processes if any
 	MinerLogger::write("stopping plot readers...", TextType::Debug);
 	plotReaderManager_->cancelAll();
@@ -147,6 +163,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 		std::thread threadLastWinner([this, block]()
 		{
+			poco_ndc(Miner::updateGensig::threadLastWinner);
 			AccountId lastWinner;
 			auto fetched = false;
 
@@ -244,8 +261,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 			// if its now empty, we have a really weird plotfile and skip it
 			if (dir.empty())
 			{
-				auto lines = {
-					std::string("Plotfile with invalid path!"),
+				std::vector<std::string> lines = {
+					"Plotfile with invalid path!",
 					plotFile->getPath()
 				};
 
@@ -297,6 +314,7 @@ size_t Burst::Miner::getScoopNum() const
 
 void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile)
 {
+	poco_ndc(Miner::submitNonce);
 	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
 
 	auto bestDeadline = deadlines_[accountId].getBest();
@@ -354,6 +372,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 bool Burst::Miner::getMiningInfo()
 {
 	using namespace Poco::Net;
+	poco_ndc(Miner::getMiningInfo);
 	
 	Request request(std::move(miningInfoSession_));
 
@@ -364,35 +383,33 @@ bool Burst::Miner::getMiningInfo()
 	std::string responseData;
 
 	if (response.receive(responseData))
-	{
-		HttpResponse httpResponse(responseData);
-		rapidjson::Document body;
-
-		body.Parse<0>(httpResponse.getMessage().c_str());	
-
-		if (body.GetParseError() == nullptr)
+	{		
+		try
 		{
+			HttpResponse httpResponse(responseData);
+			Poco::JSON::Parser parser;
+			auto root = parser.parse(httpResponse.getMessage()).extract<Poco::JSON::Object::Ptr>();
 			std::string gensig;
 
-			if (body.HasMember("baseTarget"))
+			if (root->has("baseTarget"))
 			{
-				std::string baseTargetStr = body["baseTarget"].GetString();
+				std::string baseTargetStr = root->get("baseTarget");
 				currentBaseTarget_ = std::stoull(baseTargetStr);
 			}
 
-			if (body.HasMember("generationSignature"))
+			if (root->has("generationSignature"))
 			{
-				gensig = body["generationSignature"].GetString();
+				gensig = root->get("generationSignature").convert<std::string>();
 			}
 
-			if (body.HasMember("targetDeadline"))
+			if (root->has("targetDeadline"))
 			{
-				targetDeadline_ = body["targetDeadline"].GetUint64();
+				targetDeadline_ = root->get("targetDeadline");
 			}
 
-			if (body.HasMember("height"))
+			if (root->has("height"))
 			{
-				std::string newBlockHeightStr = body["height"].GetString();
+				std::string newBlockHeightStr = root->get("height");
 				auto newBlockHeight = std::stoull(newBlockHeightStr);
 
 				if (newBlockHeight > currentBlockHeight_)
@@ -404,11 +421,16 @@ bool Burst::Miner::getMiningInfo()
 			transferSession(response, miningInfoSession_);
 			return true;
 		}
-
-		MinerLogger::write("Error on getting new block-info!", TextType::Error);
-		MinerLogger::write(body.GetParseError(), TextType::Error);
-		MinerLogger::write("Full response:", TextType::Error);
-		MinerLogger::write(httpResponse.getResponse(), TextType::Error);
+		catch (Poco::Exception& exc)
+		{
+			std::vector<std::string> lines = {
+				"Error on getting new block-info!",
+				exc.what(),
+				"Full response: " + responseData
+			};
+			
+			MinerLogger::writeStackframe(lines);
+		}
 	}
 	
 	transferSession(request, miningInfoSession_);
@@ -419,6 +441,7 @@ bool Burst::Miner::getMiningInfo()
 
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, uint64_t blockHeight)
 {
+	poco_ndc(Miner::getBestSent);
 	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
 
 	if (blockHeight != data_.getCurrentBlock())
@@ -429,6 +452,7 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(uint64_t accountId, uint64_t blockHeight)
 {
+	poco_ndc(Miner::getBestConfirmed);
 	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
 
 	if (blockHeight != data_.getCurrentBlock())
@@ -439,6 +463,7 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(uint64_t account
 
 std::vector<Poco::JSON::Object> Burst::Miner::getBlockData() const
 {
+	poco_ndc(Miner::getBlockData);
 	std::vector<Poco::JSON::Object> entries;
 	auto blockData = data_.getBlockData();
 

@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include <memory>
+#include <Poco/JSON/Object.h>
 #include "Declarations.hpp"
-#include "rapidjson/document.h"
 #include "Url.hpp"
 
 namespace Poco { namespace Net { class HTTPClientSession; } }
@@ -31,7 +31,7 @@ namespace Burst
 		Wallet& operator=(Wallet&& rhs) = default;
 
 	private:
-		bool sendWalletRequest(const std::string& uri, rapidjson::Document& json);
+		bool sendWalletRequest(const std::string& uri, Poco::JSON::Object::Ptr& json);
 
 		std::unique_ptr<Poco::Net::HTTPClientSession> walletSession_;
 		Url url_;

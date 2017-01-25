@@ -61,12 +61,14 @@ namespace Burst
 
 		static void write(const std::string& text, TextType type = TextType::Normal);
 		static void write(const std::vector<std::string>& lines, TextType type = TextType::Normal);
+		static ColorPair getTextTypeColor(TextType type);
+		static void writeStackframe(const std::string& additionalText);
+		static void writeStackframe(std::vector<std::string>& additionalLines);
+
 		static void writeProgress(float progress, size_t pipes);
 
 		static void nextLine();
-
 		static void setTextTypeColor(TextType type, ColorPair color);
-		static ColorPair getTextTypeColor(TextType type);
 
 	private:
 		static MinerLogger& getInstance();

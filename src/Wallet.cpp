@@ -3,11 +3,11 @@
 #include <Poco/Net/HTTPClientSession.h>
 #include "MinerConfig.hpp"
 #include "Request.hpp"
-#include "rapidjson/reader.h"
 #include <Poco/Net/HTTPRequest.h>
+#include <Poco/JSON/Parser.h>
+#include <cassert>
+#include <Poco/NestedDiagnosticContext.h>
 #include "MinerLogger.hpp"
-#include <Poco/NumberParser.h>
-#include "rapidjson/stringbuffer.h"
 #include "Account.hpp"
 
 using namespace Poco::Net;
@@ -18,6 +18,7 @@ Burst::Wallet::Wallet()
 Burst::Wallet::Wallet(const Url& url)
 	: url_(url)
 {
+	poco_ndc(Wallet(const Url& url));
 	walletSession_ = url_.createSession();
 }
 
@@ -26,18 +27,19 @@ Burst::Wallet::~Wallet()
 
 bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId)
 {
+	poco_ndc(Wallet::getWinnerOfBlock);
 	winnerId = 0;
 
 	if (url_.empty())
 		return false;
 
-	rapidjson::Document json;
+	Poco::JSON::Object::Ptr json;
 
 	if (sendWalletRequest("/burst?requestType=getBlock&height=" + std::to_string(block), json))
 	{
-		if (json.HasMember("generator"))
+		if (json->has("generator"))
 		{
-			winnerId = Poco::NumberParser::parseUnsigned64(json["generator"].GetString());
+			winnerId = json->get("generator").convert<uint64_t>();
 			return true;
 		}
 
@@ -50,7 +52,8 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId)
 
 bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 {
-	rapidjson::Document json;
+	poco_ndc(Wallet::getNameOfAccount);
+	Poco::JSON::Object::Ptr json;
 	name = "";
 
 	if (url_.empty())
@@ -58,9 +61,9 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 
 	if (sendWalletRequest("/burst?requestType=getAccount&account=" + std::to_string(account), json))
 	{
-		if (json.HasMember("name"))
+		if (json->has("name"))
 		{
-			name = json["name"].GetString();
+			name = json->get("name").convert<std::string>();
 			return true;
 		}
 
@@ -73,7 +76,8 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 
 bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient)
 {
-	rapidjson::Document json;
+	poco_ndc(Wallet::getRewardRecipientOfAccount);
+	Poco::JSON::Object::Ptr json;
 	rewardRecipient = 0;
 
 	if (url_.empty())
@@ -81,9 +85,9 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 
 	if (sendWalletRequest("/burst?requestType=getRewardRecipient&account=" + std::to_string(account), json))
 	{
-		if (json.HasMember("rewardRecipient"))
+		if (json->has("rewardRecipient"))
 		{
-			rewardRecipient = Poco::NumberParser::parseUnsigned64(json["rewardRecipient"].GetString());
+			rewardRecipient = json->get("rewardRecipient");
 			return true;
 		}
 
@@ -96,17 +100,20 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 
 bool Burst::Wallet::getLastBlock(uint64_t& block)
 {
-	rapidjson::Document json;
+	poco_ndc(Wallet::getLastBlock);
+	Poco::JSON::Object::Ptr json;
 	block = 0;
 
 	if (url_.empty())
+	{
 		return false;
+	}
 
 	if (sendWalletRequest("/burst?requestType=getBlock", json))
 	{
-		if (json.HasMember("height"))
+		if (json->has("height"))
 		{
-			block = json["height"].GetUint64();
+			block = json->get("height");
 			return true;
 		}
 
@@ -119,14 +126,13 @@ bool Burst::Wallet::getLastBlock(uint64_t& block)
 
 void Burst::Wallet::getAccount(AccountId id, Account& account)
 {
-	rapidjson::Document json;
-
 	if (!url_.empty())
 		account = {*this, id};
 }
 
-bool Burst::Wallet::sendWalletRequest(const std::string& uri, rapidjson::Document& json)
+bool Burst::Wallet::sendWalletRequest(const std::string& uri, Poco::JSON::Object::Ptr& json)
 {
+	poco_ndc(Wallet::sendWalletRequest);
 	HTTPRequest request{ HTTPRequest::HTTP_GET, uri, HTTPRequest::HTTP_1_1};
 	request.setKeepAlive(true);
 
@@ -139,12 +145,24 @@ bool Burst::Wallet::sendWalletRequest(const std::string& uri, rapidjson::Documen
 
 	if (resp.receive(data))
 	{
-		json.Parse<rapidjson::ParseFlag::kParseDefaultFlags>(data.data());
-
-		if (json.GetParseError() == nullptr)
+		try
 		{
+			Poco::JSON::Parser parser;
+			json = parser.parse(data).extract<Poco::JSON::Object::Ptr>();
 			transferSession(resp, walletSession_);
 			return true;
+		}
+		catch (Poco::Exception& exc)
+		{
+			std::vector<std::string> lines = {
+				"got invalid json response from server",
+				"uri: " + uri,
+				"response: " + data
+			};
+			
+			MinerLogger::writeStackframe(lines);
+			transferSession(resp, walletSession_);
+			return false;
 		}
 	}
 

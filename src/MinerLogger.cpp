@@ -13,6 +13,7 @@
 #include "MinerConfig.hpp"
 #include <iomanip>
 #include <cmath>
+#include <Poco/NestedDiagnosticContext.h>
 #include "MinerUtil.hpp"
 
 #ifdef _WIN32
@@ -223,4 +224,29 @@ Burst::MinerLogger& Burst::MinerLogger::getInstance()
 {
 	static MinerLogger instance;
 	return instance;
+}
+
+void Burst::MinerLogger::writeStackframe(const std::string& additionalText) 
+{
+	std::stringstream ss;
+	ss << std::endl << "Stackframe" << std::endl << std::endl;
+	Poco::NDC::current().dump(ss);
+	
+	std::vector<std::string> lines = {
+		additionalText,
+		ss.str()
+	};
+	
+	write(lines, TextType::Error);
+}
+
+void Burst::MinerLogger::writeStackframe(std::vector<std::string>& additionalLines) 
+{
+	std::stringstream ss;
+	ss << "Stackframe" << std::endl << std::endl;
+	Poco::NDC::current().dump(ss);
+
+	additionalLines.emplace_back(ss.str());
+
+	write(additionalLines, TextType::Error);
 }
