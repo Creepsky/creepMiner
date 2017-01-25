@@ -54,14 +54,14 @@ namespace Burst
 
 	struct Output
 	{
-		bool progress = true;
-		bool debug = false;
-		bool nonceFound = true;
-		bool nonceFoundPlot = false;
-		bool nonceConfirmedPlot = false;
-		bool plotDone = false;
-		bool dirDone = false;
-		bool lastWinner = true;
+		bool progress;
+		bool debug;
+		bool nonceFound;
+		bool nonceFoundPlot;
+		bool nonceConfirmedPlot;
+		bool plotDone;
+		bool dirDone;
+		bool lastWinner;
 	};
 
 	class Socket;
@@ -94,12 +94,12 @@ namespace Burst
 		bool getStartServer() const;
 		const Url& getServerUrl() const;
 		uint64_t getTargetDeadline() const;
-
+		
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
 
 		static MinerConfig& getConfig();
-
+		
 	private:
 		bool addPlotLocation(const std::string& fileOrPath);
 		std::shared_ptr<PlotFile> addPlotFile(const Poco::File& file);

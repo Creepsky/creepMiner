@@ -10,7 +10,6 @@
 #include "MinerLogger.hpp"
 #include "MinerUtil.hpp"
 #include <fstream>
-#include "rapidjson/document.h"
 #include <sstream>
 #include <sys/stat.h>
 #include "SocketDefinitions.hpp"
@@ -19,6 +18,11 @@
 #include <Poco/File.h>
 #include <Poco/Path.h>
 #include <Poco/DirectoryIterator.h>
+#include <Poco/Util/JSONConfiguration.h>
+#include <Poco/JSON/Parser.h>
+#include <Poco/JSON/Array.h>
+#include <string>
+#include <Poco/NestedDiagnosticContext.h>
 
 void Burst::MinerConfig::rescan()
 {
@@ -41,233 +45,132 @@ size_t Burst::PlotFile::getSize() const
 
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 {
+	poco_ndc(readConfigFile);
 	std::ifstream inputFileStream;
 
-	plotList_.clear();
-
-	auto exceptionMask = inputFileStream.exceptions() | std::ios::failbit;
-	inputFileStream.exceptions(exceptionMask);
-
+	// first we open the config file
 	try
 	{
 		inputFileStream.open(configPath);
 	}
 	catch (...)
 	{
-		MinerLogger::write("unable to open file " + configPath, TextType::Error);
+		MinerLogger::write("unable to open config " + configPath, TextType::Error);
 		return false;
 	}
 
-	std::stringstream configContent;
-	configContent << inputFileStream.rdbuf();
-	inputFileStream.close();
-	std::string configContentStr = configContent.str();
+	plotList_.clear();
 
-	rapidjson::Document configDoc;
-	configDoc.Parse<0>(configContentStr.c_str());
-
-	if (configDoc.GetParseError() != nullptr)
+	Poco::JSON::Parser parser;
+	Poco::JSON::Object::Ptr config;
+	
+	try
 	{
-		std::string parseError = configDoc.GetParseError();
-		size_t parseErrorLoc = configDoc.GetErrorOffset();
-		MinerLogger::write("Parsing Error : " + parseError, TextType::Error);
-		size_t sampleLen = 16;
-		if (configContentStr.length() - parseErrorLoc < 16)
-		{
-			sampleLen = configContentStr.length() - parseErrorLoc;
-		}
-		MinerLogger::write("--> " + configContentStr.substr(parseErrorLoc, sampleLen) + "...", TextType::Error);
+		config = parser.parse(inputFileStream).extract<Poco::JSON::Object::Ptr>();
+	}
+	catch (Poco::JSON::JSONException& exc)
+	{
+		std::vector<std::string> lines = {
+			"there is an error in the config file!",
+			exc.displayText()
+		};
+				
+		MinerLogger::writeStackframe(lines);
+
+		// dont forget to close the file
+		if (inputFileStream.is_open())
+			inputFileStream.close();
+
 		return false;
 	}
 	
-	if (configDoc.HasMember("output"))
-	{
-		if (configDoc["output"].IsArray())
-		{
-			auto& outputs = configDoc["output"];
-
-			for (auto i = 0u; i < outputs.Size(); ++i)
-			{
-				auto& setting = outputs[i];
-
-				if (!setting.IsString())
-					continue;
-
-				std::string value(setting.GetString());
-
-				auto set = true;
-				auto start = 0u;
-
-				// if the first char is a '-', the output needs to be unset
-				if (!value.empty())
-				{
-					auto firstCharacter = *value.begin();
-
-					if (firstCharacter == '-')
-					{
-						set = false;
-						start = 1;
-					}
-					else if (firstCharacter == '+')
-					{
-						set = true;
-						start = 1;
-					}
-					else
-					{
-						set = true;
-					}
-				}
-
-				if (value.size() > start)
-				{
-					auto realValue = value.substr(start);
-
-					if (realValue == "progress")
-						this->output.progress = set;
-					else if (realValue == "debug")
-						this->output.debug = set;
-					else if (realValue == "nonce found")
-						output.nonceFound = set;
-					else if (realValue == "nonce found plot")
-						output.nonceFoundPlot = set;
-					else if (realValue == "nonce confirmed plot")
-						output.nonceConfirmedPlot = set;
-					else if (realValue == "plot done")
-						output.plotDone = set;
-					else if (realValue == "dir done")
-						output.dirDone = set;
-					else if (realValue == "last winner")
-						output.lastWinner = set;
-				}
-			}
-		}
-	}
-
-	if (configDoc.HasMember("poolUrl"))
-	{
-		urlPool_ = { configDoc["poolUrl"].GetString() };
-	}
-	else
-	{
-		MinerLogger::write("No poolUrl is defined in config file " + configPath, TextType::Error);
-		return false;
-	}
-
-	if (configDoc.HasMember("walletUrl"))
-	{
-		urlWallet_ = { configDoc["walletUrl"].GetString() };
-	}
-
-	if (configDoc.HasMember("miningInfoUrl"))
-	{
-		urlMiningInfo_ = { configDoc["miningInfoUrl"].GetString() };
-	}
+	output.progress = config->optValue("output.progress", true);
+	output.debug = config->optValue("output.debug", false);
+	output.nonceFound = config->optValue("output.nonce found", true);
+	output.nonceFoundPlot = config->optValue("output.nonce found plot", false);
+	output.nonceConfirmedPlot = config->optValue("output.nonce confirmed plot", false);
+	output.plotDone = config->optValue("output.plot done", false);
+	output.dirDone = config->optValue("output.dir done", false);
+	output.lastWinner = config->optValue("output.last winner", true);
+	
+	auto urlPoolStr = config->optValue<std::string>("poolUrl", "");
+	
+	urlPool_ = urlPoolStr;
 	// if no getMiningInfoUrl and port are defined, we assume that the pool is the source
-	else
+	urlMiningInfo_ = config->optValue("miningInfoUrl", urlPoolStr);
+	urlWallet_ = config->optValue<std::string>("walletUrl", "");
+		
+	try
 	{
-		urlMiningInfo_ = urlPool_;
-	}
-
-	if (configDoc.HasMember("plots"))
-	{
-		if (configDoc["plots"].IsArray())
+		auto plotsDyn = config->get("plots");
+						
+		if (plotsDyn.type() == typeid(Poco::JSON::Array::Ptr))
 		{
-			for (auto itr = configDoc["plots"].Begin(); itr != configDoc["plots"].End(); ++itr)
-			{
-				this->addPlotLocation(itr->GetString());
-			}
+			auto plots = plotsDyn.extract<Poco::JSON::Array::Ptr>();
+			
+			for (auto& plot : *plots)
+				addPlotLocation(plot.convert<std::string>());
 		}
-		else if (configDoc["plots"].IsString())
+		else if (plotsDyn.isDeque())
 		{
-			this->addPlotLocation(configDoc["plots"].GetString());
+			
+		}
+		else if (plotsDyn.isString())
+		{
+			addPlotLocation(plotsDyn.extract<std::string>());
 		}
 		else
 		{
 			MinerLogger::write("Invalid plot file or directory in config file " + configPath, TextType::Error);
-			return false;
+			MinerLogger::write(plotsDyn.toString(), TextType::Error);
 		}
-
-		uint64_t totalSize = 0;
-
-		for (auto plotFile : plotList_)
-			totalSize += plotFile->getSize();
-
-		MinerLogger::write("Total plots size: " + gbToString(totalSize) + " GB", TextType::System);
 	}
-	else
+	catch (Poco::Exception& exc)
 	{
-		MinerLogger::write("No plot file or directory defined in config file " + configPath, TextType::Error);
-		return false;
+		std::vector<std::string> lines = {
+			"error while reading plot files!",
+			exc.what()
+		};
+		
+		MinerLogger::writeStackframe(lines);
 	}
 
-	if (plotList_.empty())
-	{
-		MinerLogger::write("No valid plot file or directory in config file " + configPath, TextType::Error);
-		return false;
-	}
+	submission_max_retry_ = config->optValue("submissionMaxRetry", 3u);
+	maxBufferSizeMB = config->optValue("maxBufferSizeMB", 64u);
 
-	if (configDoc.HasMember("submissionMaxRetry"))
+	if (maxBufferSizeMB == 0)
+		maxBufferSizeMB = 1;
+
+	http_ = config->optValue("http", 1u);
+	confirmedDeadlinesPath_ = config->optValue<std::string>("confirmed deadlines", "");
+	timeout_ = config->optValue("timeout", 30.f);
+	startServer_ = config->optValue("Start Server", false);
+	serverUrl_ = config->optValue<std::string>("serverUrl", "");
+		
+	auto targetDeadline = config->get("targetDeadline");
+	
+	if (!targetDeadline.isEmpty())
 	{
-		if (configDoc["submissionMaxRetry"].IsNumber())
-			submission_max_retry_ = configDoc["submissionMaxRetry"].GetInt();
+		// could be the raw deadline
+		if (targetDeadline.isInteger())
+			targetDeadline_ = targetDeadline.convert<uint64_t>();
+		// or a formated string
+		else if (targetDeadline.isString())
+			targetDeadline_ = formatDeadline(targetDeadline.convert<std::string>());
 		else
-			submission_max_retry_ = 3;
-	}
-
-	if (configDoc.HasMember("maxBufferSizeMB"))
-	{
-		if (configDoc["maxBufferSizeMB"].IsNumber())
 		{
-			this->maxBufferSizeMB = configDoc["maxBufferSizeMB"].GetInt();
-		}
-		else
-		{
-			std::string maxBufferSizeMBStr = configDoc["maxBufferSizeMB"].GetString();
-			try
-			{
-				this->maxBufferSizeMB = std::stoul(maxBufferSizeMBStr);
-			}
-			catch (...)
-			{
-				this->maxBufferSizeMB = 64;
-			}
-		}
-
-		if (this->maxBufferSizeMB < 1)
-		{
-			this->maxBufferSizeMB = 1;
+			targetDeadline_ = 0;
+			
+			std::vector<std::string> lines = {
+				"the target deadline is not a valid!",
+				"expected a number (amount of seconds) or a formated string (1m 1d 11:11:11)",
+				"got: " + targetDeadline.toString()
+			};
+			
+			MinerLogger::write(lines, TextType::Error);
 		}
 	}
-
-	if (configDoc.HasMember("http"))
-		if (configDoc["http"].IsNumber())
-			http_ = configDoc["http"].GetUint();
-
-	if (configDoc.HasMember("confirmed deadlines"))
-		if (configDoc["confirmed deadlines"].IsString())
-			confirmedDeadlinesPath_ = configDoc["confirmed deadlines"].GetString();
-
-	if (configDoc.HasMember("timeout"))
-		if (configDoc["timeout"].IsNumber())
-			timeout_ = static_cast<float>(configDoc["timeout"].GetDouble());
-
-	if (configDoc.HasMember("Start Server"))
-		if (configDoc["Start Server"].IsBool())
-			startServer_ = configDoc["Start Server"].GetBool();
-
-	if (configDoc.HasMember("serverUrl"))
-		if (configDoc["serverUrl"].IsString())
-			serverUrl_ = {configDoc["serverUrl"].GetString()};
-
-	if (configDoc.HasMember("targetDeadline"))
-	{
-		if (configDoc["targetDeadline"].IsUint64())
-			targetDeadline_ = configDoc["targetDeadline"].GetUint64();
-		else if (configDoc["targetDeadline"].IsString())
-			targetDeadline_ = formatDeadline(configDoc["targetDeadline"].GetString());
-	}
-
+	
 	return true;
 }
 
@@ -412,11 +315,17 @@ bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 
 	if (!path.tryParse(fileOrPath))
 	{
-		MinerLogger::write(fileOrPath + " is an invalid dir (syntax), skipping it!", TextType::Error);
+		MinerLogger::write(fileOrPath + " is an invalid file/dir (syntax), skipping it!", TextType::Error);
 		return false;
 	}
-
+		
 	Poco::File fileOrDir{ path };
+	
+	if (!fileOrDir.exists())
+	{
+		MinerLogger::write("plot file/dir does not exist: '" + path.toString() + "'", TextType::Error);
+		return false;
+	}
 	
 	// its a single plot file, add it if its really a plot file
 	if (fileOrDir.isFile())
