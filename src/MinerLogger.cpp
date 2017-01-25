@@ -161,7 +161,7 @@ void Burst::MinerLogger::clearLine()
 		consoleLength = csbi.srWindow.Right - csbi.srWindow.Left;
 #else
 		struct winsize size;
-		ioctl(STDOUT_FILENO,TIOCGWINSZ,&size);
+		ioctl(STDOUT_FILENO,TIOCGWINSZ, &size);
 		consoleLength = size.ws_col;
 #endif
 	}
@@ -195,7 +195,7 @@ void Burst::MinerLogger::printProgress(float progress, size_t pipes)
 	std::cout << std::string(notDone, '-');
 
 	setColor(TextType::Unimportant);
-	std::cout << ']' << ' ' << static_cast<size_t>(progress) << '%';
+	std::cout << ']' << ' ' << static_cast<size_t>(progress) << '%' << std::flush;
 }
 
 void Burst::MinerLogger::setColor(ColorPair color)
