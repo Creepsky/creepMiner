@@ -9,7 +9,9 @@
 #include "Poco/Net/HTTPClientSession.h"
 #include "Poco/Net/HTTPRequest.h"
 #include <Poco/Net/HTTPResponse.h>
+#include <Poco/NestedDiagnosticContext.h>
 #include "Poco/StreamCopier.h"
+#include "Declarations.hpp"
 
 using namespace Poco::Net;
 
@@ -30,6 +32,8 @@ bool Burst::Request::canSend() const
 
 Burst::Response Burst::Request::send(Poco::Net::HTTPRequest& request)
 {
+	poco_ndc(Request::send(Poco::Net::HTTPRequest&));
+	
 	if (!canSend())
 		return {nullptr};
 	
@@ -38,8 +42,8 @@ Burst::Response Burst::Request::send(Poco::Net::HTTPRequest& request)
 		session_->sendRequest(request);
 	}
 	catch(std::exception& exc)
-	{
-		MinerLogger::write(std::string("error on sending request: ") + exc.what(), TextType::Debug);
+	{		
+		MinerLogger::writeStackframe(std::string("error on sending request: ") + exc.what());
 		session_->reset();
 		return {nullptr};
 	}
@@ -58,6 +62,7 @@ Burst::NonceRequest::NonceRequest(std::unique_ptr<Poco::Net::HTTPClientSession> 
 
 Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accountId)
 {
+	poco_ndc(NonceRequest::submit);
 	NxtAddress addr(accountId);
 
 	auto requestData = "requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId);
@@ -67,7 +72,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 
 	HTTPRequest request{HTTPRequest::HTTP_POST, url, HTTPRequest::HTTP_1_1};
 	request.set("X-Capacity", std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
-	request.set("X-Miner", "creepMINER " + versionToString());
+	request.set("X-Miner", "creepMINER " + versionToString() + " " + Settings::OsFamily);
 	request.setKeepAlive(false);
 	request.setContentLength(0);
 
