@@ -76,7 +76,7 @@ namespace Burst
 		uint64_t targetDeadline_ = 0;
 		std::shared_ptr<BlockData> blockData_ = nullptr;
 		std::deque<std::shared_ptr<BlockData>> historicalBlocks_;
-		mutable Poco::FastMutex mutex_;
+		mutable Poco::Mutex mutex_;
 		Poco::NotificationCenter notifiyBlockDataChanged_;
 	};
 }
