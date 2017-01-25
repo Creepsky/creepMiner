@@ -30,6 +30,15 @@ namespace Burst
 	struct BlockData;
 	class Deadline;
 	class MinerData;
+	
+	enum class MemoryUnit : uint64_t
+	{
+		Megabyte = 1048576,
+		Gigabyte = 1073741824,
+		Terabyte = 1099511627776,
+		Petabyte = 1125899906842624,
+		Exabyte = 1152921504606846976
+	};
 
 	template <typename T, size_t SZ>
 	std::string byteArrayToStr(const std::array<T, SZ>& arr)
@@ -55,6 +64,8 @@ namespace Burst
 	std::string deadlineFormat(uint64_t seconds);
 	uint64_t formatDeadline(const std::string& format);
 	std::string gbToString(uint64_t size);
+	std::string memToString(uint64_t size, MemoryUnit factor, uint8_t precision);
+	std::string memToString(uint64_t size, uint8_t precision);
 	std::string versionToString();
 	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);
 

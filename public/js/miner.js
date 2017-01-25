@@ -190,7 +190,7 @@ function config(cfg)
 	addSystemEntry("Pool-URL", addLinkWithLabel(cfg["poolUrl"]));
 	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"]));
 	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"]));
-	addSystemEntry("Plotsize", (cfg["totalPlotSize"] / 1024 / 1024 / 1024 / 1024).toFixed(2) + " TB");
+	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
 	addSystemEntry("Timeout", cfg["timeout"]);
 }
 

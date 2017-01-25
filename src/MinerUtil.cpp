@@ -218,10 +218,29 @@ uint64_t Burst::formatDeadline(const std::string& format)
 
 std::string Burst::gbToString(uint64_t size)
 {
+	return memToString(size, MemoryUnit::Gigabyte, 2);
+}
+
+std::string Burst::memToString(uint64_t size, MemoryUnit factor, uint8_t precision)
+{	
 	std::stringstream ss;
-	ss << std::fixed << std::setprecision(2);
-	ss << size / 1024 / 1024 / 1024;
+	ss << std::fixed << std::setprecision(precision);
+	ss << static_cast<double>(size) / static_cast<uint64_t>(factor);
 	return ss.str();
+}
+
+std::string Burst::memToString(uint64_t size, uint8_t precision)
+{
+	if (size >= static_cast<uint64_t>(MemoryUnit::Exabyte))
+		return memToString(size, MemoryUnit::Exabyte, precision) + " EB";
+	else if (size >= static_cast<uint64_t>(MemoryUnit::Petabyte))
+		return memToString(size, MemoryUnit::Petabyte, precision) + " PB";
+	else if (size >= static_cast<uint64_t>(MemoryUnit::Terabyte))
+		return memToString(size, MemoryUnit::Terabyte, precision) + " TB";
+	else if (size >= static_cast<uint64_t>(MemoryUnit::Gigabyte))
+		return memToString(size, MemoryUnit::Gigabyte, precision) + " GB";
+	else
+		return memToString(size, MemoryUnit::Megabyte, precision) + " MB";
 }
 
 std::string Burst::versionToString()
@@ -345,7 +364,7 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("poolUrl", MinerConfig::getConfig().getPoolUrl().getCanonical(true));
 	json.set("miningInfoUrl", MinerConfig::getConfig().getMiningInfoUrl().getCanonical(true));
 	json.set("walletUrl", MinerConfig::getConfig().getWalletUrl().getCanonical(true));
-	json.set("totalPlotSize", MinerConfig::getConfig().getTotalPlotsize());
+	json.set("totalPlotSize", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	return json;
 }

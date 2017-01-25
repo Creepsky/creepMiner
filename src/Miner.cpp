@@ -51,7 +51,7 @@ void Burst::Miner::run()
 		return;
 	}
 
-	MinerLogger::write("Total plots size: " + gbToString(MinerConfig::getConfig().getTotalPlotsize()) + " GB",
+	MinerLogger::write("Total plots size: " + memToString(MinerConfig::getConfig().getTotalPlotsize(), 2),
 					   TextType::System);
 	MinerLogger::write("Submission Max Retry : " + std::to_string(config.getSubmissionMaxRetry()), TextType::System);
 	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
