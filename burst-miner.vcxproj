@@ -733,6 +733,7 @@
     <ClCompile Include="src\MinerData.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
     <ClCompile Include="src\PlotGenerator.cpp" />
+    <ClCompile Include="src\PlotVerifier.cpp" />
     <ClCompile Include="src\Request.cpp" />
     <ClCompile Include="src\RequestHandler.cpp" />
     <ClCompile Include="src\Response.cpp" />
@@ -757,6 +758,7 @@
     <ClInclude Include="src\MinerData.hpp" />
     <ClInclude Include="src\NonceSubmitter.hpp" />
     <ClInclude Include="src\PlotGenerator.hpp" />
+    <ClInclude Include="src\PlotVerifier.hpp" />
     <ClInclude Include="src\Request.hpp" />
     <ClInclude Include="src\RequestHandler.hpp" />
     <ClInclude Include="src\Response.hpp" />

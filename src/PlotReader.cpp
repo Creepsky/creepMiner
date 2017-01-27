@@ -126,38 +126,10 @@ void Burst::PlotReader::runTask()
 	}
 }
 
-Burst::PlotReader::PlotVerifier::PlotVerifier(Miner& miner, std::vector<ScoopData>&& buffer, uint64_t nonceRead, const GensigData& gensig,
-											  uint64_t nonceStart, const std::string& inputPath, uint64_t accountId)
-	: Task("PlotVerifier"), miner_{ &miner }, buffer_{ std::move(buffer) }, nonceRead_{ nonceRead }, gensig_{ &gensig },
-	  nonceStart_{ nonceStart }, inputPath_{&inputPath}, accountId_{accountId}
-{}
-
-void Burst::PlotReader::PlotVerifier::runTask()
-{
-	Shabal256 hash;
-
-	for (size_t i = 0; i < buffer_.size() && !isCancelled(); i++)
-	{
-		HashData target;
-		auto test = buffer_.data() + i;
-		hash.update(gensig_->data(), Settings::HashSize);
-		hash.update(test, Settings::ScoopSize);
-		hash.close(&target[0]);
-
-		uint64_t targetResult = 0;
-		memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
-		auto deadline = targetResult / miner_->getBaseTarget();
-
-		auto nonceNum = nonceStart_ + nonceRead_ + i;
-		miner_->submitNonce(nonceNum, accountId_, deadline, *inputPath_);
-		//++nonceRead_;
-	}
-}
-
 Burst::PlotListReader::PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
-	std::string&& dir, std::vector<std::shared_ptr<PlotFile>>&& plotFiles)
+	std::string&& dir, const std::vector<std::shared_ptr<PlotFile>>& plotFiles)
 	: Task(dir),
-	plotFileList_{std::move(plotFiles)}, miner_(&miner), progress_(progress), dir_{std::move(dir)}
+	plotFileList_{&plotFiles}, miner_(&miner), progress_(progress), dir_{std::move(dir)}
 {}
 
 void Burst::PlotListReader::runTask()
@@ -165,9 +137,9 @@ void Burst::PlotListReader::runTask()
 	if (miner_ == nullptr)
 		return;
 
-	auto iter = plotFileList_.begin();
+	auto iter = plotFileList_->begin();
 
-	while (iter != plotFileList_.end() && !isCancelled())
+	while (iter != plotFileList_->end() && !isCancelled())
 	{
 		auto path = (*iter)->getPath();
 		PlotReader plotReader{*miner_, path};

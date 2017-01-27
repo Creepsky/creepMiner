@@ -34,23 +34,6 @@ namespace Burst
 		void runTask() override;
 
 	private:
-		class PlotVerifier : public Task
-		{
-		public:
-			PlotVerifier(Miner &miner, std::vector<ScoopData>&& buffer, uint64_t nonceRead, const GensigData& gensig,
-				uint64_t nonceStart, const std::string& inputPath, uint64_t accountId);
-			void runTask() override;
-
-		private:
-			Miner* miner_;
-			std::vector<ScoopData> buffer_;
-			uint64_t nonceRead_;
-			const GensigData* gensig_;
-			uint64_t nonceStart_;
-			const std::string* inputPath_;
-			uint64_t accountId_;
-		};
-
 		uint64_t nonceStart_ = 0;
 		uint64_t scoopNum_ = 0;
 		uint64_t nonceCount_ = 0;
@@ -68,13 +51,13 @@ namespace Burst
 	{
 	public:
 		PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
-			std::string&& dir, std::vector<std::shared_ptr<PlotFile>>&& plotFiles);
+			std::string&& dir, const std::vector<std::shared_ptr<PlotFile>>& plotFiles);
 		~PlotListReader() override = default;
 
 		void runTask() override;
 
 	private:
-		std::vector<std::shared_ptr<PlotFile>> plotFileList_;
+		const std::vector<std::shared_ptr<PlotFile>>* plotFileList_;
 		Miner* miner_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		std::string dir_;

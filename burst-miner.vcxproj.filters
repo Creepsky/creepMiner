@@ -28,6 +28,7 @@
     <ClCompile Include="src\PlotGenerator.cpp" />
     <ClCompile Include="src\Account.cpp" />
     <ClCompile Include="src\Declarations.cpp" />
+    <ClCompile Include="src\PlotVerifier.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rapidjson\document.h">
@@ -81,6 +82,7 @@
     <ClInclude Include="src\MinerData.hpp" />
     <ClInclude Include="src\PlotGenerator.hpp" />
     <ClInclude Include="src\Account.hpp" />
+    <ClInclude Include="src\PlotVerifier.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sphlib">

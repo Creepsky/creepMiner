@@ -67,6 +67,7 @@ void Burst::Miner::run()
 			" (" + config.getServerUrl().getIp() + ")", TextType::System);
 	if (config.getTargetDeadline() > 0)
 		MinerLogger::write("Target deadline : " + deadlineFormat(config.getTargetDeadline()), TextType::System);
+	MinerLogger::write("Mining intensity : " + std::to_string(config.getMiningIntensity()), TextType::System);
 	
 	auto plotFileSize = static_cast<int32_t>(config.getPlotFiles().size());
 	
@@ -242,49 +243,13 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		
 		data_.addBlockEntry(createJsonNewBlock(data_));
 	}
+	
+	progress_->reset();
+	progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
 
-	// find all plotfiles and create plotlistreader for every device
-	{
-		using PlotList = std::vector<std::shared_ptr<PlotFile>>;
-		std::unordered_map<std::string, PlotList> plotDirs;
-
-		for (const auto plotFile : MinerConfig::getConfig().getPlotFiles())
-		{
-			Poco::Path path{ plotFile->getPath() };
-
-			auto dir = path.getDevice();
-
-			// if its empty its unix and we have to look for the top dir
-			if (dir.empty() && path.depth() > 0)
-				dir = path.directory(0);
-
-			// if its now empty, we have a really weird plotfile and skip it
-			if (dir.empty())
-			{
-				std::vector<std::string> lines = {
-					"Plotfile with invalid path!",
-					plotFile->getPath()
-				};
-
-				MinerLogger::write(lines, TextType::Debug);
-				continue;
-			}
-
-			auto iter = plotDirs.find(dir);
-
-			if (iter == plotDirs.end())
-				plotDirs.emplace(std::make_pair(dir, PlotList {}));
-
-			plotDirs[dir].emplace_back(plotFile);
-		}
-
-		progress_->reset();
-		progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
-
-		for (auto& plotDir : plotDirs)
-			plotReaderManager_->start(new PlotListReader{*this, progress_,
-				std::string(plotDir.first), std::move(plotDir.second)});
-	}
+	for (auto& plotDir : MinerConfig::getConfig().getPlotList())
+		plotReaderManager_->start(new PlotListReader{*this, progress_,
+			std::string(plotDir.first), plotDir.second});
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const
