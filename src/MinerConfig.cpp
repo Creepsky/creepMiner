@@ -81,16 +81,27 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 	
-	output.progress = config->optValue("output.progress", true);
-	output.debug = config->optValue("output.debug", false);
-	output.nonceFound = config->optValue("output.nonce found", true);
-	output.nonceFoundPlot = config->optValue("output.nonce found plot", false);
-	output.nonceConfirmedPlot = config->optValue("output.nonce confirmed plot", false);
-	output.plotDone = config->optValue("output.plot done", false);
-	output.dirDone = config->optValue("output.dir done", false);
-	output.lastWinner = config->optValue("output.last winner", true);
-	output.error.request = config->optValue("output.error.request", false);
-	output.error.response = config->optValue("output.error.response", false);
+	auto outputObj = config->getObject("output");
+
+	if (!outputObj.isNull())
+	{
+		output.progress = outputObj->optValue("progress", true);
+		output.debug = outputObj->optValue("debug", false);
+		output.nonceFound = config->optValue("nonce found", true);
+		output.nonceFoundPlot = config->optValue("nonce found plot", false);
+		output.nonceConfirmedPlot = config->optValue("nonce confirmed plot", false);
+		output.plotDone = config->optValue("plot done", false);
+		output.dirDone = config->optValue("dir done", false);
+		output.lastWinner = config->optValue("last winner", true);
+
+		auto errorObj = outputObj->getObject("error");
+
+		if (!errorObj.isNull())
+		{
+			output.error.request = config->optValue("request", false);
+			output.error.response = config->optValue("response", false);
+		}
+	}
 
 	auto urlPoolStr = config->optValue<std::string>("poolUrl", "");
 	

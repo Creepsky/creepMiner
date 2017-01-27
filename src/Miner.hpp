@@ -31,7 +31,6 @@ namespace Poco
 
 namespace Burst
 {
-	class PlotListReader;
 	class MinerConfig;
 	class PlotReadProgress;
 	class Deadline;

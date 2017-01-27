@@ -32,6 +32,5 @@ void Burst::PlotVerifier::runTask()
 
 		auto nonceNum = nonceStart_ + nonceRead_ + i;
 		miner_->submitNonce(nonceNum, accountId_, deadline, *inputPath_);
-		//++nonceRead_;
 	}
 }

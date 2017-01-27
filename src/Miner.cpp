@@ -248,8 +248,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
 
 	for (auto& plotDir : MinerConfig::getConfig().getPlotList())
-		plotReaderManager_->start(new PlotListReader{*this, progress_,
-			std::string(plotDir.first), plotDir.second});
+		plotReaderManager_->start(new PlotReader{*this, progress_, plotDir.first, plotDir.second});
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const

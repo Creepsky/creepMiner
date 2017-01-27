@@ -26,39 +26,18 @@ namespace Burst
 	class PlotReader : public Poco::Task
 	{
 	public:
-		PlotReader(Miner& miner, const std::string& path);
-		PlotReader(Miner& miner, std::unique_ptr<std::istream> stream, size_t accountId,
-			size_t nonceStart, size_t nonceCount, size_t staggerSize);
+		PlotReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
+			std::string dir, const std::vector<std::shared_ptr<PlotFile>>& plotList);
 		~PlotReader() override = default;
 
 		void runTask() override;
 
 	private:
-		uint64_t nonceStart_ = 0;
 		uint64_t scoopNum_ = 0;
-		uint64_t nonceCount_ = 0;
-		uint64_t nonceOffset_ = 0;
 		uint64_t nonceRead_ = 0;
-		uint64_t staggerSize_ = 0;
-		uint64_t accountId_ = 0;
 		GensigData gensig_;
-		std::string inputPath_ = "";
-		std::unique_ptr<std::istream> inputStream_;
 		Miner& miner_;
-	};
-
-	class PlotListReader : public Poco::Task
-	{
-	public:
-		PlotListReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
-			std::string&& dir, const std::vector<std::shared_ptr<PlotFile>>& plotFiles);
-		~PlotListReader() override = default;
-
-		void runTask() override;
-
-	private:
-		const std::vector<std::shared_ptr<PlotFile>>* plotFileList_;
-		Miner* miner_;
+		const std::vector<std::shared_ptr<PlotFile>>* plotList_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		std::string dir_;
 	};
