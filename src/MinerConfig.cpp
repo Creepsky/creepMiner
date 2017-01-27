@@ -44,7 +44,7 @@ size_t Burst::PlotFile::getSize() const
 }
 
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
-{
+{	
 	poco_ndc(readConfigFile);
 	std::ifstream inputFileStream;
 
@@ -92,7 +92,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	output.plotDone = config->optValue("output.plot done", false);
 	output.dirDone = config->optValue("output.dir done", false);
 	output.lastWinner = config->optValue("output.last winner", true);
-	
+	output.error.request = config->optValue("output.error.request", false);
+	output.error.response = config->optValue("output.error.response", false);
+
 	auto urlPoolStr = config->optValue<std::string>("poolUrl", "");
 	
 	urlPool_ = urlPoolStr;
@@ -146,7 +148,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	timeout_ = config->optValue("timeout", 30.f);
 	startServer_ = config->optValue("Start Server", false);
 	serverUrl_ = config->optValue<std::string>("serverUrl", "");
-		
+
 	auto targetDeadline = config->get("targetDeadline");
 	
 	if (!targetDeadline.isEmpty())

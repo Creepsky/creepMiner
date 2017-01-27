@@ -62,6 +62,12 @@ namespace Burst
 		bool plotDone;
 		bool dirDone;
 		bool lastWinner;
+
+		struct Error
+		{
+			bool request;
+			bool response;
+		} error;
 	};
 
 	class Socket;
@@ -118,5 +124,6 @@ namespace Burst
 		bool startServer_ = false;
 		Url serverUrl_ = {"127.0.0.1:9999"};
 		uint64_t targetDeadline_ = 0;
+		uint32_t miningIntensity_ = 1;
 	};
 }

@@ -46,7 +46,8 @@ bool Burst::Response::receive(std::string& data)
 	}
 	catch (Poco::Exception& exc)
 	{
-		MinerLogger::writeStackframe(std::string("error on receiving response: ") + exc.what());
+		if (MinerConfig::getConfig().output.error.response)
+			MinerLogger::writeStackframe(std::string("error on receiving response: ") + exc.what());
 		session_->reset();
 		return false;
 	}

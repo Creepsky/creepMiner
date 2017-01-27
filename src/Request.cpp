@@ -42,8 +42,9 @@ Burst::Response Burst::Request::send(Poco::Net::HTTPRequest& request)
 		session_->sendRequest(request);
 	}
 	catch(std::exception& exc)
-	{		
-		MinerLogger::writeStackframe(std::string("error on sending request: ") + exc.what());
+	{
+		if (MinerConfig::getConfig().output.error.request)
+			MinerLogger::writeStackframe(std::string("error on sending request: ") + exc.what());
 		session_->reset();
 		return {nullptr};
 	}
@@ -72,7 +73,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 
 	HTTPRequest request{HTTPRequest::HTTP_POST, url, HTTPRequest::HTTP_1_1};
 	request.set("X-Capacity", std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
-	request.set("X-Miner", "creepMINER " + versionToString() + " " + Settings::OsFamily);
+	request.set("X-Miner", Settings::Project.nameAndVersionAndOs);
 	request.setKeepAlive(false);
 	request.setContentLength(0);
 
