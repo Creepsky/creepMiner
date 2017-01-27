@@ -13,6 +13,7 @@
 #include <string>
 #include <Poco/Net/HTTPClientSession.h>
 #include "Url.hpp"
+#include <unordered_map>
 
 /*
  {
@@ -75,6 +76,8 @@ namespace Burst
 	class MinerConfig
 	{
 	public:
+		using PlotList = std::vector<std::shared_ptr<PlotFile>>;
+
 		bool readConfigFile(const std::string& configPath);
 		void rescan();
 
@@ -100,7 +103,9 @@ namespace Burst
 		bool getStartServer() const;
 		const Url& getServerUrl() const;
 		uint64_t getTargetDeadline() const;
-		
+		uint32_t getMiningIntensity() const;
+		const std::unordered_map<std::string, PlotList>& getPlotList() const;
+
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
 
@@ -125,5 +130,6 @@ namespace Burst
 		Url serverUrl_ = {"127.0.0.1:9999"};
 		uint64_t targetDeadline_ = 0;
 		uint32_t miningIntensity_ = 1;
+		std::unordered_map<std::string, PlotList> plotDirs_;
 	};
 }

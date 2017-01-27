@@ -10,19 +10,16 @@
 #include "MinerLogger.hpp"
 #include "MinerUtil.hpp"
 #include <fstream>
-#include <sstream>
-#include <sys/stat.h>
 #include "SocketDefinitions.hpp"
 #include "Socket.hpp"
 #include <memory>
 #include <Poco/File.h>
 #include <Poco/Path.h>
 #include <Poco/DirectoryIterator.h>
-#include <Poco/Util/JSONConfiguration.h>
 #include <Poco/JSON/Parser.h>
 #include <Poco/JSON/Array.h>
-#include <string>
 #include <Poco/NestedDiagnosticContext.h>
+#include <unordered_map>
 
 void Burst::MinerConfig::rescan()
 {
@@ -113,10 +110,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			for (auto& plot : *plots)
 				addPlotLocation(plot.convert<std::string>());
 		}
-		else if (plotsDyn.isDeque())
-		{
-			
-		}
 		else if (plotsDyn.isString())
 		{
 			addPlotLocation(plotsDyn.extract<std::string>());
@@ -137,6 +130,39 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		MinerLogger::writeStackframe(lines);
 	}
 
+	// combining all plotfiles to lists of plotfiles on the same device
+	{
+		for (const auto plotFile : getPlotFiles())
+		{
+			Poco::Path path{ plotFile->getPath() };
+
+			auto dir = path.getDevice();
+
+			// if its empty its unix and we have to look for the top dir
+			if (dir.empty() && path.depth() > 0)
+				dir = path.directory(0);
+
+			// if its now empty, we have a really weird plotfile and skip it
+			if (dir.empty())
+			{
+				std::vector<std::string> lines = {
+					"Plotfile with invalid path!",
+					plotFile->getPath()
+				};
+
+				MinerLogger::write(lines, TextType::Debug);
+				continue;
+			}
+
+			auto iter = plotDirs_.find(dir);
+
+			if (iter == plotDirs_.end())
+				plotDirs_.emplace(std::make_pair(dir, PlotList {}));
+
+			plotDirs_[dir].emplace_back(plotFile);
+		}
+	}
+
 	submission_max_retry_ = config->optValue("submissionMaxRetry", 3u);
 	maxBufferSizeMB = config->optValue("maxBufferSizeMB", 64u);
 
@@ -148,6 +174,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	timeout_ = config->optValue("timeout", 30.f);
 	startServer_ = config->optValue("Start Server", false);
 	serverUrl_ = config->optValue<std::string>("serverUrl", "");
+	miningIntensity_ = std::max(config->optValue("miningIntensity", 1), 1);
 
 	auto targetDeadline = config->get("targetDeadline");
 	
@@ -377,4 +404,14 @@ std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const Poco::Fil
 	}
 
 	return nullptr;
+}
+
+uint32_t Burst::MinerConfig::getMiningIntensity() const
+{
+	return miningIntensity_;
+}
+
+const std::unordered_map<std::string, Burst::MinerConfig::PlotList>& Burst::MinerConfig::getPlotList() const
+{
+	return plotDirs_;
 }
