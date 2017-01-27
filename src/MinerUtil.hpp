@@ -66,7 +66,6 @@ namespace Burst
 	std::string gbToString(uint64_t size);
 	std::string memToString(uint64_t size, MemoryUnit factor, uint8_t precision);
 	std::string memToString(uint64_t size, uint8_t precision);
-	std::string versionToString();
 	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);
 
 	template <typename T, typename U>

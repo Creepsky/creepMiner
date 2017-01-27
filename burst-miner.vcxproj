@@ -67,6 +67,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>burstminer</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>creepMiner</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -226,7 +227,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)obj\$(Configuration)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <LinkIncremental>true</LinkIncremental>
@@ -255,7 +256,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)obj\$(Configuration)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -728,6 +729,7 @@
   <ItemGroup>
     <ClCompile Include="src\Account.cpp" />
     <ClCompile Include="src\AccountNames.cpp" />
+    <ClCompile Include="src\Declarations.cpp" />
     <ClCompile Include="src\MinerData.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
     <ClCompile Include="src\PlotGenerator.cpp" />

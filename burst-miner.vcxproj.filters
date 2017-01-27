@@ -27,6 +27,7 @@
     <ClCompile Include="src\MinerData.cpp" />
     <ClCompile Include="src\PlotGenerator.cpp" />
     <ClCompile Include="src\Account.cpp" />
+    <ClCompile Include="src\Declarations.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rapidjson\document.h">

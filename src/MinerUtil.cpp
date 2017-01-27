@@ -243,13 +243,6 @@ std::string Burst::memToString(uint64_t size, uint8_t precision)
 		return memToString(size, MemoryUnit::Megabyte, precision) + " MB";
 }
 
-std::string Burst::versionToString()
-{
-	return std::to_string(Version::Major) + "." +
-			std::to_string(Version::Minor) + "." +
-			std::to_string(Version::Build);
-}
-
 std::string Burst::getInformationFromPlotFile(const std::string& path, uint8_t index)
 {
 	auto filenamePos = path.find_last_of("/\\");

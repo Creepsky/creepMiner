@@ -37,9 +37,9 @@ int main(int argc, const char* argv[])
 {
 	poco_ndc(main);
 	
-	Burst::MinerLogger::write("Burst miner " + Burst::versionToString() + " " + Burst::Settings::OsFamily);
+	Burst::MinerLogger::write(Burst::Settings::Project.nameAndVersionAndOs);
 	Burst::MinerLogger::write("----------------------------------------------");
-	Burst::MinerLogger::write("Github:   https://github.com/Creepsky/burst-miner");
+	Burst::MinerLogger::write("Github:   https://github.com/Creepsky/creepMiner");
 	Burst::MinerLogger::write("Author:   Creepsky [creepsky@gmail.com]");
 	Burst::MinerLogger::write("Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
 	Burst::MinerLogger::write("----------------------------------------------");

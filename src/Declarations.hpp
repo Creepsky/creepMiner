@@ -13,6 +13,25 @@ namespace Burst
 	class MinerProtocol;
 	class PlotReader;
 
+	struct Version
+	{
+		Version(uint32_t major, uint32_t minor, uint32_t build);
+
+		uint32_t major, minor, build;
+		std::string literal;
+	};
+
+	struct Project
+	{
+		Project(std::string&& name, Version&& version);
+
+		std::string name;
+		Version version;
+
+		std::string nameAndVersion;
+		std::string nameAndVersionAndOs;
+	};
+
 	class Settings
 	{
 	public:
@@ -34,6 +53,8 @@ namespace Burst
 #else
 		static constexpr auto OsFamily = "";
 #endif
+
+		static const Project Project;
 	};
 
 	template <size_t SZ>
@@ -44,10 +65,4 @@ namespace Burst
 
 	using AccountId = uint64_t;
 	using Nonce = uint64_t;
-
-	class Version
-	{
-	public:
-		static const uint32_t Major = 1u, Minor = 5u, Build = 0u;
-	};
 }
