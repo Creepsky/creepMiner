@@ -15,6 +15,7 @@
 #include <cmath>
 #include <Poco/NestedDiagnosticContext.h>
 #include "MinerUtil.hpp"
+#include <sstream>
 
 #ifdef _WIN32
 #include <wincon.h>
@@ -226,10 +227,10 @@ Burst::MinerLogger& Burst::MinerLogger::getInstance()
 	return instance;
 }
 
-void Burst::MinerLogger::writeStackframe(const std::string& additionalText) 
+void Burst::MinerLogger::writeStackframe(const std::string& additionalText)
 {
 	std::stringstream ss;
-	ss << std::endl << "Stackframe" << std::endl << std::endl;
+	ss << "Stackframe" << std::endl << std::endl;
 	Poco::NDC::current().dump(ss);
 	
 	std::vector<std::string> lines = {
