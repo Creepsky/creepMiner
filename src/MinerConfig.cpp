@@ -300,7 +300,11 @@ std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(
 		url = nullptr;
 
 	if (url != nullptr)
-		return url->createSession();
+	{
+		auto session = url->createSession();
+		session->setTimeout(secondsToTimespan(getTimeout()));
+		return session;
+	}
 
 	return nullptr;
 }
