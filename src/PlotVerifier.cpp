@@ -3,6 +3,7 @@
 #include "Miner.hpp"
 #include "MinerLogger.hpp"
 #include "MinerConfig.hpp"
+#include "shabal-cuda/Shabal.hpp"
 
 Burst::PlotVerifier::PlotVerifier(Miner &miner, Poco::NotificationQueue& queue)
 	: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}
@@ -22,9 +23,40 @@ void Burst::PlotVerifier::runTask()
 
 		auto targetDeadline = miner_->getTargetDeadline();
 
+#if defined MINING_CUDA
+		std::vector<CalculatedDeadline> calculatedDeadlines{verifyNotification->buffer.size(), CalculatedDeadline{0, 0}};
+
+		calculate_shabal_cuda(verifyNotification->buffer.data(), verifyNotification->buffer.size(), &miner_->getGensig(),
+			&calculatedDeadlines[0], verifyNotification->nonceStart, verifyNotification->nonceRead, miner_->getBaseTarget());
+
+		CalculatedDeadline* bestDeadline = nullptr;
+
+		for (auto& deadline : calculatedDeadlines)
+			if (bestDeadline == nullptr || bestDeadline->deadline > deadline.deadline)
+				bestDeadline = &deadline;
+
+		if (bestDeadline != nullptr && bestDeadline->deadline > 0)
+		{
+			if (bestDeadline->deadline < targetDeadline)
+				miner_->submitNonce(bestDeadline->nonce, verifyNotification->accountId, bestDeadline->deadline, verifyNotification->inputPath);
+		}
+		else
+		{
+			auto lines = {
+				std::string{"cuda processing gave null deadline!"},
+				std::string{"plotfile = " + verifyNotification->inputPath},
+				std::string{"buffer.size() = " + std::to_string(verifyNotification->buffer.size())},
+				std::string{"nonceStart = " + std::to_string(verifyNotification->nonceStart)},
+				std::string{"nonceRead = " + std::to_string(verifyNotification->nonceRead)}
+			};
+
+			MinerLogger::write(lines, TextType::Debug);
+		}
+#else
 		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled() && miner_->getBlockheight() == verifyNotification->block; i++)
 			verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
 				miner_->getGensig(), verifyNotification->accountId, verifyNotification->inputPath, *miner_, targetDeadline);
+#endif
 	}
 
 	MinerLogger::write("Verifier stopped", TextType::Debug);

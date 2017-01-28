@@ -2,7 +2,11 @@
 #include <string>
 #include <sstream>
 
+#if defined MINING_CUDA
+const Burst::ProjectData Burst::Settings::Project = { "creepMiner CUDA", Version { 1, 0, 0 } };
+#else
 const Burst::ProjectData Burst::Settings::Project = { "creepMiner", Version { 1, 0, 0 } };
+#endif
 
 Burst::Version::Version(uint32_t major, uint32_t minor, uint32_t build)
 	: major{major}, minor{minor}, build{build}
