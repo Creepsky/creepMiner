@@ -87,19 +87,19 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	{
 		output.progress = outputObj->optValue("progress", true);
 		output.debug = outputObj->optValue("debug", false);
-		output.nonceFound = config->optValue("nonce found", true);
-		output.nonceFoundPlot = config->optValue("nonce found plot", false);
-		output.nonceConfirmedPlot = config->optValue("nonce confirmed plot", false);
-		output.plotDone = config->optValue("plot done", false);
-		output.dirDone = config->optValue("dir done", false);
-		output.lastWinner = config->optValue("last winner", true);
+		output.nonceFound = outputObj->optValue("nonce found", true);
+		output.nonceFoundPlot = outputObj->optValue("nonce found plot", false);
+		output.nonceConfirmedPlot = outputObj->optValue("nonce confirmed plot", false);
+		output.plotDone = outputObj->optValue("plot done", false);
+		output.dirDone = outputObj->optValue("dir done", false);
+		output.lastWinner = outputObj->optValue("last winner", true);
 
 		auto errorObj = outputObj->getObject("error");
 
 		if (!errorObj.isNull())
 		{
-			output.error.request = config->optValue("request", false);
-			output.error.response = config->optValue("response", false);
+			output.error.request = errorObj->optValue("request", false);
+			output.error.response = errorObj->optValue("response", false);
 		}
 	}
 

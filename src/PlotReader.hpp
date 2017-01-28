@@ -17,6 +17,11 @@
 #include <Poco/Task.h>
 #include <atomic>
 
+namespace Poco
+{
+	class NotificationQueue;
+}
+
 namespace Burst
 {
 	class Miner;
@@ -27,7 +32,7 @@ namespace Burst
 	{
 	public:
 		PlotReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
-			std::string dir, const std::vector<std::shared_ptr<PlotFile>>& plotList);
+			std::string dir, const std::vector<std::shared_ptr<PlotFile>>& plotList, Poco::NotificationQueue& queue);
 		~PlotReader() override = default;
 
 		void runTask() override;
@@ -40,6 +45,7 @@ namespace Burst
 		const std::vector<std::shared_ptr<PlotFile>>* plotList_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		std::string dir_;
+		Poco::NotificationQueue* queue_;
 	};
 
 	class PlotReadProgress

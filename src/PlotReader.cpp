@@ -13,14 +13,17 @@
 #include <fstream>
 #include "Miner.hpp"
 #include <cmath>
+#include <Poco/NotificationQueue.h>
+#include "PlotVerifier.hpp"
 
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
-std::string dir, const std::vector<std::shared_ptr< Burst::PlotFile>>& plotList)
-	: Task("PlotReader"), miner_{miner}, progress_{progress}, dir_{std::move(dir)}
+std::string dir, const std::vector<std::shared_ptr< Burst::PlotFile>>& plotList, Poco::NotificationQueue& queue)
+	: Task("PlotReader"), miner_{miner}, progress_{progress}, dir_{std::move(dir)}, queue_{&queue}
 {
 	scoopNum_ = miner_.getScoopNum();
 	gensig_ = miner_.getGensig();
 	plotList_ = &plotList;
+
 }
 
 void Burst::PlotReader::runTask()
@@ -37,9 +40,9 @@ void Burst::PlotReader::runTask()
 			auto nonceStart = stoull(getStartNonceFromPlotFile(plotFile.getPath()));
 			auto nonceCount = stoull(getNonceCountFromPlotFile(plotFile.getPath()));
 			auto staggerSize = stoull(getStaggerSizeFromPlotFile(plotFile.getPath()));
+			auto block = miner_.getBlockheight();
 			nonceRead_ = 0;
 
-			std::vector<ScoopData> buffer;
 			size_t chunkNum = 0;
 			auto totalChunk = static_cast<size_t>(std::ceil(static_cast<double>(nonceCount) / static_cast<double>(staggerSize)));
 
@@ -48,6 +51,12 @@ void Burst::PlotReader::runTask()
 			while (!isCancelled() && inputStream.good() && chunkNum <= totalChunk)
 			{
 				// setting up plot data
+				VerifyNotification::Ptr verification = new VerifyNotification{};
+				verification->accountId = accountId;
+				verification->nonceStart = nonceStart;
+				verification->block = block;
+				verification->inputPath = plotFile.getPath();
+
 				auto scoopBufferSize = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / (64 * 2); // 8192
 				auto scoopBufferCount = static_cast<size_t>(
 					std::ceil(static_cast<float>(staggerSize * Settings::ScoopSize) / static_cast<float>(scoopBufferSize)));
@@ -57,7 +66,7 @@ void Burst::PlotReader::runTask()
 
 				while (!isCancelled() && inputStream.good() && scoopDoneRead <= scoopBufferCount)
 				{
-					buffer.resize(scoopBufferSize / Settings::ScoopSize);
+					verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 					staggerOffset = scoopDoneRead * scoopBufferSize;
 
 					if (scoopBufferSize > (staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize)))
@@ -65,36 +74,27 @@ void Burst::PlotReader::runTask()
 						scoopBufferSize = staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize);
 
 						if (scoopBufferSize > Settings::ScoopSize)
-							buffer.resize(scoopBufferSize / Settings::ScoopSize);
+							verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 					}
 
 					if (scoopBufferSize > Settings::ScoopSize)
 					{
 						inputStream.seekg(startByte + staggerOffset);
-						auto scoopData = reinterpret_cast<char*>(buffer.data());
+						auto scoopData = reinterpret_cast<char*>(verification->buffer.data());
 						inputStream.read(scoopData, scoopBufferSize);
+
+						auto bufferSize = verification->buffer.size();
+						verification->nonceRead = nonceRead_;
 
 						//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
 
-						Shabal256 hash;
+						// wait, when there is too much work for the verifiers
+						while (!isCancelled() && queue_->size() >= MinerConfig::getConfig().getMiningIntensity() * 2)
+						{ }
 
-						for (size_t i = 0; i < buffer.size() && !isCancelled(); i++)
-						{
-							HashData target;
-							auto test = buffer.data() + i;
-							hash.update(gensig_.data(), Settings::HashSize);
-							hash.update(test, Settings::ScoopSize);
-							hash.close(&target[0]);
+						queue_->enqueueNotification(verification);
 
-							uint64_t targetResult = 0;
-							memcpy(&targetResult, &target[0], sizeof uint64_t);
-							auto deadline = targetResult / miner_.getBaseTarget();
-
-							auto nonceNum = nonceStart + nonceRead_ + i;
-							miner_.submitNonce(nonceNum, accountId, deadline, plotFile.getPath());
-						}
-
-						nonceRead_ += buffer.size();
+						nonceRead_ += bufferSize;
 					}
 					//else
 					//{

@@ -22,8 +22,11 @@
 #include <algorithm>
 #include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
+#include "PlotVerifier.hpp"
 
 Burst::Miner::Miner()
+	: minerThreadPool_{ 1, MinerConfig::getConfig().getMiningIntensity() + 10 },
+	  plotReaderThreadPool_{ 1, MinerConfig::getConfig().getPlotList().size() }
 {}
 
 Burst::Miner::~Miner()
@@ -46,13 +49,13 @@ void Burst::Miner::run()
 			"Pool URL: '" + config.getPoolUrl().getCanonical(false) + "'",
 			"Mininginfo URL: '" + config.getMiningInfoUrl().getCanonical(false) + "'"
 		};
-		
+
 		MinerLogger::write(lines, TextType::Error);
 		return;
 	}
 
 	MinerLogger::write("Total plots size: " + memToString(MinerConfig::getConfig().getTotalPlotsize(), 2),
-					   TextType::System);
+		TextType::System);
 	MinerLogger::write("Submission Max Retry : " + std::to_string(config.getSubmissionMaxRetry()), TextType::System);
 	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
 	MinerLogger::write("Pool Host : " + config.getPoolUrl().getCanonical() + ":" + std::to_string(config.getPoolUrl().getPort()) +
@@ -68,35 +71,49 @@ void Burst::Miner::run()
 	if (config.getTargetDeadline() > 0)
 		MinerLogger::write("Target deadline : " + deadlineFormat(config.getTargetDeadline()), TextType::System);
 	MinerLogger::write("Mining intensity : " + std::to_string(config.getMiningIntensity()), TextType::System);
-	
-	auto plotFileSize = static_cast<int32_t>(config.getPlotFiles().size());
-	
-	if (plotFileSize <= 0)
-		plotFileSize = 1;
 
-	plotReaderThreadPool_ = std::make_unique<Poco::ThreadPool>(plotFileSize, plotFileSize);
-	plotReaderManager_ = std::make_unique<Poco::TaskManager>(*plotReaderThreadPool_);
-
-	nonceSubmitterThreadPool_ = std::make_unique<Poco::ThreadPool>();
-	nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>(*nonceSubmitterThreadPool_);
+	plotReaderManager_ = std::make_unique<Poco::TaskManager>(plotReaderThreadPool_);
+	nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>(minerThreadPool_);
+	verifierManager_ = std::make_unique<Poco::TaskManager>(minerThreadPool_);
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
+
+	auto verifiers = 0u;
+
+	try
+	{
+		for (; verifiers < MinerConfig::getConfig().getMiningIntensity(); ++verifiers)
+			verifierManager_->start(new PlotVerifier{ *this, verificationQueue_ });
+	}
+	catch (Poco::Exception&)
+	{ }
+
+	if (verifiers == 0)
+	{
+		MinerLogger::write("Could not create even one verifier! Lower the setting \"maxBufferSizeMB\"!", TextType::Error);
+		return;
+	}
+
+	if (verifiers != MinerConfig::getConfig().getMiningIntensity())
+	{
+		MinerLogger::write("Could not create all verifiers (" + std::to_string(verifiers) + "/" + std::to_string(MinerConfig::getConfig().getMiningIntensity()) + "! Lower the setting \"maxBufferSizeMB\"!", TextType::Error);
+	}
 
 	const auto sleepTime = std::chrono::seconds(3);
 	running_ = true;
 
 	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
 	miningInfoSession_->setKeepAlive(true);
-	
+
 	wallet_.getLastBlock(currentBlockHeight_);
-	
+
 	while (running_)
 	{
 		if (getMiningInfo())
 			errors = 0;
 		else
 			++errors;
-		
+
 		// we have a tollerance of 5 times of not being able to fetch mining infos, before its a real error
 		if (errors >= 5)
 		{
@@ -118,13 +135,15 @@ void Burst::Miner::stop()
 	plotReaderManager_->joinAll();
 	nonceSubmitterManager_->cancelAll();
 	nonceSubmitterManager_->joinAll();
+	verifierManager_->cancelAll();
+	verifierManager_->joinAll();
 	this->running_ = false;
 }
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
 {
 	poco_ndc(Miner::updateGensig);
-	
+
 	// stop all reading processes if any
 	MinerLogger::write("stopping plot readers...", TextType::Debug);
 	plotReaderManager_->cancelAll();
@@ -134,7 +153,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	plotReaderManager_->joinAll();
 	MinerLogger::write("plot readers stopped", TextType::Debug);
 
-	Poco::ScopedLock<Poco::FastMutex> lock{ deadlinesLock_ };
+	Poco::ScopedLock<Poco::FastMutex> lock { deadlinesLock_ };
 	deadlines_.clear();
 
 	for (auto i = 0; i < 32; ++i)
@@ -163,67 +182,67 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		auto block = data_.getCurrentBlock() - 1;
 
 		std::thread threadLastWinner([this, block]()
-		{
-			poco_ndc(Miner::updateGensig::threadLastWinner);
-			AccountId lastWinner;
-			auto fetched = false;
-
-			// we cheat here a little bit and use the submission max retry set in config
-			// for max retry fetching the last winner
-			for (auto loop = 0u;
-				!fetched && loop < MinerConfig::getConfig().getSubmissionMaxRetry();
-				++loop)
 			{
-				if (wallet_.getWinnerOfBlock(block, lastWinner))
+				poco_ndc(Miner::updateGensig::threadLastWinner);
+				AccountId lastWinner;
+				auto fetched = false;
+
+				// we cheat here a little bit and use the submission max retry set in config
+				// for max retry fetching the last winner
+				for (auto loop = 0u;
+					 !fetched && loop < MinerConfig::getConfig().getSubmissionMaxRetry();
+					 ++loop)
 				{
-					std::string name;
-
-					// we are the winner :)
-					if (accounts_.isLoaded(lastWinner))
+					if (wallet_.getWinnerOfBlock(block, lastWinner))
 					{
-						data_.addWonBlock();
-						// we (re)send the good news to the local html server
-						data_.addBlockEntry(createJsonNewBlock(data_));
+						std::string name;
+
+						// we are the winner :)
+						if (accounts_.isLoaded(lastWinner))
+						{
+							data_.addWonBlock();
+							// we (re)send the good news to the local html server
+							data_.addBlockEntry(createJsonNewBlock(data_));
+						}
+
+						wallet_.getNameOfAccount(lastWinner, name);
+
+						// if we dont fetched the winner of the last block
+						// we exit this thread function
+						if (data_.getCurrentBlock() - 1 != block)
+							return;
+
+						auto address = NxtAddress(lastWinner).to_string();
+
+						std::vector<std::string> lines = {
+							std::string(50, '-'),
+							"last block winner: ",
+							"block#             " + std::to_string(block),
+							"winner-numeric     " + std::to_string(lastWinner),
+							"winner-address     " + address
+						};
+
+						auto lastWinnerPtr = std::make_shared<Poco::JSON::Object>();
+						lastWinnerPtr->set("type", "lastWinner");
+						lastWinnerPtr->set("numeric", lastWinner);
+						lastWinnerPtr->set("address", address);
+
+						if (!name.empty())
+						{
+							lines.emplace_back("winner-name        " + name);
+							lastWinnerPtr->set("name", name);
+						}
+
+						lines.emplace_back(std::string(50, '-'));
+
+						MinerLogger::write(lines, TextType::Ok);
+						data_.getBlockData()->lastWinner = lastWinnerPtr;
+						data_.addBlockEntry(*lastWinnerPtr);
+
+						fetched = true;
 					}
-
-					wallet_.getNameOfAccount(lastWinner, name);
-
-					// if we dont fetched the winner of the last block
-					// we exit this thread function
-					if (data_.getCurrentBlock() - 1 != block)
-						return;
-
-					auto address = NxtAddress(lastWinner).to_string();
-
-					std::vector<std::string> lines = {
-						std::string(50, '-'),
-						"last block winner: ",
-						"block#             " + std::to_string(block),
-						"winner-numeric     " + std::to_string(lastWinner),
-						"winner-address     " + address
-					};
-
-					auto lastWinnerPtr = std::make_shared<Poco::JSON::Object>();
-					lastWinnerPtr->set("type", "lastWinner");
-					lastWinnerPtr->set("numeric", lastWinner);
-					lastWinnerPtr->set("address", address);
-
-					if (!name.empty())
-					{
-						lines.emplace_back("winner-name        " + name);
-						lastWinnerPtr->set("name", name);
-					}
-					
-					lines.emplace_back(std::string(50, '-'));
-
-					MinerLogger::write(lines, TextType::Ok);
-					data_.getBlockData()->lastWinner = lastWinnerPtr;
-					data_.addBlockEntry(*lastWinnerPtr);
-
-					fetched = true;
 				}
-			}
-		});
+			});
 
 		threadLastWinner.detach();
 	}
@@ -240,15 +259,15 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		};
 
 		MinerLogger::write(lines, TextType::Information);
-		
+
 		data_.addBlockEntry(createJsonNewBlock(data_));
 	}
-	
+
 	progress_->reset();
 	progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
 
 	for (auto& plotDir : MinerConfig::getConfig().getPlotList())
-		plotReaderManager_->start(new PlotReader{*this, progress_, plotDir.first, plotDir.second});
+		plotReaderManager_->start(new PlotReader{ *this, progress_, plotDir.first, plotDir.second, verificationQueue_ });
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const
@@ -268,7 +287,13 @@ uint64_t Burst::Miner::getBlockheight() const
 
 uint64_t Burst::Miner::getTargetDeadline() const
 {
-	return targetDeadline_;
+	auto targetDeadline = targetDeadline_;
+	auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
+
+	if (manualTargetDeadline > 0)
+		targetDeadline = targetDeadline < manualTargetDeadline ? targetDeadline : manualTargetDeadline;
+
+	return targetDeadline;
 }
 
 size_t Burst::Miner::getScoopNum() const
@@ -279,7 +304,7 @@ size_t Burst::Miner::getScoopNum() const
 void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile)
 {
 	poco_ndc(Miner::submitNonce);
-	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
+	Poco::ScopedLock<Poco::FastMutex> mutex { deadlinesLock_ };
 
 	auto bestDeadline = deadlines_[accountId].getBest();
 
@@ -298,10 +323,10 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		if (MinerConfig::getConfig().output.nonceFound)
 		{
 			auto message = newDeadline->getAccountName() + ": nonce found (" + Burst::deadlineFormat(deadline) + ")";
-			
+
 			if (MinerConfig::getConfig().output.nonceFoundPlot)
 				message += " in " + plotFile;
-			
+
 			data_.addBlockEntry(createJsonDeadline(newDeadline, "nonce found"));
 
 			MinerLogger::write(message, TextType::Unimportant);
@@ -309,10 +334,6 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 
 		auto createSendThread = true;
 		auto targetDeadline = getTargetDeadline();
-		auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
-
-		if (manualTargetDeadline > 0)
-			targetDeadline = targetDeadline < manualTargetDeadline ? targetDeadline : manualTargetDeadline;
 
 		if (targetDeadline > 0 && newDeadline->getDeadline() >= targetDeadline)
 		{
@@ -325,11 +346,11 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		newDeadline->send();
 
 		if (createSendThread)
-#ifdef NDEBUG
+//#ifdef NDEBUG
 			nonceSubmitterManager_->start(new NonceSubmitter{ *this, newDeadline });
-#else
+//#else
 			{} // in debug mode we dont submit nonces
-#endif
+//#endif
 	}
 }
 
@@ -337,17 +358,17 @@ bool Burst::Miner::getMiningInfo()
 {
 	using namespace Poco::Net;
 	poco_ndc(Miner::getMiningInfo);
-	
+
 	Request request(std::move(miningInfoSession_));
 
-	HTTPRequest requestData{HTTPRequest::HTTP_GET, "/burst?requestType=getMiningInfo", HTTPRequest::HTTP_1_1};
+	HTTPRequest requestData { HTTPRequest::HTTP_GET, "/burst?requestType=getMiningInfo", HTTPRequest::HTTP_1_1 };
 	requestData.setKeepAlive(true);
 
 	auto response = request.send(requestData);
 	std::string responseData;
 
 	if (response.receive(responseData))
-	{		
+	{
 		try
 		{
 			HttpResponse httpResponse(responseData);
@@ -392,11 +413,11 @@ bool Burst::Miner::getMiningInfo()
 				exc.what(),
 				"Full response: " + responseData
 			};
-			
+
 			MinerLogger::writeStackframe(lines);
 		}
 	}
-	
+
 	transferSession(request, miningInfoSession_);
 	transferSession(response, miningInfoSession_);
 
@@ -406,7 +427,7 @@ bool Burst::Miner::getMiningInfo()
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, uint64_t blockHeight)
 {
 	poco_ndc(Miner::getBestSent);
-	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
+	Poco::ScopedLock<Poco::FastMutex> mutex { deadlinesLock_ };
 
 	if (blockHeight != data_.getCurrentBlock())
 		return nullptr;
@@ -417,7 +438,7 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(uint64_t accountId, uint64_t blockHeight)
 {
 	poco_ndc(Miner::getBestConfirmed);
-	Poco::ScopedLock<Poco::FastMutex> mutex{ deadlinesLock_ };
+	Poco::ScopedLock<Poco::FastMutex> mutex { deadlinesLock_ };
 
 	if (blockHeight != data_.getCurrentBlock())
 		return nullptr;
@@ -432,7 +453,7 @@ std::vector<Poco::JSON::Object> Burst::Miner::getBlockData() const
 	auto blockData = data_.getBlockData();
 
 	if (blockData == nullptr)
-		return{};
+		return { };
 
 	entries.reserve(blockData->entries.size());
 

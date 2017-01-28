@@ -17,9 +17,9 @@
 #include "Wallet.hpp"
 #include <Poco/TaskManager.h>
 #include <vector>
-#include <Poco/Observer.h>
 #include <Poco/JSON/Object.h>
 #include "MinerData.hpp"
+#include <Poco/NotificationQueue.h>
 
 namespace Poco
 {
@@ -74,8 +74,10 @@ namespace Burst
 		Accounts accounts_;
 		Wallet wallet_;
 		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_;
-		std::unique_ptr<Poco::ThreadPool> nonceSubmitterThreadPool_;
 		std::unique_ptr<Poco::TaskManager> plotReaderManager_;
-		std::unique_ptr<Poco::ThreadPool> plotReaderThreadPool_;
+		std::unique_ptr<Poco::TaskManager> verifierManager_;
+		Poco::ThreadPool minerThreadPool_;
+		Poco::ThreadPool plotReaderThreadPool_;
+		Poco::NotificationQueue verificationQueue_;
 	};
 }
