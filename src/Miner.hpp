@@ -20,6 +20,7 @@
 #include <Poco/JSON/Object.h>
 #include "MinerData.hpp"
 #include <Poco/NotificationQueue.h>
+#include <Poco/ThreadPool.h>
 
 namespace Poco
 {
