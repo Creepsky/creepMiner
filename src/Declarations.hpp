@@ -21,9 +21,9 @@ namespace Burst
 		std::string literal;
 	};
 
-	struct Project
+	struct ProjectData
 	{
-		Project(std::string&& name, Version&& version);
+		ProjectData(std::string&& name, Version&& version);
 
 		std::string name;
 		Version version;
@@ -54,7 +54,7 @@ namespace Burst
 		static constexpr auto OsFamily = "";
 #endif
 
-		static const Project Project;
+		static const ProjectData Project;
 	};
 
 	template <size_t SZ>
