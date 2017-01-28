@@ -89,7 +89,7 @@ void Burst::PlotReader::runTask()
 						//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
 
 						// wait, when there is too much work for the verifiers
-						while (!isCancelled() && queue_->size() >= MinerConfig::getConfig().getMiningIntensity() * 2)
+						while (!isCancelled() && queue_->size() >= MinerConfig::getConfig().getMiningIntensity())
 						{ }
 
 						queue_->enqueueNotification(verification);
