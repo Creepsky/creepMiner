@@ -23,15 +23,10 @@ This is a (standalone) fork of the burst-miner found on [this github repository]
 - [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Compilation & Installation](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation)
 
-**Dependencies**
+## Dependencies
 
-The project uses the following POCO C++ libraries ([Boost Software License 1.0](https://pocoproject.org/license.html)):
-- Net
-- Foundation
-- NetSSL
-- Crypto
-- Util
-- JSON
+- POCO C++ libraries ([Boost Software License 1.0](https://pocoproject.org/license.html))
+- OpenSSL ([Apache style license](https://www.openssl.org/source/license.html))
 
 ## Contribution
 
