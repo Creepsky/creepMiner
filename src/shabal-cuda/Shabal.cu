@@ -3,6 +3,8 @@
 #include "sphlib/sph_shabal.h"
 #include "Shabal.hpp"
 #include <iostream>
+#include <Poco/Timestamp.h>
+#include "MinerLogger.hpp"
 
 #define SPH_C32(x)    ((sph_u32)(x ## U))
 #define C32   SPH_C32
@@ -406,13 +408,6 @@ sph_u32 sph_dec32le_aligned_cuda(const void *src)
 #endif
 }
 
-#define MEMCPY(src, dest, len) for(int i = 0u; i < len; ++i) dest[i] = src[i];
-
-#define PRINT(d, a, len) for (auto i = 0u; i < len; ++i) printf("%s[%i]: %i\n", d, i, a[i]);
-
-#define CPY_ARR() for(int i = 0; i < j; ++i)\
-	
-
 //template <typename T, typename P>
 //__device__
 //void cpyArr(const T* src, P* dst, size_t len)
@@ -437,7 +432,6 @@ void shabal_init_cuda(void *cc, unsigned size)
 
 	sc = (sph_shabal_context *)cc;
 	
-	// TODO: memcpy
 	memcpy(sc->A, A_init, sizeof sc->A);
 	memcpy(sc->B, B_init, sizeof sc->B);
 	memcpy(sc->C, C_init, sizeof sc->C);
@@ -513,13 +507,6 @@ __device__ void sph_enc32le_aligned_cuda(void *dst, sph_u32 val)
 }
 
 __device__
-void memset_cuda(unsigned char* arr, char val, size_t count)
-{
-	for (auto i = 0u; i < count; ++i)
-		arr[i] = val;
-}
-
-__device__
 void shabal_close_cuda(void *cc, unsigned ub, unsigned n, void *dst)
 {
 	const auto size_word = 8;
@@ -540,7 +527,6 @@ void shabal_close_cuda(void *cc, unsigned ub, unsigned n, void *dst)
 	ptr = sc->ptr;
 	z = 0x80 >> n;
 	buf[ptr] = ((ub & -z) | z) & 0xFF;
-	// TODO: memset
 	memset(buf + ptr + 1, 0, (sizeof sc->buf) - (ptr + 1));
 	READ_STATE(sc);
 	DECODE_BLOCK;
@@ -574,9 +560,9 @@ void shabal_close_cuda(void *cc, unsigned ub, unsigned n, void *dst)
 }
 
 __global__
-void calculate_shabal_cuda_device(Burst::ScoopData* buffer, uint64_t len, Burst::GensigData* gensig, CalculatedDeadline* bestDeadline,
+void calculate_shabal_cuda_device(Burst::ScoopData* buffer, uint64_t len, const Burst::GensigData* gensig, CalculatedDeadline* bestDeadline,
 	uint64_t nonceStart, uint64_t nonceRead, uint64_t baseTarget)
-{	
+{
 	sph_shabal256_context context;
 	shabal_init_cuda(&context, 256);
 
@@ -587,7 +573,7 @@ void calculate_shabal_cuda_device(Burst::ScoopData* buffer, uint64_t len, Burst:
 	
 	if (i >= len)
 	{
-		printf("blockIdx.x = %i, threadIdx.x = %i, index = %i\n", blockIdx.x, threadIdx.x, i);
+		//printf("blockIdx.x = %i, threadIdx.x = %i, index = %i\n", blockIdx.x, threadIdx.x, i);
 		return;
 	}
 
@@ -601,9 +587,71 @@ void calculate_shabal_cuda_device(Burst::ScoopData* buffer, uint64_t len, Burst:
 	uint64_t targetResult = 0;
 	memcpy(&targetResult, &target[0], sizeof(uint64_t));
 	auto deadline = targetResult / baseTarget;
-
+	
 	bestDeadline[i].deadline = deadline;
 	bestDeadline[i].nonce = nonceStart + nonceRead + i;
+}
+
+void calc_occupancy_cuda(int bufferSize, int& gridSize, int& blockSize)
+{
+	int minGridSize;
+
+	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)calculate_shabal_cuda_device, 0, 0);
+
+	gridSize = (bufferSize + blockSize - 1) / blockSize;
+}
+
+bool alloc_memory_cuda(MemoryType memType, uint64_t size, void** mem)
+{
+	size = calc_memory_size(memType, size);
+
+	if (size <= 0)
+		return false;
+
+	return cudaMalloc((void**)&*mem, size) == cudaSuccess;
+}
+
+bool realloc_memory_cuda(MemoryType memType, uint64_t size,  void** mem)
+{
+	size = calc_memory_size(memType, size);
+
+	if (size <= 0)
+		return false;
+
+	if (*mem != nullptr)
+		free_memory_cuda(*mem);
+
+	return cudaMalloc((void**)&*mem, size) == cudaSuccess;
+}
+
+bool copy_memory_cuda(MemoryType memType, uint64_t size, const void* from, void* to, MemoryCopyDirection copyDirection)
+{
+	size = calc_memory_size(memType, size);
+
+	if (size <= 0)
+		return false;
+
+	return cudaMemcpy(to, from, size, copyDirection == MemoryCopyDirection::ToDevice ? cudaMemcpyHostToDevice : cudaMemcpyDeviceToHost) == cudaSuccess;
+}
+
+bool free_memory_cuda(void* mem)
+{
+	if (mem == nullptr)
+		return false;
+
+	return cudaFree(mem) == cudaSuccess;
+}
+
+uint64_t calc_memory_size(MemoryType memType, uint64_t size)
+{
+	if (memType == MemoryType::Buffer)
+		size *= sizeof(uint8_t) * Burst::Settings::ScoopSize;
+	else if (memType == MemoryType::Gensig)
+		size = sizeof(uint8_t) * Burst::Settings::HashSize;
+	else if (memType == MemoryType::Deadlines)
+		size *= sizeof(CalculatedDeadline);
+
+	return size;
 }
 
 void calculate_shabal_cuda(Burst::ScoopData* buffer, uint64_t len, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
@@ -617,21 +665,54 @@ void calculate_shabal_cuda(Burst::ScoopData* buffer, uint64_t len, const Burst::
 	auto sizeGensig = sizeof(uint8_t) * Burst::Settings::HashSize;
 	auto sizeDeadlines = sizeof(CalculatedDeadline) * len;
 
+	Poco::Timestamp now;
+
 	auto err = cudaMalloc((void**)&cudaBuffer, sizeBuffer);
 	err = cudaMalloc((void**)&cudaGensig, sizeGensig);
 	err = cudaMalloc((void**)&cudaDeadlines, sizeDeadlines);
 
+	Burst::MinerLogger::write("cudaMalloc: " + std::to_string(now.elapsed()));
+	now.update();
+
 	err = cudaMemcpy(cudaBuffer, buffer, sizeBuffer, cudaMemcpyHostToDevice);
 	err = cudaMemcpy(cudaGensig, gensig, sizeGensig, cudaMemcpyHostToDevice);
-	err = cudaMemcpy(cudaDeadlines, deadlines, sizeDeadlines, cudaMemcpyHostToDevice);
+	//err = cudaMemcpy(cudaDeadlines, deadlines, sizeDeadlines, cudaMemcpyHostToDevice);
 	
-	calculate_shabal_cuda_device<<<len / 1024, 1024>>>(cudaBuffer, len, cudaGensig, cudaDeadlines,
+	Burst::MinerLogger::write("cudaMemcpyToDevice: " + std::to_string(now.elapsed()));
+	now.update();
+
+	int blockSize;
+	int minGridSize;
+	int gridSize;
+	
+	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)calculate_shabal_cuda_device, 0, 0);
+
+	gridSize = (len + blockSize - 1) / blockSize;
+
+	Burst::MinerLogger::write("cudaOccupancyMaxPotentialBlockSize: " + std::to_string(now.elapsed()));
+	now.update();
+
+	calculate_shabal_cuda_device<<<gridSize, blockSize>>>(cudaBuffer, len, cudaGensig, cudaDeadlines,
 		nonceStart, nonceRead, baseTarget);
 
+	Burst::MinerLogger::write("calculate_shabal_cuda_device: " + std::to_string(now.elapsed()));
+	now.update();
+
 	err = cudaMemcpy(deadlines, cudaDeadlines, sizeDeadlines, cudaMemcpyDeviceToHost);
+
+	Burst::MinerLogger::write("cudaMemcpyToHost: " + std::to_string(now.elapsed()));
+	now.update();
 
 	err = cudaFree(cudaBuffer);
 	err = cudaFree(cudaGensig);
 	err = cudaFree(cudaDeadlines);
 	err = err;
+
+	Burst::MinerLogger::write("cudaFree: " + std::to_string(now.elapsed()));
+}
+
+void calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, uint64_t bufferSize, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
+	uint64_t nonceStart, uint64_t nonceRead, uint64_t baseTarget, int gridSize, int blockSize)
+{
+	calculate_shabal_cuda_device<<<gridSize, blockSize>>>(buffer, bufferSize, gensig, deadlines, nonceStart, nonceRead, baseTarget);
 }
