@@ -3,15 +3,18 @@
 #include <memory>
 #include <string>
 #include "Response.hpp"
+#include <Poco/Net/HTTPClientSession.h>
+
+namespace Poco {namespace Net {
+	class HTTPRequest;
+}}
 
 namespace Burst
 {
-	class Socket;
-
 	class Request
 	{
 	public:
-		Request(std::unique_ptr<Socket> socket);
+		Request(std::unique_ptr<Poco::Net::HTTPClientSession> session);
 		Request(const Request& rhs) = delete;
 		Request(Request&& rhs) = default;
 		~Request();
@@ -20,25 +23,22 @@ namespace Burst
 		Request& operator=(Request&& rhs) = default;
 
 		bool canSend() const;
-		Response sendPost(const std::string& url, const std::string& body, const std::string& header);
-		Response sendGet(const std::string& url);
+		Response send(Poco::Net::HTTPRequest& request);
 
-		std::unique_ptr<Socket> close();
+		std::unique_ptr<Poco::Net::HTTPClientSession> transferSession();
 
 	private:
-		bool send(const std::string& url, const std::string& method, const std::string& body, const std::string& header) const;
-
-		std::unique_ptr<Socket> socket_;
+		std::unique_ptr<Poco::Net::HTTPClientSession> session_;
 	};
 
 	class NonceRequest
 	{
 	public:
-		NonceRequest(std::unique_ptr<Socket> socket);
+		NonceRequest(std::unique_ptr<Poco::Net::HTTPClientSession> socket);
 
-		NonceResponse submit(uint64_t nonce, uint64_t accountId, uint64_t& deadline);
+		NonceResponse submit(uint64_t nonce, uint64_t accountId);
 
-		std::unique_ptr<Socket> close();
+		std::unique_ptr<Poco::Net::HTTPClientSession> transferSession();
 
 	private:
 		Request request_;

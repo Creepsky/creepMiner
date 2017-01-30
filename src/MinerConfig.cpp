@@ -6,27 +6,28 @@
 //  Copyright (c) 2014 Miner. All rights reserved.
 //
 
-#include "MinerConfig.h"
-#include "MinerLogger.h"
-#include "MinerUtil.h"
+#include "MinerConfig.hpp"
+#include "MinerLogger.hpp"
+#include "MinerUtil.hpp"
 #include <fstream>
-#include "rapidjson/document.h"
-#include <sstream>
-#ifdef _WIN32
-#	include <win/dirent.h>
-#endif
-#include <sys/stat.h>
 #include "SocketDefinitions.hpp"
 #include "Socket.hpp"
 #include <memory>
+#include <Poco/File.h>
+#include <Poco/Path.h>
+#include <Poco/DirectoryIterator.h>
+#include <Poco/JSON/Parser.h>
+#include <Poco/JSON/Array.h>
+#include <Poco/NestedDiagnosticContext.h>
+#include <unordered_map>
 
 void Burst::MinerConfig::rescan()
 {
-	this->readConfigFile(this->configPath);
+	readConfigFile(configPath_);
 }
 
 Burst::PlotFile::PlotFile(std::string&& path, size_t size)
-	: path(std::move(path)), size(size)
+	: path(move(path)), size(size)
 {}
 
 const std::string& Burst::PlotFile::getPath() const
@@ -40,266 +41,194 @@ size_t Burst::PlotFile::getSize() const
 }
 
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
-{
-	this->configPath = configPath;
+{	
+	poco_ndc(readConfigFile);
 	std::ifstream inputFileStream;
 
-	plotList.clear();
-
-	auto exceptionMask = inputFileStream.exceptions() | std::ios::failbit;
-	inputFileStream.exceptions(exceptionMask);
-
+	// first we open the config file
 	try
 	{
 		inputFileStream.open(configPath);
 	}
 	catch (...)
 	{
-		MinerLogger::write("unable to open file " + configPath, TextType::Error);
+		MinerLogger::write("unable to open config " + configPath, TextType::Error);
 		return false;
 	}
 
-	std::stringstream configContent;
-	configContent << inputFileStream.rdbuf();
-	inputFileStream.close();
-	std::string configContentStr = configContent.str();
+	plotList_.clear();
 
-	rapidjson::Document configDoc;
-	configDoc.Parse<0>(configContentStr.c_str());
-
-	if (configDoc.GetParseError() != nullptr)
+	Poco::JSON::Parser parser;
+	Poco::JSON::Object::Ptr config;
+	
+	try
 	{
-		std::string parseError = configDoc.GetParseError();
-		size_t parseErrorLoc = configDoc.GetErrorOffset();
-		MinerLogger::write("Parsing Error : " + parseError, TextType::Error);
-		size_t sampleLen = 16;
-		if (configContentStr.length() - parseErrorLoc < 16)
-		{
-			sampleLen = configContentStr.length() - parseErrorLoc;
-		}
-		MinerLogger::write("--> " + configContentStr.substr(parseErrorLoc, sampleLen) + "...", TextType::Error);
+		config = parser.parse(inputFileStream).extract<Poco::JSON::Object::Ptr>();
+	}
+	catch (Poco::JSON::JSONException& exc)
+	{
+		std::vector<std::string> lines = {
+			"there is an error in the config file!",
+			exc.displayText()
+		};
+				
+		MinerLogger::writeStackframe(lines);
+
+		// dont forget to close the file
+		if (inputFileStream.is_open())
+			inputFileStream.close();
+
 		return false;
 	}
 	
-	if (configDoc.HasMember("output"))
+	auto outputObj = config->getObject("output");
+
+	if (!outputObj.isNull())
 	{
-		if (configDoc["output"].IsArray())
+		output.progress = outputObj->optValue("progress", true);
+		output.debug = outputObj->optValue("debug", false);
+		output.nonceFound = outputObj->optValue("nonce found", true);
+		output.nonceFoundPlot = outputObj->optValue("nonce found plot", false);
+		output.nonceConfirmedPlot = outputObj->optValue("nonce confirmed plot", false);
+		output.plotDone = outputObj->optValue("plot done", false);
+		output.dirDone = outputObj->optValue("dir done", false);
+		output.lastWinner = outputObj->optValue("last winner", true);
+
+		auto errorObj = outputObj->getObject("error");
+
+		if (!errorObj.isNull())
 		{
-			auto& outputs = configDoc["output"];
-
-			for (auto i = 0u; i < outputs.Size(); ++i)
-			{
-				auto& setting = outputs[i];
-
-				if (!setting.IsString())
-					continue;
-
-				std::string value(setting.GetString());
-
-				auto set = true;
-				auto start = 0u;
-
-				// if the first char is a '-', the output needs to be unset
-				if (!value.empty())
-				{
-					auto firstCharacter = *value.begin();
-
-					if (firstCharacter == '-')
-					{
-						set = false;
-						start = 1;
-					}
-					else if (firstCharacter == '+')
-					{
-						set = true;
-						start = 1;
-					}
-					else
-					{
-						set = true;
-					}
-				}
-
-				if (value.size() > start)
-				{
-					auto realValue = value.substr(start);
-
-					if (realValue == "progress")
-						this->output.progress = set;
-					else if (realValue == "debug")
-						this->output.debug = set;
-					else if (realValue == "nonce found")
-						output.nonceFound = set;
-					else if (realValue == "nonce found plot")
-						output.nonceFoundPlot = set;
-					else if (realValue == "nonce confirmed plot")
-						output.nonceConfirmedPlot = set;
-					else if (realValue == "plot done")
-						output.plotDone = set;
-					else if (realValue == "dir done")
-						output.dirDone = set;
-				}
-			}
+			output.error.request = errorObj->optValue("request", false);
+			output.error.response = errorObj->optValue("response", false);
 		}
 	}
 
-	if (configDoc.HasMember("poolUrl"))
-	{
-		urlPool = { configDoc["poolUrl"].GetString() };
-	}
-	else
-	{
-		MinerLogger::write("No poolUrl is defined in config file " + configPath, TextType::Error);
-		return false;
-	}
-
-	if (configDoc.HasMember("miningInfoUrl"))
-	{
-		urlMiningInfo = { configDoc["miningInfoUrl"].GetString() };
-	}
+	auto urlPoolStr = config->optValue<std::string>("poolUrl", "");
+	
+	urlPool_ = urlPoolStr;
 	// if no getMiningInfoUrl and port are defined, we assume that the pool is the source
-	else
+	urlMiningInfo_ = config->optValue("miningInfoUrl", urlPoolStr);
+	urlWallet_ = config->optValue<std::string>("walletUrl", "");
+		
+	try
 	{
-		urlMiningInfo = urlPool;
-	}
-
-	if (configDoc.HasMember("plots"))
-	{
-		if (configDoc["plots"].IsArray())
+		auto plotsDyn = config->get("plots");
+						
+		if (plotsDyn.type() == typeid(Poco::JSON::Array::Ptr))
 		{
-			for (auto itr = configDoc["plots"].Begin(); itr != configDoc["plots"].End(); ++itr)
-			{
-				this->addPlotLocation(itr->GetString());
-			}
+			auto plots = plotsDyn.extract<Poco::JSON::Array::Ptr>();
+			
+			for (auto& plot : *plots)
+				addPlotLocation(plot.convert<std::string>());
 		}
-		else if (configDoc["plots"].IsString())
+		else if (plotsDyn.isString())
 		{
-			this->addPlotLocation(configDoc["plots"].GetString());
+			addPlotLocation(plotsDyn.extract<std::string>());
 		}
 		else
 		{
 			MinerLogger::write("Invalid plot file or directory in config file " + configPath, TextType::Error);
-			return false;
+			MinerLogger::write(plotsDyn.toString(), TextType::Error);
 		}
-
-		uint64_t totalSize = 0;
-
-		for (auto plotFile : plotList)
-			totalSize += plotFile->getSize();
-
-		MinerLogger::write("Total plots size: " + gbToString(totalSize) + " GB", TextType::System);
 	}
-	else
+	catch (Poco::Exception& exc)
 	{
-		MinerLogger::write("No plot file or directory defined in config file " + configPath, TextType::Error);
-		return false;
+		std::vector<std::string> lines = {
+			"error while reading plot files!",
+			exc.what()
+		};
+		
+		MinerLogger::writeStackframe(lines);
 	}
 
-	if (this->plotList.empty())
+	// combining all plotfiles to lists of plotfiles on the same device
 	{
-		MinerLogger::write("No valid plot file or directory in config file " + configPath, TextType::Error);
-		return false;
-	}
-
-	if (configDoc.HasMember("submissionMaxRetry"))
-	{
-		if (configDoc["submissionMaxRetry"].IsNumber())
-			submission_max_retry_ = configDoc["submissionMaxRetry"].GetInt();
-		else
-			submission_max_retry_ = 3;
-	}
-
-	if (configDoc.HasMember("sendMaxRetry"))
-	{
-		if (configDoc["sendMaxRetry"].IsNumber())
-			send_max_retry_ = configDoc["sendMaxRetry"].GetInt();
-		else
-			send_max_retry_ = 3;
-	}
-
-	if (configDoc.HasMember("receiveMaxRetry"))
-	{
-		if (configDoc["receiveMaxRetry"].IsNumber())
-			receive_max_retry_ = configDoc["receiveMaxRetry"].GetInt();
-		else
-			receive_max_retry_ = 3;
-	}
-
-	if (configDoc.HasMember("sendTimeout"))
-	{
-		if (configDoc["sendTimeout"].IsNumber())
-			send_timeout_ = static_cast<float>(configDoc["sendTimeout"].GetDouble());
-		else
-			send_timeout_ = 5.f;
-	}
-
-	if (configDoc.HasMember("receiveTimeout"))
-	{
-		if (configDoc["receiveTimeout"].IsNumber())
-			receive_timeout_ = static_cast<float>(configDoc["receiveTimeout"].GetDouble());
-		else
-			receive_timeout_ = 5.f;
-	}
-
-	if (configDoc.HasMember("maxBufferSizeMB"))
-	{
-		if (configDoc["maxBufferSizeMB"].IsNumber())
+		for (const auto plotFile : getPlotFiles())
 		{
-			this->maxBufferSizeMB = configDoc["maxBufferSizeMB"].GetInt();
-		}
-		else
-		{
-			std::string maxBufferSizeMBStr = configDoc["maxBufferSizeMB"].GetString();
-			try
+			Poco::Path path{ plotFile->getPath() };
+
+			auto dir = path.getDevice();
+
+			// if its empty its unix and we have to look for the top dir
+			if (dir.empty() && path.depth() > 0)
+				dir = path.directory(0);
+
+			// if its now empty, we have a really weird plotfile and skip it
+			if (dir.empty())
 			{
-				this->maxBufferSizeMB = std::stoul(maxBufferSizeMBStr);
-			}
-			catch (...)
-			{
-				this->maxBufferSizeMB = 64;
-			}
-		}
+				std::vector<std::string> lines = {
+					"Plotfile with invalid path!",
+					plotFile->getPath()
+				};
 
-		if (this->maxBufferSizeMB < 1)
-		{
-			this->maxBufferSizeMB = 1;
+				MinerLogger::write(lines, TextType::Debug);
+				continue;
+			}
+
+			auto iter = plotDirs_.find(dir);
+
+			if (iter == plotDirs_.end())
+				plotDirs_.emplace(std::make_pair(dir, PlotList {}));
+
+			plotDirs_[dir].emplace_back(plotFile);
 		}
 	}
 
-	if (configDoc.HasMember("http"))
-		if (configDoc["http"].IsNumber())
-			http_ = configDoc["http"].GetUint();
+	submission_max_retry_ = config->optValue("submissionMaxRetry", 3u);
+	maxBufferSizeMB = config->optValue("maxBufferSizeMB", 64u);
 
-	if (configDoc.HasMember("confirmed deadlines"))
-		if (configDoc["confirmed deadlines"].IsString())
-			confirmedDeadlinesPath_ = configDoc["confirmed deadlines"].GetString();
+	if (maxBufferSizeMB == 0)
+		maxBufferSizeMB = 1;
 
-	if (configDoc.HasMember("targetDeadline"))
+	http_ = config->optValue("http", 1u);
+	confirmedDeadlinesPath_ = config->optValue<std::string>("confirmed deadlines", "");
+	timeout_ = config->optValue("timeout", 30.f);
+	startServer_ = config->optValue("Start Server", false);
+	serverUrl_ = config->optValue<std::string>("serverUrl", "");
+	miningIntensity_ = std::max(config->optValue("miningIntensity", 1), 1);
+
+	auto targetDeadline = config->get("targetDeadline");
+	
+	if (!targetDeadline.isEmpty())
 	{
-		if (configDoc["targetDeadline"].IsUint64())
-			targetDeadline_ = configDoc["targetDeadline"].GetUint64();
-		else if (configDoc["targetDeadline"].IsString())
-			targetDeadline_ = formatDeadline(configDoc["targetDeadline"].GetString());
+		// could be the raw deadline
+		if (targetDeadline.isInteger())
+			targetDeadline_ = targetDeadline.convert<uint64_t>();
+		// or a formated string
+		else if (targetDeadline.isString())
+			targetDeadline_ = formatDeadline(targetDeadline.convert<std::string>());
+		else
+		{
+			targetDeadline_ = 0;
+			
+			std::vector<std::string> lines = {
+				"the target deadline is not a valid!",
+				"expected a number (amount of seconds) or a formated string (1m 1d 11:11:11)",
+				"got: " + targetDeadline.toString()
+			};
+			
+			MinerLogger::write(lines, TextType::Error);
+		}
 	}
-
+	
 	return true;
 }
 
 const std::string& Burst::MinerConfig::getPath() const
 {
-	return configPath;
+	return configPath_;
 }
 
 const std::vector<std::shared_ptr<Burst::PlotFile>>& Burst::MinerConfig::getPlotFiles() const
 {
-	return plotList;
+	return plotList_;
 }
 
 uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 {
 	uintmax_t sum = 0;
 
-	for (auto plotFile : plotList)
+	for (auto plotFile : plotList_)
 		sum += plotFile->getSize();
 
 	return sum;
@@ -307,12 +236,32 @@ uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 
 float Burst::MinerConfig::getReceiveTimeout() const
 {
-	return receive_timeout_;
+	return getTimeout();
 }
 
 float Burst::MinerConfig::getSendTimeout() const
 {
-	return send_timeout_;
+	return getTimeout();
+}
+
+float Burst::MinerConfig::getTimeout() const
+{
+	return timeout_;
+}
+
+const Burst::Url& Burst::MinerConfig::getPoolUrl() const
+{
+	return urlPool_;
+}
+
+const Burst::Url& Burst::MinerConfig::getMiningInfoUrl() const
+{
+	return urlMiningInfo_;
+}
+
+const Burst::Url& Burst::MinerConfig::getWalletUrl() const
+{
+	return urlWallet_;
 }
 
 size_t Burst::MinerConfig::getReceiveMaxRetry() const
@@ -340,23 +289,62 @@ const std::string& Burst::MinerConfig::getConfirmedDeadlinesPath() const
 	return confirmedDeadlinesPath_;
 }
 
+bool Burst::MinerConfig::getStartServer() const
+{
+	return startServer_;
+}
+
 uint64_t Burst::MinerConfig::getTargetDeadline() const
 {
 	return targetDeadline_;
 }
 
-std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket() const
+const Burst::Url& Burst::MinerConfig::getServerUrl() const
+{
+	return serverUrl_;
+}
+
+std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostType) const
 {
 	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
-	socket->connect(urlPool.getIp(), urlPool.getPort());
+	const Url* url;
+	
+	if (hostType == HostType::Pool)
+		url = &urlPool_;
+	else if (hostType == HostType::MiningInfo)
+		url = &urlMiningInfo_;
+	else if (hostType == HostType::Wallet)
+		url = &urlWallet_;
+	else
+		url = nullptr;
+
+	if (url != nullptr)
+		socket->connect(url->getIp(), url->getPort());
+
 	return socket;
 }
 
-std::unique_ptr<Burst::Socket> Burst::MinerConfig::createMiningInfoSocket() const
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(HostType hostType) const
 {
-	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
-	socket->connect(urlMiningInfo.getIp(), urlMiningInfo.getPort());
-	return socket;
+	const Url* url;
+
+	if (hostType == HostType::Pool)
+		url = &urlPool_;
+	else if (hostType == HostType::MiningInfo)
+		url = &urlMiningInfo_;
+	else if (hostType == HostType::Wallet)
+		url = &urlWallet_;
+	else
+		url = nullptr;
+
+	if (url != nullptr)
+	{
+		auto session = url->createSession();
+		session->setTimeout(secondsToTimespan(getTimeout()));
+		return session;
+	}
+
+	return nullptr;
 }
 
 Burst::MinerConfig& Burst::MinerConfig::getConfig()
@@ -367,77 +355,59 @@ Burst::MinerConfig& Burst::MinerConfig::getConfig()
 
 bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 {
-	struct stat info;
-	auto statResult = stat(fileOrPath.c_str(), &info);
+	Poco::Path path;
 
-	if (statResult != 0)
+	if (!path.tryParse(fileOrPath))
 	{
-		MinerLogger::write(fileOrPath + " does not exist or can not be read", TextType::Error);
+		MinerLogger::write(fileOrPath + " is an invalid file/dir (syntax), skipping it!", TextType::Error);
 		return false;
 	}
-
-	// its a directory
-	if (info.st_mode & S_IFDIR)
+		
+	Poco::File fileOrDir{ path };
+	
+	if (!fileOrDir.exists())
 	{
-		auto dirPath = fileOrPath;
-		auto sizeBefore = plotList.size();
-
-		if (dirPath[dirPath.length() - 1] != PATH_SEPARATOR)
-			dirPath += PATH_SEPARATOR;
-
-		DIR* dir;
-		struct dirent* ent;
-		size_t size = 0;
-
-		if ((dir = opendir(dirPath.c_str())) != nullptr)
-		{
-			while ((ent = readdir(dir)) != nullptr)
-			{
-				auto plotFile = addPlotFile(dirPath + std::string(ent->d_name));
-
-				if (plotFile != nullptr)
-					size += plotFile->getSize();
-			}
-
-			closedir(dir);
-		}
-		else
-		{
-			MinerLogger::write("failed reading file or directory " + fileOrPath, TextType::Error);
-			closedir(dir);
-			return false;
-		}
-
-		MinerLogger::write(std::to_string(this->plotList.size() - sizeBefore) + " plot(s) found at " + fileOrPath
-						   + ", total size: " + gbToString(size) + " GB", TextType::System);
+		MinerLogger::write("plot file/dir does not exist: '" + path.toString() + "'", TextType::Error);
+		return false;
 	}
-	// its a single plot file
-	else
+	
+	// its a single plot file, add it if its really a plot file
+	if (fileOrDir.isFile())
 	{
-		auto plotFile = this->addPlotFile(fileOrPath);
-
-		if (plotFile != nullptr)
-			MinerLogger::write("plot found at " + fileOrPath + ", total size: " + gbToString(plotFile->getSize()) + " GB", TextType::System);
+		return addPlotFile(fileOrPath) != nullptr;
 	}
 
-	return true;
+	// its a dir, so we need to parse all plot files in it and add them
+	if (fileOrDir.isDirectory())
+	{
+		Poco::DirectoryIterator iter{ fileOrDir };
+		Poco::DirectoryIterator end;
+
+		while (iter != end)
+		{
+			if (iter->isFile())
+				addPlotFile(*iter);
+			
+			++iter;
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
-std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const std::string& path)
+std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const Poco::File& file)
 {
-	if (isValidPlotFile(path))
+	if (isValidPlotFile(file.path()))
 	{
-		for (size_t i = 0; i < this->plotList.size(); i++)
-			if (this->plotList[i]->getPath() == path)
-				return this->plotList[i];
+		// plot file is already in our list
+		for (size_t i = 0; i < plotList_.size(); i++)
+			if (plotList_[i]->getPath() == file.path())
+				return plotList_[i];
 
-		std::ifstream in(path, std::ifstream::ate | std::ifstream::binary);
-
-		auto plotFile = std::make_shared<PlotFile>(std::string(path), in.tellg());
-
-		this->plotList.emplace_back(plotFile);
-
-		in.close();
+		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()), file.getSize());
+		plotList_.emplace_back(plotFile);
 
 		// MinerLogger::write("Plot " + std::to_string(this->plotList.size()) + ": " + file);
 
@@ -445,4 +415,14 @@ std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const std::stri
 	}
 
 	return nullptr;
+}
+
+uint32_t Burst::MinerConfig::getMiningIntensity() const
+{
+	return miningIntensity_;
+}
+
+const std::unordered_map<std::string, Burst::MinerConfig::PlotList>& Burst::MinerConfig::getPlotList() const
+{
+	return plotDirs_;
 }

@@ -1,25 +1,23 @@
 ﻿#pragma once
 
 #include <memory>
-#include "Response.hpp"
+#include <Poco/Task.h>
 
 namespace Burst
 {
 	class Miner;
 	class Deadline;
 
-	class NonceSubmitter
+	class NonceSubmitter : public Poco::Task
 	{
 	public:
 		NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline);
+		~NonceSubmitter() override = default;
 
-		void startSubmit();
-
-	private:
-		void submitThread(Miner* miner, std::shared_ptr<Deadline> deadline) const;
+		void runTask() override;
 
 	private:
-		Miner* miner_;
-		std::shared_ptr<Deadline> deadline_;
+		Miner& miner;
+		std::shared_ptr<Deadline> deadline;
 	};
 }

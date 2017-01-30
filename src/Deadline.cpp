@@ -1,13 +1,15 @@
 ﻿#include "Deadline.hpp"
-#include "MinerUtil.h"
+#include "MinerUtil.hpp"
 #include <algorithm>
+#include "nxt/nxt_address.h"
+#include "Account.hpp"
 
 /*Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline)
 	: nonce(nonce), deadline(deadline)
 {}*/
 
-Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, AccountId accountId, uint64_t block, std::string plotFile)
-	: accountId_(accountId), block_(block), nonce_(nonce), deadline_(deadline), plotFile_(std::move(plotFile))
+Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile)
+	: account_(account), block_(block), nonce_(nonce), deadline_(deadline), plotFile_(std::move(plotFile))
 {}
 
 uint64_t Burst::Deadline::getNonce() const
@@ -22,7 +24,17 @@ uint64_t Burst::Deadline::getDeadline() const
 
 Burst::AccountId Burst::Deadline::getAccountId() const
 {
-	return accountId_;
+	return account_->getId();
+}
+
+std::string Burst::Deadline::getAccountName() const
+{
+	auto& name = account_->getName();
+
+	if (name.empty())
+		return NxtAddress(getAccountId()).to_string();
+
+	return name;
 }
 
 uint64_t Burst::Deadline::getBlock() const
@@ -73,13 +85,17 @@ bool Burst::Deadline::operator()(const Deadline& lhs, const Deadline& rhs) const
 	return lhs.deadline_ < rhs.deadline_;
 }
 
-void Burst::Deadlines::add(Deadline&& deadline)
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(Deadline&& deadline)
 {
-	deadlines.emplace_back(std::make_shared<Deadline>(std::move(deadline)));
+	auto deadlinePtr = std::make_shared<Deadline>(std::move(deadline));
+
+	deadlines.emplace_back(deadlinePtr);
 	std::sort(deadlines.begin(), deadlines.end(), [](std::shared_ptr<Deadline> lhs, std::shared_ptr<Deadline> rhs)
 			  {
 				  return *lhs < *rhs;
 			  });
+
+	return deadlinePtr;
 }
 
 void Burst::Deadlines::clear()

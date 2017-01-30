@@ -6,6 +6,8 @@ compiler: gcc
 env: CXX=g++-5 CXXFLAGS="-std=c++14"
 os: linux
 group: stable
+before_install:
+- ./install-poco.sh
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 addons:

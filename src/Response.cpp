@@ -1,40 +1,76 @@
-﻿#include "Response.hpp"
+﻿#include <Poco/JSON/Parser.h>
+#include <Poco/NestedDiagnosticContext.h>
+#include "Response.hpp"
 #include "Socket.hpp"
-#include "MinerUtil.h"
-#include "MinerConfig.h"
-#include "rapidjson/document.h"
-#include "MinerLogger.h"
+#include "MinerUtil.hpp"
+#include "MinerConfig.hpp"
+#include "MinerLogger.hpp"
+#include "Poco/Net/HTTPClientSession.h"
+#include "Poco/Net/HTTPResponse.h"
 
-Burst::Response::Response(std::unique_ptr<Socket> socket)
-	: socket_(std::move(socket))
+using namespace Poco::Net;
+
+Burst::Response::Response(std::unique_ptr<Poco::Net::HTTPClientSession> session)
+	: session_(std::move(session))
 {}
 
 Burst::Response::~Response()
 {
-	if (socket_ != nullptr)
-		socket_->disconnect();
+	if (session_ != nullptr)
+		session_->reset();
 }
 
 bool Burst::Response::canReceive() const
 {
-	return socket_ != nullptr && socket_->isConnected();
+	return session_ != nullptr;
 }
 
-bool Burst::Response::receive(std::string& data) const
+bool Burst::Response::receive(std::string& data)
 {
+	poco_ndc(Response::receive);
+	
 	if (!canReceive())
 		return false;
 
-	return socket_->receive(data);
+	try
+	{
+		HTTPResponse response;
+		std::stringstream sstream;
+		std::istream* responseStream;
+
+		responseStream = &session_->receiveResponse(response);
+		
+		data = {std::istreambuf_iterator<char>(*responseStream), {}};
+
+		return true;
+	}
+	catch (Poco::Exception& exc)
+	{
+		if (MinerConfig::getConfig().output.error.response)
+			MinerLogger::writeStackframe(std::string("error on receiving response: ") + exc.what());
+		session_->reset();
+		return false;
+	}
 }
 
-std::unique_ptr<Burst::Socket> Burst::Response::close()
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Response::transferSession()
 {
-	return std::move(socket_);
+	return std::move(session_);
 }
 
-Burst::NonceResponse::NonceResponse(std::unique_ptr<Socket> socket)
-	: response_(std::move(socket))
+const Poco::Exception* Burst::Response::getLastError() const
+{
+	return session_->networkException();
+}
+
+bool Burst::Response::isDataThere() const
+{
+	return session_->socket().poll(Poco::Timespan{60, 0},
+		Poco::Net::Socket::SELECT_READ);
+}
+
+Burst::NonceResponse::NonceResponse(std::unique_ptr<Poco::Net::HTTPClientSession> session)
+	: response_(std::move(session))
 {}
 
 bool Burst::NonceResponse::canReceive() const
@@ -42,33 +78,35 @@ bool Burst::NonceResponse::canReceive() const
 	return response_.canReceive();
 }
 
-Burst::NonceConfirmation Burst::NonceResponse::getConfirmation() const
+Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 {
+	poco_ndc(NonceResponse::getConfirmation);
+	
 	std::string response;
 	NonceConfirmation confirmation{ 0, SubmitResponse::None };
 
 	if (response_.receive(response))
 	{
-		HttpResponse httpResponse(response);
-		rapidjson::Document body;
-		body.Parse<0>(httpResponse.getMessage().c_str());
-
-		if (body.GetParseError() == nullptr)
+		try
 		{
-			if (body.HasMember("deadline"))
+			Poco::JSON::Parser parser;
+			auto root = parser.parse(response).extract<Poco::JSON::Object::Ptr>();
+
+			if (root->has("deadline"))
 			{
-				confirmation.deadline = body["deadline"].GetUint64();
+				confirmation.deadline = root->get("deadline");
 				confirmation.errorCode = SubmitResponse::Submitted;
 			}
-			else if (body.HasMember("errorCode"))
+			else if (root->has("errorCode"))
 			{
-				MinerLogger::write(std::string("error: ") + body["errorDescription"].GetString(), TextType::Error);
+				MinerLogger::write(std::string("error: ") + root->get("errorDescription").convert<std::string>(),
+								   TextType::Error);
 				// we send true so we dont send it again and again
 				confirmation.errorCode = SubmitResponse::Error;
 			}
-			else if (body.HasMember("result"))
+			else if (root->has("result"))
 			{
-				MinerLogger::write(std::string("error: ") + body["result"].GetString(), TextType::Error);
+				MinerLogger::write(std::string("error: ") + root->get("result").convert<std::string>(), TextType::Error);
 				confirmation.errorCode = SubmitResponse::Error;
 			}
 			else
@@ -77,16 +115,35 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation() const
 				confirmation.errorCode = SubmitResponse::Error;
 			}
 		}
-		else
-			confirmation.errorCode = SubmitResponse::None;
+		catch (Poco::Exception& exc)
+		{
+			std::vector<std::string> lines = {
+				"error while waiting for confirmation!",
+				exc.what()
+			};
+			
+			MinerLogger::writeStackframe(lines);
+			
+			confirmation.errorCode = SubmitResponse::Error;
+		}
 	}
 
 	return confirmation;
 }
 
-std::unique_ptr<Burst::Socket> Burst::NonceResponse::close()
+bool Burst::NonceResponse::isDataThere()
 {
-	return response_.close();
+	return response_.isDataThere();
+}
+
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::NonceResponse::transferSession()
+{
+	return response_.transferSession();
+}
+
+const Poco::Exception* Burst::NonceResponse::getLastError() const
+{
+	return response_.getLastError();
 }
 
 Burst::HttpResponse::HttpResponse(const std::string& response)

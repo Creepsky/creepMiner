@@ -3,89 +3,89 @@
 #include <sstream>
 #include "Response.hpp"
 #include "nxt/nxt_address.h"
-#include "MinerLogger.h"
-#include "MinerUtil.h"
-#include "MinerConfig.h"
+#include "MinerLogger.hpp"
+#include "MinerUtil.hpp"
+#include "MinerConfig.hpp"
+#include "Poco/Net/HTTPClientSession.h"
+#include "Poco/Net/HTTPRequest.h"
+#include <Poco/Net/HTTPResponse.h>
+#include <Poco/NestedDiagnosticContext.h>
+#include "Poco/StreamCopier.h"
+#include "Declarations.hpp"
 
-Burst::Request::Request(std::unique_ptr<Socket> socket)
-	: socket_(std::move(socket))
+using namespace Poco::Net;
+
+Burst::Request::Request(std::unique_ptr<HTTPClientSession> session)
+	: session_(std::move(session))
 {}
 
 Burst::Request::~Request()
 {
-	if (socket_ != nullptr)
-		socket_->disconnect();
+	if (session_ != nullptr)
+		session_->reset();
 }
 
 bool Burst::Request::canSend() const
 {
-	return socket_ != nullptr && socket_->isConnected();
+	return session_ != nullptr;
 }
 
-Burst::Response Burst::Request::sendPost(const std::string& url, const std::string& body, const std::string& header)
+Burst::Response Burst::Request::send(Poco::Net::HTTPRequest& request)
 {
-	if (!send(url, "POST", body, header))
-		return Response{ nullptr };
-	return { close() };
-}
-
-Burst::Response Burst::Request::sendGet(const std::string& url)
-{
-	// empty body and head for more performance
-	static const std::string body = "";
-	static const std::string head = "";
-
-	if (!send(url, "GET", body, head))
-		return { nullptr };
-	return { close() };
-}
-
-std::unique_ptr<Burst::Socket> Burst::Request::close()
-{
-	return std::move(socket_);
-}
-
-bool Burst::Request::send(const std::string& url, const std::string& method, const std::string& body, const std::string& header) const
-{
-	if (!canSend())
-		return false;
-
-	std::stringstream request;
-
-	request
-		<< method << " " << url << " HTTP/1.0" << "\r\n"
-		<< header << "\r\n\r\n" << body;
+	poco_ndc(Request::send(Poco::Net::HTTPRequest&));
 	
-	return socket_->send(request.str());
+	if (!canSend())
+		return {nullptr};
+	
+	try
+	{
+		session_->sendRequest(request);
+	}
+	catch(std::exception& exc)
+	{
+		if (MinerConfig::getConfig().output.error.request)
+			MinerLogger::writeStackframe(std::string("error on sending request: ") + exc.what());
+		session_->reset();
+		return {nullptr};
+	}
+
+	return {transferSession()};
 }
 
-Burst::NonceRequest::NonceRequest(std::unique_ptr<Socket> socket)
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Request::transferSession()
+{
+	return std::move(session_);
+}
+
+Burst::NonceRequest::NonceRequest(std::unique_ptr<Poco::Net::HTTPClientSession> socket)
 	: request_(std::move(socket))
 {}
 
-Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accountId, uint64_t& deadline)
+Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accountId)
 {
+	poco_ndc(NonceRequest::submit);
 	NxtAddress addr(accountId);
 
-	auto requestData = "requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId) + "&secretPhrase=cryptoport";
+	auto requestData = "requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId);
 	auto url = "/burst?" + requestData;
+
 	std::string responseData;
 
-	std::stringstream requestHead;
+	HTTPRequest request{HTTPRequest::HTTP_POST, url, HTTPRequest::HTTP_1_1};
+	request.set("X-Capacity", std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
+	request.set("X-Miner", Settings::Project.nameAndVersionAndOs);
+	request.setKeepAlive(false);
+	request.setContentLength(0);
 
-	requestHead << "Connection: close" << "\r\n" <<
-		"X-Capacity: " << MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024 << "\r\n"
-		"X-Miner: creepsky-uray-" + versionToString();
-
-	auto response = request_.sendPost(url, "", requestHead.str());
+	auto response = request_.send(request);
 
 	if (response.canReceive())
-		return {response.close()};
+		return{ response.transferSession() };
 
-	return {nullptr};
+	return{ nullptr };
 }
 
-std::unique_ptr<Burst::Socket> Burst::NonceRequest::close()
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::NonceRequest::transferSession()
 {
-	return request_.close();
+	return request_.transferSession();
 }

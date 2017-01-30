@@ -2,6 +2,9 @@
 
 #include <string>
 #include "SocketDefinitions.hpp"
+#include "Poco/Net/StreamSocket.h"
+#include <memory>
+#include <Poco/Net/HTTPClientSession.h>
 
 namespace Burst
 {
@@ -21,18 +24,19 @@ namespace Burst
 		float getSendTimeout() const;
 		float getReceiveTimeout() const;
 
-		bool send(const std::string& data) const;
+		bool send(const std::string& data);
 		bool receive(std::string& data);
 
 		int getError() const;
+		std::unique_ptr<Poco::Net::HTTPClientSession> createSession() const;
 
 	private:
-		void setTimeoutHelper(float seconds, float* fieldToSet) const;
+		void setTimeoutHelper(float seconds, float* fieldToSet);
 
 		float send_timeout_ = 5, receive_timeout_ = 5;
 		bool connected_ = false;
 		std::string ip_;
 		size_t port_;
-		SOCKET socket_;
+		Poco::Net::StreamSocket socket_;
 	};
 }

@@ -6,13 +6,21 @@
 //  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
-#include "MinerUtil.h"
+#include "MinerUtil.hpp"
 #include <sstream>
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
 #include "Declarations.hpp"
-#include "MinerLogger.h"
+#include "MinerLogger.hpp"
+#include <Poco/URI.h>
+#include <Poco/Net/HTTPClientSession.h>
+#include "Deadline.hpp"
+#include <Poco/JSON/Object.h>
+#include "MinerConfig.hpp"
+#include "MinerData.hpp"
+#include "PlotReader.hpp"
+#include <Poco/JSON/Parser.h>
 #include <iostream>
 #include <locale>
 #include <regex>
@@ -41,7 +49,7 @@ std::vector<std::string> Burst::splitStr(const std::string& s, const std::string
 	std::vector<std::string> tokens;
 	std::string::size_type pos, lastPos = 0, length = s.length();
 
-	using size_type  = typename std::vector<std::string>::size_type;
+	using size_type  = std::vector<std::string>::size_type;
 
 	while(lastPos < length + 1)
 	{
@@ -151,8 +159,9 @@ std::string Burst::deadlineFormat(uint64_t seconds)
 		ss << years << "y ";
 	if (months > 0)
 		ss << months % 12 << "m ";
+	if (day > 0)
+		ss << day % 30 << "d ";
 
-	ss << day % 30 << "d ";
 	ss << std::setw(2) << std::setfill('0');
 	ss << hours % 24 << ':';
 	ss << std::setw(2) << std::setfill('0');
@@ -209,17 +218,29 @@ uint64_t Burst::formatDeadline(const std::string& format)
 
 std::string Burst::gbToString(uint64_t size)
 {
+	return memToString(size, MemoryUnit::Gigabyte, 2);
+}
+
+std::string Burst::memToString(uint64_t size, MemoryUnit factor, uint8_t precision)
+{	
 	std::stringstream ss;
-	ss << std::fixed << std::setprecision(2);
-	ss << size / 1024 / 1024 / 1024;
+	ss << std::fixed << std::setprecision(precision);
+	ss << static_cast<double>(size) / static_cast<uint64_t>(factor);
 	return ss.str();
 }
 
-std::string Burst::versionToString()
+std::string Burst::memToString(uint64_t size, uint8_t precision)
 {
-	return std::to_string(Version::Major) + "." +
-			std::to_string(Version::Minor) + "." +
-			std::to_string(Version::Build);
+	if (size >= static_cast<uint64_t>(MemoryUnit::Exabyte))
+		return memToString(size, MemoryUnit::Exabyte, precision) + " EB";
+	else if (size >= static_cast<uint64_t>(MemoryUnit::Petabyte))
+		return memToString(size, MemoryUnit::Petabyte, precision) + " PB";
+	else if (size >= static_cast<uint64_t>(MemoryUnit::Terabyte))
+		return memToString(size, MemoryUnit::Terabyte, precision) + " TB";
+	else if (size >= static_cast<uint64_t>(MemoryUnit::Gigabyte))
+		return memToString(size, MemoryUnit::Gigabyte, precision) + " GB";
+	else
+		return memToString(size, MemoryUnit::Megabyte, precision) + " MB";
 }
 
 std::string Burst::getInformationFromPlotFile(const std::string& path, uint8_t index)
@@ -235,4 +256,165 @@ std::string Burst::getInformationFromPlotFile(const std::string& path, uint8_t i
 		return "";
 
 	return fileNamePart[index];
+}
+
+Poco::Timespan Burst::secondsToTimespan(float seconds)
+{
+	auto secondsInt = static_cast<long>(seconds);
+	auto microSeconds = static_cast<long>((seconds - secondsInt) * 100000);
+	return Poco::Timespan{secondsInt, microSeconds};
+}
+
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::createSession(const Poco::URI& uri)
+{
+	return nullptr;
+}
+
+Poco::Net::SocketAddress Burst::getHostAddress(const Poco::URI& uri)
+{
+	Poco::Net::SocketAddress address{uri.getHost() + ':' + std::to_string(uri.getPort())};
+	MinerLogger::write(address.toString());
+	return address;
+}
+
+std::string Burst::serializeDeadline(const Deadline& deadline, std::string delimiter)
+{
+	return deadline.getAccountName() + delimiter +
+		std::to_string(deadline.getBlock()) + delimiter +
+		std::to_string(deadline.getDeadline()) + delimiter +
+		std::to_string(deadline.getNonce());
+}
+
+Poco::JSON::Object Burst::createJsonDeadline(std::shared_ptr<Deadline> deadline)
+{
+	Poco::JSON::Object json;
+	json.set("nonce", deadline->getNonce());
+	json.set("deadline", deadlineFormat(deadline->getDeadline()));
+	json.set("account", deadline->getAccountName());
+	json.set("accountId", deadline->getAccountId());
+	json.set("plotfile", deadline->getPlotFile());
+	json.set("deadlineNum", deadline->getDeadline());
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonDeadline(std::shared_ptr<Deadline> deadline, const std::string& type)
+{
+	auto json = createJsonDeadline(deadline);
+	json.set("type", type);
+	json.set("time", getTime());
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
+{
+	Poco::JSON::Object json;
+	auto blockPtr = data.getBlockData();
+
+	if (blockPtr == nullptr)
+		return json;
+
+	auto block = *blockPtr;
+	auto bestOverall = data.getBestDeadlineOverall();
+
+	json.set("type", "new block");
+	json.set("block", block.block);
+	json.set("scoop", block.scoop);
+	json.set("baseTarget", block.baseTarget);
+	json.set("gensigStr", block.genSig);
+	json.set("time", getTime());
+	json.set("blocksMined", data.getBlocksMined());
+	json.set("blocksWon", data.getBlocksWon());
+	if (bestOverall != nullptr)
+	{
+		json.set("bestOverallNum", bestOverall->getDeadline());
+		json.set("bestOverall", deadlineFormat(bestOverall->getDeadline()));
+	}
+	json.set("deadlinesConfirmed", data.getConfirmedDeadlines());
+	json.set("deadlinesAvg", deadlineFormat(data.getAverageDeadline()));
+		
+	Poco::JSON::Array bestDeadlines;
+
+	for (auto& historicalDeadline : data.getAllHistoricalBlockData())
+	{
+		if (historicalDeadline->bestDeadline != nullptr)
+		{
+			Poco::JSON::Array jsonBestDeadline;
+			jsonBestDeadline.add(historicalDeadline->block);
+			jsonBestDeadline.add(historicalDeadline->bestDeadline->getDeadline());
+			bestDeadlines.add(jsonBestDeadline);
+		}
+	}
+
+	json.set("bestDeadlines", bestDeadlines);
+
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonConfig()
+{
+	Poco::JSON::Object json;
+	json.set("type", "config");
+	json.set("poolUrl", MinerConfig::getConfig().getPoolUrl().getCanonical(true));
+	json.set("miningInfoUrl", MinerConfig::getConfig().getMiningInfoUrl().getCanonical(true));
+	json.set("walletUrl", MinerConfig::getConfig().getWalletUrl().getCanonical(true));
+	json.set("totalPlotSize", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
+	json.set("timeout", MinerConfig::getConfig().getTimeout());
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonProgress(float progress)
+{
+	Poco::JSON::Object json;
+	json.set("type", "progress");
+	json.set("value", progress);
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonLastWinner(const MinerData& data)
+{
+	auto block = data.getBlockData();
+
+	if (block == nullptr || block->lastWinner == nullptr)
+		return Poco::JSON::Object{};
+
+	return *block->lastWinner;
+}
+
+Poco::JSON::Object Burst::createJsonShutdown()
+{
+	Poco::JSON::Object json;
+	json.set("shutdown", true);
+	return json;
+}
+
+Poco::JSON::Object Burst::createJsonWonBlocks(const MinerData& data)
+{
+	Poco::JSON::Object json;
+	json.set("type", "blocksWonUpdate");
+	json.set("blocksWon", data.getBlocksWon());
+	return json;
+}
+
+std::string Burst::getTime()
+{
+	std::stringstream ss;
+
+#if defined(__linux__) && __GNUC__ < 5 
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer [80];
+
+	time (&rawtime);
+	timeinfo = localtime (&rawtime);
+
+	strftime (buffer, 80, "%X",timeinfo);
+
+	ss << buffer;
+#else 
+	auto now = std::chrono::system_clock::now();
+	auto now_c = std::chrono::system_clock::to_time_t(now);
+	ss << std::put_time(std::localtime(&now_c), "%X");
+#endif
+
+	return ss.str();
 }

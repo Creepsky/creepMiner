@@ -1,6 +1,15 @@
 ﻿#pragma once
 
 #include <string>
+#include <Poco/URI.h>
+#include <Poco/Net/IPAddress.h>
+#include <memory>
+
+namespace Poco { namespace Net
+{
+	class HTTPClientSession;
+	class HTTPSessionFactory;
+} }
 
 namespace Burst
 {
@@ -9,20 +18,16 @@ namespace Burst
 	public:
 		Url() = default;
 		Url(const std::string& url);
-		Url(const std::string& canonical, uint32_t port);
 
-		void setUrl(const std::string& canonical, uint32_t port);
-
-		const std::string& getCanonical() const;
-		const std::string& getIp() const;
-		uint32_t getPort() const;
-
-	private:
-		static std::string resolveHostname(const std::string& url);
+		std::string getCanonical(bool withScheme = false) const;
+		std::string getIp() const;
+		uint16_t getPort() const;
+		const Poco::URI& getUri() const;
+		bool empty() const;
+		std::unique_ptr<Poco::Net::HTTPClientSession> createSession() const;
 
 	private:
-		std::string canonical;
-		std::string ip;
-		uint32_t port;
+		Poco::URI uri_;
+		Poco::Net::IPAddress ip_;
 	};
 }

@@ -16,7 +16,6 @@
 #	define PATH_SEPARATOR '/'
 #else
 #   define MSG_NOSIGNAL 0
-#	include "win/dirent.h"
 #	include <WinSock2.h>
 #	include <ws2tcpip.h>
 #	include <intrin.h>

@@ -1,116 +1,64 @@
 ﻿#include "Url.hpp"
-#include "MinerUtil.h"
-#include "MinerLogger.h"
-#include <errno.h>
-#ifdef WIN32
-#include <ws2tcpip.h>
-#else
-#include <netdb.h>
-#include <arpa/inet.h>
-#endif
+#include "MinerLogger.hpp"
+#include <Poco/Net/HostEntry.h>
+#include <Poco/Net/DNS.h>
+#include <Poco/Net/HTTPSessionFactory.h>
+#include <Poco/Net/HTTPClientSession.h>
 
 Burst::Url::Url(const std::string& url)
+	: uri_{url}
 {
-	std::string canonical;
-	unsigned int port;
-	auto startPos = url.find("//");
-
-	if (startPos == std::string::npos)
+	try
 	{
-		// maybe there is a single "/" in the url
-		// even if the url is not valid with a single "/", we are tolerant ;)
-		startPos = url.find('/');
-		
-		if (startPos == std::string::npos)
-			startPos = 0;
-		else
-			startPos += 1; // 1 is the size of "/"
+		ip_ = Poco::Net::DNS::resolveOne(uri_.getHost());
 	}
-	// if "//" is in the url, add length of "//" to the start position
-	// this would be the case, if for example the url starts with "http://"
-	else
-		startPos += 2; // 2 is the size of "//"
+	catch (...)
+	{}
+}
 
-	// ":" splits the url from the port
-	auto hostEnd = url.find(":", startPos);
+std::string Burst::Url::getCanonical(bool withScheme) const
+{
+	return (withScheme ? uri_.getScheme() + "://" : "") + uri_.getHost();
+}
 
-	// if no port is given, we try it with the default port 8124
-	if (hostEnd == std::string::npos)
+std::string Burst::Url::getIp() const
+{
+	return ip_.toString();
+}
+
+uint16_t Burst::Url::getPort() const
+{
+	return uri_.getPort();
+}
+
+const Poco::URI& Burst::Url::getUri() const
+{
+	return uri_;
+}
+
+bool Burst::Url::empty() const
+{
+	return uri_.getHost().empty() ||
+		uri_.getScheme().empty();
+}
+
+std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Url::createSession() const
+{
+	try
 	{
-		port = 8124;
-		canonical = url;
+		return std::unique_ptr<Poco::Net::HTTPClientSession> {
+			Poco::Net::HTTPSessionFactory::defaultFactory().createClientSession(uri_)
+		};
 	}
-	else
+	catch (...)
 	{
-		canonical = url.substr(startPos, hostEnd - startPos);
-		auto poolPortStr = url.substr(hostEnd + 1, url.size() - (hostEnd + 1));
+		auto lines = {
+			std::string("could not send request to host: unknown protocol ") + uri_.getScheme() + "!",
+			std::string("uri: " + getCanonical())
+		};
 
-		try
-		{
-			port = std::stoul(poolPortStr);
-		}
-		// if we can not convert the given port to a number, we try it with the default port 8124
-		catch (...)
-		{
-			port = 8124;
-		}
+		MinerLogger::write(lines, TextType::Error);
+
+		return nullptr;
 	}
-
-	setUrl(canonical, port);
-}
-
-Burst::Url::Url(const std::string& canonical, uint32_t port)
-{
-	setUrl(canonical, port);
-}
-
-void Burst::Url::setUrl(const std::string& canonical, uint32_t port)
-{
-	this->canonical = canonical;
-	this->port = port;
-	this->ip = resolveHostname(this->canonical);
-}
-
-const std::string& Burst::Url::getCanonical() const
-{
-	return canonical;
-}
-
-const std::string& Burst::Url::getIp() const
-{
-	return ip;
-}
-
-uint32_t Burst::Url::getPort() const
-{
-	return port;
-}
-
-std::string Burst::Url::resolveHostname(const std::string& url)
-{
-	struct addrinfo* result = nullptr;
-	struct sockaddr_in* addr;
-
-	auto retval = getaddrinfo(url.c_str(), nullptr, nullptr, &result);
-
-	if (retval != 0)
-	{
-		MinerLogger::write("can not resolve hostname " + url, TextType::Error);
-		MinerLogger::write("error code: " + std::to_string(retval), TextType::Error);
-		return "";
-	}
-
-	char buf[INET_ADDRSTRLEN];
-	addr = reinterpret_cast<struct sockaddr_in*>(result->ai_addr);
-
-	if (inet_ntop(AF_INET, &addr->sin_addr, buf, INET_ADDRSTRLEN) == nullptr)
-	{
-		MinerLogger::write("can not resolve hostname " + url, TextType::Error);
-		MinerLogger::write("error code: " + std::to_string(errno), TextType::Error);
-		return "";
-	}
-
-	freeaddrinfo(result);
-
-	return buf;
 }

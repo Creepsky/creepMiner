@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <array>
+#include <Poco/Platform.h>
 
 namespace Burst
 {
@@ -11,6 +12,25 @@ namespace Burst
 	class MinerConfig;
 	class MinerProtocol;
 	class PlotReader;
+
+	struct Version
+	{
+		Version(uint32_t major, uint32_t minor, uint32_t build);
+
+		uint32_t major, minor, build;
+		std::string literal;
+	};
+
+	struct ProjectData
+	{
+		ProjectData(std::string&& name, Version&& version);
+
+		std::string name;
+		Version version;
+
+		std::string nameAndVersion;
+		std::string nameAndVersionAndOs;
+	};
 
 	class Settings
 	{
@@ -23,6 +43,18 @@ namespace Burst
 		static const size_t ScoopSize = HashPerScoop * HashSize; // 64 Bytes
 		static const size_t PlotSize = ScoopPerPlot * ScoopSize; // 256KB = 262144 Bytes
 		static const size_t PlotScoopSize = ScoopSize + HashSize; // 64 + 32 bytes
+
+#if defined POCO_OS_FAMILY_BSD
+		static constexpr auto OsFamily = "BSD";
+#elif defined POCO_OS_FAMILY_UNIX
+		static constexpr auto OsFamily = "Unix";
+#elif defined POCO_OS_FAMILY_WINDOWS
+		static constexpr auto OsFamily = "Windows";
+#else
+		static constexpr auto OsFamily = "";
+#endif
+
+		static const ProjectData Project;
 	};
 
 	template <size_t SZ>
@@ -33,10 +65,4 @@ namespace Burst
 
 	using AccountId = uint64_t;
 	using Nonce = uint64_t;
-
-	class Version
-	{
-	public:
-		static const uint32_t Major = 1u, Minor = 4u, Build = 9u;
-	};
 }
