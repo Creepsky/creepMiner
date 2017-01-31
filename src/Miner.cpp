@@ -23,10 +23,11 @@
 #include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include "PlotVerifier.hpp"
+#include "PlotSizes.hpp"
 
 Burst::Miner::Miner()
-	: minerThreadPool_{ 1, MinerConfig::getConfig().getMiningIntensity() + 10 },
-	  plotReaderThreadPool_{ 1, MinerConfig::getConfig().getPlotList().size() }
+	: minerThreadPool_{ 1, static_cast<int>(MinerConfig::getConfig().getMiningIntensity()) + 10 },
+	  plotReaderThreadPool_{ 1, static_cast<int>(MinerConfig::getConfig().getPlotList().size()) }
 {}
 
 Burst::Miner::~Miner()
@@ -162,6 +163,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		this->gensig_[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 16));
 	}
 
+	gensigStr_ = gensigStr;
+
 	GensigData newGenSig;
 	hash.update(&gensig_[0], gensig_.size());
 	hash.update(blockHeight);
@@ -266,6 +269,9 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	progress_->reset();
 	progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
 
+	PlotSizes::nextRound();
+	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
+
 	for (auto& plotDir : MinerConfig::getConfig().getPlotList())
 		plotReaderManager_->start(new PlotReader{ *this, progress_, plotDir.first, plotDir.second, verificationQueue_ });
 }
@@ -275,8 +281,18 @@ const Burst::GensigData& Burst::Miner::getGensig() const
 	return this->gensig_;
 }
 
+const std::string& Burst::Miner::getGensigStr() const
+{
+	return gensigStr_;
+}
+
 uint64_t Burst::Miner::getBaseTarget() const
 {
+	auto blockData = data_.getBlockData();
+
+	if (blockData == nullptr)
+		return 0;
+
 	return data_.getBlockData()->baseTarget;
 }
 
@@ -346,11 +362,11 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		newDeadline->send();
 
 		if (createSendThread)
-//#ifdef NDEBUG
+#ifdef NDEBUG
 			nonceSubmitterManager_->start(new NonceSubmitter{ *this, newDeadline });
-//#else
+#else
 			{} // in debug mode we dont submit nonces
-//#endif
+#endif
 	}
 }
 

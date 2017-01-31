@@ -9,6 +9,11 @@
 #include <Poco/JSON/Object.h>
 #include "MinerServer.hpp"
 #include "Miner.hpp"
+#include <Poco/NestedDiagnosticContext.h>
+#include "Request.hpp"
+#include "MinerConfig.hpp"
+#include <Poco/Net/HTTPClientSession.h>
+#include "PlotSizes.hpp"
 
 void Burst::TemplateVariables::inject(std::string& source) const
 {
@@ -107,4 +112,107 @@ void Burst::WebSocketHandler::handleRequest(Poco::Net::HTTPServerRequest& reques
 	}
 	catch (...)
 	{}
+}
+
+Burst::MiningInfoHandler::MiningInfoHandler(Miner& miner)
+	: miner_{&miner}
+{ }
+
+void Burst::MiningInfoHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	poco_ndc(MiningInfoHandler::handleRequest);
+
+	Poco::JSON::Object json;
+	json.set("baseTarget", miner_->getBaseTarget());
+	json.set("generationSignature", miner_->getGensigStr());
+	json.set("targetDeadline", miner_->getTargetDeadline());
+	json.set("height", miner_->getBlockheight());
+
+	try
+	{
+		std::stringstream ss;
+		json.stringify(ss);
+		auto jsonStr = ss.str();
+
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setContentLength(jsonStr.size());
+
+		auto& output = response.send();
+		output << jsonStr;
+
+
+	}
+	catch (Poco::Exception& exc)
+	{
+		MinerLogger::writeStackframe("Could not send mining info! " + exc.displayText());
+	}
+}
+
+Burst::SubmitNonceHandler::SubmitNonceHandler(Miner& miner)
+	: miner_{&miner}
+{ }
+
+void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	poco_ndc(SubmitNonceHandler::handleRequest);
+
+	try
+	{
+		try
+		{
+			if (request.has("X-PlotsHash"))
+				PlotSizes::set(request.get("X-PlotsHash"), Poco::NumberParser::parseUnsigned64(request.get("X-Capacity")));
+		}
+		catch (Poco::Exception&)
+		{
+			if (MinerConfig::getConfig().output.debug)
+				MinerLogger::write("The X-PlotsHash from the other miner is not a number! " + request.get("X-PlotsHash"), TextType::Debug);
+		}
+
+		// sum up the capacity
+		request.set("X-Capacity", std::to_string(PlotSizes::getTotal()));
+
+		// forward the request to the pool
+		ForwardHandler{MinerConfig::getConfig().createSession(HostType::Pool)}.handleRequest(request, response);
+	}
+	catch (Poco::Exception& exc)
+	{
+		MinerLogger::writeStackframe("Could not forward nonce! " + exc.displayText());
+	}
+}
+
+Burst::ForwardHandler::ForwardHandler(std::unique_ptr<Poco::Net::HTTPClientSession> session)
+	: session_{std::move(session)}
+{ }
+
+void Burst::ForwardHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	if (session_ == nullptr)
+		return;
+
+	try
+	{
+		Request forwardRequest{std::move(session_)};
+		auto forwardResponse = forwardRequest.send(request);
+
+		std::string data;
+
+		if (forwardResponse.receive(data))
+		{
+			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+			response.setContentLength(data.size());
+
+			auto& responseStream = response.send();
+			responseStream << data;
+		}
+	}
+	catch (Poco::Exception& exc)
+	{
+		std::vector<std::string> lines = {
+			"Could not forward request to wallet! " + exc.displayText(),
+			request.getURI()
+		};
+
+		MinerLogger::writeStackframe(lines);
+	}
 }

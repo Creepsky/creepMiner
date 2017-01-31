@@ -12,6 +12,7 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "Poco/StreamCopier.h"
 #include "Declarations.hpp"
+#include "PlotSizes.hpp"
 
 using namespace Poco::Net;
 
@@ -72,7 +73,8 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 	std::string responseData;
 
 	HTTPRequest request{HTTPRequest::HTTP_POST, url, HTTPRequest::HTTP_1_1};
-	request.set("X-Capacity", std::to_string(MinerConfig::getConfig().getTotalPlotsize() / 1024 / 1024 / 1024));
+	request.set("X-Capacity", std::to_string(PlotSizes::getTotal()));
+	request.set("X-PlotsHash", MinerConfig::getConfig().getConfig().getPlotsHash());
 	request.set("X-Miner", Settings::Project.nameAndVersionAndOs);
 	request.setKeepAlive(false);
 	request.setContentLength(0);

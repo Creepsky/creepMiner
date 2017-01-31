@@ -20,8 +20,9 @@ This is a (standalone) fork of the burst-miner found on [this github repository]
 
 ## Instructions
 
-- [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Compilation & Installation](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation)
+- [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
+- [Forwarding](https://github.com/Creepsky/creepMiner/wiki/Forwarding)
 
 ## Dependencies
 

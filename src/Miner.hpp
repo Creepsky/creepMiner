@@ -50,6 +50,7 @@ namespace Burst
 		uint64_t getBlockheight() const;
 		uint64_t getTargetDeadline() const;
 		const GensigData& getGensig() const;
+		const std::string& getGensigStr() const;
 		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
 		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile);
 
@@ -65,6 +66,7 @@ namespace Burst
 		MinerData data_;
 		Shabal256 hash;
 		GensigData gensig_;
+		std::string gensigStr_;
 		std::unordered_map<AccountId, Deadlines> deadlines_;
 		Poco::FastMutex deadlinesLock_;
 		std::shared_ptr<PlotReadProgress> progress_;

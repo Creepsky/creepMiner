@@ -20,6 +20,9 @@
 #include <Poco/JSON/Array.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include <unordered_map>
+#include <Poco/SHA1Engine.h>
+#include <Poco/DigestStream.h>
+#include "PlotSizes.hpp"
 
 void Burst::MinerConfig::rescan()
 {
@@ -143,9 +146,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	// combining all plotfiles to lists of plotfiles on the same device
 	{
+		Poco::SHA1Engine sha;
+		Poco::DigestOutputStream shaStream{sha};
+
 		for (const auto plotFile : getPlotFiles())
 		{
 			Poco::Path path{ plotFile->getPath() };
+
+			shaStream << plotFile->getPath();
 
 			auto dir = path.getDevice();
 
@@ -172,6 +180,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			plotDirs_[dir].emplace_back(plotFile);
 		}
+
+		shaStream << std::flush;
+		plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
+
+		// we remember our total plot size
+		PlotSizes::set(plotsHash_, getTotalPlotsize() / 1024 / 1024 / 1024);
 	}
 
 	submission_max_retry_ = config->optValue("submissionMaxRetry", 3u);
@@ -425,4 +439,9 @@ uint32_t Burst::MinerConfig::getMiningIntensity() const
 const std::unordered_map<std::string, Burst::MinerConfig::PlotList>& Burst::MinerConfig::getPlotList() const
 {
 	return plotDirs_;
+}
+
+const std::string& Burst::MinerConfig::getPlotsHash() const
+{
+	return plotsHash_;
 }

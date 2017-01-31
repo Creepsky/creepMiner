@@ -45,7 +45,7 @@ void Burst::MinerServer::run(uint16_t port)
 		socket.bind(port_, true);
 		socket.listen();
 	}
-	catch (Poco::Exception& exc)
+	catch (Poco::Exception&)
 	{
 		MinerLogger::write("error while creating local http server on port " + std::to_string(port_),
 						   TextType::Error);
@@ -72,7 +72,7 @@ void Burst::MinerServer::run(uint16_t port)
 		catch (std::exception& exc)
 		{
 			server_.release();
-			MinerLogger::write(std::string("could not start local server: ") + exc.what(), TextType::Error);
+			MinerLogger::writeStackframe(std::string("could not start local server: ") + exc.what());
 		}
 	}
 }
@@ -193,11 +193,29 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 	{
 		URI uri{request.getURI()};
 
+		// root
 		if (uri.getPath() == "/")
 			return new RootHandler{server_->variables_};
 
+		// shutdown everything
 		if (uri.getPath() == "/shutdown")
-			return new ShutdownHandler(*server_->miner_, *server_);
+			return new ShutdownHandler{*server_->miner_, *server_};
+
+		// forward function
+		if (uri.getPath() == "/burst")
+		{
+			// send back local mining infos
+			if (startsWith<std::string>(uri.getQuery(), "requestType=getMiningInfo"))
+				return new MiningInfoHandler{*server_->miner_};
+
+			// forward nonce with combined capacity
+			if (startsWith<std::string>(uri.getQuery(), "requestType=submitNonce"))
+				return new SubmitNonceHandler{*server_->miner_};
+			
+			// just forward whatever the request is to the wallet
+			// why wallet? because the only requests to a pool are getMiningInfo and submitNonce and we handled them already
+			return new ForwardHandler{MinerConfig::getConfig().createSession(HostType::Wallet)};
+		}
 
 		Path path{"public"};
 		path.append(uri.getPath());
