@@ -227,7 +227,11 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	try
 	{
-		auto passphrase = config->get("passphrase").extract<Poco::JSON::Object::Ptr>();
+		auto passphraseJson = config->get("passphrase");
+		Poco::JSON::Object::Ptr passphrase = nullptr;
+
+		if (!passphraseJson.isEmpty())
+			passphraseJson.extract<Poco::JSON::Object::Ptr>();
 
 		if (!passphrase.isNull())
 		{
