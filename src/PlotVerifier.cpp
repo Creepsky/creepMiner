@@ -84,7 +84,7 @@ void Burst::PlotVerifier::runTask()
 #else
 		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled() && miner_->getBlockheight() == verifyNotification->block; i++)
 			verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
-				miner_->getGensig(), verifyNotification->accountId, verifyNotification->inputPath, *miner_, targetDeadline);
+				verifyNotification->gensig, verifyNotification->accountId, verifyNotification->inputPath, *miner_, targetDeadline);
 #endif
 	}
 
