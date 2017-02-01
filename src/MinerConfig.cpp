@@ -224,7 +224,67 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			MinerLogger::write(lines, TextType::Error);
 		}
 	}
+
+	try
+	{
+		auto passphraseJson = config->get("passphrase");
+		Poco::JSON::Object::Ptr passphrase = nullptr;
+
+		if (!passphraseJson.isEmpty())
+			passphraseJson.extract<Poco::JSON::Object::Ptr>();
+
+		if (!passphrase.isNull())
+		{
+			auto decrypted = passphrase->optValue<std::string>("decrypted", "");
+			auto encrypted = passphrase->optValue<std::string>("encrypted", "");
+			auto salt = passphrase->optValue<std::string>("salt", "");
+			auto key = passphrase->optValue<std::string>("key", "");
+			auto iterations = passphrase->optValue<uint32_t>("iterations", 0);
+			auto deleteKey = passphrase->optValue<uint32_t>("deleteKey", false);
+			auto algorithm = passphrase->optValue<std::string>("algorithm", "aes-256-cbc");
+
+			if (!encrypted.empty() && !key.empty() && !salt.empty())
+			{
+				passPhrase_ = decrypt(encrypted, algorithm, key, salt, iterations);
+
+				if (deleteKey)
+					passphrase->set("key", "");
+			}
+
+			// there is a decrypted passphrase, we need to encrypt it
+			if (!decrypted.empty())
+			{
+				encrypted = encrypt(decrypted, algorithm, key, salt, iterations);
+				passPhrase_ = decrypted;
+
+				passphrase->set("decrypted", "");
+				passphrase->set("encrypted", encrypted);
+				passphrase->set("salt", salt);
+				passphrase->set("key", key);
+				passphrase->set("iterations", iterations);
+			}
+		}
+	}
+	catch (Poco::Exception& exc)
+	{
+		std::vector<std::string> lines = {
+			"Error while reading passphrase in config file!",
+			exc.displayText()
+		};
+
+		MinerLogger::writeStackframe(lines);
+	}
 	
+	inputFileStream.close();
+
+	std::ofstream outputFileStream{configPath};
+
+	if (outputFileStream.is_open())
+	{
+		config->stringify(outputFileStream, 4);
+		outputFileStream.close();
+	}
+
 	return true;
 }
 
@@ -444,4 +504,9 @@ const std::unordered_map<std::string, Burst::MinerConfig::PlotList>& Burst::Mine
 const std::string& Burst::MinerConfig::getPlotsHash() const
 {
 	return plotsHash_;
+}
+
+const std::string& Burst::MinerConfig::getPassphrase() const
+{
+	return passPhrase_;
 }

@@ -24,6 +24,12 @@
 #include <iostream>
 #include <locale>
 #include <regex>
+#include <Poco/FileStream.h>
+#include <Poco/Crypto/CipherKey.h>
+#include <Poco/Crypto/Cipher.h>
+#include <Poco/Crypto/CipherFactory.h>
+#include <Poco/Random.h>
+#include <Poco/NestedDiagnosticContext.h>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -256,6 +262,91 @@ std::string Burst::getInformationFromPlotFile(const std::string& path, uint8_t i
 		return "";
 
 	return fileNamePart[index];
+}
+
+std::string Burst::encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, uint32_t& iterations)
+{
+	poco_ndc(encryptAES256);
+	
+	if (decrypted.empty())
+		return "";
+	
+	if (iterations == 0)
+		iterations = 1000;
+
+	try
+	{
+		// all valid chars for the salt
+		std::string validChars = "abcdefghijklmnopqrstuvwxyz";
+		validChars += Poco::toUpper(validChars);
+		validChars += "0123456789";
+		validChars += "()[]*/+-#'~?´`&$!";
+
+		const auto createRandomCharSequence = [&validChars](size_t lenght)
+		{
+			std::stringstream stream;
+			Poco::Random random;
+
+			random.seed();
+
+			for (auto i = 0u; i < lenght; ++i)
+				stream << validChars[random.next(static_cast<uint32_t>(validChars.size()))];
+
+			return stream.str();
+		};
+
+		// we create a 30 chars long key if the param key is empty
+		if (key.empty())
+			key = createRandomCharSequence(30);
+
+		// we create a 15 chars long salt if the param salt is empty
+		if (salt.empty())
+			salt = createRandomCharSequence(15);
+
+		Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
+		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
+		auto cipher = factory.createCipher(cipherKey);
+		
+		return cipher->encryptString(decrypted, Poco::Crypto::Cipher::ENC_BASE64);
+	}
+	catch (Poco::Exception& exc)
+	{
+		std::vector<std::string> lines = {
+			"Error encrypting the passphrase!",
+			exc.displayText()
+		};
+
+		MinerLogger::writeStackframe(lines);
+
+		return "";
+	}
+}
+
+std::string Burst::decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, uint32_t& iterations)
+{
+	poco_ndc(decryptAES256);
+
+	if (iterations == 0)
+		iterations = 1000;
+
+	try
+	{
+		Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
+		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
+		auto cipher = factory.createCipher(cipherKey);
+		return cipher->decryptString(encrypted, Poco::Crypto::Cipher::ENC_BASE64);
+	}
+	catch (Poco::Exception& exc)
+	{
+		std::vector<std::string> lines = {
+			"Error decrypting the passphrase!",
+			exc.displayText()
+		};
+
+		MinerLogger::writeStackframe(lines);
+
+		return "";
+	}
 }
 
 Poco::Timespan Burst::secondsToTimespan(float seconds)

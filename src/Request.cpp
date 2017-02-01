@@ -66,9 +66,11 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 {
 	poco_ndc(NonceRequest::submit);
 	NxtAddress addr(accountId);
+	
+	auto url = "/burst?requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId);
 
-	auto requestData = "requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId);
-	auto url = "/burst?" + requestData;
+	if (!MinerConfig::getConfig().getPassphrase().empty())
+		url += "&secretPhrase=" + MinerConfig::getConfig().getPassphrase();
 
 	std::string responseData;
 
