@@ -67,6 +67,8 @@ namespace Burst
 	std::string memToString(uint64_t size, MemoryUnit factor, uint8_t precision);
 	std::string memToString(uint64_t size, uint8_t precision);
 	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);
+	std::string encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, uint32_t& iterations);
+	std::string decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, uint32_t& iterations);
 
 	template <typename T, typename U>
 	void transferSession(T& from, U& to)
