@@ -13,6 +13,7 @@
 #include "MinerConfig.hpp"
 #include <Poco/Path.h>
 #include <Poco/NestedDiagnosticContext.h>
+#include <Poco/String.h>
 
 using namespace Poco;
 using namespace Net;
