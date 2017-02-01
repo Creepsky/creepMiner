@@ -122,6 +122,10 @@ Poco::Timespan Burst::MinerData::getRunTime() const
 uint64_t Burst::MinerData::getCurrentBlock() const
 {
 	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
+	
+	if (blockData_ == nullptr)
+		return 0;
+
 	return blockData_->block;
 }
 

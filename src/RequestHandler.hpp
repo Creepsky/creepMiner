@@ -3,15 +3,20 @@
 #include <Poco/Net/HTTPRequestHandler.h>
 #include <Poco/Net/WebSocket.h>
 #include <memory>
-#include <Poco/Observer.h>
-#include <Poco/NotificationCenter.h>
 #include <functional>
-#include <Poco/Any.h>
 #include <unordered_map>
 
-namespace Poco {namespace JSON {
-	class Object;
-}
+namespace Poco
+{
+	namespace JSON
+	{
+		class Object;
+	}
+
+	namespace Net
+	{
+		class HTTPServerRequest;
+	}
 }
 
 namespace Burst
@@ -29,7 +34,7 @@ namespace Burst
 	class NotFoundHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
-		~NotFoundHandler() = default;
+		~NotFoundHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 	};
 
@@ -37,7 +42,7 @@ namespace Burst
 	{
 	public:
 		RootHandler(const TemplateVariables& variables);
-		~RootHandler() = default;
+		~RootHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:
@@ -48,7 +53,7 @@ namespace Burst
 	{
 	public:
 		ShutdownHandler(Miner& miner, MinerServer& server);
-		~ShutdownHandler() = default;
+		~ShutdownHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:
@@ -60,7 +65,7 @@ namespace Burst
 	{
 	public:
 		AssetHandler(const TemplateVariables& variables);
-		~AssetHandler() = default;
+		~AssetHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:
@@ -70,7 +75,7 @@ namespace Burst
 	class BadRequestHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
-		~BadRequestHandler() = default;
+		~BadRequestHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 	};
 
@@ -78,10 +83,43 @@ namespace Burst
 	{
 	public:
 		explicit WebSocketHandler(MinerServer* server);
-		~WebSocketHandler() = default;
+		~WebSocketHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:
 		MinerServer* server_;
+	};
+
+	class MiningInfoHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		explicit MiningInfoHandler(Miner& miner);
+		~MiningInfoHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		Miner* miner_;
+	};
+
+	class SubmitNonceHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		explicit SubmitNonceHandler(Miner& miner);
+		~SubmitNonceHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		Miner* miner_;
+	};
+
+	class ForwardHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		explicit ForwardHandler(std::unique_ptr<Poco::Net::HTTPClientSession> session);
+		~ForwardHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		std::unique_ptr<Poco::Net::HTTPClientSession> session_;
 	};
 }

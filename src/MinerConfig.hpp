@@ -15,19 +15,8 @@
 #include "Url.hpp"
 #include <unordered_map>
 
-/*
- {
-	poolUrl : "burst-pool.cryptoport.io:80",
-	submissionMaxDelay : 60000,
-	submissionMaxRetry : 3,
-	plots : [
-		"/mnt/sda/plots/",
-		"/mnt/sdb/plots/"
-	]
- }
- */
-
-namespace Poco {
+namespace Poco
+{
 	class File;
 }
 
@@ -105,6 +94,7 @@ namespace Burst
 		uint64_t getTargetDeadline() const;
 		uint32_t getMiningIntensity() const;
 		const std::unordered_map<std::string, PlotList>& getPlotList() const;
+		const std::string& getPlotsHash() const;
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -131,5 +121,6 @@ namespace Burst
 		uint64_t targetDeadline_ = 0;
 		uint32_t miningIntensity_ = 1;
 		std::unordered_map<std::string, PlotList> plotDirs_;
+		std::string plotsHash_;
 	};
 }
