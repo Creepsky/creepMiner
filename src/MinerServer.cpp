@@ -205,12 +205,15 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		// forward function
 		if (uri.getPath() == "/burst")
 		{
+			static const std::string getMiningInfo = "requestType=getMiningInfo";
+			static const std::string submitNonce = "requestType=submitNonce";
+
 			// send back local mining infos
-			if (Poco::startsWith<std::string>(uri.getQuery(), "requestType=getMiningInfo"))
+			if (uri.getQuery().compare(0, getMiningInfo.size(), getMiningInfo) == 0)
 				return new MiningInfoHandler{*server_->miner_};
 
 			// forward nonce with combined capacity
-			if (Poco::startsWith<std::string>(uri.getQuery(), "requestType=submitNonce"))
+			if (uri.getQuery().compare(0, submitNonce.size(), submitNonce) == 0)
 				return new SubmitNonceHandler{*server_->miner_};
 			
 			// just forward whatever the request is to the wallet
