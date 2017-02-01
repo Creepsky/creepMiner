@@ -1,15 +1,15 @@
 MODULES   := sphlib nxt
 SRC_DIR   := $(addprefix src/,$(MODULES)) src
-BUILD_DIR := $(addprefix bin/,$(MODULES)) bin
+BUILD_DIR := $(addprefix bin/obj/,$(MODULES)) bin/obj
 
 POCO_MODULES := Net Foundation NetSSL_OpenSSL openssl Crypto Util JSON
 POCO_DIR     := $(addprefix Poco/,$(POCO_MODULES))
 
 SRC       := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.cpp))
-OBJ       := $(patsubst src/%.cpp,bin/%.o,$(SRC))
+OBJ       := $(patsubst src/%.cpp,bin/obj/%.o,$(SRC))
 INCLUDES  := $(addprefix -I,$(SRC_DIR)) $(addprefix -I,$(POCO_DIR))
 
-EXECUTABLE        := burst-miner
+EXECUTABLE        := creepMiner
 EXECUTABLE_PATH   := bin/$(EXECUTABLE)
 
 CFLAGS    := -O3 -march=native -std=c++14 -Wall -D_REENTRANT -DNDEBUG
