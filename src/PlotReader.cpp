@@ -41,6 +41,7 @@ void Burst::PlotReader::runTask()
 			auto nonceCount = stoull(getNonceCountFromPlotFile(plotFile.getPath()));
 			auto staggerSize = stoull(getStaggerSizeFromPlotFile(plotFile.getPath()));
 			auto block = miner_.getBlockheight();
+			auto gensig = miner_.getGensig();
 			nonceRead_ = 0;
 
 			size_t chunkNum = 0;
@@ -56,6 +57,7 @@ void Burst::PlotReader::runTask()
 				verification->nonceStart = nonceStart;
 				verification->block = block;
 				verification->inputPath = plotFile.getPath();
+				verification->gensig = gensig;
 
 				auto scoopBufferSize = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / (64 * 2); // 8192
 				auto scoopBufferCount = static_cast<size_t>(

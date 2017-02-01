@@ -20,6 +20,7 @@ namespace Burst
 		uint64_t nonceStart;
 		std::string inputPath;
 		uint64_t block;
+		GensigData gensig;
 	};
 
 	class PlotVerifier : public Poco::Task

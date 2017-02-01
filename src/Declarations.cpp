@@ -1,7 +1,7 @@
 #include "Declarations.hpp"
 #include <string>
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 1, 0 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 1, 1 };
 
 #if defined MINING_CUDA
 const Burst::ProjectData Burst::Settings::Project = { "creepMiner CUDA", ProjectVersion };
