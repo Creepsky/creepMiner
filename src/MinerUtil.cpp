@@ -272,7 +272,7 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 		return "";
 	
 	if (iterations == 0)
-		iterations = 100;
+		iterations = 1000;
 
 	try
 	{
@@ -303,7 +303,7 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 		if (salt.empty())
 			salt = createRandomCharSequence(15);
 
-		Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations, "sha1");
+		Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
 		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
 		auto cipher = factory.createCipher(cipherKey);
 		
@@ -327,11 +327,11 @@ std::string Burst::decrypt(const std::string& encrypted, const std::string& algo
 	poco_ndc(decryptAES256);
 
 	if (iterations == 0)
-		iterations = 100;
+		iterations = 1000;
 
 	try
 	{
-		Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations, "sha1");
+		Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
 		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
 		auto cipher = factory.createCipher(cipherKey);
 		return cipher->decryptString(encrypted, Poco::Crypto::Cipher::ENC_BASE64);
