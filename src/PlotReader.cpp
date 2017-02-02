@@ -17,116 +17,128 @@
 #include "PlotVerifier.hpp"
 
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
-std::string dir, const std::vector<std::shared_ptr< Burst::PlotFile>>& plotList, Poco::NotificationQueue& queue)
-	: Task("PlotReader"), miner_{miner}, progress_{progress}, dir_{std::move(dir)}, queue_{&queue}
+	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
+	: Task("PlotReader"), miner_{miner}, progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
 {
-	scoopNum_ = miner_.getScoopNum();
-	gensig_ = miner_.getGensig();
-	plotList_ = &plotList;
-
+	//scoopNum_ = miner_.getScoopNum();
+	//gensig_ = miner_.getGensig();
+	//plotList_ = &plotList;
 }
 
 void Burst::PlotReader::runTask()
 {
-	for (auto plotFileIter = plotList_->begin(); plotFileIter != plotList_->end() && !isCancelled(); ++plotFileIter)
+	while (!isCancelled())
 	{
-		auto& plotFile = *(*plotFileIter);
+		Poco::Notification::Ptr notification(plotReadQueue_->waitDequeueNotification());
+		PlotReadNotification::Ptr plotReadNotification;
 
-		std::ifstream inputStream(plotFile.getPath(), std::ifstream::binary);
+		if (notification)
+			plotReadNotification = notification.cast<PlotReadNotification>();
+		else
+			break;
 
-		if (inputStream.good())
+		for (auto plotFileIter = plotReadNotification->plotList.begin(); plotFileIter != plotReadNotification->plotList.end() && !isCancelled(); ++plotFileIter)
 		{
-			auto accountId = stoull(getAccountIdFromPlotFile(plotFile.getPath()));
-			auto nonceStart = stoull(getStartNonceFromPlotFile(plotFile.getPath()));
-			auto nonceCount = stoull(getNonceCountFromPlotFile(plotFile.getPath()));
-			auto staggerSize = stoull(getStaggerSizeFromPlotFile(plotFile.getPath()));
-			auto block = miner_.getBlockheight();
-			auto gensig = miner_.getGensig();
-			nonceRead_ = 0;
+			auto& plotFile = *(*plotFileIter);
+			uint64_t nonceRead = 0;
+			std::ifstream inputStream(plotFile.getPath(), std::ifstream::binary);
 
-			size_t chunkNum = 0;
-			auto totalChunk = static_cast<size_t>(std::ceil(static_cast<double>(nonceCount) / static_cast<double>(staggerSize)));
-
-			//MinerLogger::write("reading plot file " + plotFile.getPath());
-
-			while (!isCancelled() && inputStream.good() && chunkNum <= totalChunk)
+			if (inputStream.good())
 			{
-				// setting up plot data
-				VerifyNotification::Ptr verification = new VerifyNotification{};
-				verification->accountId = accountId;
-				verification->nonceStart = nonceStart;
-				verification->block = block;
-				verification->inputPath = plotFile.getPath();
-				verification->gensig = gensig;
+				auto accountId = stoull(getAccountIdFromPlotFile(plotFile.getPath()));
+				auto nonceStart = stoull(getStartNonceFromPlotFile(plotFile.getPath()));
+				auto nonceCount = stoull(getNonceCountFromPlotFile(plotFile.getPath()));
+				auto staggerSize = stoull(getStaggerSizeFromPlotFile(plotFile.getPath()));
+				auto block = miner_.getBlockheight();
+				auto gensig = miner_.getGensig();
 
-				auto scoopBufferSize = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / (64 * 2); // 8192
-				auto scoopBufferCount = static_cast<size_t>(
-					std::ceil(static_cast<float>(staggerSize * Settings::ScoopSize) / static_cast<float>(scoopBufferSize)));
-				auto startByte = scoopNum_ * Settings::ScoopSize * staggerSize + chunkNum * staggerSize * Settings::PlotSize;
-				auto scoopDoneRead = 0u;
-				size_t staggerOffset;
+				size_t chunkNum = 0;
+				auto totalChunk = static_cast<size_t>(std::ceil(static_cast<double>(nonceCount) / static_cast<double>(staggerSize)));
 
-				while (!isCancelled() && inputStream.good() && scoopDoneRead <= scoopBufferCount)
+				//MinerLogger::write("reading plot file " + plotFile.getPath());
+
+				while (!isCancelled() &&  miner_.getBlockheight() == plotReadNotification->blockheight && inputStream.good() && chunkNum <= totalChunk)
 				{
-					verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
-					staggerOffset = scoopDoneRead * scoopBufferSize;
+					// setting up plot data
+					VerifyNotification::Ptr verification = new VerifyNotification{};
+					verification->accountId = accountId;
+					verification->nonceStart = nonceStart;
+					verification->block = block;
+					verification->inputPath = plotFile.getPath();
+					verification->gensig = gensig;
 
-					if (scoopBufferSize > (staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize)))
+					auto scoopBufferSize = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / (64 * 2); // 8192
+					auto scoopBufferCount = static_cast<size_t>(
+						std::ceil(static_cast<float>(staggerSize * Settings::ScoopSize) / static_cast<float>(scoopBufferSize)));
+					auto startByte = plotReadNotification->scoopNum * Settings::ScoopSize * staggerSize + chunkNum * staggerSize * Settings::PlotSize;
+					auto scoopDoneRead = 0u;
+					size_t staggerOffset;
+
+					while (!isCancelled() && inputStream.good() && scoopDoneRead <= scoopBufferCount)
 					{
-						scoopBufferSize = staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize);
+						verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
+						staggerOffset = scoopDoneRead * scoopBufferSize;
+
+						if (scoopBufferSize > (staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize)))
+						{
+							scoopBufferSize = staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize);
+
+							if (scoopBufferSize > Settings::ScoopSize)
+								verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
+						}
 
 						if (scoopBufferSize > Settings::ScoopSize)
-							verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
+						{
+							inputStream.seekg(startByte + staggerOffset);
+							auto scoopData = reinterpret_cast<char*>(verification->buffer.data());
+							inputStream.read(scoopData, scoopBufferSize);
+
+							auto bufferSize = verification->buffer.size();
+							verification->nonceRead = nonceRead;
+
+							//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
+
+							// wait, when there is too much work for the verifiers
+							while (!isCancelled() &&
+								miner_.getBlockheight() == plotReadNotification->blockheight &&
+								verificationQueue_->size() >= MinerConfig::getConfig().getMiningIntensity())
+							{ }
+
+							if (!isCancelled() && miner_.getBlockheight() == plotReadNotification->blockheight)
+								verificationQueue_->enqueueNotification(verification);
+
+							nonceRead += bufferSize;
+						}
+						//else
+						//{
+						//	MinerLogger::write("scoop buffer ="+std::to_string(scoopBufferSize));
+						//}
+
+						++scoopDoneRead;
 					}
 
-					if (scoopBufferSize > Settings::ScoopSize)
-					{
-						inputStream.seekg(startByte + staggerOffset);
-						auto scoopData = reinterpret_cast<char*>(verification->buffer.data());
-						inputStream.read(scoopData, scoopBufferSize);
-
-						auto bufferSize = verification->buffer.size();
-						verification->nonceRead = nonceRead_;
-
-						//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
-
-						// wait, when there is too much work for the verifiers
-						while (!isCancelled() && queue_->size() >= MinerConfig::getConfig().getMiningIntensity())
-						{ }
-
-						queue_->enqueueNotification(verification);
-
-						nonceRead_ += bufferSize;
-					}
-					//else
-					//{
-					//	MinerLogger::write("scoop buffer ="+std::to_string(scoopBufferSize));
-					//}
-
-					++scoopDoneRead;
+					++chunkNum;
 				}
 
-				++chunkNum;
+				if (progress_ != nullptr && !isCancelled())
+				{
+					progress_->add(plotFile.getSize());
+					miner_.getData().addBlockEntry(createJsonProgress(progress_->getProgress()));
+				}
+
+				inputStream.close();
+
+				//MinerLogger::write("finished reading plot file " + inputPath_);
+				//MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
 			}
 
-			if (progress_ != nullptr && !isCancelled())
-			{
-				progress_->add(plotFile.getSize());
-				miner_.getData().addBlockEntry(createJsonProgress(progress_->getProgress()));
-			}
-
-			inputStream.close();
-
-			//MinerLogger::write("finished reading plot file " + inputPath_);
-			//MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
+			//if (MinerConfig::getConfig().output.debug)
+				//MinerLogger::write("finished reading plot file " + plotFile.getPath(), TextType::Debug);
 		}
 
-		//if (MinerConfig::getConfig().output.debug)
-			//MinerLogger::write("finished reading plot file " + plotFile.getPath(), TextType::Debug);
+		if (MinerConfig::getConfig().output.dirDone)
+			MinerLogger::write("Dir " + plotReadNotification->dir + " done", TextType::Unimportant);
 	}
-
-	if (MinerConfig::getConfig().output.dirDone)
-		MinerLogger::write("Dir " + dir_ + " done", TextType::Unimportant);
 }
 
 void Burst::PlotReadProgress::reset()
