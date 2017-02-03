@@ -67,41 +67,52 @@ void Burst::Miner::run()
 	if (config.getTargetDeadline() > 0)
 		MinerLogger::write("Target deadline : " + deadlineFormat(config.getTargetDeadline()), TextType::System);
 	MinerLogger::write("Mining intensity : " + std::to_string(config.getMiningIntensity()), TextType::System);
+	MinerLogger::write("Max plot readers : " + (config.getMaxPlotReaders() == 0
+		                                            ? std::to_string(config.getPlotList().size())
+		                                            : std::to_string(config.getMaxPlotReaders())), TextType::System);
 
 	// only create the thread pools and manager for mining if there is work to do (plot files)
 	if (!config.getPlotFiles().empty())
 	{
 		// thread pools
-		minerThreadPool_ = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(MinerConfig::getConfig().getMiningIntensity()) + 10);
+		verifierThreadPool_ = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(MinerConfig::getConfig().getMiningIntensity()));
 		plotReaderThreadPool_ = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(MinerConfig::getConfig().getPlotList().size()));
-		verifierManager_ = std::make_unique<Poco::TaskManager>();
 
 		// manager
+		verifierManager_ = std::make_unique<Poco::TaskManager>(*verifierThreadPool_);
 		plotReaderManager_ = std::make_unique<Poco::TaskManager>(*plotReaderThreadPool_);
-		nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>(*minerThreadPool_);
+		nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>();
 
-		// verifiers
-		auto verifiers = 0u;
-		//
-		try
-		{
-			for (; verifiers < MinerConfig::getConfig().getMiningIntensity(); ++verifiers)
-				verifierManager_->start(new PlotVerifier{ *this, verificationQueue_ });
-		}
-		catch (Poco::Exception&)
-		{ }
-		//
-		if (verifiers == 0)
-		{
-			MinerLogger::write("Could not create even one verifier! Lower the setting \"maxBufferSizeMB\"!", TextType::Error);
-			return;
-		}
-		//
+		// create the plot verifiers
+		auto verifiers = createWorkers<PlotVerifier>(MinerConfig::getConfig().getMiningIntensity(), *verifierManager_, *this, verificationQueue_);
+
 		if (verifiers != MinerConfig::getConfig().getMiningIntensity())
 		{
-			MinerLogger::write("Could not create all verifiers (" + std::to_string(verifiers) + "/" + std::to_string(MinerConfig::getConfig().getMiningIntensity()) + "! Lower the setting \"maxBufferSizeMB\"!", TextType::Error);
+			MinerLogger::write("Could not create all verifiers (" + std::to_string(verifiers) + "/" +
+				std::to_string(MinerConfig::getConfig().getMiningIntensity()) + "! Lower the setting \"maxBufferSizeMB\"!", TextType::Error);
+
+			if (verifiers == 0)
+				return;
 		}
-	}	
+
+		// create plot reader
+		size_t plotReaderToCreate = MinerConfig::getConfig().getMaxPlotReaders();
+
+		if (plotReaderToCreate == 0)
+			plotReaderToCreate = MinerConfig::getConfig().getPlotList().size();
+
+		auto plotReader = createWorkers<PlotReader>(plotReaderToCreate, *plotReaderManager_,
+			*this, progress_, verificationQueue_, plotReadQueue_);
+
+		if (plotReader != plotReaderToCreate)
+		{
+			MinerLogger::write("Could not create all plot reader (" + std::to_string(plotReader) + "/" +
+				std::to_string(plotReaderToCreate) + "! Change the setting \"maxPlotReaders\"!", TextType::Error);
+
+			if (plotReader == 0)
+				return;
+		}
+	}
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
 
@@ -137,13 +148,15 @@ void Burst::Miner::run()
 void Burst::Miner::stop()
 {
 	poco_ndc(Miner::stop);
+	plotReadQueue_.wakeUpAll();
 	plotReaderManager_->cancelAll();
 	plotReaderManager_->joinAll();
-	nonceSubmitterManager_->cancelAll();
-	nonceSubmitterManager_->joinAll();
+	verificationQueue_.wakeUpAll();
 	verifierManager_->cancelAll();
 	verifierManager_->joinAll();
-	this->running_ = false;
+	nonceSubmitterManager_->cancelAll();
+	nonceSubmitterManager_->joinAll();
+	running_ = false;
 }
 
 void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
@@ -152,15 +165,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 	// stop all reading processes if any
 	if (!MinerConfig::getConfig().getPlotFiles().empty())
-	{
-		MinerLogger::write("stopping plot readers...", TextType::Debug);
-		plotReaderManager_->cancelAll();
-
-		// wait for all plotReaders to stop
-		MinerLogger::write("waiting plot readers to stop...", TextType::Debug);
-		plotReaderManager_->joinAll();
-		MinerLogger::write("plot readers stopped", TextType::Debug);
-	}
+		plotReadQueue_.clear();
 
 	Poco::ScopedLock<Poco::FastMutex> lock { deadlinesLock_ };
 	deadlines_.clear();
@@ -281,7 +286,16 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
 
 	for (auto& plotDir : MinerConfig::getConfig().getPlotList())
-		plotReaderManager_->start(new PlotReader{ *this, progress_, plotDir.first, plotDir.second, verificationQueue_ });
+	{
+		auto plotRead = new PlotReadNotification;
+		plotRead->dir = plotDir.first;
+		plotRead->plotList = plotDir.second;
+		plotRead->gensig = getGensig();
+		plotRead->scoopNum = getScoopNum();
+		plotRead->blockheight = getBlockheight();
+
+		plotReadQueue_.enqueueNotification(plotRead);
+	}
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const
