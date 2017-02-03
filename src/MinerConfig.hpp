@@ -96,6 +96,7 @@ namespace Burst
 		const std::unordered_map<std::string, PlotList>& getPlotList() const;
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
+		uint32_t getMaxPlotReaders() const;
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -124,5 +125,6 @@ namespace Burst
 		std::unordered_map<std::string, PlotList> plotDirs_;
 		std::string plotsHash_;
 		std::string passPhrase_;
+		uint32_t maxPlotReaders_;
 	};
 }

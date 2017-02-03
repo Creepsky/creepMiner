@@ -201,6 +201,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	serverUrl_ = config->optValue<std::string>("serverUrl", "");
 	miningIntensity_ = std::max(config->optValue("miningIntensity", 1), 1);
 
+	maxPlotReaders_ = config->optValue("maxPlotReaders", 0u);
+
 	auto targetDeadline = config->get("targetDeadline");
 	
 	if (!targetDeadline.isEmpty())
@@ -509,4 +511,9 @@ const std::string& Burst::MinerConfig::getPlotsHash() const
 const std::string& Burst::MinerConfig::getPassphrase() const
 {
 	return passPhrase_;
+}
+
+uint32_t Burst::MinerConfig::getMaxPlotReaders() const
+{
+	return maxPlotReaders_;
 }
