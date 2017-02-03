@@ -85,16 +85,13 @@ void Burst::Miner::run()
 	// create the plot verifiers
 	auto verifiers = createWorkers<PlotVerifier>(MinerConfig::getConfig().getMiningIntensity(), *verifierManager_, *this, verificationQueue_);
 
-	if (verifiers == 0)
-	{
-		MinerLogger::write("Could not create even one verifier! Lower the setting \"maxBufferSizeMB\"!", TextType::Error);
-		return;
-	}
-
 	if (verifiers != MinerConfig::getConfig().getMiningIntensity())
 	{
 		MinerLogger::write("Could not create all verifiers (" + std::to_string(verifiers) + "/" +
 			std::to_string(MinerConfig::getConfig().getMiningIntensity()) + "! Lower the setting \"maxBufferSizeMB\"!", TextType::Error);
+		
+		if (verifiers == 0)
+			return;
 	}
 
 	// create plot reader
@@ -106,16 +103,13 @@ void Burst::Miner::run()
 	auto plotReader = createWorkers<PlotReader>(plotReaderToCreate, *plotReaderManager_,
 		*this, progress_, verificationQueue_, plotReadQueue_);
 
-	if (verifiers == 0)
-	{
-		MinerLogger::write("Could not create even one plot reader! Change the setting \"maxPlotReaders\"!", TextType::Error);
-		return;
-	}
-
 	if (plotReader != plotReaderToCreate)
 	{
 		MinerLogger::write("Could not create all plot reader (" + std::to_string(plotReader) + "/" +
 			std::to_string(plotReaderToCreate) + "! Change the setting \"maxPlotReaders\"!", TextType::Error);
+			
+		if (plotReader == 0)
+			return;
 	}
 
 	const auto sleepTime = std::chrono::seconds(3);
