@@ -233,10 +233,13 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		Poco::JSON::Object::Ptr passphrase = nullptr;
 
 		if (!passphraseJson.isEmpty())
-			passphraseJson.extract<Poco::JSON::Object::Ptr>();
+			passphrase = passphraseJson.extract<Poco::JSON::Object::Ptr>();
 
 		if (!passphrase.isNull())
 		{
+			if (output.debug)
+				MinerLogger::write("Reading passphrase...", TextType::Debug);
+
 			auto decrypted = passphrase->optValue<std::string>("decrypted", "");
 			auto encrypted = passphrase->optValue<std::string>("encrypted", "");
 			auto salt = passphrase->optValue<std::string>("salt", "");
@@ -247,23 +250,54 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			if (!encrypted.empty() && !key.empty() && !salt.empty())
 			{
+				if (output.debug)
+					MinerLogger::write("Encrypted passphrase found, trying to decrypt...", TextType::Debug);
+
 				passPhrase_ = decrypt(encrypted, algorithm, key, salt, iterations);
 
+				if (!passPhrase_.empty())
+					if (output.debug)
+						MinerLogger::write("Passphrase decrypted!", TextType::Debug);
+
 				if (deleteKey)
+				{
+					if (output.debug)
+						MinerLogger::write("passhrase.deleteKey == true, deleting the key...", TextType::Debug);
+
 					passphrase->set("key", "");
+				}
 			}
 
 			// there is a decrypted passphrase, we need to encrypt it
 			if (!decrypted.empty())
 			{
+				if (output.debug)
+					MinerLogger::write("Decrypted passphrase found, trying to encrypt...", TextType::Debug);
+
 				encrypted = encrypt(decrypted, algorithm, key, salt, iterations);
 				passPhrase_ = decrypted;
 
-				passphrase->set("decrypted", "");
-				passphrase->set("encrypted", encrypted);
-				passphrase->set("salt", salt);
-				passphrase->set("key", key);
-				passphrase->set("iterations", iterations);
+				if (!encrypted.empty())
+				{
+					passphrase->set("decrypted", "");
+					passphrase->set("encrypted", encrypted);
+					passphrase->set("salt", salt);
+					passphrase->set("key", key);
+					passphrase->set("iterations", iterations);
+
+					if (output.debug)
+					{
+						std::vector<std::string> lines = {
+							"Passphrase encrypted!",
+							"encrypted: " + encrypted,
+							"salt: " + salt,
+							"key: " + std::string(key.size(), '*'),
+							"iterations: " + std::to_string(iterations)
+						};
+
+						MinerLogger::write(lines, TextType::Debug);
+					}
+				}
 			}
 		}
 	}
