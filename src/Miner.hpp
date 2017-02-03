@@ -81,6 +81,7 @@ namespace Burst
 		std::unique_ptr<Poco::TaskManager> verifierManager_;
 		Poco::ThreadPool minerThreadPool_;
 		Poco::ThreadPool plotReaderThreadPool_;
+		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
 	};
 }

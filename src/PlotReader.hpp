@@ -16,6 +16,7 @@
 #include "Declarations.hpp"
 #include <Poco/Task.h>
 #include <atomic>
+#include <Poco/Notification.h>
 
 namespace Poco
 {
@@ -28,24 +29,30 @@ namespace Burst
 	class PlotFile;
 	class PlotReadProgress;
 
+	struct PlotReadNotification : Poco::Notification
+	{
+		typedef Poco::AutoPtr<PlotReadNotification> Ptr;
+		std::string dir;
+		std::vector<std::shared_ptr<PlotFile>> plotList;
+		uint64_t scoopNum = 0;
+		GensigData gensig;
+		uint64_t blockheight = 0;
+	};
+
 	class PlotReader : public Poco::Task
 	{
 	public:
 		PlotReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
-			std::string dir, const std::vector<std::shared_ptr<PlotFile>>& plotList, Poco::NotificationQueue& queue);
+			Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue);
 		~PlotReader() override = default;
 
 		void runTask() override;
 
 	private:
-		uint64_t scoopNum_ = 0;
-		uint64_t nonceRead_ = 0;
-		GensigData gensig_;
 		Miner& miner_;
-		const std::vector<std::shared_ptr<PlotFile>>* plotList_;
 		std::shared_ptr<PlotReadProgress> progress_;
-		std::string dir_;
-		Poco::NotificationQueue* queue_;
+		Poco::NotificationQueue* verificationQueue_;
+		Poco::NotificationQueue* plotReadQueue_;
 	};
 
 	class PlotReadProgress
