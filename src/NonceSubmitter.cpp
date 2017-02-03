@@ -18,7 +18,7 @@ void Burst::NonceSubmitter::runTask()
 
 	auto loopConditionHelper = [this, &betterDeadlineInPipeline](size_t tryCount, size_t maxTryCount, SubmitResponse response)
 	{
-		if (tryCount >= maxTryCount ||
+		if (maxTryCount > 0 && tryCount >= maxTryCount ||
 			response != SubmitResponse::None ||
 			deadline->getBlock() != miner.getBlockheight() ||
 			betterDeadlineInPipeline ||
@@ -48,7 +48,7 @@ void Burst::NonceSubmitter::runTask()
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
 	auto firstSendAttempt = true;
-
+	
 	// submit-loop
 	while (loopConditionHelper(submitTryCount,
 		MinerConfig::getConfig().getSubmissionMaxRetry(),

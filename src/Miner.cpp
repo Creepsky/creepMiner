@@ -50,7 +50,8 @@ void Burst::Miner::run()
 
 	MinerLogger::write("Total plots size: " + memToString(MinerConfig::getConfig().getTotalPlotsize(), 2),
 		TextType::System);
-	MinerLogger::write("Submission Max Retry : " + std::to_string(config.getSubmissionMaxRetry()), TextType::System);
+	MinerLogger::write("Submission Max Retry : " + (config.getSubmissionMaxRetry() == 0u ? "unlimited" :
+		                   std::to_string(config.getSubmissionMaxRetry())), TextType::System);
 	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
 	if (!config.getPoolUrl().empty())
 		MinerLogger::write("Pool Host : " + config.getPoolUrl().getCanonical() + ":" + std::to_string(config.getPoolUrl().getPort()) +
@@ -206,7 +207,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 				// we cheat here a little bit and use the submission max retry set in config
 				// for max retry fetching the last winner
 				for (auto loop = 0u;
-					 !fetched && loop < MinerConfig::getConfig().getSubmissionMaxRetry();
+					 !fetched && (loop < MinerConfig::getConfig().getSubmissionMaxRetry() || MinerConfig::getConfig().getSubmissionMaxRetry() == 0);
 					 ++loop)
 				{
 					if (wallet_.getWinnerOfBlock(block, lastWinner))
