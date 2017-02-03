@@ -40,7 +40,7 @@ void Burst::PlotReader::runTask()
 		for (auto plotFileIter = plotReadNotification->plotList.begin();
 			plotFileIter != plotReadNotification->plotList.end() &&
 			!isCancelled() &&
-			miner_.getBlockheight() == plotReadNotification->blockheight &&;
+			miner_.getBlockheight() == plotReadNotification->blockheight;
 			++plotFileIter)
 		{
 			auto& plotFile = *(*plotFileIter);
