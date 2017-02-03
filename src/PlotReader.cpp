@@ -37,7 +37,11 @@ void Burst::PlotReader::runTask()
 		else
 			break;
 
-		for (auto plotFileIter = plotReadNotification->plotList.begin(); plotFileIter != plotReadNotification->plotList.end() && !isCancelled(); ++plotFileIter)
+		for (auto plotFileIter = plotReadNotification->plotList.begin();
+			plotFileIter != plotReadNotification->plotList.end() &&
+			!isCancelled() &&
+			miner_.getBlockheight() == plotReadNotification->blockheight &&;
+			++plotFileIter)
 		{
 			auto& plotFile = *(*plotFileIter);
 			uint64_t nonceRead = 0;
@@ -57,7 +61,10 @@ void Burst::PlotReader::runTask()
 
 				//MinerLogger::write("reading plot file " + plotFile.getPath());
 
-				while (!isCancelled() &&  miner_.getBlockheight() == plotReadNotification->blockheight && inputStream.good() && chunkNum <= totalChunk)
+				while (!isCancelled() &&
+					miner_.getBlockheight() == plotReadNotification->blockheight &&
+					inputStream.good() &&
+					chunkNum <= totalChunk)
 				{
 					// setting up plot data
 					VerifyNotification::Ptr verification = new VerifyNotification{};
@@ -74,7 +81,10 @@ void Burst::PlotReader::runTask()
 					auto scoopDoneRead = 0u;
 					size_t staggerOffset;
 
-					while (!isCancelled() && inputStream.good() && scoopDoneRead <= scoopBufferCount)
+					while (!isCancelled() &&
+						miner_.getBlockheight() == plotReadNotification->blockheight &&
+						inputStream.good() &&
+						scoopDoneRead <= scoopBufferCount)
 					{
 						verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 						staggerOffset = scoopDoneRead * scoopBufferSize;
