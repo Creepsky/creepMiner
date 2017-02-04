@@ -329,8 +329,11 @@ uint64_t Burst::Miner::getTargetDeadline() const
 	auto targetDeadline = targetDeadline_;
 	auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
 
-	if (manualTargetDeadline > 0)
-		targetDeadline = targetDeadline < manualTargetDeadline ? targetDeadline : manualTargetDeadline;
+	if (targetDeadline == 0)
+		targetDeadline = manualTargetDeadline;
+	else if (targetDeadline > manualTargetDeadline &&
+		manualTargetDeadline > 0)
+		targetDeadline = manualTargetDeadline;
 
 	return targetDeadline;
 }
