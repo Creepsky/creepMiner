@@ -119,7 +119,7 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 		{
 			std::vector<std::string> lines = {
 				"error while waiting for confirmation!",
-				exc.what()
+				exc.displayText()
 			};
 			
 			MinerLogger::writeStackframe(lines);

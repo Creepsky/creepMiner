@@ -111,7 +111,7 @@ void Burst::PlotReader::runTask()
 							// wait, when there is too much work for the verifiers
 							while (!isCancelled() &&
 								miner_.getBlockheight() == plotReadNotification->blockheight &&
-								verificationQueue_->size() >= MinerConfig::getConfig().getMiningIntensity())
+								static_cast<uint32_t>(verificationQueue_->size()) >= MinerConfig::getConfig().getMiningIntensity())
 							{ }
 
 							if (!isCancelled() && miner_.getBlockheight() == plotReadNotification->blockheight)

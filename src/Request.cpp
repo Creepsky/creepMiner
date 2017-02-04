@@ -13,6 +13,8 @@
 #include "Poco/StreamCopier.h"
 #include "Declarations.hpp"
 #include "PlotSizes.hpp"
+#include <Poco/Crypto/Crypto.h>
+#include <Poco/Net/HTMLForm.h>
 
 using namespace Poco::Net;
 
@@ -66,15 +68,21 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 {
 	poco_ndc(NonceRequest::submit);
 	NxtAddress addr(accountId);
-	
-	auto url = "/burst?requestType=submitNonce&nonce=" + std::to_string(nonce) + "&accountId=" + std::to_string(accountId);
+
+	Poco::URI uri;
+
+	uri.setPath("/burst");
+
+	uri.addQueryParameter("requestType", "submitNonce");
+	uri.addQueryParameter("nonce", std::to_string(nonce));
+	uri.addQueryParameter("accountId", std::to_string(accountId));
 
 	if (!MinerConfig::getConfig().getPassphrase().empty())
-		url += "&secretPhrase=" + MinerConfig::getConfig().getPassphrase();
+		uri.addQueryParameter("secretPhrase", MinerConfig::getConfig().getPassphrase());
 
 	std::string responseData;
 
-	HTTPRequest request{HTTPRequest::HTTP_POST, url, HTTPRequest::HTTP_1_1};
+	HTTPRequest request{HTTPRequest::HTTP_POST, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
 	request.set("X-Capacity", std::to_string(PlotSizes::getTotal()));
 	request.set("X-PlotsHash", MinerConfig::getConfig().getConfig().getPlotsHash());
 	request.set("X-Miner", Settings::Project.nameAndVersionAndOs);

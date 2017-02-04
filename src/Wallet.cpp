@@ -35,7 +35,12 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId)
 
 	Poco::JSON::Object::Ptr json;
 
-	if (sendWalletRequest("/burst?requestType=getBlock&height=" + std::to_string(block), json))
+	Poco::URI uri;
+	uri.setPath("/burst");
+	uri.addQueryParameter("requestType", "getBlock");
+	uri.addQueryParameter("height", std::to_string(block));
+
+	if (sendWalletRequest(uri, json))
 	{
 		if (json->has("generator"))
 		{
@@ -59,7 +64,12 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 	if (url_.empty())
 		return false;
 
-	if (sendWalletRequest("/burst?requestType=getAccount&account=" + std::to_string(account), json))
+	Poco::URI uri;
+	uri.setPath("/burst");
+	uri.addQueryParameter("requestType", "getAccount");
+	uri.addQueryParameter("account", std::to_string(account));
+
+	if (sendWalletRequest(uri, json))
 	{
 		if (json->has("name"))
 		{
@@ -83,7 +93,12 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 	if (url_.empty())
 		return false;
 
-	if (sendWalletRequest("/burst?requestType=getRewardRecipient&account=" + std::to_string(account), json))
+	Poco::URI uri;
+	uri.setPath("/burst");
+	uri.addQueryParameter("requestType", "getRewardRecipient");
+	uri.addQueryParameter("account", std::to_string(account));
+
+	if (sendWalletRequest(uri, json))
 	{
 		if (json->has("rewardRecipient"))
 		{
@@ -109,7 +124,11 @@ bool Burst::Wallet::getLastBlock(uint64_t& block)
 		return false;
 	}
 
-	if (sendWalletRequest("/burst?requestType=getBlock", json))
+	Poco::URI uri;
+	uri.setPath("/burst");
+	uri.addQueryParameter("requestType", "getBlock");
+
+	if (sendWalletRequest(uri, json))
 	{
 		if (json->has("height"))
 		{
@@ -130,10 +149,11 @@ void Burst::Wallet::getAccount(AccountId id, Account& account)
 		account = {*this, id};
 }
 
-bool Burst::Wallet::sendWalletRequest(const std::string& uri, Poco::JSON::Object::Ptr& json)
+bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::Ptr& json)
 {
 	poco_ndc(Wallet::sendWalletRequest);
-	HTTPRequest request{ HTTPRequest::HTTP_GET, uri, HTTPRequest::HTTP_1_1};
+
+	HTTPRequest request{ HTTPRequest::HTTP_GET, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
 	request.setKeepAlive(true);
 
 	if (walletSession_ == nullptr)
@@ -156,8 +176,9 @@ bool Burst::Wallet::sendWalletRequest(const std::string& uri, Poco::JSON::Object
 		{
 			std::vector<std::string> lines = {
 				"got invalid json response from server",
-				"uri: " + uri,
-				"response: " + data
+				"uri: " + uri.getPathAndQuery(),
+				"response: " + data,
+				exc.displayText()
 			};
 			
 			MinerLogger::writeStackframe(lines);
