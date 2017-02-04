@@ -9,7 +9,6 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "MinerLogger.hpp"
 #include "Account.hpp"
-#include <Poco/Uri.h>
 
 using namespace Poco::Net;
 
