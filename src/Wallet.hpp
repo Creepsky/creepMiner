@@ -5,7 +5,15 @@
 #include "Declarations.hpp"
 #include "Url.hpp"
 
-namespace Poco { namespace Net { class HTTPClientSession; } }
+namespace Poco
+{
+	class URI;
+
+	namespace Net
+	{
+		class HTTPClientSession;
+	}
+}
 
 namespace Burst
 {
@@ -31,7 +39,7 @@ namespace Burst
 		Wallet& operator=(Wallet&& rhs) = default;
 
 	private:
-		bool sendWalletRequest(const std::string& uri, Poco::JSON::Object::Ptr& json);
+		bool sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::Ptr& json);
 
 		std::unique_ptr<Poco::Net::HTTPClientSession> walletSession_;
 		Url url_;
