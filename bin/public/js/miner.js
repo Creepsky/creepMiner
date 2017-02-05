@@ -25,6 +25,7 @@ var connectionStatus = $("#connectionStatus");
 var wonBlocks = $("#wonBlocks");
 var bestDeadlinesChart = $("#deadlinesChart");
 var plot;
+var deadlinesInfo = $("#deadlinesInfo");
 
 if (confirmedSound)
 	confirmedSound.volume = 0.5;
@@ -60,6 +61,7 @@ function newBlock(block)
 	plot.setData([block["bestDeadlines"]]);
 	plot.setupGrid();
 	plot.draw();
+	showDeadlinesInfo(null);
 }
 
 function getNewLine(message, id, time, type)
@@ -339,11 +341,54 @@ function connect()
 	}
 }
 
+function deadlineFormat(val) {
+	var secs = Math.floor(val);
+	var mins = Math.floor(secs / 60);
+	var hours = Math.floor(mins / 60);
+	var day = Math.floor(hours / 24);
+	var months = Math.floor(day / 30);
+	var years = Math.floor(months / 12);
+	var msg = "";
+	
+	if (years > 0)
+		msg += years.toFixed() + "y ";
+	if (months > 0)
+		msg += (months % 12).toFixed() + "m ";
+	if (day > 0)
+		msg += day % 30 + "d ";
+	msg += ("00" + (hours % 24)).slice(-2) + ':';
+	msg += ("00" + (mins % 60)).slice(-2) + ':';
+	msg += ("00" + (secs % 60)).slice(-2);
+
+	return msg;
+}
+
+function showDeadlinesInfo(deadlineObj)
+{	
+	var infos = "---";
+		
+	plot.unhighlight();
+	
+	if (deadlineObj)
+	{		
+		var infos = "block <b>" + deadlineObj.datapoint[0] + "</b>: " +
+			deadlineFormat(deadlineObj.datapoint[1]);
+
+		plot.highlight(deadlineObj.series, deadlineObj.datapoint);
+	}
+	
+	deadlinesInfo.html(infos);
+	lastDeadlineInfo = deadlineObj;
+}
+
 function initPlot()
 {
 	var options = {
 		series: {
-			lines: { show: true },
+			lines: {
+				show: true,
+				fill: true
+			},
 			points: { show: true }
 		},
 		grid: {
@@ -359,30 +404,22 @@ function initPlot()
 			min: 0,
 			timeformat: "%Yy %mm %dd %H:%M:%S",
 			tickFormatter: function (val, axis) {
-				var secs = Math.floor(val);
-				var mins = Math.floor(secs / 60);
-				var hours = Math.floor(mins / 60);
-				var day = Math.floor(hours / 24);
-				var months = Math.floor(day / 30);
-				var years = Math.floor(months / 12);
-				var msg = "";
-				
-				if (years > 0)
-					msg += years.toFixed() + "y ";
-				if (months > 0)
-					msg += (months % 12).toFixed() + "m ";
-
-				msg += day % 30 + "d ";
-				msg += ("00" + (hours % 24)).slice(-2) + ':';
-				msg += ("00" + (mins % 60)).slice(-2) + ':';
-				msg += ("00" + (secs % 60)).slice(-2);
-			
-				return msg;
+				return deadlineFormat(val);
 			}
 		}
 	};
 	
 	plot = $.plot(bestDeadlinesChart, [], options);
+	
+	bestDeadlinesChart.bind("plotclick", function (event, pos, item) {
+		if (item)
+			showDeadlinesInfo(item);
+	});
+	
+	bestDeadlinesChart.bind("plothover", function (event, pos, item) {
+		if (item)
+			showDeadlinesInfo(item);
+	});
 }
 
 window.onload = function(evt)
@@ -391,7 +428,7 @@ window.onload = function(evt)
 	bestDeadlineOverallElement.html(nullDeadline);
 	connect();
 	deActivateConfirmationSound(true);
-	
+	showDeadlinesInfo(null);
 }
 
 window.onresize = function(evt)
