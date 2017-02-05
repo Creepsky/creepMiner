@@ -57,6 +57,11 @@ const std::string& Burst::Deadline::getPlotFile() const
 	return plotFile_;
 }
 
+void Burst::Deadline::setDeadline(uint64_t deadline)
+{
+	deadline_ = deadline;
+}
+
 bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
 {
 	return getDeadline() < rhs.getDeadline();

@@ -103,9 +103,28 @@ void Burst::NonceSubmitter::runTask()
 				}
 				else
 				{
-					MinerLogger::write("Error on logging confirmed deadline!", TextType::Error);
-					MinerLogger::write("Path: '" + confirmedDeadlinesPath + "'", TextType::Error);
+					std::vector<std::string> lines = {
+						"Error on logging confirmed deadline!",
+						"Path: '" + confirmedDeadlinesPath + "'"
+					};
+
+					MinerLogger::write(lines, TextType::Error);
 				}
+			}
+
+			// our calculated deadlines differs from the pools one
+			if (confirmation.deadline != deadline->getDeadline())
+			{
+				std::vector<std::string> lines = {
+					"The pools deadline for the nonce is different then ours!",
+					"Pools deadline: " + deadlineFormat(confirmation.deadline),
+					"Our deadline: " + deadlineFormat(deadline->getDeadline())
+				};
+
+				MinerLogger::write(lines, TextType::Error);
+
+				// change the deadline
+				deadline->setDeadline(confirmation.deadline);
 			}
 
 			auto message = accountName + ": nonce confirmed (" + deadlineFormat(deadline->getDeadline()) + ")";

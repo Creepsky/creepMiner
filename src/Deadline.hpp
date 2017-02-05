@@ -29,6 +29,7 @@ namespace Burst
 		bool isOnTheWay() const;
 		bool isConfirmed() const;
 		const std::string& getPlotFile() const;
+		void setDeadline(uint64_t deadline);
 
 		bool operator<(const Deadline& rhs) const;
 		bool operator()(const Deadline& lhs, const Deadline& rhs) const;
