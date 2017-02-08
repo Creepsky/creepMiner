@@ -111,7 +111,9 @@ void Burst::PlotReader::runTask()
 							//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
 
 							// wait, when there is too much work for the verifiers
-							while (sumBufferSize_ >= MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024)
+							while (sumBufferSize_ >= MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 &&
+								!isCancelled() &&
+								miner_.getBlockheight() == plotReadNotification->blockheight)
 							{ }
 
 							sumBufferSize_ += bufferSize * sizeof(ScoopData);
