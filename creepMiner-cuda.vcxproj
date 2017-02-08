@@ -178,6 +178,7 @@
     <ClInclude Include="src\sphlib\sph_types.h" />
     <ClInclude Include="src\Url.hpp" />
     <ClInclude Include="src\Wallet.hpp" />
+    <ClInclude Include="src\WorkerList.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />
