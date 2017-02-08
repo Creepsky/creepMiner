@@ -19,7 +19,6 @@
 #include <Poco/JSON/Object.h>
 #include <Poco/Path.h>
 #include "NonceSubmitter.hpp"
-#include <algorithm>
 #include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include "PlotVerifier.hpp"
@@ -385,8 +384,6 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		}
 
 		newDeadline->send();
-
-		Poco::ThreadTarget target{ []() {} };
 
 		if (createSendThread)
 #ifdef NDEBUG
