@@ -21,6 +21,8 @@
 #include "MinerData.hpp"
 #include <Poco/NotificationQueue.h>
 #include <Poco/ThreadPool.h>
+#include "PlotVerifier.hpp"
+#include "WorkerList.hpp"
 
 namespace Poco
 {
@@ -77,11 +79,9 @@ namespace Burst
 		Accounts accounts_;
 		Wallet wallet_;
 		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_;
-		std::unique_ptr<Poco::TaskManager> plotReaderManager_;
-		std::unique_ptr<Poco::TaskManager> verifierManager_;
-		std::unique_ptr<Poco::ThreadPool> verifierThreadPool_;
-		std::unique_ptr<Poco::ThreadPool> plotReaderThreadPool_;
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
+		std::unique_ptr<WorkerList<PlotVerifier>> verifier_;
+		std::unique_ptr<WorkerList<PlotReader>> plotReader_;
 	};
 }

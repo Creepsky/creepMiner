@@ -95,20 +95,4 @@ namespace Burst
 	Poco::JSON::Object createJsonWonBlocks(const MinerData& data);
 
 	std::string getTime();
-
-	template <typename T, typename TaskManager, typename ...Args>
-	auto createWorkers(size_t size, TaskManager& taskManager, Args&&... args)
-	{
-		auto i = 0u;
-
-		try
-		{
-			for (; i < size; ++i)
-				taskManager.start(new T{std::forward<Args>(args)...});
-		}
-		catch (Poco::Exception&)
-		{ }
-
-		return i;
-	};
 }

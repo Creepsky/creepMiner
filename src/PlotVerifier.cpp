@@ -4,6 +4,7 @@
 #include "MinerLogger.hpp"
 #include "MinerConfig.hpp"
 #include "shabal-cuda/Shabal.hpp"
+#include "PlotReader.hpp"
 
 Burst::PlotVerifier::PlotVerifier(Miner &miner, Poco::NotificationQueue& queue)
 	: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}
@@ -86,6 +87,8 @@ void Burst::PlotVerifier::runTask()
 			verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
 				verifyNotification->gensig, verifyNotification->accountId, verifyNotification->inputPath, *miner_, targetDeadline);
 #endif
+
+		PlotReader::sumBufferSize_ -= verifyNotification->buffer.size() * sizeof(ScoopData);
 	}
 
 #if defined MINING_CUDA

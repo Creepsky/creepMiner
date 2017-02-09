@@ -19,7 +19,6 @@
 #include <Poco/JSON/Object.h>
 #include <Poco/Path.h>
 #include "NonceSubmitter.hpp"
-#include <algorithm>
 #include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include "PlotVerifier.hpp"
@@ -75,17 +74,14 @@ void Burst::Miner::run()
 	// only create the thread pools and manager for mining if there is work to do (plot files)
 	if (!config.getPlotFiles().empty())
 	{
-		// thread pools
-		verifierThreadPool_ = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(MinerConfig::getConfig().getMiningIntensity()));
-		plotReaderThreadPool_ = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(MinerConfig::getConfig().getPlotList().size()));
-
 		// manager
-		verifierManager_ = std::make_unique<Poco::TaskManager>(*verifierThreadPool_);
-		plotReaderManager_ = std::make_unique<Poco::TaskManager>(*plotReaderThreadPool_);
 		nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>();
 
 		// create the plot verifiers
-		auto verifiers = createWorkers<PlotVerifier>(MinerConfig::getConfig().getMiningIntensity(), *verifierManager_, *this, verificationQueue_);
+		verifier_ = std::make_unique<WorkerList<PlotVerifier>>(Poco::Thread::Priority::PRIO_HIGHEST, MinerConfig::getConfig().getMiningIntensity(),
+			*this, verificationQueue_);
+
+		auto verifiers = verifier_->size();
 
 		if (verifiers != MinerConfig::getConfig().getMiningIntensity())
 		{
@@ -102,8 +98,13 @@ void Burst::Miner::run()
 		if (plotReaderToCreate == 0)
 			plotReaderToCreate = MinerConfig::getConfig().getPlotList().size();
 
-		auto plotReader = createWorkers<PlotReader>(plotReaderToCreate, *plotReaderManager_,
+		plotReader_ = std::make_unique<WorkerList<PlotReader>>(Poco::Thread::Priority::PRIO_HIGHEST, plotReaderToCreate,
 			*this, progress_, verificationQueue_, plotReadQueue_);
+
+		auto plotReader = plotReader_->size();
+
+		//auto plotReader = createWorkers<PlotReader>(plotReaderToCreate, *plotReaderThreadPool_,
+			//Poco::Thread::Priority::PRIO_HIGHEST, *this, progress_, verificationQueue_, plotReadQueue_);
 
 		if (plotReader != plotReaderToCreate)
 		{
@@ -150,13 +151,10 @@ void Burst::Miner::stop()
 {
 	poco_ndc(Miner::stop);
 	plotReadQueue_.wakeUpAll();
-	plotReaderManager_->cancelAll();
-	plotReaderManager_->joinAll();
+	plotReader_->stop();
 	verificationQueue_.wakeUpAll();
-	verifierManager_->cancelAll();
-	verifierManager_->joinAll();
-	nonceSubmitterManager_->cancelAll();
-	nonceSubmitterManager_->joinAll();
+	verifier_->stop();
+	Poco::ThreadPool::defaultPool().stopAll();
 	running_ = false;
 }
 

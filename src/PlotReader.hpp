@@ -47,6 +47,7 @@ namespace Burst
 		~PlotReader() override = default;
 
 		void runTask() override;
+		static uint64_t sumBufferSize_;
 
 	private:
 		Miner& miner_;

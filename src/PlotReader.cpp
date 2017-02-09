@@ -16,6 +16,8 @@
 #include <Poco/NotificationQueue.h>
 #include "PlotVerifier.hpp"
 
+uint64_t Burst::PlotReader::PlotReader::sumBufferSize_ = 0;
+
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
 	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
 	: Task("PlotReader"), miner_{miner}, progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
@@ -109,10 +111,12 @@ void Burst::PlotReader::runTask()
 							//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
 
 							// wait, when there is too much work for the verifiers
-							while (!isCancelled() &&
-								miner_.getBlockheight() == plotReadNotification->blockheight &&
-								static_cast<uint32_t>(verificationQueue_->size()) >= MinerConfig::getConfig().getMiningIntensity())
+							while (sumBufferSize_ >= MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 &&
+								!isCancelled() &&
+								miner_.getBlockheight() == plotReadNotification->blockheight)
 							{ }
+
+							sumBufferSize_ += bufferSize * sizeof(ScoopData);
 
 							if (!isCancelled() && miner_.getBlockheight() == plotReadNotification->blockheight)
 								verificationQueue_->enqueueNotification(verification);
