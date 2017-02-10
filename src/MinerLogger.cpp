@@ -180,6 +180,10 @@ bool Burst::MinerLogger::setChannelPriority(const std::string& channel, const st
 			iter->second->setPriority(Poco::Message::PRIO_DEBUG);
 		else if (priority == "trace")
 			iter->second->setPriority(Poco::Message::PRIO_TRACE);
+		else if (priority == "off")
+			iter->second->setPriority(static_cast<Poco::Message::Priority>(0));
+		else if (priority == "all")
+			iter->second->setPriority(Poco::Message::PRIO_TRACE);
 		else
 			return false;
 
