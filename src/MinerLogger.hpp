@@ -11,7 +11,6 @@
 #include <string>
 #include <mutex>
 #include <map>
-#include <atomic>
 #include <vector>
 #include <Poco/Channel.h>
 #include <Poco/Message.h>
@@ -233,12 +232,13 @@ namespace Burst
 			logger.log(message);
 		}
 
-		static void stackframe(Poco::Logger& logger, const Poco::NestedDiagnosticContext& stackframe, const char* file, int line)
+		void stackframe(Poco::Logger& logger, const Poco::NestedDiagnosticContext& stackframe, const char* file, int line) const
 		{
 			std::stringstream ss;
-			ss << "Stackframe" << std::endl << std::endl;
+			ss << "Stackframe" << std::endl;
 			stackframe.dump(ss);
-			logger.log(ss.str(), file, line);
+
+			log(logger, ss.str(), file, line);
 		}
 	};
 
