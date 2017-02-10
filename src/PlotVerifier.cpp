@@ -3,6 +3,7 @@
 #include "Miner.hpp"
 #include "MinerLogger.hpp"
 #include "PlotReader.hpp"
+#include <atomic>
 
 #ifdef MINING_CUDA 
 #include "shabal-cuda/Shabal.hpp"

@@ -17,7 +17,7 @@
 #include "PlotVerifier.hpp"
 #include <Poco/Timestamp.h>
 
-std::atomic_uint64_t Burst::PlotReader::PlotReader::sumBufferSize_ = 0;
+std::atomic_uint_fast64_t Burst::PlotReader::PlotReader::sumBufferSize_;
 
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
 	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
