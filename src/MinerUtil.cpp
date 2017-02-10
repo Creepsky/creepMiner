@@ -21,7 +21,6 @@
 #include "MinerData.hpp"
 #include "PlotReader.hpp"
 #include <Poco/JSON/Parser.h>
-#include <iostream>
 #include <locale>
 #include <regex>
 #include <Poco/FileStream.h>
@@ -311,12 +310,8 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 	}
 	catch (Poco::Exception& exc)
 	{
-		std::vector<std::string> lines = {
-			"Error encrypting the passphrase!",
-			exc.displayText()
-		};
-
-		MinerLogger::writeStackframe(lines);
+		log_error(MinerLogger::general, "Error encrypting the passphrase!\n%s", exc.displayText());
+		log_current_stackframe(MinerLogger::general);
 
 		return "";
 	}
@@ -338,12 +333,8 @@ std::string Burst::decrypt(const std::string& encrypted, const std::string& algo
 	}
 	catch (Poco::Exception& exc)
 	{
-		std::vector<std::string> lines = {
-			"Error decrypting the passphrase!",
-			exc.displayText()
-		};
-
-		MinerLogger::writeStackframe(lines);
+		log_error(MinerLogger::general, "Error decrypting the passphrase!\n%s", exc.displayText());
+		log_current_stackframe(MinerLogger::general);
 
 		return "";
 	}
@@ -364,7 +355,6 @@ std::unique_ptr<Poco::Net::HTTPClientSession> Burst::createSession(const Poco::U
 Poco::Net::SocketAddress Burst::getHostAddress(const Poco::URI& uri)
 {
 	Poco::Net::SocketAddress address{uri.getHost() + ':' + std::to_string(uri.getPort())};
-	MinerLogger::write(address.toString());
 	return address;
 }
 
@@ -490,7 +480,7 @@ std::string Burst::getTime()
 {
 	std::stringstream ss;
 
-#if defined(__linux__) && __GNUC__ < 5 
+#if defined(__linux__) && __GNUC__ < 5
 	time_t rawtime;
 	struct tm * timeinfo;
 	char buffer [80];

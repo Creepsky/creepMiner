@@ -14,12 +14,13 @@ namespace Burst
 	struct VerifyNotification : Poco::Notification
 	{
 		typedef Poco::AutoPtr<VerifyNotification> Ptr;
+
 		std::vector<ScoopData> buffer;
-		uint64_t accountId;
-		uint64_t nonceRead;
-		uint64_t nonceStart;
-		std::string inputPath;
-		uint64_t block;
+		uint64_t accountId = 0;
+		uint64_t nonceRead = 0;
+		uint64_t nonceStart = 0;
+		std::string inputPath = "";
+		uint64_t block = 0;
 		GensigData gensig;
 	};
 

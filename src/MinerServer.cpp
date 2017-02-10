@@ -46,10 +46,11 @@ void Burst::MinerServer::run(uint16_t port)
 		socket.bind(port_, true);
 		socket.listen();
 	}
-	catch (Poco::Exception&)
+	catch (Poco::Exception& exc)
 	{
-		MinerLogger::write("error while creating local http server on port " + std::to_string(port_),
-						   TextType::Error);
+		log_fatal(MinerLogger::server, "Error while creating local http server on port %hu!", port_);
+		log_exception(MinerLogger::server, exc);
+		return;
 	}
 
 	auto params = new HTTPServerParams;
@@ -70,10 +71,12 @@ void Burst::MinerServer::run(uint16_t port)
 		{
 			server_->start();
 		}
-		catch (std::exception& exc)
+		catch (Poco::Exception& exc)
 		{
 			server_.release();
-			MinerLogger::writeStackframe(std::string("could not start local server: ") + exc.what());
+
+			log_fatal(MinerLogger::server, "Could not start local server: %s", exc.displayText());
+			log_current_stackframe(MinerLogger::server);
 		}
 	}
 }
@@ -165,13 +168,13 @@ bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string
 	{
 		auto n = websocket.sendFrame(data.data(), static_cast<int>(data.size()));
 		if (n != static_cast<int>(data.size()))
-			MinerLogger::write("could not fully send: " + data, TextType::Error);
+			log_warning(MinerLogger::server, "Could not fully send: %s", data);
 		return true;
 	}
-	catch (std::exception& exc)
+	catch (Poco::Exception& exc)
 	{
-		MinerLogger::write(std::string("could not send the data to the websocket!: ") + exc.what(),
-			TextType::Debug);
+		log_warning(MinerLogger::server, "Could not send the data to the websocket!\n\tdata: %s", data);
+		log_exception(MinerLogger::server, exc);
 		return false;
 	}
 }
@@ -188,7 +191,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		icompare(request["Upgrade"], "websocket") == 0)
 		return new WebSocketHandler{server_};
 
-	MinerLogger::write("request: " + request.getURI(), TextType::Debug);
+	log_debug(MinerLogger::server, "Request: %s", request.getURI());
 
 	try
 	{
