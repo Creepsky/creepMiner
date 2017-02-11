@@ -15,8 +15,9 @@
 #include <cmath>
 #include <Poco/NotificationQueue.h>
 #include "PlotVerifier.hpp"
+#include <Poco/Timestamp.h>
 
-uint64_t Burst::PlotReader::PlotReader::sumBufferSize_ = 0;
+std::atomic_uint_fast64_t Burst::PlotReader::PlotReader::sumBufferSize_;
 
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
 	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
@@ -39,6 +40,8 @@ void Burst::PlotReader::runTask()
 		else
 			break;
 
+		Poco::Timestamp timeStartDir;
+
 		for (auto plotFileIter = plotReadNotification->plotList.begin();
 			plotFileIter != plotReadNotification->plotList.end() &&
 			!isCancelled() &&
@@ -48,6 +51,8 @@ void Burst::PlotReader::runTask()
 			auto& plotFile = *(*plotFileIter);
 			uint64_t nonceRead = 0;
 			std::ifstream inputStream(plotFile.getPath(), std::ifstream::binary);
+
+			Poco::Timestamp timeStartFile;
 
 			if (inputStream.good())
 			{
@@ -68,14 +73,6 @@ void Burst::PlotReader::runTask()
 					inputStream.good() &&
 					chunkNum <= totalChunk)
 				{
-					// setting up plot data
-					VerifyNotification::Ptr verification = new VerifyNotification{};
-					verification->accountId = accountId;
-					verification->nonceStart = nonceStart;
-					verification->block = block;
-					verification->inputPath = plotFile.getPath();
-					verification->gensig = gensig;
-
 					auto scoopBufferSize = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / (64 * 2); // 8192
 					auto scoopBufferCount = static_cast<size_t>(
 						std::ceil(static_cast<float>(staggerSize * Settings::ScoopSize) / static_cast<float>(scoopBufferSize)));
@@ -88,6 +85,14 @@ void Burst::PlotReader::runTask()
 						inputStream.good() &&
 						scoopDoneRead <= scoopBufferCount)
 					{
+						// setting up plot data
+						VerifyNotification::Ptr verification = new VerifyNotification{};
+						verification->accountId = accountId;
+						verification->nonceStart = nonceStart;
+						verification->block = block;
+						verification->inputPath = plotFile.getPath();
+						verification->gensig = gensig;
+
 						verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 						staggerOffset = scoopDoneRead * scoopBufferSize;
 
@@ -111,15 +116,18 @@ void Burst::PlotReader::runTask()
 							//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
 
 							// wait, when there is too much work for the verifiers
-							while (sumBufferSize_ >= MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 &&
+							auto waitForSpace = false;
+
+							while (!waitForSpace &&
 								!isCancelled() &&
 								miner_.getBlockheight() == plotReadNotification->blockheight)
-							{ }
-
-							sumBufferSize_ += bufferSize * sizeof(ScoopData);
-
-							if (!isCancelled() && miner_.getBlockheight() == plotReadNotification->blockheight)
+								waitForSpace = sumBufferSize_ < MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
+							
+							if (waitForSpace)
+							{
 								verificationQueue_->enqueueNotification(verification);
+								sumBufferSize_ += bufferSize * sizeof(ScoopData);
+							}
 
 							nonceRead += bufferSize;
 						}
@@ -148,10 +156,35 @@ void Burst::PlotReader::runTask()
 
 			//if (MinerConfig::getConfig().output.debug)
 				//MinerLogger::write("finished reading plot file " + plotFile.getPath(), TextType::Debug);
-		}
 
-		if (MinerConfig::getConfig().output.dirDone)
-			MinerLogger::write("Dir " + plotReadNotification->dir + " done", TextType::Unimportant);
+			auto fileReadDiff = timeStartFile.elapsed();
+			auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
+			Poco::Timespan span{fileReadDiff};
+
+			log_debug(MinerLogger::plotReader, "%s done %s in %ss (~%.2hf GB/s)",
+				plotFile.getPath(),
+				memToString(plotFile.getSize(), 2),
+				Poco::DateTimeFormatter::format(span, "%s.%i"),
+				static_cast<float>(plotFile.getSize()) / 1024 / 1024 / 1024 / fileReadDiffSeconds);
+		}
+		
+		auto dirReadDiff = timeStartDir.elapsed();
+		auto dirReadDiffSeconds = static_cast<float>(dirReadDiff) / 1000 / 1000;
+		Poco::Timespan span{dirReadDiff};
+
+		std::uint64_t totalSizeBytes = 0u;
+
+		for (const auto& plot : plotReadNotification->plotList)
+			totalSizeBytes += plot->getSize();
+
+		auto totalSizeMBytes = totalSizeBytes / 1024 / 1024 / 1024;
+
+		log_information(MinerLogger::plotReader, "Dir %s done: %z files, %s total, %ss (~%.2hf GB/s)",
+			plotReadNotification->dir,
+			plotReadNotification->plotList.size(),
+			memToString(totalSizeBytes, 2),
+			Poco::DateTimeFormatter::format(span, "%s.%i"),
+			totalSizeMBytes / dirReadDiffSeconds);
 	}
 }
 
@@ -166,10 +199,8 @@ void Burst::PlotReadProgress::add(uintmax_t value)
 	std::lock_guard<std::mutex> guard(lock_);
 	progress_ += value;
 
-	if (max_ > 0 && MinerConfig::getConfig().output.progress)
+	if (max_ > 0)
 		MinerLogger::writeProgress(getProgress(), 48);
-		//MinerLogger::write("progress: " + std::to_string(progress * 1.f / max * 100) + " %",
-						   //TextType::Progress);
 }
 
 void Burst::PlotReadProgress::set(uintmax_t value)

@@ -17,7 +17,6 @@
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/JSON/Object.h>
-#include <Poco/Path.h>
 #include "NonceSubmitter.hpp"
 #include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
@@ -43,33 +42,34 @@ void Burst::Miner::run()
 		config.getMiningInfoUrl().empty() &&
 		config.getWalletUrl().empty())
 	{
-		MinerLogger::write("Pool/Wallet/MiningInfo are all empty! Miner has nothing to do and shutting down!", TextType::Error);
+		log_critical(MinerLogger::miner, "Pool/Wallet/MiningInfo are all empty! Miner has nothing to do and shutting down!");
 		return;
 	}
 
-	MinerLogger::write("Total plots size: " + memToString(MinerConfig::getConfig().getTotalPlotsize(), 2),
-		TextType::System);
-	MinerLogger::write("Submission Max Retry : " + (config.getSubmissionMaxRetry() == 0u ? "unlimited" :
-		                   std::to_string(config.getSubmissionMaxRetry())), TextType::System);
-	MinerLogger::write("Buffer Size : " + std::to_string(config.maxBufferSizeMB) + " MB", TextType::System);
+	log_system(MinerLogger::miner, "Total plots size: %s", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
+	log_system(MinerLogger::miner, "Submission Max Retry : %s", (config.getSubmissionMaxRetry() == 0u ? "unlimited" :
+		                   std::to_string(config.getSubmissionMaxRetry())));
+	log_system(MinerLogger::miner, "Buffer Size : %z MB", config.maxBufferSizeMB);
 	if (!config.getPoolUrl().empty())
-		MinerLogger::write("Pool Host : " + config.getPoolUrl().getCanonical() + ":" + std::to_string(config.getPoolUrl().getPort()) +
-			" (" + config.getPoolUrl().getIp() + ")", TextType::System);
+		log_system(MinerLogger::miner, "Pool Host : %s:%hu (%s)",
+			config.getPoolUrl().getCanonical(), config.getPoolUrl().getPort(), config.getPoolUrl().getIp());
 	if (!config.getMiningInfoUrl().empty())
-		MinerLogger::write("Mininginfo URL : " + config.getMiningInfoUrl().getCanonical() + ":" + std::to_string(config.getMiningInfoUrl().getPort()) +
-			" (" + config.getMiningInfoUrl().getIp() + ")", TextType::System);
+		log_system(MinerLogger::miner, "Mininginfo URL : %s:%hu (%s)",
+			config.getMiningInfoUrl().getCanonical(), config.getMiningInfoUrl().getPort(), config.getMiningInfoUrl().getIp());
 	if (!config.getWalletUrl().empty())
-		MinerLogger::write("Wallet URL : " + config.getWalletUrl().getCanonical() + ":" + std::to_string(config.getWalletUrl().getPort()) +
-			" (" + config.getWalletUrl().getIp() + ")", TextType::System);
+		log_system(MinerLogger::miner, "Wallet URL : %s:%hu (%s)",
+			config.getWalletUrl().getCanonical(), config.getWalletUrl().getPort(), config.getWalletUrl().getIp());
 	if (config.getStartServer() && !config.getServerUrl().empty())
-		MinerLogger::write("Server URL : " + config.getServerUrl().getCanonical() + ":" + std::to_string(config.getServerUrl().getPort()) +
-			" (" + config.getServerUrl().getIp() + ")", TextType::System);
+		log_system(MinerLogger::miner, "Server URL : %s:%hu (%s)",
+			config.getServerUrl().getCanonical(), config.getServerUrl().getPort(), config.getServerUrl().getIp());
 	if (config.getTargetDeadline() > 0)
-		MinerLogger::write("Target deadline : " + deadlineFormat(config.getTargetDeadline()), TextType::System);
-	MinerLogger::write("Mining intensity : " + std::to_string(config.getMiningIntensity()), TextType::System);
-	MinerLogger::write("Max plot readers : " + (config.getMaxPlotReaders() == 0
-		                                            ? std::to_string(config.getPlotList().size())
-		                                            : std::to_string(config.getMaxPlotReaders())), TextType::System);
+		log_system(MinerLogger::miner, "Target deadline : %s", deadlineFormat(config.getTargetDeadline()));
+	log_system(MinerLogger::miner, "Mining intensity : %u", config.getMiningIntensity());
+	log_system(MinerLogger::miner, "Max plot readers : %z",
+		(config.getMaxPlotReaders() == 0
+		? config.getPlotList().size()
+		: config.getMaxPlotReaders()));
+	log_system(MinerLogger::miner, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
 
 	// only create the thread pools and manager for mining if there is work to do (plot files)
 	if (!config.getPlotFiles().empty())
@@ -85,8 +85,8 @@ void Burst::Miner::run()
 
 		if (verifiers != MinerConfig::getConfig().getMiningIntensity())
 		{
-			MinerLogger::write("Could not create all verifiers (" + std::to_string(verifiers) + "/" +
-				std::to_string(MinerConfig::getConfig().getMiningIntensity()) + "! Lower the setting \"maxBufferSizeMB\"!", TextType::Error);
+			log_critical(MinerLogger::miner, "Could not create all verifiers (%z/%z)!\n"
+				"Lower the setting \"maxBufferSizeMB\"!", verifiers, MinerConfig::getConfig().getMiningIntensity());
 
 			if (verifiers == 0)
 				return;
@@ -108,8 +108,8 @@ void Burst::Miner::run()
 
 		if (plotReader != plotReaderToCreate)
 		{
-			MinerLogger::write("Could not create all plot reader (" + std::to_string(plotReader) + "/" +
-				std::to_string(plotReaderToCreate) + "! Change the setting \"maxPlotReaders\"!", TextType::Error);
+			log_critical(MinerLogger::miner, "Could not create all plot reader (%z/%z)!\n"
+				"Lower the setting \"maxPlotReaders\"!", plotReader, plotReaderToCreate);
 
 			if (plotReader == 0)
 				return;
@@ -137,7 +137,7 @@ void Burst::Miner::run()
 		if (errors >= 5)
 		{
 			// reset error-counter and show error-message in console
-			MinerLogger::write("Could not get block infos!", TextType::Error);
+			log_error(MinerLogger::miner, "Could not get block infos!");
 			errors = 0;
 		}
 
@@ -190,8 +190,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	// it could be slow and is not necessary for the whole process
 	// so show it when it's done
 	if (currentBlockHeight_ > 0 &&
-		!MinerConfig::getConfig().getWalletUrl().getIp().empty() &&
-		MinerConfig::getConfig().output.lastWinner)
+		!MinerConfig::getConfig().getWalletUrl().getIp().empty())
 	{
 		// copy blockheight temporary for lambda arg capture
 		auto block = data_.getCurrentBlock() - 1;
@@ -229,14 +228,6 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 						auto address = NxtAddress(lastWinner).to_string();
 
-						std::vector<std::string> lines = {
-							std::string(50, '-'),
-							"last block winner: ",
-							"block#             " + std::to_string(block),
-							"winner-numeric     " + std::to_string(lastWinner),
-							"winner-address     " + address
-						};
-
 						auto lastWinnerPtr = std::make_shared<Poco::JSON::Object>();
 						lastWinnerPtr->set("type", "lastWinner");
 						lastWinnerPtr->set("numeric", lastWinner);
@@ -244,13 +235,19 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 						if (!name.empty())
 						{
-							lines.emplace_back("winner-name        " + name);
 							lastWinnerPtr->set("name", name);
 						}
 
-						lines.emplace_back(std::string(50, '-'));
+						log_ok(MinerLogger::miner, std::string(50, '-') + "\n"
+							"last block winner: \n"
+							"block#             %Lu\n"
+							"winner-numeric     %Lu\n"
+							"winner-address     %s\n"
+							"%s" +
+							std::string(50, '-'),
+							block, lastWinner, address, (name.empty() ? "" : Poco::format("winner-name        %s\n", name))
+						);
 
-						MinerLogger::write(lines, TextType::Ok);
 						data_.getBlockData()->lastWinner = lastWinnerPtr;
 						data_.addBlockEntry(*lastWinnerPtr);
 
@@ -264,16 +261,13 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 	// printing block info and transfer it to local server
 	{
-		auto lines = {
+		log_notice(MinerLogger::miner, std::string(50, '-') + "\n"
+			"block#      %Lu\n"
+			"scoop#      %d\n"
+			"baseTarget# %Lu\n" +
 			std::string(50, '-'),
-			std::string("block#      " + std::to_string(blockHeight)),
-			std::string("scoop#      " + std::to_string(scoopNum)),
-			std::string("baseTarget# " + std::to_string(baseTarget)),
-			//std::string("gensig#     " + gensigStr),
-			std::string(50, '-')
-		};
-
-		MinerLogger::write(lines, TextType::Information);
+			blockHeight, scoopNum, baseTarget
+		);
 
 		data_.addBlockEntry(createJsonNewBlock(data_));
 	}
@@ -360,17 +354,10 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 			plotFile
 		});
 
-		if (MinerConfig::getConfig().output.nonceFound)
-		{
-			auto message = newDeadline->getAccountName() + ": nonce found (" + Burst::deadlineFormat(deadline) + ")";
+		data_.addBlockEntry(createJsonDeadline(newDeadline, "nonce found"));
 
-			if (MinerConfig::getConfig().output.nonceFoundPlot)
-				message += " in " + plotFile;
-
-			data_.addBlockEntry(createJsonDeadline(newDeadline, "nonce found"));
-
-			MinerLogger::write(message, TextType::Unimportant);
-		}
+		log_unimportant(MinerLogger::miner, "%s: nonce found (%s)\n\tin: %s",
+			newDeadline->getAccountName(), deadlineFormat(deadline), plotFile);
 
 		auto createSendThread = true;
 		auto targetDeadline = getTargetDeadline();
@@ -379,8 +366,8 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 		{
 			createSendThread = false;
 
-			MinerLogger::write("Nonce is higher then the target deadline of the pool (" +
-				deadlineFormat(targetDeadline) + ")", TextType::Debug);
+			log_debug(MinerLogger::miner, "Nonce is higher then the target deadline of the pool (%s)",
+				deadlineFormat(targetDeadline));
 		}
 
 		newDeadline->send();
@@ -454,7 +441,8 @@ bool Burst::Miner::getMiningInfo()
 				"Full response: " + responseData
 			};
 
-			MinerLogger::writeStackframe(lines);
+			log_error(MinerLogger::miner, "Error on getting new block-info!\n\t%s\n\tFull response:\n\t%s", exc.displayText(), responseData);
+			log_current_stackframe(MinerLogger::miner);
 		}
 	}
 

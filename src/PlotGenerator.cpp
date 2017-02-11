@@ -128,6 +128,6 @@ void Burst::RandomNonceGenerator::runTask()
 		//plotReader.runTask();
 	}
 
-	MinerLogger::write("Random nonce generator finished...", TextType::Debug);
+	log_debug(MinerLogger::general, "Random nonce generator finished...");
 	free(mem);
 }

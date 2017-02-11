@@ -43,7 +43,7 @@ void Burst::NonceSubmitter::runTask()
 
 	//MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
 
-	MinerLogger::write(accountName + ": nonce on the way (" + deadline->deadlineToReadableString() + ")");
+	log_information(MinerLogger::nonceSubmitter, "%s: nonce on the way (%s)", accountName, deadline->deadlineToReadableString());
 
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
@@ -54,8 +54,7 @@ void Burst::NonceSubmitter::runTask()
 		MinerConfig::getConfig().getSubmissionMaxRetry(),
 		confirmation.errorCode))
 	{
-		MinerLogger::write("Submit-loop " + std::to_string(submitTryCount + 1) + " (" + deadline->deadlineToReadableString() + ")",
-			TextType::Debug);
+		log_debug(MinerLogger::nonceSubmitter, "Submit-loop %z (%s)", submitTryCount + 1, deadline->deadlineToReadableString());
 
 		NonceRequest request{MinerConfig::getConfig().createSession(HostType::Pool)};
 
@@ -64,7 +63,7 @@ void Burst::NonceSubmitter::runTask()
 
 		if (response.canReceive() && firstSendAttempt)
 		{
-			MinerLogger::write(accountName + ": nonce submitted (" + deadlineFormat(deadline->getDeadline()) + ")", TextType::Ok);
+			log_ok(MinerLogger::nonceSubmitter, "%s: nonce submitted (%s)", accountName, deadlineFormat(deadline->getDeadline()));
 			miner.getData().addBlockEntry(createJsonDeadline(deadline, "nonce submitted"));
 			firstSendAttempt = false;
 		}
@@ -103,34 +102,20 @@ void Burst::NonceSubmitter::runTask()
 				}
 				else
 				{
-					std::vector<std::string> lines = {
-						"Error on logging confirmed deadline!",
-						"Path: '" + confirmedDeadlinesPath + "'"
-					};
-
-					MinerLogger::write(lines, TextType::Error);
+					log_error(MinerLogger::nonceSubmitter, "Error on logging confirmed deadline!\nPath: %s", confirmedDeadlinesPath);
 				}
 			}
 
 			// our calculated deadlines differs from the pools one
 			if (confirmation.deadline != deadline->getDeadline())
 			{
-				std::vector<std::string> lines = {
-					"The pools deadline for the nonce is different then ours!",
-					"Pools deadline: " + deadlineFormat(confirmation.deadline),
-					"Our deadline: " + deadlineFormat(deadline->getDeadline())
-				};
-
-				MinerLogger::write(lines, TextType::Error);
+				log_error(MinerLogger::nonceSubmitter, "The pools deadline for the nonce is different then ours!\n"
+					"\tPools deadline: %s\n\tOur deadline: %s",
+					deadlineFormat(confirmation.deadline), deadlineFormat(deadline->getDeadline()));
 
 				// change the deadline
 				deadline->setDeadline(confirmation.deadline);
 			}
-
-			auto message = accountName + ": nonce confirmed (" + deadlineFormat(deadline->getDeadline()) + ")";
-
-			if (MinerConfig::getConfig().output.nonceConfirmedPlot)
-				message += " in " + deadline->getPlotFile();
 
 			auto bestConfirmed = miner.getBestConfirmed(deadline->getAccountId(), deadline->getBlock());
 			auto showConfirmation = true;
@@ -140,7 +125,10 @@ void Burst::NonceSubmitter::runTask()
 				showConfirmation = bestConfirmed->getDeadline() > deadline->getDeadline();
 
 			if (showConfirmation)
-				MinerLogger::write(message, TextType::Success);
+				log_success(MinerLogger::nonceSubmitter, "%s: nonce confirmed (%s)\n"
+					"\tnonce: %Lu\n"
+					"\tin %s",
+					accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
 
 			// save the best deadline overall			
 			miner.getData().setBestDeadline(deadline);
@@ -153,25 +141,24 @@ void Burst::NonceSubmitter::runTask()
 			deadline->confirm();
 		}
 		else if (betterDeadlineInPipeline)
-			MinerLogger::write("Better deadline in pipeline, stop submitting! (" + deadlineFormat(deadline->getDeadline()) + ")",
-				TextType::Debug);
+			log_debug(MinerLogger::nonceSubmitter, "Better deadline in pipeline, stop submitting! (%s)", deadlineFormat(deadline->getDeadline()));
 		else
 		{
 			// sent, but not confirmed
 			if (firstSendAttempt)
-				MinerLogger::write(accountName + ": could not submit nonce! network issues?" +
-					" (" + deadlineFormat(deadline->getDeadline()) + ")", TextType::Error);
+				log_warning(MinerLogger::nonceSubmitter, "%s: could not submit nonce! network issues? (%s)",
+					accountName, deadlineFormat(deadline->getDeadline()));
 			else if (confirmation.errorCode == SubmitResponse::Error)
-				MinerLogger::write(accountName + ": error on submitting nonce!" +
-					" (" + deadlineFormat(deadline->getDeadline()) + ")", TextType::Error);
+				log_warning(MinerLogger::nonceSubmitter, "%s: error on submitting nonce! (%s)",
+					accountName, deadlineFormat(deadline->getDeadline()));
 			else
-				MinerLogger::write(accountName + ": got no confirmation from server! busy?" +
-					" (" + deadlineFormat(deadline->getDeadline()) + ")", TextType::Error);
+				log_warning(MinerLogger::nonceSubmitter, "%s: got no confirmation from server! busy? (%s)",
+					accountName, deadlineFormat(deadline->getDeadline()));
 		}
 	}
 	else
 	{
-		MinerLogger::write("Found nonce was for the last block, stopped submitting! (" +
-			deadlineFormat(deadline->getDeadline()) + ")", TextType::Debug);
+		log_debug(MinerLogger::nonceSubmitter, "Found nonce was for the last block, stopped submitting! (%s)",
+			deadlineFormat(deadline->getDeadline()));
 	}
 }

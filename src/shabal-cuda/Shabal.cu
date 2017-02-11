@@ -664,23 +664,15 @@ void calculate_shabal_cuda(Burst::ScoopData* buffer, uint64_t len, const Burst::
 	auto sizeBuffer = sizeof(uint8_t) * Burst::Settings::ScoopSize * len;
 	auto sizeGensig = sizeof(uint8_t) * Burst::Settings::HashSize;
 	auto sizeDeadlines = sizeof(CalculatedDeadline) * len;
-
-	Poco::Timestamp now;
-
+	
 	auto err = cudaMalloc((void**)&cudaBuffer, sizeBuffer);
 	err = cudaMalloc((void**)&cudaGensig, sizeGensig);
 	err = cudaMalloc((void**)&cudaDeadlines, sizeDeadlines);
-
-	Burst::MinerLogger::write("cudaMalloc: " + std::to_string(now.elapsed()));
-	now.update();
-
+	
 	err = cudaMemcpy(cudaBuffer, buffer, sizeBuffer, cudaMemcpyHostToDevice);
 	err = cudaMemcpy(cudaGensig, gensig, sizeGensig, cudaMemcpyHostToDevice);
 	//err = cudaMemcpy(cudaDeadlines, deadlines, sizeDeadlines, cudaMemcpyHostToDevice);
 	
-	Burst::MinerLogger::write("cudaMemcpyToDevice: " + std::to_string(now.elapsed()));
-	now.update();
-
 	int blockSize;
 	int minGridSize;
 	int gridSize;
@@ -689,26 +681,15 @@ void calculate_shabal_cuda(Burst::ScoopData* buffer, uint64_t len, const Burst::
 
 	gridSize = (len + blockSize - 1) / blockSize;
 
-	Burst::MinerLogger::write("cudaOccupancyMaxPotentialBlockSize: " + std::to_string(now.elapsed()));
-	now.update();
-
 	calculate_shabal_cuda_device<<<gridSize, blockSize>>>(cudaBuffer, len, cudaGensig, cudaDeadlines,
 		nonceStart, nonceRead, baseTarget);
-
-	Burst::MinerLogger::write("calculate_shabal_cuda_device: " + std::to_string(now.elapsed()));
-	now.update();
-
+	
 	err = cudaMemcpy(deadlines, cudaDeadlines, sizeDeadlines, cudaMemcpyDeviceToHost);
-
-	Burst::MinerLogger::write("cudaMemcpyToHost: " + std::to_string(now.elapsed()));
-	now.update();
 
 	err = cudaFree(cudaBuffer);
 	err = cudaFree(cudaGensig);
 	err = cudaFree(cudaDeadlines);
 	err = err;
-
-	Burst::MinerLogger::write("cudaFree: " + std::to_string(now.elapsed()));
 }
 
 void calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, uint64_t bufferSize, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,

@@ -52,12 +52,8 @@ std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Url::createSession() const
 	}
 	catch (...)
 	{
-		auto lines = {
-			std::string("could not send request to host: unknown protocol ") + uri_.getScheme() + "!",
-			std::string("uri: " + getCanonical())
-		};
-
-		MinerLogger::write(lines, TextType::Error);
+		log_warning(MinerLogger::session, "Could not send request to host: unknown protocol '%s'!\nURI: %s",
+			uri_.getScheme(), getCanonical());
 
 		return nullptr;
 	}

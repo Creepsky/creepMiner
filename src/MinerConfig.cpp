@@ -23,6 +23,8 @@
 #include <Poco/SHA1Engine.h>
 #include <Poco/DigestStream.h>
 #include "PlotSizes.hpp"
+#include <Poco/Logger.h>
+#include <Poco/SplitterChannel.h>
 
 void Burst::MinerConfig::rescan()
 {
@@ -55,7 +57,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 	catch (...)
 	{
-		MinerLogger::write("unable to open config " + configPath, TextType::Error);
+		log_critical(MinerLogger::config, "Unable to open config %s", configPath);
 		return false;
 	}
 
@@ -69,13 +71,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		config = parser.parse(inputFileStream).extract<Poco::JSON::Object::Ptr>();
 	}
 	catch (Poco::JSON::JSONException& exc)
-	{
-		std::vector<std::string> lines = {
-			"there is an error in the config file!",
+	{		
+		log_error(MinerLogger::config,
+			"There is an error in the config file!\n"
+			"%s",
 			exc.displayText()
-		};
-				
-		MinerLogger::writeStackframe(lines);
+		);
+
+		log_current_stackframe(MinerLogger::config);
 
 		// dont forget to close the file
 		if (inputFileStream.is_open())
@@ -83,27 +86,39 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		return false;
 	}
+
+	inputFileStream.close();
 	
 	auto outputObj = config->getObject("output");
 
-	if (!outputObj.isNull())
+	Poco::JSON::Object::Ptr loggingObj = nullptr;
+
+	if (config->has("logging"))
+		loggingObj = config->get("logging").extract<Poco::JSON::Object::Ptr>();
+
+	if (!loggingObj.isNull())
 	{
-		output.progress = outputObj->optValue("progress", true);
-		output.debug = outputObj->optValue("debug", false);
-		output.nonceFound = outputObj->optValue("nonce found", true);
-		output.nonceFoundPlot = outputObj->optValue("nonce found plot", false);
-		output.nonceConfirmedPlot = outputObj->optValue("nonce confirmed plot", false);
-		output.plotDone = outputObj->optValue("plot done", false);
-		output.dirDone = outputObj->optValue("dir done", false);
-		output.lastWinner = outputObj->optValue("last winner", true);
-
-		auto errorObj = outputObj->getObject("error");
-
-		if (!errorObj.isNull())
+		try
 		{
-			output.error.request = errorObj->optValue("request", false);
-			output.error.response = errorObj->optValue("response", false);
+			auto logPath = loggingObj->optValue("path", std::string());
+
+			if (!logPath.empty())
+			{
+				log_system(MinerLogger::config, "Changing path for log file to\n\t%s", logPath);
+				logPath = MinerLogger::setFilePath(loggingObj->optValue("path", std::string()));
+			}
+
+			pathLogfile_ = logPath;
 		}
+		catch (Poco::Exception& exc)
+		{
+			log_fatal(MinerLogger::config, "Could not set path for log-file!\n%s", exc.displayText());
+		}
+
+		// setup logger
+		for (auto& name : MinerLogger::channelNames)
+			if (loggingObj->has(name))
+				MinerLogger::setChannelPriority(name, loggingObj->get(name).extract<std::string>());
 	}
 
 	auto urlPoolStr = config->optValue<std::string>("poolUrl", "");
@@ -130,18 +145,19 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		}
 		else
 		{
-			MinerLogger::write("Invalid plot file or directory in config file " + configPath, TextType::Error);
-			MinerLogger::write(plotsDyn.toString(), TextType::Error);
+			log_warning(MinerLogger::config, "Invalid plot file or directory in config file %s\n%s",
+				configPath, plotsDyn.toString());
 		}
 	}
 	catch (Poco::Exception& exc)
-	{
-		std::vector<std::string> lines = {
-			"error while reading plot files!",
-			exc.what()
-		};
-		
-		MinerLogger::writeStackframe(lines);
+	{		
+		log_error(MinerLogger::config,
+			"Error while reading plot files!\n"
+			"%s",
+			exc.displayText()
+		);
+
+		log_current_stackframe(MinerLogger::config);
 	}
 
 	// combining all plotfiles to lists of plotfiles on the same device
@@ -164,12 +180,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			// if its now empty, we have a really weird plotfile and skip it
 			if (dir.empty())
 			{
-				std::vector<std::string> lines = {
-					"Plotfile with invalid path!",
-					plotFile->getPath()
-				};
-
-				MinerLogger::write(lines, TextType::Debug);
+				log_debug(MinerLogger::config, "Plotfile with invalid path!\n%s", plotFile->getPath());
 				continue;
 			}
 
@@ -216,14 +227,10 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		else
 		{
 			targetDeadline_ = 0;
-			
-			std::vector<std::string> lines = {
-				"the target deadline is not a valid!",
-				"expected a number (amount of seconds) or a formated string (1m 1d 11:11:11)",
-				"got: " + targetDeadline.toString()
-			};
-			
-			MinerLogger::write(lines, TextType::Error);
+
+			log_error(MinerLogger::config, "The target deadline is not a valid!\n"
+				"Expected a number (amount of seconds) or a formated string (1m 1d 11:11:11)\n"
+				"Got: %s", targetDeadline.toString());
 		}
 	}
 
@@ -237,8 +244,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		if (!passphrase.isNull())
 		{
-			if (output.debug)
-				MinerLogger::write("Reading passphrase...", TextType::Debug);
+			log_debug(MinerLogger::config, "Reading passphrase...");
 
 			auto decrypted = passphrase->optValue<std::string>("decrypted", "");
 			auto encrypted = passphrase->optValue<std::string>("encrypted", "");
@@ -250,20 +256,16 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			if (!encrypted.empty() && !key.empty() && !salt.empty())
 			{
-				if (output.debug)
-					MinerLogger::write("Encrypted passphrase found, trying to decrypt...", TextType::Debug);
+				log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
 
 				passPhrase_ = decrypt(encrypted, algorithm, key, salt, iterations);
 
 				if (!passPhrase_.empty())
-					if (output.debug)
-						MinerLogger::write("Passphrase decrypted!", TextType::Debug);
+					log_debug(MinerLogger::config, "Passphrase decrypted!");
 
 				if (deleteKey)
 				{
-					if (output.debug)
-						MinerLogger::write("passhrase.deleteKey == true, deleting the key...", TextType::Debug);
-
+					log_debug(MinerLogger::config, "Passhrase.deleteKey == true, deleting the key...");
 					passphrase->set("key", "");
 				}
 			}
@@ -271,8 +273,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			// there is a decrypted passphrase, we need to encrypt it
 			if (!decrypted.empty())
 			{
-				if (output.debug)
-					MinerLogger::write("Decrypted passphrase found, trying to encrypt...", TextType::Debug);
+				log_debug(MinerLogger::config, "Decrypted passphrase found, trying to encrypt...");
 
 				encrypted = encrypt(decrypted, algorithm, key, salt, iterations);
 				passPhrase_ = decrypted;
@@ -285,34 +286,28 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 					passphrase->set("key", key);
 					passphrase->set("iterations", iterations);
 
-					if (output.debug)
-					{
-						std::vector<std::string> lines = {
-							"Passphrase encrypted!",
-							"encrypted: " + encrypted,
-							"salt: " + salt,
-							"key: " + std::string(key.size(), '*'),
-							"iterations: " + std::to_string(iterations)
-						};
-
-						MinerLogger::write(lines, TextType::Debug);
-					}
+					log_debug(MinerLogger::config, "Passphrase encrypted!\n"
+						"encrypted: %s\n"
+						"salt: %s\n"
+						"key: %s\n"
+						"iterations: %u",
+						encrypted, salt, std::string(key.size(), '*'), iterations
+					);
 				}
 			}
 		}
 	}
 	catch (Poco::Exception& exc)
 	{
-		std::vector<std::string> lines = {
-			"Error while reading passphrase in config file!",
+		log_error(MinerLogger::config,
+			"Error while reading passphrase in config file!\n"
+			"%s",
 			exc.displayText()
-		};
+		);
 
-		MinerLogger::writeStackframe(lines);
+		log_current_stackframe(MinerLogger::config);
 	}
 	
-	inputFileStream.close();
-
 	std::ofstream outputFileStream{configPath};
 
 	if (outputFileStream.is_open())
@@ -469,7 +464,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 
 	if (!path.tryParse(fileOrPath))
 	{
-		MinerLogger::write(fileOrPath + " is an invalid file/dir (syntax), skipping it!", TextType::Error);
+		log_warning(MinerLogger::config, "%s is an invalid file/dir (syntax), skipping it!", fileOrPath);
 		return false;
 	}
 		
@@ -477,7 +472,7 @@ bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
 	
 	if (!fileOrDir.exists())
 	{
-		MinerLogger::write("plot file/dir does not exist: '" + path.toString() + "'", TextType::Error);
+		log_warning(MinerLogger::config, "Plot file/dir does not exist: '%s'", path.toString());
 		return false;
 	}
 	
@@ -550,4 +545,9 @@ const std::string& Burst::MinerConfig::getPassphrase() const
 uint32_t Burst::MinerConfig::getMaxPlotReaders() const
 {
 	return maxPlotReaders_;
+}
+
+const Poco::Path& Burst::MinerConfig::getPathLogfile() const
+{
+	return pathLogfile_;
 }

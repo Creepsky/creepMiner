@@ -1,10 +1,8 @@
 ﻿#include "Request.hpp"
 #include "Socket.hpp"
-#include <sstream>
 #include "Response.hpp"
 #include "nxt/nxt_address.h"
 #include "MinerLogger.hpp"
-#include "MinerUtil.hpp"
 #include "MinerConfig.hpp"
 #include "Poco/Net/HTTPClientSession.h"
 #include "Poco/Net/HTTPRequest.h"
@@ -13,7 +11,6 @@
 #include "Poco/StreamCopier.h"
 #include "Declarations.hpp"
 #include "PlotSizes.hpp"
-#include <Poco/Crypto/Crypto.h>
 #include <Poco/Net/HTMLForm.h>
 
 using namespace Poco::Net;
@@ -44,10 +41,11 @@ Burst::Response Burst::Request::send(Poco::Net::HTTPRequest& request)
 	{
 		session_->sendRequest(request);
 	}
-	catch(std::exception& exc)
+	catch(Poco::Exception& exc)
 	{
-		if (MinerConfig::getConfig().output.error.request)
-			MinerLogger::writeStackframe(std::string("error on sending request: ") + exc.what());
+		log_error(MinerLogger::socket, "Error on sending request: %s", exc.displayText());
+		log_current_stackframe(MinerLogger::socket);
+
 		session_->reset();
 		return {nullptr};
 	}
@@ -67,7 +65,6 @@ Burst::NonceRequest::NonceRequest(std::unique_ptr<Poco::Net::HTTPClientSession> 
 Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accountId)
 {
 	poco_ndc(NonceRequest::submit);
-	NxtAddress addr(accountId);
 
 	Poco::URI uri;
 

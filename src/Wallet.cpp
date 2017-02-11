@@ -51,7 +51,7 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId)
 		return false;
 	}
 
-	MinerLogger::write(std::string("Could not get last winner!"), TextType::Debug);
+	log_debug(MinerLogger::wallet, "Could not get last winner!");
 	return false;
 }
 
@@ -80,7 +80,7 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 		return false;
 	}
 
-	MinerLogger::write(std::string("Could not get name of account!"), TextType::Debug);
+	log_debug(MinerLogger::wallet, "Could not get name of account!");
 	return false;
 }
 
@@ -109,7 +109,7 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 		return false;
 	}
 
-	MinerLogger::write(std::string("Could not get name of account!"), TextType::Debug);
+	log_debug(MinerLogger::wallet, "Could not get name of account!");
 	return false;
 }
 
@@ -139,7 +139,7 @@ bool Burst::Wallet::getLastBlock(uint64_t& block)
 		return false;
 	}
 
-	MinerLogger::write(std::string("Could not get last blockheight!"), TextType::Debug);
+	log_debug(MinerLogger::wallet, "Could not get last blockheight!");
 	return false;
 }
 
@@ -174,14 +174,15 @@ bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::
 		}
 		catch (Poco::Exception& exc)
 		{
-			std::vector<std::string> lines = {
-				"got invalid json response from server",
-				"uri: " + uri.getPathAndQuery(),
-				"response: " + data,
-				exc.displayText()
-			};
+			log_error(MinerLogger::wallet, "Got invalid json response from server\n"
+				"\tURI: %s\n"
+				"\tResponse: %s\n"
+				"\t%s",
+				uri.getPathAndQuery(), data, exc.displayText()
+			);
+
+			log_current_stackframe(MinerLogger::wallet);
 			
-			MinerLogger::writeStackframe(lines);
 			transferSession(resp, walletSession_);
 			return false;
 		}

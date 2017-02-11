@@ -10,10 +10,10 @@
 
 #include <memory>
 #include <vector>
-#include <string>
 #include <Poco/Net/HTTPClientSession.h>
 #include "Url.hpp"
 #include <unordered_map>
+#include <Poco/Path.h>
 
 namespace Poco
 {
@@ -42,24 +42,6 @@ namespace Burst
 		size_t size;
 	};
 
-	struct Output
-	{
-		bool progress;
-		bool debug;
-		bool nonceFound;
-		bool nonceFoundPlot;
-		bool nonceConfirmedPlot;
-		bool plotDone;
-		bool dirDone;
-		bool lastWinner;
-
-		struct Error
-		{
-			bool request;
-			bool response;
-		} error;
-	};
-
 	class Socket;
 
 	class MinerConfig
@@ -71,7 +53,6 @@ namespace Burst
 		void rescan();
 
 		size_t maxBufferSizeMB = 128;
-		Output output;
 		const std::string& getPath() const;
 
 		const std::vector<std::shared_ptr<PlotFile>>& getPlotFiles() const;
@@ -97,6 +78,7 @@ namespace Burst
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		uint32_t getMaxPlotReaders() const;
+		const Poco::Path& getPathLogfile() const;
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -125,6 +107,7 @@ namespace Burst
 		std::unordered_map<std::string, PlotList> plotDirs_;
 		std::string plotsHash_;
 		std::string passPhrase_;
-		uint32_t maxPlotReaders_;
+		uint32_t maxPlotReaders_ = 0;
+		Poco::Path pathLogfile_ = "";
 	};
 }

@@ -29,7 +29,8 @@ bool Burst::Socket::connect(const std::string& ip, size_t port)
 	}
 	catch(Poco::Exception& exc)
 	{
-		MinerLogger::write(std::string("error on connecting to host: ") + exc.what());
+		log_error(MinerLogger::socket, "Error on connecting to host: %s", exc.displayText());
+		log_exception(MinerLogger::socket, exc);
 		return false;
 	}
 
@@ -149,9 +150,7 @@ bool Burst::Socket::receive(std::string& data)
         if (errorNr != ETIMEDOUT)
 #endif
 		{
-			MinerLogger::write("Error while receiving on socket!", TextType::Debug);
-			MinerLogger::write("Error-Code: " + std::to_string(errorNr), TextType::Debug);
-			MinerLogger::write("Disconnecting socket...", TextType::Debug);
+			log_debug(MinerLogger::socket, "Error while receiving on socket!\nError-Code: %d\nDisconnecting socket...", errorNr);
 			disconnect();
 		}
 	}

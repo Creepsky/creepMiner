@@ -17,6 +17,7 @@
 #include <Poco/Task.h>
 #include <atomic>
 #include <Poco/Notification.h>
+#include <atomic>
 
 namespace Poco
 {
@@ -47,7 +48,8 @@ namespace Burst
 		~PlotReader() override = default;
 
 		void runTask() override;
-		static uint64_t sumBufferSize_;
+
+		static std::atomic_uint_fast64_t sumBufferSize_;
 
 	private:
 		Miner& miner_;

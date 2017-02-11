@@ -18,6 +18,7 @@
 #include <Poco/Net/PrivateKeyPassphraseHandler.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include "MinerServer.hpp"
+#include <Poco/Logger.h>
 
 class SSLInitializer
 {
@@ -36,19 +37,23 @@ public:
 int main(int argc, const char* argv[])
 {
 	poco_ndc(main);
+
+	Burst::MinerLogger::setup();
 	
-	Burst::MinerLogger::write(Burst::Settings::Project.nameAndVersionAndOs);
-	Burst::MinerLogger::write("----------------------------------------------");
-	Burst::MinerLogger::write("Github:   https://github.com/Creepsky/creepMiner");
-	Burst::MinerLogger::write("Author:   Creepsky [creepsky@gmail.com]");
-	Burst::MinerLogger::write("Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
-	Burst::MinerLogger::write("----------------------------------------------");
-	Burst::MinerLogger::write("Based on http://github.com/uraymeiviar/burst-miner", Burst::TextType::Unimportant);
-	Burst::MinerLogger::write("author : uray meiviar [ uraymeiviar@gmail.com ]", Burst::TextType::Unimportant);
-	Burst::MinerLogger::write("please donate to support developments :", Burst::TextType::Unimportant);
-	Burst::MinerLogger::write(" [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX", Burst::TextType::Unimportant);
-	Burst::MinerLogger::write(" [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b", Burst::TextType::Unimportant);
-	Burst::MinerLogger::write("----------------------------------------------");
+	auto& general = Poco::Logger::get("general");
+	
+	log_information(general, Burst::Settings::Project.nameAndVersionAndOs);
+	log_information(general, "----------------------------------------------");
+	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
+	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
+	log_information(general, "Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
+	log_information(general, "----------------------------------------------");
+	log_unimportant(general, "Based on http://github.com/uraymeiviar/burst-miner");
+	log_unimportant(general, "author : uray meiviar [ uraymeiviar@gmail.com ]");
+	log_unimportant(general, "please donate to support developments :");
+	log_unimportant(general, " [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX");
+	log_unimportant(general, " [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b");
+	log_unimportant(general, "----------------------------------------------");
 
 	std::string configFile = "mining.conf";
 
@@ -56,19 +61,19 @@ int main(int argc, const char* argv[])
 	{
 		if (argv[1][0] == '-')
 		{
-			Burst::MinerLogger::write("usage : burstminer <config-file>");
-			Burst::MinerLogger::write("if no config-file specified, program will look for mining.conf file inside current directory");
+			log_information(general, "usage : burstminer <config-file>");
+			log_information(general, "if no config-file specified, program will look for mining.conf file inside current directory");
 		}
 		configFile = std::string(argv[1]);
 	}
 
-	Burst::MinerLogger::write("using config file : " + configFile, Burst::TextType::System);
+	log_system(general, "using config file %s", configFile);
 	
 	try
 	{
 		using namespace Poco;
 		using namespace Net;
-
+		
 		SSLInitializer sslInitializer;
 		HTTPSStreamFactory::registerFactory();
 
@@ -77,8 +82,8 @@ int main(int argc, const char* argv[])
 			Context::VERIFY_RELAXED, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
 
-		Poco::Net::HTTPSessionInstantiator::registerInstantiator();
-		Poco::Net::HTTPSSessionInstantiator::registerInstantiator();
+		HTTPSessionInstantiator::registerInstantiator();
+		HTTPSSessionInstantiator::registerInstantiator();
 
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 		{
@@ -96,18 +101,17 @@ int main(int argc, const char* argv[])
 		}
 		else
 		{
-			Burst::MinerLogger::write("Aborting program due to invalid configuration", Burst::TextType::Error);
+			log_error(general, "Aborting program due to invalid configuration");
 		}
 	}
 	catch (Poco::Exception& exc)
 	{
-		Burst::MinerLogger::write(std::string("Aborting program due to exceptional state: ") + exc.displayText(),
-								  Burst::TextType::Error);
+		log_fatal(general, "Aborting program due to exceptional state: %s", exc.displayText());
+		log_exception(general, exc);
 	}
 	catch (std::exception& exc)
 	{
-		Burst::MinerLogger::write(std::string("Aborting program due to exceptional state: ") + exc.what(),
-								  Burst::TextType::Error);
+		log_fatal(general, "Aborting program due to exceptional state: %s", exc.what());
 	}
 
 	return 0;

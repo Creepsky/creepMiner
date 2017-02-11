@@ -3,7 +3,6 @@
 #include "Response.hpp"
 #include "Socket.hpp"
 #include "MinerUtil.hpp"
-#include "MinerConfig.hpp"
 #include "MinerLogger.hpp"
 #include "Poco/Net/HTTPClientSession.h"
 #include "Poco/Net/HTTPResponse.h"
@@ -46,8 +45,13 @@ bool Burst::Response::receive(std::string& data)
 	}
 	catch (Poco::Exception& exc)
 	{
-		if (MinerConfig::getConfig().output.error.response)
-			MinerLogger::writeStackframe(std::string("error on receiving response: ") + exc.what());
+		log_error(MinerLogger::socket,
+			"Error on receiving response!\n%s",
+			exc.displayText()
+		);
+
+		log_current_stackframe(MinerLogger::socket);
+
 		session_->reset();
 		return false;
 	}
@@ -99,31 +103,30 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 			}
 			else if (root->has("errorCode"))
 			{
-				MinerLogger::write(std::string("error: ") + root->get("errorDescription").convert<std::string>(),
-								   TextType::Error);
+				log_warning(MinerLogger::nonceSubmitter, "Error: %s", root->get("errorDescription").convert<std::string>());
 				// we send true so we dont send it again and again
 				confirmation.errorCode = SubmitResponse::Error;
 			}
 			else if (root->has("result"))
 			{
-				MinerLogger::write(std::string("error: ") + root->get("result").convert<std::string>(), TextType::Error);
+				log_warning(MinerLogger::nonceSubmitter, "Error: %s", root->get("result").convert<std::string>());
 				confirmation.errorCode = SubmitResponse::Error;
 			}
 			else
 			{
-				MinerLogger::write(response, TextType::Error);
+				log_warning(MinerLogger::nonceSubmitter, response);
 				confirmation.errorCode = SubmitResponse::Error;
 			}
 		}
 		catch (Poco::Exception& exc)
-		{
-			std::vector<std::string> lines = {
-				"error while waiting for confirmation!",
+		{			
+			log_error(MinerLogger::socket,
+				"Error while waiting for confirmation!\n%s",
 				exc.displayText()
-			};
+			);
 			
-			MinerLogger::writeStackframe(lines);
-			
+			log_current_stackframe(MinerLogger::socket);
+
 			confirmation.errorCode = SubmitResponse::Error;
 		}
 	}

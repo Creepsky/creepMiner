@@ -14,6 +14,7 @@
 #include "MinerConfig.hpp"
 #include <Poco/Net/HTTPClientSession.h>
 #include "PlotSizes.hpp"
+#include <Poco/Logger.h>
 
 void Burst::TemplateVariables::inject(std::string& source) const
 {
@@ -51,7 +52,7 @@ Burst::ShutdownHandler::ShutdownHandler(Miner& miner, MinerServer& server)
 
 void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	MinerLogger::write("Shutting down miner...", TextType::System);
+	log_system(MinerLogger::server, "Shutting down miner...");
 
 	// first we shut down the miner
 	miner_->stop();
@@ -71,7 +72,7 @@ void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 	// finally we shut down the server
 	server_->stop();
 
-	MinerLogger::write("Goodbye", TextType::System);
+	log_system(MinerLogger::server, "Goodbye");
 }
 
 Burst::AssetHandler::AssetHandler(const TemplateVariables& variables)
@@ -139,12 +140,11 @@ void Burst::MiningInfoHandler::handleRequest(Poco::Net::HTTPServerRequest& reque
 
 		auto& output = response.send();
 		output << jsonStr;
-
-
 	}
 	catch (Poco::Exception& exc)
 	{
-		MinerLogger::writeStackframe("Could not send mining info! " + exc.displayText());
+		log_error(MinerLogger::server, "Could not send mining info! %s", exc.displayText());
+		log_current_stackframe(MinerLogger::server);
 	}
 }
 
@@ -165,8 +165,7 @@ void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& requ
 		}
 		catch (Poco::Exception&)
 		{
-			if (MinerConfig::getConfig().output.debug)
-				MinerLogger::write("The X-PlotsHash from the other miner is not a number! " + request.get("X-PlotsHash"), TextType::Debug);
+			log_debug(MinerLogger::server, "The X-PlotsHash from the other miner is not a number! %s", request.get("X-PlotsHash"));
 		}
 
 		// sum up the capacity
@@ -177,7 +176,8 @@ void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& requ
 	}
 	catch (Poco::Exception& exc)
 	{
-		MinerLogger::writeStackframe("Could not forward nonce! " + exc.displayText());
+		log_error(MinerLogger::server, "Could not forward nonce! %s", exc.displayText());
+		log_current_stackframe(MinerLogger::server);
 	}
 }
 
@@ -208,11 +208,7 @@ void Burst::ForwardHandler::handleRequest(Poco::Net::HTTPServerRequest& request,
 	}
 	catch (Poco::Exception& exc)
 	{
-		std::vector<std::string> lines = {
-			"Could not forward request to wallet! " + exc.displayText(),
-			request.getURI()
-		};
-
-		MinerLogger::writeStackframe(lines);
+		log_error(MinerLogger::server, "Could not forward request to wallet!\n%s\n%s", exc.displayText(), request.getURI());
+		log_current_stackframe(MinerLogger::server);
 	}
 }
