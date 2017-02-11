@@ -98,7 +98,15 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	if (!loggingObj.isNull())
 	{
-		MinerLogger::setFilePath(loggingObj->optValue("path", std::string()));
+		try
+		{
+			auto path = MinerLogger::setFilePath(loggingObj->optValue("path", std::string()));
+			pathLogfile_ = path;
+		}
+		catch (Poco::Exception& exc)
+		{
+			log_fatal(MinerLogger::config, "Could not set path for log-file!\n%s", exc.displayText());
+		}
 
 		// setup logger
 		for (auto& name : MinerLogger::channelNames)

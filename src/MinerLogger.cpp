@@ -30,7 +30,7 @@
 #include <Poco/PatternFormatter.h>
 #include <Poco/FormattingChannel.h>
 #include <Poco/SplitterChannel.h>
-#include <Poco/DateTimeFormatter.h>
+#include <Poco/File.h>
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -195,9 +195,44 @@ bool Burst::MinerLogger::setChannelPriority(const std::string& channel, const st
 	return false;
 }
 
-void Burst::MinerLogger::setFilePath(const std::string& path)
+std::string Burst::MinerLogger::setFilePath(const std::string& path)
 {
-	fileChannel_->setProperty("path", path);
+	try
+	{
+		Poco::Path fullPath{ path };
+
+		if (!path.empty())
+		{
+			if (!fullPath.isDirectory())
+				throw Poco::ApplicationException(Poco::format("%s is not a directory!", path));
+
+			Poco::File file{ fullPath };
+
+			try
+			{
+				if (!file.exists())
+					file.createDirectories();
+			}
+			catch (...)
+			{
+				throw;
+			}
+		}
+
+		fullPath.append(getFilenameWithtimestamp("creepMiner", "log"));
+		
+		auto logPath = fullPath.toString();
+
+		fileChannel_->close();
+		fileChannel_->setProperty("path", logPath);
+		fileChannel_->open();
+
+		return logPath;
+	}
+	catch (...)
+	{
+		throw;
+	}
 }
 
 void Burst::MinerLogger::write(const std::string& text, TextType type)
@@ -330,8 +365,7 @@ void Burst::MinerLogger::setup()
 {
 	// create (not open yet) FileChannel
 	{
-		fileChannel_ = new Poco::FileChannel{Poco::format("creepMiner %s.log",
-			Poco::DateTimeFormatter::format(Poco::Timestamp(), "%Y%m%d_%H%M%s"))};
+		fileChannel_ = new Poco::FileChannel{getFilenameWithtimestamp("creepMiner", "log")};
 
 		// rotate every 5 MB
 		fileChannel_->setProperty("rotation", "1 M");

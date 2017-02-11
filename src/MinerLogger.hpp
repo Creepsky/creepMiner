@@ -108,7 +108,7 @@ namespace Burst
 		static void setup();
 		static bool setChannelPriority(const std::string& channel, Poco::Message::Priority priority);
 		static bool setChannelPriority(const std::string& channel, const std::string& priority);
-		static void setFilePath(const std::string& path);
+		static std::string setFilePath(const std::string& path);
 
 		static Poco::Logger& miner;
 		static Poco::Logger& config;
@@ -136,6 +136,7 @@ namespace Burst
 		static void clearLine();
 		static void printTime();
 		static void printProgress(float progress, size_t pipes);
+
 
 		static std::mutex consoleMutex;
 		static ColorPair currentColor;
