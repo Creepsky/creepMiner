@@ -11,8 +11,6 @@
 #include <iomanip>
 #include <mutex>
 #include "MinerConfig.hpp"
-#include <iomanip>
-#include <cmath>
 #include <Poco/NestedDiagnosticContext.h>
 #include "MinerUtil.hpp"
 #include <sstream>
@@ -20,6 +18,9 @@
 #ifdef _WIN32
 #include <wincon.h>
 #include <windows.h>
+#else
+#include <iomanip>
+#include <cmath>
 #endif
 
 #include <Poco/Logger.h>
@@ -29,6 +30,7 @@
 #include <Poco/PatternFormatter.h>
 #include <Poco/FormattingChannel.h>
 #include <Poco/SplitterChannel.h>
+#include <Poco/DateTimeFormatter.h>
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -328,8 +330,9 @@ void Burst::MinerLogger::setup()
 {
 	// create (not open yet) FileChannel
 	{
-		fileChannel_ = new Poco::FileChannel{"creepMiner.log"};
-		
+		fileChannel_ = new Poco::FileChannel{Poco::format("creepMiner %s.log",
+			Poco::DateTimeFormatter::format(Poco::Timestamp(), "%Y%m%d_%H%M%s"))};
+
 		// rotate every 5 MB
 		fileChannel_->setProperty("rotation", "1 M");
 		// archive log

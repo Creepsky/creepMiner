@@ -69,6 +69,7 @@ void Burst::Miner::run()
 		(config.getMaxPlotReaders() == 0
 		? config.getPlotList().size()
 		: config.getMaxPlotReaders()));
+	log_system(MinerLogger::miner, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
 
 	// only create the thread pools and manager for mining if there is work to do (plot files)
 	if (!config.getPlotFiles().empty())
