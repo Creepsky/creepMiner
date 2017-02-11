@@ -499,3 +499,9 @@ std::string Burst::getTime()
 
 	return ss.str();
 }
+
+std::string Burst::getFilenameWithtimestamp(const std::string& name, const std::string& ending)
+{
+	return Poco::format("%s_%s.%s",
+		name, Poco::DateTimeFormatter::format(Poco::Timestamp(), "%Y%m%d_%H%M%s"), ending);
+}

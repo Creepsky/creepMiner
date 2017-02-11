@@ -95,4 +95,5 @@ namespace Burst
 	Poco::JSON::Object createJsonWonBlocks(const MinerData& data);
 
 	std::string getTime();
+	std::string getFilenameWithtimestamp(const std::string& name, const std::string& ending);
 }
