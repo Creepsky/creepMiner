@@ -100,8 +100,15 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	{
 		try
 		{
-			auto path = MinerLogger::setFilePath(loggingObj->optValue("path", std::string()));
-			pathLogfile_ = path;
+			auto logPath = loggingObj->optValue("path", std::string());
+
+			if (!logPath.empty())
+			{
+				log_system(MinerLogger::config, "Changing path for log file to\n\t%s", logPath);
+				logPath = MinerLogger::setFilePath(loggingObj->optValue("path", std::string()));
+			}
+
+			pathLogfile_ = logPath;
 		}
 		catch (Poco::Exception& exc)
 		{
