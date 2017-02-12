@@ -10,7 +10,7 @@ cache:
   directories:
   - $TRAVIS_BUILD_DIR/poco-1.7.6-all
 before_install:
-- ./install-poco.sh
+- if [ ! -d "poco-1.7.6-all" ]; then ./install-poco.sh; fi
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 addons:
