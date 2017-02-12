@@ -6,6 +6,9 @@ compiler: gcc
 env: CXX=g++-5 CXXFLAGS="-std=c++14"
 os: linux
 group: stable
+cache:
+  directories:
+  - $HOME/poco
 before_install:
 - ./install-poco.sh
 install:
@@ -16,4 +19,6 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-5
-script: make
+script:
+- make
+- cp poco-1.7.6-all ~/poco
