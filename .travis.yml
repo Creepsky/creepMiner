@@ -8,7 +8,7 @@ os: linux
 group: stable
 cache:
   directories:
-  - $HOME/poco
+  - $TRAVIS_BUILD_DIR/poco-1.7.6-all
 before_install:
 - ./install-poco.sh
 install:
@@ -19,6 +19,4 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-5
-script:
-- make
-- cp poco-1.7.6-all ~/poco
+script: make
