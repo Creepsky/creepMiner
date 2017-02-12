@@ -84,8 +84,8 @@
     <ClInclude Include="src\PlotGenerator.hpp" />
     <ClInclude Include="src\Account.hpp" />
     <ClInclude Include="src\PlotVerifier.hpp" />
-    <ClInclude Include="src\shabal-cuda\Shabal.hpp" />
     <ClInclude Include="src\PlotSizes.hpp" />
+    <ClInclude Include="src\WorkerList.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sphlib">
@@ -103,8 +103,5 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="src\resources.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="src\shabal-cuda\Shabal.cu" />
   </ItemGroup>
 </Project>
