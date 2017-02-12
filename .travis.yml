@@ -11,7 +11,7 @@ cache:
   - $TRAVIS_BUILD_DIR/poco-1.7.6-all
 before_install:
 - if [ ! -d "poco-1.7.6-all" ]; then ./install-poco.sh; fi
-- if [ -d "poco-1.7.6-all" ]; cd poco-1.7.6-all && sudo ldconfig && sudo make install
+- if [ -d "poco-1.7.6-all" ]; cd poco-1.7.6-all && sudo ldconfig && sudo make install;
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 addons:
