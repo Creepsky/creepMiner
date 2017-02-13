@@ -131,7 +131,10 @@ void Burst::Miner::run()
 		if (getMiningInfo())
 			errors = 0;
 		else
+		{
 			++errors;
+			log_debug(MinerLogger::miner, "Could not get mining infos %u/5 times...", errors);
+		}
 
 		// we have a tollerance of 5 times of not being able to fetch mining infos, before its a real error
 		if (errors >= 5)
@@ -164,9 +167,18 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 
 	// stop all reading processes if any
 	if (!MinerConfig::getConfig().getPlotFiles().empty())
+	{
 		plotReadQueue_.clear();
+		verificationQueue_.clear();
+		PlotReader::sumBufferSize_ = 0;
+		log_debug(MinerLogger::miner, "Verification queue cleared.");
+	}
 
+	log_debug(MinerLogger::miner, "Locking threads...");
 	Poco::ScopedLock<Poco::FastMutex> lock { deadlinesLock_ };
+	log_debug(MinerLogger::miner, "Threads locked, setting up new block %Lu...", blockHeight);
+
+	// new round, clear all deadlines
 	deadlines_.clear();
 
 	for (auto i = 0; i < 32; ++i)
@@ -376,7 +388,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 #ifdef NDEBUG
 			nonceSubmitterManager_->start(new NonceSubmitter{ *this, newDeadline });
 #else
-			{} // in debug mode we dont submit nonces
+		{} // in debug mode we dont submit nonces
 #endif
 	}
 }

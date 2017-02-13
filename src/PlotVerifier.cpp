@@ -89,7 +89,13 @@ void Burst::PlotVerifier::runTask()
 				verifyNotification->gensig, verifyNotification->accountId, verifyNotification->inputPath, *miner_, targetDeadline);
 #endif
 		
-		PlotReader::sumBufferSize_ -= verifyNotification->buffer.size() * sizeof(ScoopData);
+		if (verifyNotification->block == miner_->getBlockheight())
+			PlotReader::sumBufferSize_ -= verifyNotification->buffer.size() * sizeof(ScoopData);
+		else
+			log_debug(MinerLogger::plotVerifier, "Plot verifier is done with work, but not for this block!\n"
+				"\tBlock#: %Lu (vs. this block#: %Lu)\n"
+				"\tPlotfile:%s",
+				verifyNotification->block, miner_->getBlockheight(), verifyNotification->inputPath);
 	}
 
 #if defined MINING_CUDA
@@ -116,9 +122,9 @@ void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceR
 	memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
 	auto deadline = targetResult / miner.getBaseTarget();
 	
-	if (targetDeadline > deadline)
-	{
+	//if (targetDeadline > deadline)
+	//{
 		auto nonceNum = nonceStart + nonceRead + offset;
 		miner.submitNonce(nonceNum, accountId, deadline, inputPath);
-	}
+	//}
 }
