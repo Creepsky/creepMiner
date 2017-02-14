@@ -27,18 +27,6 @@ namespace Poco
 
 namespace Burst
 {
-	const std::string TYPE_NORMAL = "normal";
-	const std::string TYPE_ERROR = "error";
-	const std::string TYPE_INFO = "info";
-	const std::string TYPE_SUCCESS = "success";
-	const std::string TYPE_WARN = "warn";
-	const std::string TYPE_IMPORTANT = "important";
-	const std::string TYPE_SYSTEM = "system";
-	const std::string TYPE_UNIMPORTANT = "unimportant";
-	const std::string TYPE_OK = "ok";
-	const std::string TYPE_DEBUG = "debug";
-	const std::string TYPE_PROGRESS = "progress";
-
 	class MinerLogger
 	{
 	public:
@@ -120,6 +108,9 @@ namespace Burst
 		static Poco::Logger& plotVerifier;
 		static Poco::Logger& wallet;
 		static Poco::Logger& general;
+		
+		static void setOutput(int id, bool set);
+		static bool hasOutput(int id);
 
 	private:
 		static void write(const std::string& text, TextType type = TextType::Normal);
@@ -137,7 +128,6 @@ namespace Burst
 		static void printTime();
 		static void printProgress(float progress, size_t pipes);
 
-
 		static std::mutex consoleMutex;
 		static ColorPair currentColor;
 		static TextType currentTextType;
@@ -147,6 +137,7 @@ namespace Burst
 		static size_t lastPipeCount_;
 
 		static const std::unordered_map<std::string, ColoredPriorityConsoleChannel*> channels_;
+		static std::unordered_map<uint32_t, bool> output_;
 		static Poco::Channel* fileChannel_;
 		static Poco::FormattingChannel* fileFormatter_;
 	};
@@ -163,9 +154,9 @@ namespace Burst
 		 * \param file The file, in which the log was created.
 		 * \param line The line in the file, in which the log was created.
 		 */
-		Message(Poco::Logger& logger, const std::string& text, const char* file, int line)
+		Message(Poco::Logger& logger, const std::string& text, const char* file, int line, bool condition = true)
 		{
-			log(logger, text, file, line);
+			log(logger, text, file, line, condition);
 		}
 
 		/**
@@ -178,9 +169,9 @@ namespace Burst
 		 * \param args The values for the placeholders in format.
 		 */
 		template <typename ...Args>
-		Message(Poco::Logger& logger, const std::string& format, const char* file, int line, Args&&... args)
+		Message(Poco::Logger& logger, const std::string& format, const char* file, int line, bool condition, Args&&... args)
 		{
-			log(logger, Poco::format(format, args...), file, line);
+			log(logger, Poco::format(format, args...), file, line, condition);
 		}
 
 		/**
@@ -222,12 +213,13 @@ namespace Burst
 		}
 
 	private:
-		void log(Poco::Logger& logger, const std::string& text, const char* file, int line) const
+		void log(Poco::Logger& logger, const std::string& text, const char* file, int line, bool condition = true) const
 		{
 			Poco::Message message;
 			message.setText(text);
 			message.setPriority(Priority);
 			message.set("type", std::to_string(static_cast<int>(Type)));
+			message.set("condition", std::to_string(condition));
 			message.setSourceFile(file);
 			message.setSourceLine(line);
 			logger.log(message);
@@ -267,22 +259,27 @@ namespace Burst
 	template <TextType Type>
 	using Trace = Message<Poco::Message::Priority::PRIO_TRACE, Type>;
 
-#define log_fatal(logger, text, ...) Burst::Fatal<Burst::TextType::Error>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_critical(logger, text, ...) Burst::Critical<Burst::TextType::Error>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_error(logger, text, ...) Burst::Error<Burst::TextType::Error>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_warning(logger, text, ...) Burst::Warning<Burst::TextType::Error>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_notice(logger, text, ...) Burst::Notice<Burst::TextType::Information>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_information(logger, text, ...) Burst::Information<Burst::TextType::Normal>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_debug(logger, text, ...) Burst::Debug<Burst::TextType::Debug>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_trace(logger, text, ...) Burst::Trace<Burst::TextType::Debug>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
+#define log_fatal(logger, text, ...) Burst::Fatal<Burst::TextType::Error>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_critical(logger, text, ...) Burst::Critical<Burst::TextType::Error>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_error(logger, text, ...) Burst::Error<Burst::TextType::Error>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_warning(logger, text, ...) Burst::Warning<Burst::TextType::Error>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_notice(logger, text, ...) Burst::Notice<Burst::TextType::Information>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_information(logger, text, ...) Burst::Information<Burst::TextType::Normal>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_information_if(logger, cond, text, ...) Burst::Information<Burst::TextType::Normal>(logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
+#define log_debug(logger, text, ...) Burst::Debug<Burst::TextType::Debug>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_trace(logger, text, ...) Burst::Trace<Burst::TextType::Debug>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
 #define log_exception(logger, exception) Burst::Error<Burst::TextType::Error>(logger, exception, __FILE__, __LINE__)
 #define log_memory(logger, text, memory, size) Burst::Trace<Burst::TextType::Debug>(logger, text, memory, size, __FILE__, __LINE__)
 #define log_stackframe(logger, stackframe) Burst::Error<Burst::TextType::Error>(logger, stackframe, __FILE__, __LINE__)
 #define log_current_stackframe(logger) log_stackframe(logger, Poco::NestedDiagnosticContext::current())
 
-#define log_ok(logger, text, ...) Burst::Information<Burst::TextType::Ok>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_unimportant(logger, text, ...) Burst::Information<Burst::TextType::Unimportant>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_success(logger, text, ...) Burst::Information<Burst::TextType::Success>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
-#define log_system(logger, text, ...) Burst::Information<Burst::TextType::System>(logger, text, __FILE__, __LINE__, ##__VA_ARGS__)
+#define log_ok(logger, text, ...) Burst::Information<Burst::TextType::Ok>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_ok_if(logger, cond, text, ...) Burst::Information<Burst::TextType::Ok>(logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
+#define log_unimportant(logger, text, ...) Burst::Information<Burst::TextType::Unimportant>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_unimportant_if(logger, cond, text, ...) Burst::Information<Burst::TextType::Unimportant>(logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
+#define log_success(logger, text, ...) Burst::Information<Burst::TextType::Success>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_success_if(logger, cond, text, ...) Burst::Information<Burst::TextType::Success>(logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
+#define log_system(logger, text, ...) Burst::Information<Burst::TextType::System>(logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
+#define log_system_if(logger, cond, text, ...) Burst::Information<Burst::TextType::System>(logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
 
 }

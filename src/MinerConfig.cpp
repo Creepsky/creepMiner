@@ -25,6 +25,7 @@
 #include "PlotSizes.hpp"
 #include <Poco/Logger.h>
 #include <Poco/SplitterChannel.h>
+#include "Output.hpp"
 
 void Burst::MinerConfig::rescan()
 {
@@ -89,8 +90,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	inputFileStream.close();
 	
-	auto outputObj = config->getObject("output");
-
 	Poco::JSON::Object::Ptr loggingObj = nullptr;
 
 	if (config->has("logging"))
@@ -119,6 +118,23 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		for (auto& name : MinerLogger::channelNames)
 			if (loggingObj->has(name))
 				MinerLogger::setChannelPriority(name, loggingObj->get(name).extract<std::string>());
+	}
+
+	Poco::JSON::Object::Ptr outputObj = nullptr;
+
+	if (config->has("output"))
+		outputObj = config->getObject("output");
+
+	// output
+	if (!outputObj.isNull())
+	{
+		MinerLogger::setOutput(LastWinner, outputObj->optValue("lastWinner", MinerLogger::hasOutput(LastWinner)));
+		MinerLogger::setOutput(NonceFound, outputObj->optValue("nonceFound", MinerLogger::hasOutput(NonceFound)));
+		MinerLogger::setOutput(NonceOnTheWay, outputObj->optValue("nonceOnTheWay", MinerLogger::hasOutput(NonceOnTheWay)));
+		MinerLogger::setOutput(NonceSent, outputObj->optValue("nonceSent", MinerLogger::hasOutput(NonceSent)));
+		MinerLogger::setOutput(NonceConfirmed, outputObj->optValue("nonceConfirmed", MinerLogger::hasOutput(NonceConfirmed)));
+		MinerLogger::setOutput(PlotDone, outputObj->optValue("plotDone", MinerLogger::hasOutput(PlotDone)));
+		MinerLogger::setOutput(DirDone, outputObj->optValue("dirDone", MinerLogger::hasOutput(DirDone)));
 	}
 
 	auto urlPoolStr = config->optValue<std::string>("poolUrl", "");

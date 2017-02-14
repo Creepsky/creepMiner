@@ -145,6 +145,7 @@
     <ClCompile Include="src\Wallet.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Output.hpp" />
     <ClInclude Include="src\Account.hpp" />
     <ClInclude Include="src\AccountNames.hpp" />
     <ClInclude Include="src\MinerData.hpp" />
