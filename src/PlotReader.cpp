@@ -16,6 +16,7 @@
 #include <Poco/NotificationQueue.h>
 #include "PlotVerifier.hpp"
 #include <Poco/Timestamp.h>
+#include "Output.hpp"
 
 std::atomic_uint_fast64_t Burst::PlotReader::PlotReader::sumBufferSize_;
 
@@ -161,7 +162,7 @@ void Burst::PlotReader::runTask()
 			auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
 			Poco::Timespan span{fileReadDiff};
 
-			log_debug(MinerLogger::plotReader, "%s done %s in %ss (~%.2hf GB/s)",
+			log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s done %s in %ss (~%.2hf GB/s)",
 				plotFile.getPath(),
 				memToString(plotFile.getSize(), 2),
 				Poco::DateTimeFormatter::format(span, "%s.%i"),
@@ -179,7 +180,7 @@ void Burst::PlotReader::runTask()
 
 		auto totalSizeMBytes = totalSizeBytes / 1024 / 1024 / 1024;
 
-		log_information(MinerLogger::plotReader, "Dir %s done: %z files, %s total, %ss (~%.2hf GB/s)",
+		log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone), "Dir %s done: %z files, %s total, %ss (~%.2hf GB/s)",
 			plotReadNotification->dir,
 			plotReadNotification->plotList.size(),
 			memToString(totalSizeBytes, 2),

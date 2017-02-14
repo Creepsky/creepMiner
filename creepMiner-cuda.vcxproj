@@ -160,6 +160,7 @@
     <ClInclude Include="src\AccountNames.hpp" />
     <ClInclude Include="src\MinerData.hpp" />
     <ClInclude Include="src\NonceSubmitter.hpp" />
+    <ClInclude Include="src\Output.hpp" />
     <ClInclude Include="src\PlotGenerator.hpp" />
     <ClInclude Include="src\PlotSizes.hpp" />
     <ClInclude Include="src\PlotVerifier.hpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="src\sphlib\sph_types.h" />
     <ClInclude Include="src\Url.hpp" />
     <ClInclude Include="src\Wallet.hpp" />
+    <ClInclude Include="src\WorkerList.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon.ico" />

@@ -6,6 +6,7 @@
 #include "MinerConfig.hpp"
 #include "Miner.hpp"
 #include <fstream>
+#include "Output.hpp"
 
 Burst::NonceSubmitter::NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline)
 	: Task(serializeDeadline(*deadline)), miner(miner), deadline(deadline)
@@ -43,7 +44,7 @@ void Burst::NonceSubmitter::runTask()
 
 	//MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
 
-	log_information(MinerLogger::nonceSubmitter, "%s: nonce on the way (%s)", accountName, deadline->deadlineToReadableString());
+	log_information_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceOnTheWay), "%s: nonce on the way (%s)", accountName, deadline->deadlineToReadableString());
 
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
@@ -63,7 +64,7 @@ void Burst::NonceSubmitter::runTask()
 
 		if (response.canReceive() && firstSendAttempt)
 		{
-			log_ok(MinerLogger::nonceSubmitter, "%s: nonce submitted (%s)", accountName, deadlineFormat(deadline->getDeadline()));
+			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)", accountName, deadlineFormat(deadline->getDeadline()));
 			miner.getData().addBlockEntry(createJsonDeadline(deadline, "nonce submitted"));
 			firstSendAttempt = false;
 		}
@@ -125,7 +126,7 @@ void Burst::NonceSubmitter::runTask()
 				showConfirmation = bestConfirmed->getDeadline() > deadline->getDeadline();
 
 			if (showConfirmation)
-				log_success(MinerLogger::nonceSubmitter, "%s: nonce confirmed (%s)\n"
+				log_success_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceConfirmed), "%s: nonce confirmed (%s)\n"
 					"\tnonce: %Lu\n"
 					"\tin %s",
 					accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());

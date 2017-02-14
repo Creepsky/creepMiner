@@ -22,6 +22,7 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "PlotVerifier.hpp"
 #include "PlotSizes.hpp"
+#include "Output.hpp"
 
 Burst::Miner::Miner()
 {}
@@ -250,7 +251,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 							lastWinnerPtr->set("name", name);
 						}
 
-						log_ok(MinerLogger::miner, std::string(50, '-') + "\n"
+						log_ok_if(MinerLogger::miner, MinerLogger::hasOutput(LastWinner), std::string(50, '-') + "\n"
 							"last block winner: \n"
 							"block#             %Lu\n"
 							"winner-numeric     %Lu\n"
@@ -368,7 +369,7 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 
 		data_.addBlockEntry(createJsonDeadline(newDeadline, "nonce found"));
 
-		log_unimportant(MinerLogger::miner, "%s: nonce found (%s)\n\tin: %s",
+		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound), "%s: nonce found (%s)\n\tin: %s",
 			newDeadline->getAccountName(), deadlineFormat(deadline), plotFile);
 
 		auto createSendThread = true;

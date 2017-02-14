@@ -31,6 +31,7 @@
 #include <Poco/FormattingChannel.h>
 #include <Poco/SplitterChannel.h>
 #include <Poco/File.h>
+#include "Output.hpp"
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -49,6 +50,15 @@ Poco::Logger& Burst::MinerLogger::plotReader = Poco::Logger::get("plotReader");
 Poco::Logger& Burst::MinerLogger::plotVerifier = Poco::Logger::get("plotVerifier");
 Poco::Logger& Burst::MinerLogger::wallet = Poco::Logger::get("wallet");
 Poco::Logger& Burst::MinerLogger::general = Poco::Logger::get("general");
+
+std::unordered_map<uint32_t, bool> Burst::MinerLogger::output_ = {
+	{ LastWinner, true },
+	{ NonceFound, true },
+	{ NonceSent, true },
+	{ NonceConfirmed, true },
+	{ PlotDone, false },
+	{ DirDone, true },
+};
 
 const std::vector<std::string> Burst::MinerLogger::channelNames
 {
@@ -137,8 +147,14 @@ void Burst::MinerLogger::ColoredPriorityConsoleChannel::log(const Poco::Message&
 		if (msg.has("type"))
 			type = static_cast<TextType>(Poco::NumberParser::parse(msg.get("type")));
 
-		for (auto& token : tokenizer)
-			write(token, type);
+		auto condition = true;
+
+		if (msg.has("condition"))
+			condition = Poco::NumberParser::parseBool(msg.get("condition"));
+
+		if (condition)
+			for (auto& token : tokenizer)
+				write(token, type);
 	}
 }
 
@@ -233,6 +249,21 @@ std::string Burst::MinerLogger::setFilePath(const std::string& path)
 	{
 		throw;
 	}
+}
+
+void Burst::MinerLogger::setOutput(int id, bool set)
+{
+	output_[id] = set;
+}
+
+bool Burst::MinerLogger::hasOutput(int id)
+{
+	auto iter = output_.find(id);
+
+	if (iter != output_.end())
+		return iter->second;
+
+	return false;
 }
 
 void Burst::MinerLogger::write(const std::string& text, TextType type)
