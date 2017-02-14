@@ -138,11 +138,11 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 
 	auto urlPoolStr = config->optValue<std::string>("poolUrl", "");
-	
-	urlPool_ = urlPoolStr;
+
+	urlPool_ = {urlPoolStr, "http", 8124};
 	// if no getMiningInfoUrl and port are defined, we assume that the pool is the source
-	urlMiningInfo_ = config->optValue("miningInfoUrl", urlPoolStr);
-	urlWallet_ = config->optValue<std::string>("walletUrl", "");
+	urlMiningInfo_ = {config->optValue("miningInfoUrl", urlPoolStr), "http", 8124};
+	urlWallet_ = {config->optValue<std::string>("walletUrl", ""), "https", 8127};
 		
 	try
 	{
@@ -224,8 +224,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	http_ = config->optValue("http", 1u);
 	confirmedDeadlinesPath_ = config->optValue<std::string>("confirmed deadlines", "");
 	timeout_ = config->optValue("timeout", 30.f);
-	startServer_ = config->optValue("Start Server", false);
-	serverUrl_ = config->optValue<std::string>("serverUrl", "");
+	startServer_ = config->optValue("Start Server", true);
+	serverUrl_ = {config->optValue<std::string>("serverUrl", ""), "http", 8080};
 	miningIntensity_ = std::max(config->optValue("miningIntensity", 1), 1);
 
 	maxPlotReaders_ = config->optValue("maxPlotReaders", 0u);
