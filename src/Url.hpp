@@ -17,7 +17,7 @@ namespace Burst
 	{
 	public:
 		Url() = default;
-		Url(const std::string& url);
+		Url(const std::string& url, const std::string& defaultScheme = "", unsigned short defaultPort = 0);
 
 		std::string getCanonical(bool withScheme = false) const;
 		std::string getIp() const;
