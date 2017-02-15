@@ -8,9 +8,9 @@ os: linux
 group: stable
 cache:
   directories:
-  - $TRAVIS_BUILD_DIR/poco-1.7.6-all
+  - $TRAVIS_BUILD_DIR/poco-1.7.7-all
 before_install:
-- if [ "$(ls -A poco-1.7.6-all)" ]; then cd poco-1.7.6-all && sudo ldconfig && sudo make install; else ./install-poco.sh; fi
+- if [ "$(ls -A poco-1.7.7-all)" ]; then cd poco-1.7.7-all && sudo ldconfig && sudo make install; else ./install-poco.sh; fi
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 addons:
