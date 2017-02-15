@@ -26,6 +26,7 @@
 #include <Poco/Logger.h>
 #include <Poco/SplitterChannel.h>
 #include "Output.hpp"
+#include <Poco/UTF8String.h>
 
 void Burst::MinerConfig::rescan()
 {
