@@ -54,6 +54,7 @@ Poco::Logger& Burst::MinerLogger::general = Poco::Logger::get("general");
 std::unordered_map<uint32_t, bool> Burst::MinerLogger::output_ = {
 	{ LastWinner, true },
 	{ NonceFound, true },
+	{ NonceOnTheWay, true },
 	{ NonceSent, true },
 	{ NonceConfirmed, true },
 	{ PlotDone, false },
@@ -163,6 +164,11 @@ void Burst::MinerLogger::ColoredPriorityConsoleChannel::setPriority(Poco::Messag
 	priority_ = priority;
 }
 
+Poco::Message::Priority Burst::MinerLogger::ColoredPriorityConsoleChannel::getPriority() const
+{
+	return priority_;
+}
+
 bool Burst::MinerLogger::setChannelPriority(const std::string& channel, Poco::Message::Priority priority)
 {
 	auto iter = channels_.find(channel);
@@ -209,6 +215,36 @@ bool Burst::MinerLogger::setChannelPriority(const std::string& channel, const st
 	}
 
 	return false;
+}
+
+std::string Burst::MinerLogger::getChannelPriority(const std::string& channel)
+{
+	auto iter = channels_.find(channel);
+
+	if (iter != channels_.end())
+	{
+		switch (iter->second->getPriority())
+		{
+		case Poco::Message::PRIO_FATAL:
+			return "fatal";
+		case Poco::Message::PRIO_CRITICAL:
+			return "critical";
+		case Poco::Message::PRIO_ERROR:
+			return "error";
+		case Poco::Message::PRIO_WARNING:
+			return "warning";
+		case Poco::Message::PRIO_NOTICE:
+			return "notice";
+		case Poco::Message::PRIO_INFORMATION:
+			return "information";
+		case Poco::Message::PRIO_DEBUG:
+			return "debug";
+		case Poco::Message::PRIO_TRACE:
+			return "trace";
+		}
+	}
+
+	return "";
 }
 
 std::string Burst::MinerLogger::setFilePath(const std::string& path)

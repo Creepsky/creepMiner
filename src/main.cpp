@@ -111,7 +111,7 @@ int main(int argc, const char* argv[])
 	}
 	catch (std::exception& exc)
 	{
-		log_fatal(general, "Aborting program due to exceptional state: %s", exc.what());
+		log_fatal(general, "Aborting program due to exceptional state: %s", std::string(exc.what()));
 	}
 
 	return 0;

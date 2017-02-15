@@ -46,8 +46,21 @@ size_t Burst::PlotFile::getSize() const
 	return size;
 }
 
+template <typename T>
+T getOrAdd(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValue)
+{
+	auto json = object->get(key);
+
+	if (json.isEmpty())
+		object->set(key, defaultValue);
+	else if (json.type() == typeid(T))
+		return json.extract<T>();
+
+	return defaultValue;
+}
+
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
-{	
+{
 	poco_ndc(readConfigFile);
 	std::ifstream inputFileStream;
 
@@ -67,9 +80,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	Poco::JSON::Parser parser;
 	Poco::JSON::Object::Ptr config;
 	
+	std::string jsonStr((std::istreambuf_iterator<char>(inputFileStream)),
+		std::istreambuf_iterator<char>());
+	
+	inputFileStream.close();
+
 	try
 	{
-		config = parser.parse(inputFileStream).extract<Poco::JSON::Object::Ptr>();
+		config = parser.parse(jsonStr).extract<Poco::JSON::Object::Ptr>();
 	}
 	catch (Poco::JSON::JSONException& exc)
 	{		
@@ -88,187 +106,260 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
-	inputFileStream.close();
-	
-	Poco::JSON::Object::Ptr loggingObj = nullptr;
+	// logging
+	{
+		Poco::JSON::Object::Ptr loggingObj = nullptr;
+		
+		if (config->has("logging"))
+			loggingObj = config->get("logging").extract<Poco::JSON::Object::Ptr>();
 
-	if (config->has("logging"))
-		loggingObj = config->get("logging").extract<Poco::JSON::Object::Ptr>();
+		if (!loggingObj.isNull())
+		{
+			try
+			{
+				auto logPathObj = loggingObj->get("path");
+				std::string logPath = "";
 
-	if (!loggingObj.isNull())
+				if (logPathObj.isEmpty())
+				{
+					loggingObj->set("path", "");
+				}
+				else
+				{
+					logPath = logPathObj.extract<std::string>();
+
+					if (!logPath.empty())
+						log_system(MinerLogger::config, "Changing path for log file to\n\t%s", logPath);
+
+					logPath = MinerLogger::setFilePath(logPath);
+				}
+
+				pathLogfile_ = logPath;
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_fatal(MinerLogger::config, "Could not set path for log-file!\n%s", exc.displayText());
+			}
+
+			// setup logger
+			for (auto& name : MinerLogger::channelNames)
+			{
+				if (loggingObj->has(name))
+					MinerLogger::setChannelPriority(name, loggingObj->get(name).extract<std::string>());
+				else
+					loggingObj->set(name, MinerLogger::getChannelPriority(name));
+			}
+		}
+		// if it dont exist, we create it!
+		else
+		{
+			loggingObj = new Poco::JSON::Object;
+			loggingObj->set("path", "");
+
+			for (auto& name : MinerLogger::channelNames)
+				loggingObj->set(name, MinerLogger::getChannelPriority(name));
+
+			config->set("logging", loggingObj);
+		}
+	}
+
+	// output
+	{
+		auto outputObj = config->getObject("output");
+
+		// output
+		if (outputObj.isNull())
+		{
+			outputObj = new Poco::JSON::Object;
+			config->set("output", outputObj);
+		}
+
+		auto checkCreateFunc = [&outputObj](int id, const std::string& name)
+		{
+			auto obj = outputObj->get(name);
+
+			if (!obj.isEmpty() && obj.isBoolean())
+				MinerLogger::setOutput(id, obj.extract<bool>());
+			else
+				outputObj->set(name, MinerLogger::hasOutput(id));
+		};
+		
+		checkCreateFunc(LastWinner, "lastWinner");
+		checkCreateFunc(NonceFound, "nonceFound");
+		checkCreateFunc(NonceOnTheWay, "nonceOnTheWay");
+		checkCreateFunc(NonceSent, "nonceSent");
+		checkCreateFunc(NonceConfirmed, "nonceConfirmed");
+		checkCreateFunc(PlotDone, "plotDone");
+		checkCreateFunc(DirDone, "dirDone");
+	}
+
+	// urls
+	{
+		auto checkCreateFunc = [&config](const std::string& name, Url& url,
+			const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl)
+		{
+			auto var = getOrAdd(config, name, createUrl);
+			url = {var, defaultScheme, defaultPort};
+			config->set(name, url.getUri().toString());
+		};
+		
+		checkCreateFunc("poolUrl", urlPool_, "http", 8124, "http://pool.burst-team.us:8124");
+		checkCreateFunc("miningInfoUrl", urlMiningInfo_, "http", 8124, "");
+		checkCreateFunc("walletUrl", urlWallet_, "https", 8128, "https://wallet.burst-team.us:8128");
+		checkCreateFunc("serverUrl", serverUrl_, "http", 8080, "http://localhost:8080");
+ 
+		if (urlMiningInfo_.empty() && !urlPool_.empty())
+		{
+			urlMiningInfo_ = urlPool_;
+			config->set("miningInfoUrl", urlPool_.getUri().toString());
+		}
+	}
+
+	// plots
 	{
 		try
 		{
-			auto logPath = loggingObj->optValue("path", std::string());
+			auto plotsDyn = config->get("plots");
 
-			if (!logPath.empty())
+			if (plotsDyn.type() == typeid(Poco::JSON::Array::Ptr))
 			{
-				log_system(MinerLogger::config, "Changing path for log file to\n\t%s", logPath);
-				logPath = MinerLogger::setFilePath(loggingObj->optValue("path", std::string()));
+				auto plots = plotsDyn.extract<Poco::JSON::Array::Ptr>();
+			
+				for (auto& plot : *plots)
+					addPlotLocation(plot.convert<std::string>());
 			}
-
-			pathLogfile_ = logPath;
+			else if (plotsDyn.isString())
+			{
+				addPlotLocation(plotsDyn.extract<std::string>());
+			}
+			else if (plotsDyn.isEmpty())
+			{
+				Poco::JSON::Array::Ptr arr = new Poco::JSON::Array;
+				config->set("plots", arr);
+			}
+			else
+			{
+				log_warning(MinerLogger::config, "Invalid plot file or directory in config file %s\n%s",
+					configPath, plotsDyn.toString());
+			}
 		}
 		catch (Poco::Exception& exc)
-		{
-			log_fatal(MinerLogger::config, "Could not set path for log-file!\n%s", exc.displayText());
+		{		
+			log_error(MinerLogger::config,
+				"Error while reading plot files!\n"
+				"%s",
+				exc.displayText()
+			);
+
+			log_current_stackframe(MinerLogger::config);
 		}
 
-		// setup logger
-		for (auto& name : MinerLogger::channelNames)
-			if (loggingObj->has(name))
-				MinerLogger::setChannelPriority(name, loggingObj->get(name).extract<std::string>());
-	}
-
-	Poco::JSON::Object::Ptr outputObj = nullptr;
-
-	if (config->has("output"))
-		outputObj = config->getObject("output");
-
-	// output
-	if (!outputObj.isNull())
-	{
-		MinerLogger::setOutput(LastWinner, outputObj->optValue("lastWinner", MinerLogger::hasOutput(LastWinner)));
-		MinerLogger::setOutput(NonceFound, outputObj->optValue("nonceFound", MinerLogger::hasOutput(NonceFound)));
-		MinerLogger::setOutput(NonceOnTheWay, outputObj->optValue("nonceOnTheWay", MinerLogger::hasOutput(NonceOnTheWay)));
-		MinerLogger::setOutput(NonceSent, outputObj->optValue("nonceSent", MinerLogger::hasOutput(NonceSent)));
-		MinerLogger::setOutput(NonceConfirmed, outputObj->optValue("nonceConfirmed", MinerLogger::hasOutput(NonceConfirmed)));
-		MinerLogger::setOutput(PlotDone, outputObj->optValue("plotDone", MinerLogger::hasOutput(PlotDone)));
-		MinerLogger::setOutput(DirDone, outputObj->optValue("dirDone", MinerLogger::hasOutput(DirDone)));
-	}
-
-	auto urlPoolStr = config->optValue<std::string>("poolUrl", "");
-
-	urlPool_ = {urlPoolStr, "http", 8124};
-	// if no getMiningInfoUrl and port are defined, we assume that the pool is the source
-	urlMiningInfo_ = {config->optValue("miningInfoUrl", urlPoolStr), "http", 8124};
-	urlWallet_ = {config->optValue<std::string>("walletUrl", ""), "https", 8127};
-		
-	try
-	{
-		auto plotsDyn = config->get("plots");
-						
-		if (plotsDyn.type() == typeid(Poco::JSON::Array::Ptr))
+		// combining all plotfiles to lists of plotfiles on the same device
 		{
-			auto plots = plotsDyn.extract<Poco::JSON::Array::Ptr>();
-			
-			for (auto& plot : *plots)
-				addPlotLocation(plot.convert<std::string>());
-		}
-		else if (plotsDyn.isString())
-		{
-			addPlotLocation(plotsDyn.extract<std::string>());
-		}
-		else
-		{
-			log_warning(MinerLogger::config, "Invalid plot file or directory in config file %s\n%s",
-				configPath, plotsDyn.toString());
-		}
-	}
-	catch (Poco::Exception& exc)
-	{		
-		log_error(MinerLogger::config,
-			"Error while reading plot files!\n"
-			"%s",
-			exc.displayText()
-		);
+			Poco::SHA1Engine sha;
+			Poco::DigestOutputStream shaStream{sha};
 
-		log_current_stackframe(MinerLogger::config);
-	}
-
-	// combining all plotfiles to lists of plotfiles on the same device
-	{
-		Poco::SHA1Engine sha;
-		Poco::DigestOutputStream shaStream{sha};
-
-		for (const auto plotFile : getPlotFiles())
-		{
-			Poco::Path path{ plotFile->getPath() };
-
-			shaStream << plotFile->getPath();
-
-			auto dir = path.getDevice();
-
-			// if its empty its unix and we have to look for the top dir
-			if (dir.empty() && path.depth() > 0)
-				dir = path.directory(0);
-
-			// if its now empty, we have a really weird plotfile and skip it
-			if (dir.empty())
+			for (const auto plotFile : getPlotFiles())
 			{
-				log_debug(MinerLogger::config, "Plotfile with invalid path!\n%s", plotFile->getPath());
-				continue;
+				Poco::Path path{ plotFile->getPath() };
+
+				shaStream << plotFile->getPath();
+
+				auto dir = path.getDevice();
+
+				// if its empty its unix and we have to look for the top dir
+				if (dir.empty() && path.depth() > 0)
+					dir = path.directory(0);
+
+				// if its now empty, we have a really weird plotfile and skip it
+				if (dir.empty())
+				{
+					log_debug(MinerLogger::config, "Plotfile with invalid path!\n%s", plotFile->getPath());
+					continue;
+				}
+
+				auto iter = plotDirs_.find(dir);
+
+				if (iter == plotDirs_.end())
+					plotDirs_.emplace(std::make_pair(dir, PlotList {}));
+
+				plotDirs_[dir].emplace_back(plotFile);
 			}
 
-			auto iter = plotDirs_.find(dir);
+			shaStream << std::flush;
+			plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
 
-			if (iter == plotDirs_.end())
-				plotDirs_.emplace(std::make_pair(dir, PlotList {}));
-
-			plotDirs_[dir].emplace_back(plotFile);
+			// we remember our total plot size
+			PlotSizes::set(plotsHash_, getTotalPlotsize() / 1024 / 1024 / 1024);
 		}
-
-		shaStream << std::flush;
-		plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
-
-		// we remember our total plot size
-		PlotSizes::set(plotsHash_, getTotalPlotsize() / 1024 / 1024 / 1024);
 	}
 
-	submission_max_retry_ = config->optValue("submissionMaxRetry", 3u);
-	maxBufferSizeMB = config->optValue("maxBufferSizeMB", 64u);
+	submission_max_retry_ = getOrAdd(config, "submissionMaxRetry", 3);
+	maxBufferSizeMB = getOrAdd(config, "maxBufferSizeMB", 128);
 
 	if (maxBufferSizeMB == 0)
-		maxBufferSizeMB = 1;
+		maxBufferSizeMB = 128;
 
 	http_ = config->optValue("http", 1u);
 	confirmedDeadlinesPath_ = config->optValue<std::string>("confirmed deadlines", "");
-	timeout_ = config->optValue("timeout", 30.f);
-	startServer_ = config->optValue("Start Server", true);
-	serverUrl_ = {config->optValue<std::string>("serverUrl", ""), "http", 8080};
-	miningIntensity_ = std::max(config->optValue("miningIntensity", 1), 1);
+	timeout_ = getOrAdd(config, "timeout", 30.f);
+	startServer_ = getOrAdd(config, "Start Server", false);
+	miningIntensity_ = getOrAdd(config, "miningIntensity", 2);
+	maxPlotReaders_ = getOrAdd(config, "maxPlotReaders", 0u);
 
-	maxPlotReaders_ = config->optValue("maxPlotReaders", 0u);
-
-	auto targetDeadline = config->get("targetDeadline");
-	
-	if (!targetDeadline.isEmpty())
+	// target deadline
 	{
-		// could be the raw deadline
-		if (targetDeadline.isInteger())
-			targetDeadline_ = targetDeadline.convert<uint64_t>();
-		// or a formated string
-		else if (targetDeadline.isString())
-			targetDeadline_ = formatDeadline(targetDeadline.convert<std::string>());
+		auto targetDeadline = config->get("targetDeadline");
+	
+		if (!targetDeadline.isEmpty())
+		{
+			// could be the raw deadline
+			if (targetDeadline.isInteger())
+				targetDeadline_ = targetDeadline.convert<uint64_t>();
+			// or a formated string
+			else if (targetDeadline.isString())
+				targetDeadline_ = formatDeadline(targetDeadline.convert<std::string>());
+			else
+			{
+				targetDeadline_ = 0;
+
+				log_error(MinerLogger::config, "The target deadline is not a valid!\n"
+					"Expected a number (amount of seconds) or a formated string (1m 1d 11:11:11)\n"
+					"Got: %s", targetDeadline.toString());
+			}
+		}
 		else
 		{
+			config->set("targetDeadline", "0y 0m 0d 00:00:00");
 			targetDeadline_ = 0;
-
-			log_error(MinerLogger::config, "The target deadline is not a valid!\n"
-				"Expected a number (amount of seconds) or a formated string (1m 1d 11:11:11)\n"
-				"Got: %s", targetDeadline.toString());
 		}
 	}
 
-	try
+	// passphrase
 	{
-		auto passphraseJson = config->get("passphrase");
-		Poco::JSON::Object::Ptr passphrase = nullptr;
-
-		if (!passphraseJson.isEmpty())
-			passphrase = passphraseJson.extract<Poco::JSON::Object::Ptr>();
-
-		if (!passphrase.isNull())
+		try
 		{
+			auto passphraseJson = config->get("passphrase");
+			Poco::JSON::Object::Ptr passphrase = nullptr;
+
+			if (!passphraseJson.isEmpty())
+				passphrase = passphraseJson.extract<Poco::JSON::Object::Ptr>();
+			
+			if (passphrase.isNull())
+			{
+				passphrase = new Poco::JSON::Object;
+				config->set("passphrase", passphrase);
+			}
+
 			log_debug(MinerLogger::config, "Reading passphrase...");
 
-			auto decrypted = passphrase->optValue<std::string>("decrypted", "");
-			auto encrypted = passphrase->optValue<std::string>("encrypted", "");
-			auto salt = passphrase->optValue<std::string>("salt", "");
-			auto key = passphrase->optValue<std::string>("key", "");
-			auto iterations = passphrase->optValue<uint32_t>("iterations", 0);
-			auto deleteKey = passphrase->optValue<uint32_t>("deleteKey", false);
-			auto algorithm = passphrase->optValue<std::string>("algorithm", "aes-256-cbc");
+			auto decrypted = Poco::UTF8::unescape(getOrAdd<std::string>(passphrase, "decrypted", ""));
+			auto encrypted = Poco::UTF8::unescape(getOrAdd<std::string>(passphrase, "encrypted", ""));
+			auto salt = Poco::UTF8::unescape(getOrAdd<std::string>(passphrase, "salt", ""));
+			auto key = Poco::UTF8::unescape(getOrAdd<std::string>(passphrase, "key", ""));
+			auto iterations = getOrAdd(passphrase, "iterations", 0u);
+			auto deleteKey = getOrAdd(passphrase, "deleteKey", false);
+			auto algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
 
 			if (!encrypted.empty() && !key.empty() && !salt.empty())
 			{
@@ -297,9 +388,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				if (!encrypted.empty())
 				{
 					passphrase->set("decrypted", "");
-					passphrase->set("encrypted", encrypted);
-					passphrase->set("salt", salt);
-					passphrase->set("key", key);
+					passphrase->set("encrypted", Poco::UTF8::escape(encrypted));
+					passphrase->set("salt", Poco::UTF8::escape(salt));
+					passphrase->set("key", Poco::UTF8::escape(key));
 					passphrase->set("iterations", iterations);
 
 					log_debug(MinerLogger::config, "Passphrase encrypted!\n"
@@ -312,16 +403,16 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				}
 			}
 		}
-	}
-	catch (Poco::Exception& exc)
-	{
-		log_error(MinerLogger::config,
-			"Error while reading passphrase in config file!\n"
-			"%s",
-			exc.displayText()
-		);
+		catch (Poco::Exception& exc)
+		{
+			log_error(MinerLogger::config,
+				"Error while reading passphrase in config file!\n"
+				"%s",
+				exc.displayText()
+			);
 
-		log_current_stackframe(MinerLogger::config);
+			log_current_stackframe(MinerLogger::config);
+		}
 	}
 	
 	std::ofstream outputFileStream{configPath};
