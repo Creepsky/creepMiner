@@ -59,9 +59,9 @@ namespace Burst
 		void confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline);
 
 	private:
-		std::atomic<uint64_t> blockHeight_ = 0;
-		std::atomic<uint64_t> scoop_ = 0;
-		std::atomic<uint64_t> baseTarget_ = 0;
+		std::atomic<uint64_t> blockHeight_;
+		std::atomic<uint64_t> scoop_;
+		std::atomic<uint64_t> baseTarget_;
 		GensigData genSig_;
 		std::string genSigStr_ = "";
 		std::shared_ptr<std::vector<Poco::JSON::Object>> entries_;

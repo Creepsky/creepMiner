@@ -44,13 +44,13 @@ namespace Burst
 
 	private:
 		std::shared_ptr<Account> account_;
-		std::atomic<uint64_t> block_ = 0;
-		std::atomic<uint64_t> nonce_ = 0;
-		std::atomic<uint64_t> deadline_ = 0;
+		std::atomic<uint64_t> block_;
+		std::atomic<uint64_t> nonce_;
+		std::atomic<uint64_t> deadline_;
 		std::string plotFile_ = "";
-		std::atomic<bool> onTheWay_ = false;
-		std::atomic<bool> sent_ = false;
-		std::atomic<bool> confirmed_ = false;
+		std::atomic<bool> onTheWay_;
+		std::atomic<bool> sent_;
+		std::atomic<bool> confirmed_;
 		Deadlines* parent_;
 		mutable Poco::FastMutex mutex_;
 	};

@@ -49,7 +49,7 @@ namespace Burst
 
 		void runTask() override;
 
-		static std::atomic_uint_fast64_t sumBufferSize_;
+		static std::atomic<uint64_t> sumBufferSize_;
 
 	private:
 		Miner& miner_;
