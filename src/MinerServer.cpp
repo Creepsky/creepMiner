@@ -114,7 +114,9 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 
 	if (blockData != nullptr)
 	{
-		for (auto data = blockData->entries.begin(); data != blockData->entries.end() && !error; ++data)
+		auto entries = blockData->getEntries();
+
+		for (auto data = entries.begin(); data != entries.end() && !error; ++data)
 		{
 			std::stringstream ss;
 			data->stringify(ss);

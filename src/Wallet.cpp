@@ -25,7 +25,7 @@ Burst::Wallet::Wallet(const Url& url)
 Burst::Wallet::~Wallet()
 {}
 
-bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId)
+bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId) const
 {
 	poco_ndc(Wallet::getWinnerOfBlock);
 	winnerId = 0;
@@ -55,7 +55,7 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId)
 	return false;
 }
 
-bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
+bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name) const
 {
 	poco_ndc(Wallet::getNameOfAccount);
 	Poco::JSON::Object::Ptr json;
@@ -84,7 +84,7 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name)
 	return false;
 }
 
-bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient)
+bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient) const
 {
 	poco_ndc(Wallet::getRewardRecipientOfAccount);
 	Poco::JSON::Object::Ptr json;
@@ -113,7 +113,7 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 	return false;
 }
 
-bool Burst::Wallet::getLastBlock(uint64_t& block)
+bool Burst::Wallet::getLastBlock(uint64_t& block) const
 {
 	poco_ndc(Wallet::getLastBlock);
 	Poco::JSON::Object::Ptr json;
@@ -143,13 +143,14 @@ bool Burst::Wallet::getLastBlock(uint64_t& block)
 	return false;
 }
 
-void Burst::Wallet::getAccount(AccountId id, Account& account)
+void Burst::Wallet::getAccount(AccountId id, Account& account) const
 {
-	if (!url_.empty())
-		account = {*this, id};
+	// TODO REWORK
+	//if (!url_.empty())
+		//account = {*this, id};
 }
 
-bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::Ptr& json)
+bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::Ptr& json) const
 {
 	poco_ndc(Wallet::sendWalletRequest);
 

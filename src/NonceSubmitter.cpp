@@ -64,8 +64,9 @@ void Burst::NonceSubmitter::runTask()
 
 		if (response.canReceive() && firstSendAttempt)
 		{
-			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)", accountName, deadlineFormat(deadline->getDeadline()));
-			miner.getData().addBlockEntry(createJsonDeadline(deadline, "nonce submitted"));
+			deadline->send();
+			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)",
+				accountName, deadlineFormat(deadline->getDeadline()));
 			firstSendAttempt = false;
 		}
 
@@ -130,11 +131,6 @@ void Burst::NonceSubmitter::runTask()
 					"\tnonce: %Lu\n"
 					"\tin %s",
 					accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
-
-			// save the best deadline overall			
-			miner.getData().setBestDeadline(deadline);
-			miner.getData().addConfirmedDeadline();
-			miner.getData().addBlockEntry(createJsonDeadline(deadline, "nonce confirmed"));
 
 			// we have to confirm it at the very last position
 			// because we work with the best confirmed deadline so far before

@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include <unordered_map>
-#include "MinerShabal.hpp"
 #include "Declarations.hpp"
 #include "Deadline.hpp"
 #include <memory>
@@ -20,7 +18,6 @@
 #include <Poco/JSON/Object.h>
 #include "MinerData.hpp"
 #include <Poco/NotificationQueue.h>
-#include <Poco/ThreadPool.h>
 #include "PlotVerifier.hpp"
 #include "WorkerList.hpp"
 
@@ -60,21 +57,13 @@ namespace Burst
 		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
 		std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
-
+		
 	private:
 		bool getMiningInfo();
 
 		bool running_ = false;
 		MinerData data_;
-		Shabal256 hash;
-		GensigData gensig_;
-		std::string gensigStr_;
-		std::unordered_map<AccountId, Deadlines> deadlines_;
-		Poco::FastMutex deadlinesLock_;
 		std::shared_ptr<PlotReadProgress> progress_;
-		uint64_t currentBlockHeight_ = 0u;
-		uint64_t currentBaseTarget_ = 0u;
-		uint64_t targetDeadline_ = 0u;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
 		Accounts accounts_;
 		Wallet wallet_;

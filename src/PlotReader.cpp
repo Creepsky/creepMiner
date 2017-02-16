@@ -146,7 +146,7 @@ void Burst::PlotReader::runTask()
 				if (progress_ != nullptr && !isCancelled())
 				{
 					progress_->add(plotFile.getSize());
-					miner_.getData().addBlockEntry(createJsonProgress(progress_->getProgress()));
+					miner_.getData().getBlockData()->setProgress(progress_->getProgress());
 				}
 
 				inputStream.close();

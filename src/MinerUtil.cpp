@@ -29,6 +29,7 @@
 #include <Poco/Crypto/CipherFactory.h>
 #include <Poco/Random.h>
 #include <Poco/NestedDiagnosticContext.h>
+#include "Account.hpp"
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -366,19 +367,19 @@ std::string Burst::serializeDeadline(const Deadline& deadline, std::string delim
 		std::to_string(deadline.getNonce());
 }
 
-Poco::JSON::Object Burst::createJsonDeadline(std::shared_ptr<Deadline> deadline)
+Poco::JSON::Object Burst::createJsonDeadline(const Deadline& deadline)
 {
 	Poco::JSON::Object json;
-	json.set("nonce", deadline->getNonce());
-	json.set("deadline", deadlineFormat(deadline->getDeadline()));
-	json.set("account", deadline->getAccountName());
-	json.set("accountId", deadline->getAccountId());
-	json.set("plotfile", deadline->getPlotFile());
-	json.set("deadlineNum", deadline->getDeadline());
+	json.set("nonce", deadline.getNonce());
+	json.set("deadline", deadlineFormat(deadline.getDeadline()));
+	json.set("account", deadline.getAccountName());
+	json.set("accountId", deadline.getAccountId());
+	json.set("plotfile", deadline.getPlotFile());
+	json.set("deadlineNum", deadline.getDeadline());
 	return json;
 }
 
-Poco::JSON::Object Burst::createJsonDeadline(std::shared_ptr<Deadline> deadline, const std::string& type)
+Poco::JSON::Object Burst::createJsonDeadline(const Deadline& deadline, const std::string& type)
 {
 	auto json = createJsonDeadline(deadline);
 	json.set("type", type);
@@ -388,20 +389,21 @@ Poco::JSON::Object Burst::createJsonDeadline(std::shared_ptr<Deadline> deadline,
 
 Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 {
+	// TODO REWORK
 	Poco::JSON::Object json;
 	auto blockPtr = data.getBlockData();
 
 	if (blockPtr == nullptr)
 		return json;
 
-	auto block = *blockPtr;
+	auto& block = *blockPtr;
 	auto bestOverall = data.getBestDeadlineOverall();
 
 	json.set("type", "new block");
-	json.set("block", block.block);
-	json.set("scoop", block.scoop);
-	json.set("baseTarget", block.baseTarget);
-	json.set("gensigStr", block.genSig);
+	json.set("block", block.getBlockheight());
+	json.set("scoop", block.getScoop());
+	json.set("baseTarget", block.getBasetarget());
+	json.set("gensigStr", block.getGensigStr());
 	json.set("time", getTime());
 	json.set("blocksMined", data.getBlocksMined());
 	json.set("blocksWon", data.getBlocksWon());
@@ -417,11 +419,11 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 
 	for (auto& historicalDeadline : data.getAllHistoricalBlockData())
 	{
-		if (historicalDeadline->bestDeadline != nullptr)
+		if (historicalDeadline->getBestDeadline() != nullptr)
 		{
 			Poco::JSON::Array jsonBestDeadline;
-			jsonBestDeadline.add(historicalDeadline->block);
-			jsonBestDeadline.add(historicalDeadline->bestDeadline->getDeadline());
+			jsonBestDeadline.add(historicalDeadline->getBlockheight());
+			jsonBestDeadline.add(historicalDeadline->getBestDeadline()->getDeadline());
 			bestDeadlines.add(jsonBestDeadline);
 		}
 	}
@@ -453,12 +455,13 @@ Poco::JSON::Object Burst::createJsonProgress(float progress)
 
 Poco::JSON::Object Burst::createJsonLastWinner(const MinerData& data)
 {
+	// TODO REWORK
 	auto block = data.getBlockData();
 
-	if (block == nullptr || block->lastWinner == nullptr)
+	if (block == nullptr || block->getLastWinner() == nullptr)
 		return Poco::JSON::Object{};
 
-	return *block->lastWinner;
+	return *block->getLastWinner()->toJSON();
 }
 
 Poco::JSON::Object Burst::createJsonShutdown()

@@ -28,7 +28,7 @@ namespace Poco
 namespace Burst
 {
 	class PlotReadProgress;
-	struct BlockData;
+	class BlockData;
 	class Deadline;
 	class MinerData;
 	
@@ -85,8 +85,8 @@ namespace Burst
 	Poco::Net::SocketAddress getHostAddress(const Poco::URI& uri);
 	std::string serializeDeadline(const Deadline& deadline, std::string delimiter = ":");
 
-	Poco::JSON::Object createJsonDeadline(std::shared_ptr<Deadline> deadline);
-	Poco::JSON::Object createJsonDeadline(std::shared_ptr<Deadline> deadline, const std::string& type);
+	Poco::JSON::Object createJsonDeadline(const Deadline& deadline);
+	Poco::JSON::Object createJsonDeadline(const Deadline& deadline, const std::string& type);
 	Poco::JSON::Object createJsonNewBlock(const MinerData& data);
 	Poco::JSON::Object createJsonConfig();
 	Poco::JSON::Object createJsonProgress(float progress);

@@ -3,6 +3,9 @@
 #include "Deadline.hpp"
 #include <Poco/Nullable.h>
 #include <unordered_map>
+#include <Poco/Activity.h>
+#include <Poco/ActiveMethod.h>
+#include <Poco/JSON/Object.h>
 
 namespace Burst
 {
@@ -12,21 +15,33 @@ namespace Burst
 	{
 	public:
 		Account();
-		Account(Wallet& wallet, AccountId id, bool fetchAll = false);
+		Account(const Wallet& wallet, AccountId id, bool fetchAll = false);
 
-		void setWallet(Wallet& wallet);
+		void setWallet(const Wallet& wallet);
 
 		AccountId getId() const;
-		const std::string& getName(bool reset = false);
-		const AccountId& getRewardRecipient(bool reset = false);
+		std::string getName(bool reset = false);
+		Poco::ActiveResult<std::string> getNameAsync(bool reset = false);
+		AccountId getRewardRecipient() const;
+		//Poco::ActiveResult<AccountId> getRewardRecipientAsync(bool reset = false);
 		Deadlines& getDeadlines();
+		std::string getAddress() const;
+
+		Poco::JSON::Object::Ptr toJSON() const;
+
+	protected:
+		std::string runGetName(const bool& reset);
+		AccountId runGetRewardRecipient(const bool& reset);
 
 	private:
 		AccountId id_;
 		Poco::Nullable<std::string> name_;
 		Poco::Nullable<AccountId> rewardRecipient_;
 		Deadlines deadlines_;
-		Wallet* wallet_;
+		const Wallet* wallet_;
+		Poco::ActiveMethod<std::string, bool, Account> getName_;
+		//Poco::ActiveMethod<AccountId, bool, Account> getRewardRecipient_;
+		mutable Poco::Mutex mutex_;
 	};
 
 	class Accounts
