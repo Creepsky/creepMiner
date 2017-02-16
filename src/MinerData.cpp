@@ -137,7 +137,8 @@ std::shared_ptr<Burst::Account> Burst::BlockData::getLastWinner() const
 Poco::ActiveResult<std::shared_ptr<Burst::Account>> Burst::BlockData::getLastWinnerAsync(const Wallet& wallet, const Accounts& accounts)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
-	return activityLastWinner_(std::forward_as_tuple(wallet, accounts));
+	auto tuple = std::make_tuple(&wallet, &accounts);
+	return activityLastWinner_(tuple);
 }
 
 const Burst::GensigData& Burst::BlockData::getGensig() const
@@ -193,14 +194,14 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(uint64_t acco
 	}
 }
 
-std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::tuple<const Wallet&, const Accounts&>& args)
+std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::tuple<const Wallet*, const Accounts*>& args)
 {
 	poco_ndc(Miner::runGetLastWinner);
 
 	AccountId lastWinner;
 	auto lastBlockheight = blockHeight_ - 1;
-	auto& wallet = std::get<0>(args);
-	auto& accounts = std::get<1>(args);
+	auto& wallet = *std::get<0>(args);
+	auto& accounts = *std::get<1>(args);
 
 	// we cheat here a little bit and use the submission max retry set in config
 	// for max retry fetching the last winner

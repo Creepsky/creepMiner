@@ -54,7 +54,7 @@ namespace Burst
 		std::shared_ptr<Deadline> getBestDeadline(uint64_t accountId, DeadlineSearchType searchType);
 
 	protected:
-		std::shared_ptr<Account> runGetLastWinner(const std::tuple<const Wallet&, const Accounts&>& args);
+		std::shared_ptr<Account> runGetLastWinner(const std::tuple<const Wallet*, const Accounts*>& args);
 		void addBlockEntry(Poco::JSON::Object entry) const;
 		void confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline);
 
@@ -68,7 +68,7 @@ namespace Burst
 		std::shared_ptr<Account> lastWinner_ = nullptr;
 		std::unordered_map<AccountId, Deadlines> deadlines_;
 		std::shared_ptr<Deadline> bestDeadline_;
-		Poco::ActiveMethod<std::shared_ptr<Account>, std::tuple<const Wallet&, const Accounts&>, BlockData,
+		Poco::ActiveMethod<std::shared_ptr<Account>, std::tuple<const Wallet*, const Accounts*>, BlockData,
 			Poco::ActiveStarter<ActiveDispatcher>> activityLastWinner_;
 		MinerData* parent_;
 		mutable Poco::FastMutex mutex_;
