@@ -442,6 +442,15 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("walletUrl", MinerConfig::getConfig().getWalletUrl().getCanonical(true));
 	json.set("totalPlotSize", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
+	json.set("bufferSize", memToString(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, 0));
+	json.set("targetDeadline", deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+	json.set("maxPlotReaders", MinerConfig::getConfig().getMaxPlotReaders() == 0
+		? MinerConfig::getConfig().getPlotList().size()
+		: MinerConfig::getConfig().getMaxPlotReaders());
+	json.set("miningIntensity", MinerConfig::getConfig().getMiningIntensity());
+	json.set("submissionMaxRetry", MinerConfig::getConfig().getSubmissionMaxRetry() == 0 ?
+		"unlimited" :
+		std::to_string(MinerConfig::getConfig().getSubmissionMaxRetry()));
 	return json;
 }
 
