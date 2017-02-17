@@ -66,7 +66,7 @@ void Burst::BlockData::confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline
 	if (deadline == nullptr)
 		return;
 
-	addBlockEntry(createJsonDeadline(*deadline, "deadline confirmed"));
+	addBlockEntry(createJsonDeadline(*deadline, "nonce confirmed"));
 
 	if (bestDeadline_ == nullptr ||
 		bestDeadline_->getDeadline() > deadline->getDeadline())
