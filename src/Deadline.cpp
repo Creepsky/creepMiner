@@ -118,15 +118,21 @@ Burst::Deadlines::Deadlines(BlockData* parent)
 	: parent_{parent}
 {}
 
+Burst::Deadlines::Deadlines(const Deadlines& rhs)
+{
+	deadlines_ = rhs.deadlines_;
+	parent_ = rhs.parent_;
+}
+
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 	
 	auto deadlinePtr = std::make_shared<Deadline>(nonce, deadline, account, block, std::move(plotFile), this);
 
-	deadlines.emplace_back(deadlinePtr);
+	deadlines_.emplace_back(deadlinePtr);
 
-	std::sort(deadlines.begin(), deadlines.end(), [](std::shared_ptr<Deadline> lhs, std::shared_ptr<Deadline> rhs)
+	std::sort(deadlines_.begin(), deadlines_.end(), [](std::shared_ptr<Deadline> lhs, std::shared_ptr<Deadline> rhs)
 			  {
 				  return *lhs < *rhs;
 			  });
@@ -137,19 +143,19 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(uint64_t nonce, uint64_t 
 void Burst::Deadlines::clear()
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
-	deadlines.clear();
+	deadlines_.clear();
 }
 
 bool Burst::Deadlines::confirm(Nonce nonce)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	auto iter = std::find_if(deadlines.begin(), deadlines.end(), [nonce](std::shared_ptr<Deadline> dl)
+	auto iter = std::find_if(deadlines_.begin(), deadlines_.end(), [nonce](std::shared_ptr<Deadline> dl)
 							 {
 								 return dl->getNonce() == nonce;
 							 });
 
-	if (iter == deadlines.end())
+	if (iter == deadlines_.end())
 		return false;
 
 	(*iter)->confirm();
@@ -161,12 +167,12 @@ bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, uint64_t block)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	auto iter = std::find_if(deadlines.begin(), deadlines.end(), [nonce, accountId, block](std::shared_ptr<Deadline> dl)
+	auto iter = std::find_if(deadlines_.begin(), deadlines_.end(), [nonce, accountId, block](std::shared_ptr<Deadline> dl)
 	                         {
 		                         return dl->getNonce() == nonce && dl->getAccountId() == accountId && dl->getBlock() == block;
 	                         });
 
-	if (iter == deadlines.end())
+	if (iter == deadlines_.end())
 		return false;
 
 	(*iter)->confirm();
@@ -177,17 +183,17 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBest() const
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	if (deadlines.empty())
+	if (deadlines_.empty())
 		return nullptr;
 
-	return deadlines.front();
+	return deadlines_.front();
 }
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed() const
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	for (auto& deadline : deadlines)
+	for (auto& deadline : deadlines_)
 		if (deadline->isConfirmed())
 			return deadline;
 
@@ -198,7 +204,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestFound() const
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	for (auto& deadline : deadlines)
+	for (auto& deadline : deadlines_)
 		if (deadline->isOnTheWay())
 			return deadline;
 
@@ -209,7 +215,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestSent() const
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	for (auto& deadline : deadlines)
+	for (auto& deadline : deadlines_)
 		if (deadline->isOnTheWay())
 			return deadline;
 

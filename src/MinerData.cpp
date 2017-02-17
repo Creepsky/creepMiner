@@ -47,7 +47,7 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadline(uint64_t nonce, u
 
 	if (iter == deadlines_.end())
 	{
-		deadlines_.emplace(accountId, this);
+		deadlines_.insert(std::make_pair(accountId, Deadlines(this)));
 		return deadlines_[accountId].add(nonce, deadline, account, block, plotFile);
 	}
 

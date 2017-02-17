@@ -59,6 +59,7 @@ namespace Burst
 	{
 	public:
 		explicit Deadlines(BlockData* parent = nullptr);
+		Deadlines(const Deadlines& rhs);
 
 		std::shared_ptr<Deadline> add(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile);
 		void clear();
@@ -75,7 +76,7 @@ namespace Burst
 		void deadlineConfirmed(std::shared_ptr<Deadline> deadline) const;
 
 	private:
-		std::vector<std::shared_ptr<Deadline>> deadlines;
+		std::vector<std::shared_ptr<Deadline>> deadlines_;
 		BlockData* parent_;
 		mutable Poco::FastMutex mutex_;
 
