@@ -300,8 +300,10 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 			plotFile
 		);
 		
-		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound), "%s: nonce found (%s)\n\tin: %s",
-			newDeadline->getAccountName(), deadlineFormat(deadline), plotFile);
+		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound), "%s: nonce found (%s)\n"
+			"\tnonce: %Lu\n"
+			"\tin: %s",
+			newDeadline->getAccountName(), deadlineFormat(deadline), newDeadline->getNonce(), plotFile);
 
 		auto createSendThread = true;
 		auto targetDeadline = getTargetDeadline();

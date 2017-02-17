@@ -44,7 +44,8 @@ void Burst::NonceSubmitter::runTask()
 
 	//MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
 
-	log_information_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceOnTheWay), "%s: nonce on the way (%s)", accountName, deadline->deadlineToReadableString());
+	log_information_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceOnTheWay), "%s: nonce on the way (%s)",
+		accountName, deadline->deadlineToReadableString());
 
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
@@ -65,8 +66,10 @@ void Burst::NonceSubmitter::runTask()
 		if (response.canReceive() && firstSendAttempt)
 		{
 			deadline->send();
-			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)",
-				accountName, deadlineFormat(deadline->getDeadline()));
+			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)\n"
+				"\tnonce: %Lu\n"
+				"\tin %s",
+				accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
 			firstSendAttempt = false;
 		}
 
