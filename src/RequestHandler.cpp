@@ -38,12 +38,19 @@ void Burst::RootHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Po
 	response.setChunkedTransferEncoding(true);
 	auto& out = response.send();
 
-	Poco::FileInputStream file{ "public/index.html", std::ios::in };
-	std::string str(std::istreambuf_iterator<char>{file}, {});
-	
-	variables_->inject(str);
+	try
+	{
+		Poco::FileInputStream file{ "public/index.html", std::ios::in };
+		std::string str(std::istreambuf_iterator<char>{file}, {});
+		variables_->inject(str);
 
-	out << str;
+		out << str;
+	}
+	catch (Poco::Exception& exc)
+	{
+		log_error(MinerLogger::server, "Could not open public/index.html!");
+		log_exception(MinerLogger::server, exc);
+	}
 }
 
 Burst::ShutdownHandler::ShutdownHandler(Miner& miner, MinerServer& server)
@@ -81,14 +88,22 @@ Burst::AssetHandler::AssetHandler(const TemplateVariables& variables)
 
 void Burst::AssetHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	Poco::FileInputStream file{"public/" + request.getURI(), std::ios::in};
-	std::string str(std::istreambuf_iterator<char>{file}, {});
+	try
+	{
+		Poco::FileInputStream file{"public/" + request.getURI(), std::ios::in};
+		std::string str(std::istreambuf_iterator<char>{file}, {});
 
-	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-	response.setChunkedTransferEncoding(true);
-	auto& out = response.send();
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
 
-	out << str;
+		out << str;
+	}
+	catch (Poco::Exception& exc)
+	{
+		log_error(MinerLogger::server, "Webserver could not open 'public/%s'!", request.getURI());
+		log_exception(MinerLogger::server, exc);
+	}
 }
 
 void Burst::BadRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
@@ -143,7 +158,7 @@ void Burst::MiningInfoHandler::handleRequest(Poco::Net::HTTPServerRequest& reque
 	}
 	catch (Poco::Exception& exc)
 	{
-		log_error(MinerLogger::server, "Could not send mining info! %s", exc.displayText());
+		log_error(MinerLogger::server, "Webserver could not send mining info! %s", exc.displayText());
 		log_current_stackframe(MinerLogger::server);
 	}
 }
