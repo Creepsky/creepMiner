@@ -122,9 +122,10 @@
       <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
     </Link>
     <CudaCompile>
-      <CodeGeneration>compute_30,sm_30;compute_35,sm_35;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61</CodeGeneration>
+      <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61</CodeGeneration>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <FastMath>true</FastMath>
+      <FastMath>false</FastMath>
+      <Runtime>InheritFromHost</Runtime>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
