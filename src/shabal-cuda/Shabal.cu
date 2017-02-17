@@ -696,4 +696,9 @@ void calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, uint64_t bufferSiz
 	uint64_t nonceStart, uint64_t nonceRead, uint64_t baseTarget, int gridSize, int blockSize)
 {
 	calculate_shabal_cuda_device<<<gridSize, blockSize>>>(buffer, bufferSize, gensig, deadlines, nonceStart, nonceRead, baseTarget);
+
+	auto err = cudaPeekAtLastError();
+
+	if (err != cudaSuccess)
+		log_error(Burst::MinerLogger::plotVerifier, "CUDA error: %s", std::string(cudaGetErrorString(err)));
 }
