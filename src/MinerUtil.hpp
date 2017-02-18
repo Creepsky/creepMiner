@@ -97,5 +97,6 @@ namespace Burst
 	std::string getTime();
 	std::string getFilenameWithtimestamp(const std::string& name, const std::string& ending);
 
+	std::string hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase);
 	bool check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase);
 }

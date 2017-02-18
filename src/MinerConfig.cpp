@@ -416,6 +416,58 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			log_current_stackframe(MinerLogger::config);
 		}
 	}
+
+	// server credentials
+	{
+		auto webserverJson = config->get("webserver");
+
+		const auto plainUserId = "plain-user";
+		const auto plainPassId = "plain-pass";
+		const auto hashedUserId = "hashed-user";
+		const auto hashedPassId = "hashed-pass";
+
+		Poco::JSON::Object::Ptr webserver = nullptr;
+
+		if (!webserverJson.isEmpty())
+			webserver = webserverJson.extract<Poco::JSON::Object::Ptr>();
+
+		if (webserver.isNull())
+		{
+			webserver = new Poco::JSON::Object;
+			config->set("webserver", webserver);
+		}
+
+		auto plainUser = getOrAdd(webserver, plainUserId, std::string{});
+		auto hashedUser = getOrAdd(webserver, hashedUserId, std::string{});
+		auto plainPass = getOrAdd(webserver, plainPassId, std::string{});
+		auto hashedPass = getOrAdd(webserver, hashedPassId, std::string{});
+
+		if (!plainUser.empty())
+		{
+			hashedUser = hash_HMAC_SHA1(plainUser, WebserverPassphrase);
+			webserver->set(hashedUserId, hashedUser);
+			webserver->set(plainUserId, "");
+
+			log_debug(MinerLogger::config, "hashed  the webserver username\n"
+				"\thash: %s", hashedUser);
+		}
+
+		if (!plainPass.empty())
+		{
+			hashedPass = hash_HMAC_SHA1(plainPass, WebserverPassphrase);
+			webserver->set(hashedPassId, hashedPass);
+			webserver->set(plainPassId, "");
+
+			log_debug(MinerLogger::config, "hashed  the webserver password\n"
+				"\thash: %s", hashedPass);
+		}
+
+		if (!hashedUser.empty())
+			serverUser_ = hashedUser;
+
+		if (!hashedPass.empty())
+			serverPass_ = hashedPass;
+	}
 	
 	std::ofstream outputFileStream{configPath};
 

@@ -32,6 +32,7 @@
 #include "Account.hpp"
 #include <Poco/HMACEngine.h>
 #include <Poco/SHA1Engine.h>
+#include <Poco/StreamCopier.h>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -520,8 +521,21 @@ std::string Burst::getFilenameWithtimestamp(const std::string& name, const std::
 		name, Poco::DateTimeFormatter::format(Poco::Timestamp(), "%Y%m%d_%H%M%s"), ending);
 }
 
+std::string Burst::hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase)
+{
+	Poco::HMACEngine<Poco::SHA1Engine> engine{ passphrase };
+	engine.update(plain);
+	auto& digest = engine.digest();
+	return Poco::DigestEngine::digestToHex(digest);
+}
+
 bool Burst::check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase)
 {
+	// if there is no hash
+	if (hashed.empty())
+		// there is no password
+		return plain.empty();
+
 	// first, hash the plain text
 	Poco::HMACEngine<Poco::SHA1Engine> engine{ passphrase };
 	//

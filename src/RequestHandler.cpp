@@ -66,8 +66,7 @@ void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 
 	auto credentialsOk = false;
 
-	if (
-		request.hasCredentials())
+	if (request.hasCredentials())
 	{
 		std::string scheme, authInfo;
 		request.getCredentials(scheme, authInfo);
