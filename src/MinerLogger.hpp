@@ -78,6 +78,7 @@ namespace Burst
 			
 			void log(const Poco::Message& msg) override;
 			void setPriority(Poco::Message::Priority priority);
+			Poco::Message::Priority getPriority() const;
 
 		private:
 			static Poco::FastMutex mutex_;
@@ -96,6 +97,7 @@ namespace Burst
 		static void setup();
 		static bool setChannelPriority(const std::string& channel, Poco::Message::Priority priority);
 		static bool setChannelPriority(const std::string& channel, const std::string& priority);
+		static std::string getChannelPriority(const std::string& channel);
 		static std::string setFilePath(const std::string& path);
 
 		static Poco::Logger& miner;
