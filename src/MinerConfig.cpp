@@ -27,6 +27,8 @@
 #include <Poco/SplitterChannel.h>
 #include "Output.hpp"
 
+const std::string Burst::MinerConfig::WebserverPassphrase = "secret-webserver-pass-951";
+
 void Burst::MinerConfig::rescan()
 {
 	readConfigFile(configPath_);
@@ -566,4 +568,14 @@ uint32_t Burst::MinerConfig::getMaxPlotReaders() const
 const Poco::Path& Burst::MinerConfig::getPathLogfile() const
 {
 	return pathLogfile_;
+}
+
+const std::string& Burst::MinerConfig::getServerUser() const
+{
+	return serverUser_;
+}
+
+const std::string& Burst::MinerConfig::getServerPass() const
+{
+	return serverPass_;
 }

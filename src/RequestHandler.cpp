@@ -15,6 +15,9 @@
 #include <Poco/Net/HTTPClientSession.h>
 #include "PlotSizes.hpp"
 #include <Poco/Logger.h>
+#include <Poco/Base64Decoder.h>
+#include <Poco/StreamCopier.h>
+#include <Poco/StringTokenizer.h>
 
 void Burst::TemplateVariables::inject(std::string& source) const
 {
@@ -59,6 +62,53 @@ Burst::ShutdownHandler::ShutdownHandler(Miner& miner, MinerServer& server)
 
 void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
+	poco_ndc("ShutdownHandler::handleRequest");
+
+	auto credentialsOk = false;
+
+	if (
+		request.hasCredentials())
+	{
+		std::string scheme, authInfo;
+		request.getCredentials(scheme, authInfo);
+
+		// credentials are base64 encoded
+		std::stringstream encoded(authInfo);
+		std::stringstream decoded;
+		std::string credentials = "", user = "", password = "";
+		//
+		Poco::Base64Decoder base64(encoded);
+		Poco::StreamCopier::copyStream(base64, decoded);
+		//
+		credentials = decoded.str();
+
+		Poco::StringTokenizer tokenizer{credentials, ":"};
+
+		if (tokenizer.count() == 2)
+		{
+			user = tokenizer[0];
+			password = tokenizer[1];
+
+			credentialsOk = 
+				check_HMAC_SHA1(user, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverPassphrase) &&
+				check_HMAC_SHA1(password, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassphrase);
+		}
+
+		log_information(MinerLogger::server, "%s request to shutdown the miner.\n"
+			"\tfrom: %s\n"
+			"\tuser: %s",
+			(credentialsOk ? std::string("Authorized") : std::string("Unauthorized")),
+			request.clientAddress().toString(),
+			user);
+	}
+	
+	if (!credentialsOk)
+	{
+		response.requireAuthentication("creepMiner");
+		response.send();
+		return;
+	}
+
 	log_system(MinerLogger::server, "Shutting down miner...");
 
 	// first we shut down the miner

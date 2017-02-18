@@ -30,6 +30,8 @@
 #include <Poco/Random.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include "Account.hpp"
+#include <Poco/HMACEngine.h>
+#include <Poco/SHA1Engine.h>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -516,4 +518,20 @@ std::string Burst::getFilenameWithtimestamp(const std::string& name, const std::
 {
 	return Poco::format("%s_%s.%s",
 		name, Poco::DateTimeFormatter::format(Poco::Timestamp(), "%Y%m%d_%H%M%s"), ending);
+}
+
+bool Burst::check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase)
+{
+	// first, hash the plain text
+	Poco::HMACEngine<Poco::SHA1Engine> engine{ passphrase };
+	//
+	engine.update(plain);
+	//
+	auto& digest = engine.digest();
+
+	// create the digest for the hashed word
+	auto hashedDigest = Poco::HMACEngine<Poco::SHA1Engine>::digestFromHex(hashed);
+
+	// check if its the same
+	return digest == hashedDigest;
 }
