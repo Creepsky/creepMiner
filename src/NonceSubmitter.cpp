@@ -44,7 +44,8 @@ void Burst::NonceSubmitter::runTask()
 
 	//MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
 
-	log_information_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceOnTheWay), "%s: nonce on the way (%s)", accountName, deadline->deadlineToReadableString());
+	log_information_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceOnTheWay), "%s: nonce on the way (%s)",
+		accountName, deadline->deadlineToReadableString());
 
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
@@ -64,8 +65,11 @@ void Burst::NonceSubmitter::runTask()
 
 		if (response.canReceive() && firstSendAttempt)
 		{
-			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)", accountName, deadlineFormat(deadline->getDeadline()));
-			miner.getData().addBlockEntry(createJsonDeadline(deadline, "nonce submitted"));
+			deadline->send();
+			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)\n"
+				"\tnonce: %Lu\n"
+				"\tin %s",
+				accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
 			firstSendAttempt = false;
 		}
 
@@ -83,6 +87,8 @@ void Burst::NonceSubmitter::runTask()
 	// it has to be the same block
 	if (deadline->getBlock() == miner.getBlockheight())
 	{
+		log_trace(MinerLogger::nonceSubmitter, "miner.getBlockheight");
+
 		if (confirmation.errorCode == SubmitResponse::Submitted)
 		{
 			auto confirmedDeadlinesPath = MinerConfig::getConfig().getConfirmedDeadlinesPath();
@@ -130,11 +136,6 @@ void Burst::NonceSubmitter::runTask()
 					"\tnonce: %Lu\n"
 					"\tin %s",
 					accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
-
-			// save the best deadline overall			
-			miner.getData().setBestDeadline(deadline);
-			miner.getData().addConfirmedDeadline();
-			miner.getData().addBlockEntry(createJsonDeadline(deadline, "nonce confirmed"));
 
 			// we have to confirm it at the very last position
 			// because we work with the best confirmed deadline so far before

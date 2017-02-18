@@ -15,6 +15,9 @@
 #include <Poco/Net/HTTPClientSession.h>
 #include "PlotSizes.hpp"
 #include <Poco/Logger.h>
+#include <Poco/Base64Decoder.h>
+#include <Poco/StreamCopier.h>
+#include <Poco/StringTokenizer.h>
 
 void Burst::TemplateVariables::inject(std::string& source) const
 {
@@ -38,12 +41,19 @@ void Burst::RootHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Po
 	response.setChunkedTransferEncoding(true);
 	auto& out = response.send();
 
-	Poco::FileInputStream file{ "public/index.html", std::ios::in };
-	std::string str(std::istreambuf_iterator<char>{file}, {});
-	
-	variables_->inject(str);
+	try
+	{
+		Poco::FileInputStream file{ "public/index.html", std::ios::in };
+		std::string str(std::istreambuf_iterator<char>{file}, {});
+		variables_->inject(str);
 
-	out << str;
+		out << str;
+	}
+	catch (Poco::Exception& exc)
+	{
+		log_error(MinerLogger::server, "Could not open public/index.html!");
+		log_exception(MinerLogger::server, exc);
+	}
 }
 
 Burst::ShutdownHandler::ShutdownHandler(Miner& miner, MinerServer& server)
@@ -52,6 +62,52 @@ Burst::ShutdownHandler::ShutdownHandler(Miner& miner, MinerServer& server)
 
 void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
+	poco_ndc("ShutdownHandler::handleRequest");
+
+	auto credentialsOk = false;
+
+	if (request.hasCredentials())
+	{
+		std::string scheme, authInfo;
+		request.getCredentials(scheme, authInfo);
+
+		// credentials are base64 encoded
+		std::stringstream encoded(authInfo);
+		std::stringstream decoded;
+		std::string credentials, user = "", password;
+		//
+		Poco::Base64Decoder base64(encoded);
+		Poco::StreamCopier::copyStream(base64, decoded);
+		//
+		credentials = decoded.str();
+
+		Poco::StringTokenizer tokenizer{credentials, ":"};
+
+		if (tokenizer.count() == 2)
+		{
+			user = tokenizer[0];
+			password = tokenizer[1];
+
+			credentialsOk = 
+				check_HMAC_SHA1(user, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverPassphrase) &&
+				check_HMAC_SHA1(password, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassphrase);
+		}
+
+		log_information(MinerLogger::server, "%s request to shutdown the miner.\n"
+			"\tfrom: %s\n"
+			"\tuser: %s",
+			(credentialsOk ? std::string("Authorized") : std::string("Unauthorized")),
+			request.clientAddress().toString(),
+			user);
+	}
+	
+	if (!credentialsOk)
+	{
+		response.requireAuthentication("creepMiner");
+		response.send();
+		return;
+	}
+
 	log_system(MinerLogger::server, "Shutting down miner...");
 
 	// first we shut down the miner
@@ -81,14 +137,36 @@ Burst::AssetHandler::AssetHandler(const TemplateVariables& variables)
 
 void Burst::AssetHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	Poco::FileInputStream file{"public/" + request.getURI(), std::ios::in};
-	std::string str(std::istreambuf_iterator<char>{file}, {});
+	try
+	{
+		const auto relativePath = "public/" + request.getURI();
+		Poco::Path path{ relativePath };
+		Poco::FileInputStream file{relativePath, std::ios::in};
+		std::string str(std::istreambuf_iterator<char>{file}, {});
 
-	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-	response.setChunkedTransferEncoding(true);
-	auto& out = response.send();
+		std::string mimeType = "text/plain";
 
-	out << str;
+		auto ext = path.getExtension();
+
+		if (ext == "css")
+			mimeType = "text/css";
+		else if (ext == "js")
+			mimeType = "text/javascript";
+		else if (ext == "png")
+			mimeType = "image/png";
+
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		response.setContentType(mimeType);
+		auto& out = response.send();
+
+		out << str;
+	}
+	catch (Poco::Exception& exc)
+	{
+		log_error(MinerLogger::server, "Webserver could not open 'public/%s'!", request.getURI());
+		log_exception(MinerLogger::server, exc);
+	}
 }
 
 void Burst::BadRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
@@ -143,7 +221,7 @@ void Burst::MiningInfoHandler::handleRequest(Poco::Net::HTTPServerRequest& reque
 	}
 	catch (Poco::Exception& exc)
 	{
-		log_error(MinerLogger::server, "Could not send mining info! %s", exc.displayText());
+		log_error(MinerLogger::server, "Webserver could not send mining info! %s", exc.displayText());
 		log_current_stackframe(MinerLogger::server);
 	}
 }

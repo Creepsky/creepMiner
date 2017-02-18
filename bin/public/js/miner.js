@@ -193,7 +193,11 @@ function config(cfg)
 	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"]));
 	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"]));
 	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
-	addSystemEntry("Timeout", cfg["timeout"]);
+	addSystemEntry("Buffersize", cfg["bufferSize"]);
+	addSystemEntry("Target deadline", cfg["targetDeadline"]);
+	addSystemEntry("Plot readers", cfg["maxPlotReaders"]);
+	addSystemEntry("Mining intensity", cfg["miningIntensity"]);
+	addSystemEntry("Submission retry", cfg["submissionMaxRetry"]);
 }
 
 function setConfirmedDeadlines(deadlines)

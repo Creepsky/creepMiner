@@ -28,7 +28,7 @@ namespace Poco
 namespace Burst
 {
 	class PlotReadProgress;
-	struct BlockData;
+	class BlockData;
 	class Deadline;
 	class MinerData;
 	
@@ -85,8 +85,8 @@ namespace Burst
 	Poco::Net::SocketAddress getHostAddress(const Poco::URI& uri);
 	std::string serializeDeadline(const Deadline& deadline, std::string delimiter = ":");
 
-	Poco::JSON::Object createJsonDeadline(std::shared_ptr<Deadline> deadline);
-	Poco::JSON::Object createJsonDeadline(std::shared_ptr<Deadline> deadline, const std::string& type);
+	Poco::JSON::Object createJsonDeadline(const Deadline& deadline);
+	Poco::JSON::Object createJsonDeadline(const Deadline& deadline, const std::string& type);
 	Poco::JSON::Object createJsonNewBlock(const MinerData& data);
 	Poco::JSON::Object createJsonConfig();
 	Poco::JSON::Object createJsonProgress(float progress);
@@ -96,4 +96,7 @@ namespace Burst
 
 	std::string getTime();
 	std::string getFilenameWithtimestamp(const std::string& name, const std::string& ending);
+
+	std::string hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase);
+	bool check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase);
 }

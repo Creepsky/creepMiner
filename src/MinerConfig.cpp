@@ -26,7 +26,8 @@
 #include <Poco/Logger.h>
 #include <Poco/SplitterChannel.h>
 #include "Output.hpp"
-#include <Poco/UTF8String.h>
+
+const std::string Burst::MinerConfig::WebserverPassphrase = "secret-webserver-pass-951";
 
 void Burst::MinerConfig::rescan()
 {
@@ -414,11 +415,11 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			}
 
 			log_debug(MinerLogger::config, "Reading passphrase...");
-
-			auto decrypted = Poco::UTF8::unescape(getOrAdd<std::string>(passphrase, "decrypted", ""));
-			auto encrypted = Poco::UTF8::unescape(getOrAdd<std::string>(passphrase, "encrypted", ""));
-			auto salt = Poco::UTF8::unescape(getOrAdd<std::string>(passphrase, "salt", ""));
-			auto key = Poco::UTF8::unescape(getOrAdd<std::string>(passphrase, "key", ""));
+			
+			auto decrypted = getOrAdd<std::string>(passphrase, "decrypted", "");
+			auto encrypted = getOrAdd<std::string>(passphrase, "encrypted", "");
+			auto salt = getOrAdd<std::string>(passphrase, "salt", "");
+			auto key = getOrAdd<std::string>(passphrase, "key", "");
 			auto iterations = getOrAdd(passphrase, "iterations", 0u);
 			auto deleteKey = getOrAdd(passphrase, "deleteKey", false);
 			auto algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
@@ -450,9 +451,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				if (!encrypted.empty())
 				{
 					passphrase->set("decrypted", "");
-					passphrase->set("encrypted", Poco::UTF8::escape(encrypted));
-					passphrase->set("salt", Poco::UTF8::escape(salt));
-					passphrase->set("key", Poco::UTF8::escape(key));
+					passphrase->set("encrypted", encrypted);
+					passphrase->set("salt", salt);
+					passphrase->set("key", key);
 					passphrase->set("iterations", iterations);
 
 					log_debug(MinerLogger::config, "Passphrase encrypted!\n"
@@ -475,6 +476,58 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			log_current_stackframe(MinerLogger::config);
 		}
+	}
+
+	// server credentials
+	{
+		auto webserverJson = config->get("webserver");
+
+		const auto plainUserId = "plain-user";
+		const auto plainPassId = "plain-pass";
+		const auto hashedUserId = "hashed-user";
+		const auto hashedPassId = "hashed-pass";
+
+		Poco::JSON::Object::Ptr webserver = nullptr;
+
+		if (!webserverJson.isEmpty())
+			webserver = webserverJson.extract<Poco::JSON::Object::Ptr>();
+
+		if (webserver.isNull())
+		{
+			webserver = new Poco::JSON::Object;
+			config->set("webserver", webserver);
+		}
+
+		auto plainUser = getOrAdd(webserver, plainUserId, std::string{});
+		auto hashedUser = getOrAdd(webserver, hashedUserId, std::string{});
+		auto plainPass = getOrAdd(webserver, plainPassId, std::string{});
+		auto hashedPass = getOrAdd(webserver, hashedPassId, std::string{});
+
+		if (!plainUser.empty())
+		{
+			hashedUser = hash_HMAC_SHA1(plainUser, WebserverPassphrase);
+			webserver->set(hashedUserId, hashedUser);
+			webserver->set(plainUserId, "");
+
+			log_debug(MinerLogger::config, "hashed  the webserver username\n"
+				"\thash: %s", hashedUser);
+		}
+
+		if (!plainPass.empty())
+		{
+			hashedPass = hash_HMAC_SHA1(plainPass, WebserverPassphrase);
+			webserver->set(hashedPassId, hashedPass);
+			webserver->set(plainPassId, "");
+
+			log_debug(MinerLogger::config, "hashed  the webserver password\n"
+				"\thash: %s", hashedPass);
+		}
+
+		if (!hashedUser.empty())
+			serverUser_ = hashedUser;
+
+		if (!hashedPass.empty())
+			serverPass_ = hashedPass;
 	}
 	
 	std::ofstream outputFileStream{configPath};
@@ -745,4 +798,14 @@ uint32_t Burst::MinerConfig::getMaxPlotReaders() const
 const Poco::Path& Burst::MinerConfig::getPathLogfile() const
 {
 	return pathLogfile_;
+}
+
+const std::string& Burst::MinerConfig::getServerUser() const
+{
+	return serverUser_;
+}
+
+const std::string& Burst::MinerConfig::getServerPass() const
+{
+	return serverPass_;
 }

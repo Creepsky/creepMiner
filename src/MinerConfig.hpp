@@ -80,9 +80,13 @@ namespace Burst
 		const std::string& getPassphrase() const;
 		uint32_t getMaxPlotReaders() const;
 		const Poco::Path& getPathLogfile() const;
+		const std::string& getServerUser() const;
+		const std::string& getServerPass() const;
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
+
+		static const std::string WebserverPassphrase;
 
 		static MinerConfig& getConfig();
 		
@@ -111,6 +115,7 @@ namespace Burst
 		std::unordered_map<std::string, PlotList> plotDirs_;
 		std::string plotsHash_;
 		std::string passPhrase_;
+		std::string serverUser_, serverPass_;
 		uint32_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
 	};

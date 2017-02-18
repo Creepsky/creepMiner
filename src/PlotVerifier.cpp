@@ -90,7 +90,7 @@ void Burst::PlotVerifier::runTask()
 #endif
 		
 		if (verifyNotification->block == miner_->getBlockheight())
-			PlotReader::sumBufferSize_ -= verifyNotification->buffer.size() * sizeof(ScoopData);
+			PlotReader::globalBufferSize.remove(verifyNotification->buffer.size() * sizeof(ScoopData));
 		else
 			log_debug(MinerLogger::plotVerifier, "Plot verifier is done with work, but not for this block!\n"
 				"\tBlock#: %Lu (vs. this block#: %Lu)\n"
