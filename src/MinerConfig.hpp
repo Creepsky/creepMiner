@@ -14,6 +14,7 @@
 #include "Url.hpp"
 #include <unordered_map>
 #include <Poco/Path.h>
+#include <Poco/JSON/Object.h>
 
 namespace Poco
 {
@@ -85,6 +86,9 @@ namespace Burst
 
 		static MinerConfig& getConfig();
 		
+	private:
+		static Poco::JSON::Object::Ptr readOutput(Poco::JSON::Object::Ptr json);
+
 	private:
 		bool addPlotLocation(const std::string& fileOrPath);
 		std::shared_ptr<PlotFile> addPlotFile(const Poco::File& file);

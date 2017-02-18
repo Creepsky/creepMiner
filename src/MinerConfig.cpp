@@ -60,6 +60,30 @@ T getOrAdd(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValu
 	return defaultValue;
 }
 
+template <typename T>
+T getOrAddAlt(Poco::JSON::Object::Ptr object, Poco::JSON::Object::Ptr alt, const std::string& key, T defaultValue)
+{
+	auto json = object->get(key);
+	Poco::Dynamic::Var jsonAlt;
+
+	if (!alt.isNull() && alt->has(key))
+		jsonAlt = alt->get(key);
+
+	alt->remove(key);
+
+	T defaultOrAltValue = defaultValue;
+
+	if (!jsonAlt.isEmpty())
+		defaultOrAltValue = jsonAlt.convert<T>();;
+
+	if (json.isEmpty())
+		object->set(key, defaultOrAltValue);
+	else if (json.type() == typeid(T))
+		return json.extract<T>();
+
+	return defaultOrAltValue;
+}
+
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 {
 	poco_ndc(readConfigFile);
@@ -110,7 +134,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	// logging
 	{
 		Poco::JSON::Object::Ptr loggingObj = nullptr;
-		
+
 		if (config->has("logging"))
 			loggingObj = config->get("logging").extract<Poco::JSON::Object::Ptr>();
 
@@ -162,151 +186,188 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			config->set("logging", loggingObj);
 		}
-	}
-
-	// output
-	{
-		auto outputObj = config->getObject("output");
 
 		// output
-		if (outputObj.isNull())
 		{
-			outputObj = new Poco::JSON::Object;
-			config->set("output", outputObj);
-		}
+			Poco::JSON::Object::Ptr outputObj = nullptr;
 
-		auto checkCreateFunc = [&outputObj](int id, const std::string& name)
-		{
-			auto obj = outputObj->get(name);
+			// the output element can occur in two places:
+			//  a) the old one, directly under the root element
+			//  b) the new one, inside the logging element
+			auto outputLoggingObj = readOutput(loggingObj->getObject("output"));
+			auto outputConfigObj = readOutput(config->getObject("output"));
 
-			if (!obj.isEmpty() && obj.isBoolean())
-				MinerLogger::setOutput(id, obj.extract<bool>());
-			else
-				outputObj->set(name, MinerLogger::hasOutput(id));
-		};
-		
-		checkCreateFunc(LastWinner, "lastWinner");
-		checkCreateFunc(NonceFound, "nonceFound");
-		checkCreateFunc(NonceOnTheWay, "nonceOnTheWay");
-		checkCreateFunc(NonceSent, "nonceSent");
-		checkCreateFunc(NonceConfirmed, "nonceConfirmed");
-		checkCreateFunc(PlotDone, "plotDone");
-		checkCreateFunc(DirDone, "dirDone");
-	}
+			// the plan is
+			//  - use the new one
+			//  - if its not there, but the old one exists, move it to the new place
+			//  - otherwise create it
 
-	// urls
-	{
-		auto checkCreateFunc = [&config](const std::string& name, Url& url,
-			const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl)
-		{
-			auto var = getOrAdd(config, name, createUrl);
-			url = {var, defaultScheme, defaultPort};
-			config->set(name, url.getUri().toString());
-		};
-		
-		checkCreateFunc("poolUrl", urlPool_, "http", 8124, "http://pool.burst-team.us:8124");
-		checkCreateFunc("miningInfoUrl", urlMiningInfo_, "http", 8124, "");
-		checkCreateFunc("walletUrl", urlWallet_, "https", 8128, "https://wallet.burst-team.us:8128");
-		checkCreateFunc("serverUrl", serverUrl_, "http", 8080, "http://localhost:8080");
- 
-		if (urlMiningInfo_.empty() && !urlPool_.empty())
-		{
-			urlMiningInfo_ = urlPool_;
-			config->set("miningInfoUrl", urlPool_.getUri().toString());
+			// new one exists
+			if (!outputLoggingObj.isNull())
+				outputObj = outputLoggingObj;
+
+			// old one exists
+			if (!outputConfigObj.isNull())
+			{
+				// if only the old one exists, move it to the new place
+				if (outputLoggingObj.isNull())
+					outputObj = outputConfigObj;
+
+				// delete the old one
+				config->remove("output");
+			}
+
+			loggingObj->set("output", outputObj);
 		}
 	}
 
-	// plots
+	// mining
 	{
-		try
-		{
-			auto plotsDyn = config->get("plots");
+		Poco::JSON::Object::Ptr miningObj = nullptr;
 
-			if (plotsDyn.type() == typeid(Poco::JSON::Array::Ptr))
-			{
-				auto plots = plotsDyn.extract<Poco::JSON::Array::Ptr>();
-			
-				for (auto& plot : *plots)
-					addPlotLocation(plot.convert<std::string>());
-			}
-			else if (plotsDyn.isString())
-			{
-				addPlotLocation(plotsDyn.extract<std::string>());
-			}
-			else if (plotsDyn.isEmpty())
-			{
-				Poco::JSON::Array::Ptr arr = new Poco::JSON::Array;
-				config->set("plots", arr);
-			}
+		if (config->has("mining"))
+			miningObj = config->get("mining").extract<Poco::JSON::Object::Ptr>();
+		else
+			miningObj = new Poco::JSON::Object;
+
+		submission_max_retry_ = getOrAddAlt(miningObj, config, "submissionMaxRetry", 3);
+		maxBufferSizeMB = getOrAddAlt(miningObj, config, "maxBufferSizeMB", 128);
+
+		if (maxBufferSizeMB == 0)
+			maxBufferSizeMB = 128;
+
+		timeout_ = getOrAddAlt(miningObj, config, "timeout", 30.f);
+		miningIntensity_ = getOrAddAlt(miningObj, config, "miningIntensity", 2);
+		maxPlotReaders_ = getOrAddAlt(miningObj, config, "maxPlotReaders", 0u);
+
+		// urls
+		{
+			Poco::JSON::Object::Ptr urlsObj;
+
+			if (miningObj->has("urls"))
+				urlsObj = miningObj->get("urls").extract<Poco::JSON::Object::Ptr>();
 			else
+				urlsObj = new Poco::JSON::Object;
+
+			auto checkCreateFunc = [&urlsObj, &config](const std::string& name, Url& url,
+				const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl)
 			{
-				log_warning(MinerLogger::config, "Invalid plot file or directory in config file %s\n%s",
-					configPath, plotsDyn.toString());
+				auto var = getOrAddAlt(urlsObj, config, name, createUrl);
+				url = {var, defaultScheme, defaultPort};
+				urlsObj->set(name, url.getUri().toString());
+			};
+
+			checkCreateFunc("poolUrl", urlPool_, "http", 8124, "http://pool.burst-team.us:8124");
+			checkCreateFunc("miningInfoUrl", urlMiningInfo_, "http", 8124, "");
+			checkCreateFunc("walletUrl", urlWallet_, "https", 8128, "https://wallet.burst-team.us:8128");
+			//checkCreateFunc("serverUrl", serverUrl_, "http", 8080, "http://localhost:8080");
+
+			if (urlMiningInfo_.empty() && !urlPool_.empty())
+			{
+				urlMiningInfo_ = urlPool_;
+				urlsObj->set("miningInfoUrl", urlPool_.getUri().toString());
 			}
-		}
-		catch (Poco::Exception& exc)
-		{		
-			log_error(MinerLogger::config,
-				"Error while reading plot files!\n"
-				"%s",
-				exc.displayText()
-			);
 
-			log_current_stackframe(MinerLogger::config);
+			miningObj->set("urls", urlsObj);
 		}
 
-		// combining all plotfiles to lists of plotfiles on the same device
+		// plots
 		{
-			Poco::SHA1Engine sha;
-			Poco::DigestOutputStream shaStream{sha};
-
-			for (const auto plotFile : getPlotFiles())
+			try
 			{
-				Poco::Path path{ plotFile->getPath() };
+				Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
+				auto plotsArr = getOrAddAlt(miningObj, config, "plots", arr);
 
-				shaStream << plotFile->getPath();
+				auto plotsDyn = miningObj->get("plots");
 
-				auto dir = path.getDevice();
-
-				// if its empty its unix and we have to look for the top dir
-				if (dir.empty() && path.depth() > 0)
-					dir = path.directory(0);
-
-				// if its now empty, we have a really weird plotfile and skip it
-				if (dir.empty())
+				if (plotsDyn.type() == typeid(Poco::JSON::Array::Ptr))
 				{
-					log_debug(MinerLogger::config, "Plotfile with invalid path!\n%s", plotFile->getPath());
-					continue;
+					auto plots = plotsDyn.extract<Poco::JSON::Array::Ptr>();
+
+					for (auto& plot : *plots)
+						addPlotLocation(plot.convert<std::string>());
+				}
+				/*else if (plotsDyn.isString())
+				{
+					addPlotLocation(plotsDyn.extract<std::string>());
+				}
+				else if (plotsDyn.isEmpty())
+				{
+					Poco::JSON::Array::Ptr arr = new Poco::JSON::Array;
+					config->set("plots", arr);
+				}
+				else
+				{
+					log_warning(MinerLogger::config, "Invalid plot file or directory in config file %s\n%s",
+						configPath, plotsDyn.toString());
+				}*/
+			}
+			catch (Poco::Exception& exc)
+			{		
+				log_error(MinerLogger::config,
+					"Error while reading plot files!\n"
+					"%s",
+					exc.displayText()
+				);
+
+				log_current_stackframe(MinerLogger::config);
+			}
+
+			// combining all plotfiles to lists of plotfiles on the same device
+			{
+				Poco::SHA1Engine sha;
+				Poco::DigestOutputStream shaStream{sha};
+
+				for (const auto plotFile : getPlotFiles())
+				{
+					Poco::Path path{ plotFile->getPath() };
+
+					shaStream << plotFile->getPath();
+
+					auto dir = path.getDevice();
+
+					// if its empty its unix and we have to look for the top dir
+					if (dir.empty() && path.depth() > 0)
+						dir = path.directory(0);
+
+					// if its now empty, we have a really weird plotfile and skip it
+					if (dir.empty())
+					{
+						log_debug(MinerLogger::config, "Plotfile with invalid path!\n%s", plotFile->getPath());
+						continue;
+					}
+
+					auto iter = plotDirs_.find(dir);
+
+					if (iter == plotDirs_.end())
+						plotDirs_.emplace(std::make_pair(dir, PlotList {}));
+
+					plotDirs_[dir].emplace_back(plotFile);
 				}
 
-				auto iter = plotDirs_.find(dir);
+				shaStream << std::flush;
+				plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
 
-				if (iter == plotDirs_.end())
-					plotDirs_.emplace(std::make_pair(dir, PlotList {}));
-
-				plotDirs_[dir].emplace_back(plotFile);
+				// we remember our total plot size
+				PlotSizes::set(plotsHash_, getTotalPlotsize() / 1024 / 1024 / 1024);
 			}
-
-			shaStream << std::flush;
-			plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
-
-			// we remember our total plot size
-			PlotSizes::set(plotsHash_, getTotalPlotsize() / 1024 / 1024 / 1024);
 		}
+
+		config->set("mining", miningObj);
 	}
 
-	submission_max_retry_ = getOrAdd(config, "submissionMaxRetry", 3);
-	maxBufferSizeMB = getOrAdd(config, "maxBufferSizeMB", 128);
+	//submission_max_retry_ = getOrAdd(config, "submissionMaxRetry", 3);
+	//maxBufferSizeMB = getOrAdd(config, "maxBufferSizeMB", 128);
 
 	if (maxBufferSizeMB == 0)
 		maxBufferSizeMB = 128;
 
-	http_ = config->optValue("http", 1u);
+	//http_ = config->optValue("http", 1u);
 	confirmedDeadlinesPath_ = config->optValue<std::string>("confirmed deadlines", "");
-	timeout_ = getOrAdd(config, "timeout", 30.f);
+	//timeout_ = getOrAdd(config, "timeout", 30.f);
 	startServer_ = getOrAdd(config, "Start Server", false);
-	miningIntensity_ = getOrAdd(config, "miningIntensity", 2);
-	maxPlotReaders_ = getOrAdd(config, "maxPlotReaders", 0u);
+	//miningIntensity_ = getOrAdd(config, "miningIntensity", 2);
+	//maxPlotReaders_ = getOrAdd(config, "maxPlotReaders", 0u);
 
 	// target deadline
 	{
@@ -564,6 +625,32 @@ Burst::MinerConfig& Burst::MinerConfig::getConfig()
 {
 	static MinerConfig config;
 	return config;
+}
+
+Poco::JSON::Object::Ptr Burst::MinerConfig::readOutput(Poco::JSON::Object::Ptr json)
+{
+	if (json.isNull())
+		return nullptr;
+
+	auto checkCreateFunc = [&json](int id, const std::string& name)
+	{
+		auto obj = json->get(name);
+
+		if (!obj.isEmpty() && obj.isBoolean())
+			MinerLogger::setOutput(id, obj.extract<bool>());
+		else
+			json->set(name, MinerLogger::hasOutput(id));
+	};
+
+	checkCreateFunc(LastWinner, "lastWinner");
+	checkCreateFunc(NonceFound, "nonceFound");
+	checkCreateFunc(NonceOnTheWay, "nonceOnTheWay");
+	checkCreateFunc(NonceSent, "nonceSent");
+	checkCreateFunc(NonceConfirmed, "nonceConfirmed");
+	checkCreateFunc(PlotDone, "plotDone");
+	checkCreateFunc(DirDone, "dirDone");
+
+	return json;
 }
 
 bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
