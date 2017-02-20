@@ -175,7 +175,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	{
 		plotReadQueue_.clear();
 		verificationQueue_.clear();
-		PlotReader::sumBufferSize_ = 0;
+		PlotReader::globalBufferSize.reset();
 		log_debug(MinerLogger::miner, "Verification queue cleared.");
 	}
 			

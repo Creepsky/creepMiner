@@ -307,7 +307,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	timeout_ = getOrAdd(config, "timeout", 30.f);
 	startServer_ = getOrAdd(config, "Start Server", false);
 	miningIntensity_ = getOrAdd(config, "miningIntensity", 2);
-	maxPlotReaders_ = getOrAdd(config, "maxPlotReaders", 0u);
+	maxPlotReaders_ = getOrAdd(config, "maxPlotReaders", 0);
 
 	// target deadline
 	{

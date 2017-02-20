@@ -18,7 +18,34 @@
 #include <Poco/Timestamp.h>
 #include "Output.hpp"
 
-std::atomic<uint64_t> Burst::PlotReader::PlotReader::sumBufferSize_;
+Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
+
+void Burst::GlobalBufferSize::reset()
+{
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
+	size_ = 0;
+}
+
+bool Burst::GlobalBufferSize::add(uint64_t sizeToAdd, uint64_t max)
+{
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
+
+	if (size_ + sizeToAdd > max)
+		return false;
+
+	size_ += sizeToAdd;
+	return true;
+}
+
+void Burst::GlobalBufferSize::remove(uint64_t sizeToRemove)
+{
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
+
+	if (sizeToRemove > size_)
+		sizeToRemove = size_;
+
+	size_ -= sizeToRemove;
+}
 
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
 	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
@@ -94,16 +121,26 @@ void Burst::PlotReader::runTask()
 						verification->inputPath = plotFile.getPath();
 						verification->gensig = gensig;
 
-						verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 						staggerOffset = scoopDoneRead * scoopBufferSize;
 
 						if (scoopBufferSize > (staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize)))
 						{
 							scoopBufferSize = staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize);
 
-							if (scoopBufferSize > Settings::ScoopSize)
-								verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
+							//if (scoopBufferSize > Settings::ScoopSize)
+								//verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 						}
+
+						while (!isCancelled() &&
+							miner_.getBlockheight() == plotReadNotification->blockheight &&
+							!globalBufferSize.add((scoopBufferSize / Settings::ScoopSize) * sizeof(ScoopData),
+								MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024))
+						{ }
+
+						if (isCancelled())
+							continue;
+
+						verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 
 						if (scoopBufferSize > Settings::ScoopSize)
 						{
@@ -116,20 +153,8 @@ void Burst::PlotReader::runTask()
 
 							//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
 
-							// wait, when there is too much work for the verifiers
-							auto waitForSpace = false;
-
-							while (!waitForSpace &&
-								!isCancelled() &&
-								miner_.getBlockheight() == plotReadNotification->blockheight)
-								waitForSpace = sumBufferSize_ < MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
+							verificationQueue_->enqueueNotification(verification);
 							
-							if (waitForSpace)
-							{
-								verificationQueue_->enqueueNotification(verification);
-								sumBufferSize_ += bufferSize * sizeof(ScoopData);
-							}
-
 							nonceRead += bufferSize;
 						}
 						//else

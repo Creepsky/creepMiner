@@ -30,6 +30,18 @@ namespace Burst
 	class PlotFile;
 	class PlotReadProgress;
 
+	class GlobalBufferSize
+	{
+	public:
+		void reset();
+		bool add(uint64_t sizeToAdd, uint64_t max);
+		void remove(uint64_t sizeToRemove);
+
+	private:
+		uint64_t size_ = 0;
+		mutable Poco::FastMutex mutex_;
+	};
+
 	struct PlotReadNotification : Poco::Notification
 	{
 		typedef Poco::AutoPtr<PlotReadNotification> Ptr;
@@ -49,7 +61,7 @@ namespace Burst
 
 		void runTask() override;
 
-		static std::atomic<uint64_t> sumBufferSize_;
+		static GlobalBufferSize globalBufferSize;
 
 	private:
 		Miner& miner_;
