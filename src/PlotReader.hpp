@@ -33,12 +33,13 @@ namespace Burst
 	class GlobalBufferSize
 	{
 	public:
-		void reset();
-		bool add(uint64_t sizeToAdd, uint64_t max);
+		void reset(uint64_t max);
+		bool add(uint64_t sizeToAdd);
 		void remove(uint64_t sizeToRemove);
 
 	private:
 		uint64_t size_ = 0;
+		uint64_t max_ = 0;
 		mutable Poco::FastMutex mutex_;
 	};
 

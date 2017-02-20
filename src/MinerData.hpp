@@ -12,6 +12,7 @@
 #include <Poco/ActiveMethod.h>
 #include <unordered_map>
 #include <atomic>
+#include <functional>
 
 namespace Burst
 {
@@ -49,8 +50,9 @@ namespace Burst
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
 		std::shared_ptr<Deadline> getBestDeadline() const;
-		std::vector<Poco::JSON::Object> getEntries() const;
-		const std::unordered_map<AccountId, Deadlines>& getDeadlines() const;
+		//std::vector<Poco::JSON::Object> getEntries() const;
+		bool forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const;
+		//const std::unordered_map<AccountId, Deadlines>& getDeadlines() const;
 		std::shared_ptr<Deadline> getBestDeadline(uint64_t accountId, DeadlineSearchType searchType);
 
 	protected:
@@ -120,10 +122,10 @@ namespace Burst
 
 		Poco::Timestamp startTime_ = {};
 		std::shared_ptr<Deadline> bestDeadlineOverall_ = nullptr;
-		uint64_t blocksMined_ = 0;
-		uint64_t blocksWon_ = 0;
-		uint64_t deadlinesConfirmed_ = 0;
-		uint64_t targetDeadline_ = 0;
+		std::atomic<uint64_t> blocksMined_;
+		std::atomic<uint64_t> blocksWon_;
+		std::atomic<uint64_t> deadlinesConfirmed_;
+		std::atomic<uint64_t> targetDeadline_;
 		std::shared_ptr<BlockData> blockData_ = nullptr;
 		std::deque<std::shared_ptr<BlockData>> historicalBlocks_;
 		mutable Poco::Mutex mutex_;

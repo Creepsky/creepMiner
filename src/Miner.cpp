@@ -175,7 +175,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	{
 		plotReadQueue_.clear();
 		verificationQueue_.clear();
-		PlotReader::globalBufferSize.reset();
+		PlotReader::globalBufferSize.reset(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024);
 		log_debug(MinerLogger::miner, "Verification queue cleared.");
 	}
 			
@@ -410,12 +410,7 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 		blockHeight != block->getBlockheight())
 		return nullptr;
 
-	auto iter = block->getDeadlines().find(accountId);
-
-	if (iter == block->getDeadlines().end())
-		return nullptr;
-
-	return iter->second.getBestSent();
+	return block->getBestDeadline(accountId, BlockData::DeadlineSearchType::Sent);
 }
 
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(uint64_t accountId, uint64_t blockHeight)
@@ -428,20 +423,20 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(uint64_t account
 		blockHeight != block->getBlockheight())
 		return nullptr;
 
-	return block->getBestDeadline();
+	return block->getBestDeadline(accountId, BlockData::DeadlineSearchType::Confirmed);
 }
 
-std::vector<Poco::JSON::Object> Burst::Miner::getBlockData() const
-{
-	// TODO REWORK
-	poco_ndc(Miner::getBlockData);
-	auto blockData = data_.getBlockData();
-
-	if (blockData == nullptr)
-		return { };
-
-	return blockData->getEntries();
-}
+//std::vector<Poco::JSON::Object> Burst::Miner::getBlockData() const
+//{
+//	// TODO REWORK
+//	poco_ndc(Miner::getBlockData);
+//	auto blockData = data_.getBlockData();
+//
+//	if (blockData == nullptr)
+//		return { };
+//
+//	return blockData->getEntries();
+//}
 
 Burst::MinerData& Burst::Miner::getData()
 {

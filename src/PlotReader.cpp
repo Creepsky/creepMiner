@@ -20,17 +20,18 @@
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
-void Burst::GlobalBufferSize::reset()
+void Burst::GlobalBufferSize::reset(uint64_t max)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	size_ = 0;
+	max_ = max;
 }
 
-bool Burst::GlobalBufferSize::add(uint64_t sizeToAdd, uint64_t max)
+bool Burst::GlobalBufferSize::add(uint64_t sizeToAdd)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 
-	if (size_ + sizeToAdd > max)
+	if (size_ + sizeToAdd > max_)
 		return false;
 
 	size_ += sizeToAdd;
@@ -121,26 +122,38 @@ void Burst::PlotReader::runTask()
 						verification->inputPath = plotFile.getPath();
 						verification->gensig = gensig;
 
+						while (!isCancelled() &&
+							miner_.getBlockheight() == plotReadNotification->blockheight &&
+							!globalBufferSize.add((scoopBufferSize / Settings::ScoopSize) * sizeof(ScoopData)))
+						{ }
+
+						if (isCancelled() ||
+							miner_.getBlockheight() != plotReadNotification->blockheight)
+							continue;
+						
+						verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 						staggerOffset = scoopDoneRead * scoopBufferSize;
 
 						if (scoopBufferSize > (staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize)))
 						{
 							scoopBufferSize = staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize);
 
-							//if (scoopBufferSize > Settings::ScoopSize)
-								//verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
+							if (scoopBufferSize > Settings::ScoopSize)
+							{
+								globalBufferSize.remove(verification->buffer.size() * sizeof(ScoopData));
+
+								while (!isCancelled() &&
+									miner_.getBlockheight() == plotReadNotification->blockheight &&
+									!globalBufferSize.add((scoopBufferSize / Settings::ScoopSize) * sizeof(ScoopData)))
+								{ }
+
+								if (isCancelled() ||
+									miner_.getBlockheight() != plotReadNotification->blockheight)
+									continue;
+
+								verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
+							}
 						}
-
-						while (!isCancelled() &&
-							miner_.getBlockheight() == plotReadNotification->blockheight &&
-							!globalBufferSize.add((scoopBufferSize / Settings::ScoopSize) * sizeof(ScoopData),
-								MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024))
-						{ }
-
-						if (isCancelled())
-							continue;
-
-						verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
 
 						if (scoopBufferSize > Settings::ScoopSize)
 						{

@@ -87,6 +87,8 @@ void Burst::NonceSubmitter::runTask()
 	// it has to be the same block
 	if (deadline->getBlock() == miner.getBlockheight())
 	{
+		log_trace(MinerLogger::nonceSubmitter, "miner.getBlockheight");
+
 		if (confirmation.errorCode == SubmitResponse::Submitted)
 		{
 			auto confirmedDeadlinesPath = MinerConfig::getConfig().getConfirmedDeadlinesPath();
@@ -122,7 +124,9 @@ void Burst::NonceSubmitter::runTask()
 				deadline->setDeadline(confirmation.deadline);
 			}
 
+			log_trace(MinerLogger::nonceSubmitter, "miner.getBestConfirmed >> 0");
 			auto bestConfirmed = miner.getBestConfirmed(deadline->getAccountId(), deadline->getBlock());
+			log_trace(MinerLogger::nonceSubmitter, "miner.getBestConfirmed >> 1");
 			auto showConfirmation = true;
 
 			// only show the confirmation, if the confirmed deadline is better then the best already confirmed
@@ -138,7 +142,9 @@ void Burst::NonceSubmitter::runTask()
 			// we have to confirm it at the very last position
 			// because we work with the best confirmed deadline so far before
 			// this point
+			log_trace(MinerLogger::nonceSubmitter, "deadline->confirm >> 0");
 			deadline->confirm();
+			log_trace(MinerLogger::nonceSubmitter, "deadline->confirm >> 1");
 		}
 		else if (betterDeadlineInPipeline)
 			log_debug(MinerLogger::nonceSubmitter, "Better deadline in pipeline, stop submitting! (%s)", deadlineFormat(deadline->getDeadline()));

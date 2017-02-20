@@ -39,9 +39,9 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadline(uint64_t nonce, u
 	if (account == nullptr)
 		return nullptr;
 
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
-
 	auto accountId = account->getId();
+
+	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
 
 	auto iter = deadlines_.find(accountId);
 
@@ -61,17 +61,21 @@ void Burst::BlockData::setBaseTarget(uint64_t baseTarget)
 
 void Burst::BlockData::confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline)
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
-
 	if (deadline == nullptr)
 		return;
 
 	addBlockEntry(createJsonDeadline(*deadline, "nonce confirmed"));
 
-	if (bestDeadline_ == nullptr ||
-		bestDeadline_->getDeadline() > deadline->getDeadline())
-		bestDeadline_ = deadline;
+	// set the best deadline for this block
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
 
+		if (bestDeadline_ == nullptr ||
+			bestDeadline_->getDeadline() > deadline->getDeadline())
+			bestDeadline_ = deadline;
+	}
+
+	// set the best deadline overall
 	if (parent_ != nullptr)
 	{
 		parent_->setBestDeadline(deadline);
@@ -81,8 +85,11 @@ void Burst::BlockData::confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline
 
 void Burst::BlockData::setLastWinner(std::shared_ptr<Account> account)
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
-	lastWinner_ = account;
+	// set the winner for the last block
+	{
+		Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+		lastWinner_ = account;
+	}
 
 	auto lastWinnerJson = account->toJSON();
 	lastWinnerJson->set("type", "lastWinner");
@@ -91,15 +98,11 @@ void Burst::BlockData::setLastWinner(std::shared_ptr<Account> account)
 
 void Burst::BlockData::refreshBlockEntry() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
-
-	if (parent_ != nullptr)
-		addBlockEntry(createJsonNewBlock(*parent_));
+	addBlockEntry(createJsonNewBlock(*parent_));
 }
 
 void Burst::BlockData::setProgress(float progress) const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
 	addBlockEntry(createJsonProgress(progress));
 }
 
@@ -143,13 +146,11 @@ Poco::ActiveResult<std::shared_ptr<Burst::Account>> Burst::BlockData::getLastWin
 
 const Burst::GensigData& Burst::BlockData::getGensig() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
 	return genSig_;
 }
 
 const std::string& Burst::BlockData::getGensigStr() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
 	return genSigStr_;
 }
 
@@ -159,18 +160,32 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline() const
 	return bestDeadline_;
 }
 
-std::vector<Poco::JSON::Object> Burst::BlockData::getEntries() const
+bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
 
-	return *entries_;
+	if (entries_ == nullptr)
+		return false;
+
+	auto error = false;
+
+	for (auto iter = entries_->begin(); iter != entries_->end() && !error; ++iter)
+		error = traverseFunction(*iter);
+
+	return error;
 }
 
-const std::unordered_map<Burst::AccountId, Burst::Deadlines>& Burst::BlockData::getDeadlines() const
-{
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
-	return deadlines_;
-}
+//std::vector<Poco::JSON::Object> Burst::BlockData::getEntries() const
+//{
+//	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+//	return *entries_;
+//}
+
+//const std::unordered_map<Burst::AccountId, Burst::Deadlines>& Burst::BlockData::getDeadlines() const
+//{
+//	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+//	return deadlines_;
+//}
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(uint64_t accountId, BlockData::DeadlineSearchType searchType)
 {
@@ -223,7 +238,6 @@ std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pa
 			auto winnerAccount = std::make_shared<Account>(wallet, lastWinner);
 			winnerAccount->getName();
 
-			// TODO REWORK
 			log_ok_if(MinerLogger::miner, MinerLogger::hasOutput(LastWinner), std::string(50, '-') + "\n"
 				"last block winner: \n"
 				"block#             %Lu\n"
@@ -269,7 +283,6 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(uint64_t block
 
 void Burst::MinerData::addConfirmedDeadline()
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	++deadlinesConfirmed_;
 }
 
@@ -285,13 +298,11 @@ void Burst::MinerData::setBestDeadline(std::shared_ptr<Deadline> deadline)
 
 void Burst::MinerData::setTargetDeadline(uint64_t deadline)
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	targetDeadline_ = deadline;
 }
 
 void Burst::MinerData::addWonBlock()
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	++blocksWon_;
 }
 
@@ -315,13 +326,11 @@ Poco::Timespan Burst::MinerData::getRunTime() const
 
 uint64_t Burst::MinerData::getBlocksMined() const
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	return blocksMined_;
 }
 
 uint64_t Burst::MinerData::getBlocksWon() const
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	return blocksWon_;
 }
 
@@ -353,12 +362,12 @@ std::shared_ptr<const Burst::BlockData> Burst::MinerData::getBlockData() const
 
 std::shared_ptr<const Burst::BlockData> Burst::MinerData::getHistoricalBlockData(uint32_t roundsBefore) const
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
-
 	if (roundsBefore == 0)
 		return getBlockData();
 
 	auto wantedBlock = getBlockData()->getBlockheight() - roundsBefore;
+
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 
 	auto iter = std::find_if(historicalBlocks_.begin(), historicalBlocks_.end(), [wantedBlock](const std::shared_ptr<BlockData>& data)
 	{
@@ -386,15 +395,12 @@ std::vector<std::shared_ptr<const Burst::BlockData>> Burst::MinerData::getAllHis
 
 uint64_t Burst::MinerData::getConfirmedDeadlines() const
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	return deadlinesConfirmed_;
 }
 
 uint64_t Burst::MinerData::getTargetDeadline() const
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
-
-	auto targetDeadline = targetDeadline_;
+	auto targetDeadline = targetDeadline_.load();
 	auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
 
 	if (targetDeadline == 0)
@@ -408,7 +414,6 @@ uint64_t Burst::MinerData::getTargetDeadline() const
 
 bool Burst::MinerData::compareToTargetDeadline(uint64_t deadline) const
 {
-	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	return deadline < getTargetDeadline();
 }
 

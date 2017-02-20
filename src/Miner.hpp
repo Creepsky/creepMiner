@@ -55,7 +55,7 @@ namespace Burst
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
-		std::vector<Poco::JSON::Object> getBlockData() const;
+		//std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
 		
 	private:
