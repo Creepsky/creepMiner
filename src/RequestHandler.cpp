@@ -74,7 +74,7 @@ void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 		// credentials are base64 encoded
 		std::stringstream encoded(authInfo);
 		std::stringstream decoded;
-		std::string credentials = "", user = "", password = "";
+		std::string credentials, user = "", password;
 		//
 		Poco::Base64Decoder base64(encoded);
 		Poco::StreamCopier::copyStream(base64, decoded);
@@ -139,11 +139,25 @@ void Burst::AssetHandler::handleRequest(Poco::Net::HTTPServerRequest& request, P
 {
 	try
 	{
-		Poco::FileInputStream file{"public/" + request.getURI(), std::ios::in};
+		const auto relativePath = "public/" + request.getURI();
+		Poco::Path path{ relativePath };
+		Poco::FileInputStream file{relativePath, std::ios::in};
 		std::string str(std::istreambuf_iterator<char>{file}, {});
+
+		std::string mimeType = "text/plain";
+
+		auto ext = path.getExtension();
+
+		if (ext == "css")
+			mimeType = "text/css";
+		else if (ext == "js")
+			mimeType = "text/javascript";
+		else if (ext == "png")
+			mimeType = "image/png";
 
 		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 		response.setChunkedTransferEncoding(true);
+		response.setContentType(mimeType);
 		auto& out = response.send();
 
 		out << str;
