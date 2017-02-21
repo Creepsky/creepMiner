@@ -12,6 +12,9 @@ Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, std::shared_ptr<Acc
 	  nonce_(nonce),
 	  deadline_(deadline),
 	  plotFile_(std::move(plotFile)),
+	  onTheWay_{false},
+	  sent_{false},
+	  confirmed_{false},
 	  parent_{parent}
 {}
 
