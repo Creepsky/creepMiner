@@ -207,11 +207,10 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestFound() const
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	for (auto& deadline : deadlines_)
-		if (deadline->isOnTheWay())
-			return deadline;
+	if (deadlines_.empty())
+		return nullptr;
 
-	return nullptr;
+	return deadlines_.front();
 }
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestSent() const
