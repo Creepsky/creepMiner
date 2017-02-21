@@ -133,12 +133,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(uint64_t nonce, uint64_t 
 	
 	auto deadlinePtr = std::make_shared<Deadline>(nonce, deadline, account, block, std::move(plotFile), this);
 
-	deadlines_.emplace_back(deadlinePtr);
-
-	std::sort(deadlines_.begin(), deadlines_.end(), [](std::shared_ptr<Deadline> lhs, std::shared_ptr<Deadline> rhs)
-			  {
-				  return *lhs < *rhs;
-			  });
+	deadlines_.insert(deadlinePtr);
 
 	return deadlinePtr;
 }
@@ -189,7 +184,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBest() const
 	if (deadlines_.empty())
 		return nullptr;
 
-	return deadlines_.front();
+	return *deadlines_.begin();
 }
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed() const
@@ -205,12 +200,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed() const
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestFound() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
-
-	if (deadlines_.empty())
-		return nullptr;
-
-	return deadlines_.front();
+	return getBest();
 }
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestSent() const

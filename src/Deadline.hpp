@@ -1,12 +1,10 @@
 ﻿#pragma once
 
-#include <cstdint>
 #include <memory>
-#include <vector>
 #include "Declarations.hpp"
-#include <string>
 #include <Poco/Mutex.h>
 #include <atomic>
+#include <set>
 
 namespace Burst
 {
@@ -75,8 +73,15 @@ namespace Burst
 		void deadlineEvent(std::shared_ptr<Deadline> deadline, const std::string& type) const;
 		void deadlineConfirmed(std::shared_ptr<Deadline> deadline) const;
 
-	private:
-		std::vector<std::shared_ptr<Deadline>> deadlines_;
+		struct LessThan : std::binary_function<std::shared_ptr<Deadline>, std::shared_ptr<Deadline>, bool>
+		{
+			bool operator()(const std::shared_ptr<Deadline>& lhs, const std::shared_ptr<Deadline>& rhs) const
+			{
+				return !(lhs == rhs) && (*lhs < *rhs);
+			}
+		};
+
+		std::set<std::shared_ptr<Deadline>, LessThan> deadlines_;
 		BlockData* parent_;
 		mutable Poco::FastMutex mutex_;
 
