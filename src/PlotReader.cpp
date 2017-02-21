@@ -17,6 +17,7 @@
 #include "PlotVerifier.hpp"
 #include <Poco/Timestamp.h>
 #include "Output.hpp"
+#include "MinerShabal.hpp"
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
@@ -70,6 +71,10 @@ void Burst::PlotReader::runTask()
 			break;
 
 		Poco::Timestamp timeStartDir;
+		auto block = miner_.getBlockheight();
+		auto gensig = miner_.getGensig();
+		auto noncesPerBuffer = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / Settings::PlotSize;
+		auto scoopsPerBuffer = noncesPerBuffer / Settings::ScoopSize;
 
 		for (auto plotFileIter = plotReadNotification->plotList.begin();
 			plotFileIter != plotReadNotification->plotList.end() &&
@@ -89,19 +94,37 @@ void Burst::PlotReader::runTask()
 				auto nonceStart = stoull(getStartNonceFromPlotFile(plotFile.getPath()));
 				auto nonceCount = stoull(getNonceCountFromPlotFile(plotFile.getPath()));
 				auto staggerSize = stoull(getStaggerSizeFromPlotFile(plotFile.getPath()));
-				auto block = miner_.getBlockheight();
-				auto gensig = miner_.getGensig();
 
 				size_t chunkNum = 0;
 				auto totalChunk = static_cast<size_t>(std::ceil(static_cast<double>(nonceCount) / static_cast<double>(staggerSize)));
 
 				//MinerLogger::write("reading plot file " + plotFile.getPath());
 
-				while (!isCancelled() &&
-					miner_.getBlockheight() == plotReadNotification->blockheight &&
-					inputStream.good() &&
-					chunkNum <= totalChunk)
+				// optimized plotfile
+				if (nonceCount == staggerSize)
 				{
+					VerifyNotification::Ptr verification = new VerifyNotification{};
+					verification->accountId = accountId;
+					verification->nonceStart = nonceStart;
+					verification->block = block;
+					verification->inputPath = plotFile.getPath();
+					verification->gensig = gensig;
+					verification->buffer.resize(nonceCount);
+					
+					inputStream.seekg(staggerSize * plotReadNotification->scoopNum * Settings::ScoopSize);
+					auto scoopData = reinterpret_cast<char*>(verification->buffer.data());
+					inputStream.read(scoopData, nonceCount * Settings::ScoopSize);
+					
+					sumBufferSize_ += verification->buffer.size() * sizeof(ScoopData);
+					verificationQueue_->enqueueNotification(verification);
+				}
+				else
+				{
+					while (!isCancelled() &&
+						miner_.getBlockheight() == plotReadNotification->blockheight &&
+						inputStream.good() &&
+						chunkNum <= totalChunk)
+					{
 					auto scoopBufferSize = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024 / (64 * 2); // 8192
 					auto scoopBufferCount = static_cast<size_t>(
 						std::ceil(static_cast<float>(staggerSize * Settings::ScoopSize) / static_cast<float>(scoopBufferSize)));
@@ -113,30 +136,21 @@ void Burst::PlotReader::runTask()
 						miner_.getBlockheight() == plotReadNotification->blockheight &&
 						inputStream.good() &&
 						scoopDoneRead <= scoopBufferCount)
-					{
-						// setting up plot data
-						VerifyNotification::Ptr verification = new VerifyNotification{};
-						verification->accountId = accountId;
-						verification->nonceStart = nonceStart;
-						verification->block = block;
-						verification->inputPath = plotFile.getPath();
-						verification->gensig = gensig;
-
-						while (!isCancelled() &&
-							miner_.getBlockheight() == plotReadNotification->blockheight &&
-							!globalBufferSize.add((scoopBufferSize / Settings::ScoopSize) * sizeof(ScoopData)))
-						{ }
-
-						if (isCancelled() ||
-							miner_.getBlockheight() != plotReadNotification->blockheight)
-							continue;
-						
-						verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
-						staggerOffset = scoopDoneRead * scoopBufferSize;
-
-						if (scoopBufferSize > (staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize)))
 						{
-							scoopBufferSize = staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize);
+							// setting up plot data
+							VerifyNotification::Ptr verification = new VerifyNotification{};
+							verification->accountId = accountId;
+							verification->nonceStart = nonceStart;
+							verification->block = block;
+							verification->inputPath = plotFile.getPath();
+							verification->gensig = gensig;
+
+							verification->buffer.resize(scoopBufferSize / Settings::ScoopSize);
+							staggerOffset = scoopDoneRead * scoopBufferSize;
+
+							if (scoopBufferSize > (staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize)))
+							{
+								scoopBufferSize = staggerSize * Settings::ScoopSize - (scoopDoneRead * scoopBufferSize);
 
 							if (scoopBufferSize > Settings::ScoopSize)
 							{
@@ -155,16 +169,16 @@ void Burst::PlotReader::runTask()
 							}
 						}
 
-						if (scoopBufferSize > Settings::ScoopSize)
-						{
-							inputStream.seekg(startByte + staggerOffset);
-							auto scoopData = reinterpret_cast<char*>(verification->buffer.data());
-							inputStream.read(scoopData, scoopBufferSize);
+							if (scoopBufferSize > Settings::ScoopSize)
+							{
+								inputStream.seekg(startByte + staggerOffset);
+								auto scoopData = reinterpret_cast<char*>(verification->buffer.data());
+								inputStream.read(scoopData, scoopBufferSize);
 
-							auto bufferSize = verification->buffer.size();
-							verification->nonceRead = nonceRead;
+								auto bufferSize = verification->buffer.size();
+								verification->nonceRead = nonceRead;
 
-							//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
+								//MinerLogger::write("chunk "+std::to_string(chunkNum)+" offset "+std::to_string(startByte + staggerOffset)+" read "+std::to_string(scoopBufferSize)+" nonce offset "+std::to_string(this->nonceOffset)+" nonceRead "+std::to_string(this->nonceRead));
 
 							verificationQueue_->enqueueNotification(verification);
 							
@@ -176,9 +190,10 @@ void Burst::PlotReader::runTask()
 						//}
 
 						++scoopDoneRead;
-					}
+						}
 
-					++chunkNum;
+						++chunkNum;
+					}
 				}
 
 				if (progress_ != nullptr && !isCancelled())
