@@ -62,20 +62,23 @@ T getOrAdd(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValu
 }
 
 template <typename T>
-T getOrAddAlt(Poco::JSON::Object::Ptr object, Poco::JSON::Object::Ptr alt, const std::string& key, T defaultValue)
+T getOrAddAlt(Poco::JSON::Object::Ptr object, Poco::JSON::Object::Ptr alt, const std::string& key, T defaultValue, std::string altkey = "")
 {
 	auto json = object->get(key);
 	Poco::Dynamic::Var jsonAlt;
 
-	if (!alt.isNull() && alt->has(key))
-		jsonAlt = alt->get(key);
+	if (altkey.empty())
+		altkey = key;
+
+	if (!alt.isNull() && alt->has(altkey))
+		jsonAlt = alt->get(altkey);
 
 	alt->remove(key);
 
 	T defaultOrAltValue = defaultValue;
 
 	if (!jsonAlt.isEmpty())
-		defaultOrAltValue = jsonAlt.convert<T>();;
+		defaultOrAltValue = jsonAlt.extract<T>();
 
 	if (json.isEmpty())
 		object->set(key, defaultOrAltValue);
@@ -131,6 +134,17 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		return false;
 	}
+
+	auto checkCreateUrlFunc = [&config](Poco::JSON::Object::Ptr urlsObj, const std::string& name, Url& url,
+		const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl, std::string altName = "")
+	{
+		if (altName.empty())
+			altName = name;
+
+		auto var = getOrAddAlt(urlsObj, config, name, createUrl, altName);
+		url = {var, defaultScheme, defaultPort};
+		urlsObj->set(name, url.getUri().toString());
+	};
 
 	// logging
 	{
@@ -224,7 +238,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	// mining
 	{
-		Poco::JSON::Object::Ptr miningObj = nullptr;
+		Poco::JSON::Object::Ptr miningObj;
 
 		if (config->has("mining"))
 			miningObj = config->get("mining").extract<Poco::JSON::Object::Ptr>();
@@ -237,9 +251,13 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (maxBufferSizeMB == 0)
 			maxBufferSizeMB = 128;
 
-		timeout_ = getOrAddAlt(miningObj, config, "timeout", 30.f);
-		miningIntensity_ = getOrAddAlt(miningObj, config, "miningIntensity", 2);
-		maxPlotReaders_ = getOrAddAlt(miningObj, config, "maxPlotReaders", 0u);
+		auto timeout = getOrAddAlt(miningObj, config, "timeout", 30);
+		timeout_ = static_cast<float>(timeout);
+
+		miningIntensity_ = getOrAddAlt(miningObj, config, "intensity", 2, "miningIntensity");
+		
+		auto maxPlotReaders = getOrAddAlt(miningObj, config, "maxPlotReaders", 0);
+		maxPlotReaders_ = maxPlotReaders;
 
 		// urls
 		{
@@ -250,23 +268,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			else
 				urlsObj = new Poco::JSON::Object;
 
-			auto checkCreateFunc = [&urlsObj, &config](const std::string& name, Url& url,
-				const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl)
-			{
-				auto var = getOrAddAlt(urlsObj, config, name, createUrl);
-				url = {var, defaultScheme, defaultPort};
-				urlsObj->set(name, url.getUri().toString());
-			};
-
-			checkCreateFunc("poolUrl", urlPool_, "http", 8124, "http://pool.burst-team.us:8124");
-			checkCreateFunc("miningInfoUrl", urlMiningInfo_, "http", 8124, "");
-			checkCreateFunc("walletUrl", urlWallet_, "https", 8128, "https://wallet.burst-team.us:8128");
-			//checkCreateFunc("serverUrl", serverUrl_, "http", 8080, "http://localhost:8080");
+			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8124, "http://pool.burst-team.us:8124", "poolUrl");
+			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8124, "", "miningInfoUrl");
+			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 8128, "https://wallet.burst-team.us:8128", "walletUrl");
 
 			if (urlMiningInfo_.empty() && !urlPool_.empty())
 			{
 				urlMiningInfo_ = urlPool_;
-				urlsObj->set("miningInfoUrl", urlPool_.getUri().toString());
+				urlsObj->set("miningInfo", urlPool_.getUri().toString());
 			}
 
 			miningObj->set("urls", urlsObj);
@@ -354,180 +363,200 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			}
 		}
 
+		// target deadline
+		{
+			auto targetDeadline = miningObj->get("targetDeadline");
+			auto targetDeadlineAlt = config->get("targetDeadline");
+
+			if (targetDeadline.isEmpty())
+				targetDeadline = targetDeadlineAlt;
+
+			config->remove("targetDeadline");
+			miningObj->set("targetDeadline", targetDeadline);
+
+			if (!targetDeadline.isEmpty())
+			{
+				// could be the raw deadline
+				if (targetDeadline.isInteger())
+					targetDeadline_ = targetDeadline.convert<uint64_t>();
+				// or a formated string
+				else if (targetDeadline.isString())
+					targetDeadline_ = formatDeadline(targetDeadline.convert<std::string>());
+				else
+				{
+					targetDeadline_ = 0;
+
+					log_error(MinerLogger::config, "The target deadline is not a valid!\n"
+						"Expected a number (amount of seconds) or a formated string (1m 1d 11:11:11)\n"
+						"Got: %s", targetDeadline.toString());
+				}
+			}
+			else
+			{
+				miningObj->set("targetDeadline", "0y 0m 0d 00:00:00");
+				targetDeadline_ = 0;
+			}
+		}
+
+		// passphrase
+		{
+			try
+			{
+				auto passphraseJson = miningObj->get("passphrase");
+				auto passphraseJsonAlt = config->get("passphrase");
+				Poco::JSON::Object::Ptr passphrase = nullptr;
+
+				if (passphraseJson.isEmpty())
+					passphraseJson = passphraseJsonAlt;
+
+				config->remove("passphrase");
+				miningObj->set("passphrase", passphraseJson);
+
+				if (!passphraseJson.isEmpty())
+					passphrase = passphraseJson.extract<Poco::JSON::Object::Ptr>();
+
+				if (passphrase.isNull())
+				{
+					passphrase = new Poco::JSON::Object;
+					miningObj->set("passphrase", passphrase);
+				}
+
+				log_debug(MinerLogger::config, "Reading passphrase...");
+
+				auto decrypted = getOrAdd<std::string>(passphrase, "decrypted", "");
+				auto encrypted = getOrAdd<std::string>(passphrase, "encrypted", "");
+				auto salt = getOrAdd<std::string>(passphrase, "salt", "");
+				auto key = getOrAdd<std::string>(passphrase, "key", "");
+				auto iterations = getOrAdd(passphrase, "iterations", 0u);
+				auto deleteKey = getOrAdd(passphrase, "deleteKey", false);
+				auto algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
+
+				if (!encrypted.empty() && !key.empty() && !salt.empty())
+				{
+					log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
+
+					passPhrase_ = decrypt(encrypted, algorithm, key, salt, iterations);
+
+					if (!passPhrase_.empty())
+						log_debug(MinerLogger::config, "Passphrase decrypted!");
+
+					if (deleteKey)
+					{
+						log_debug(MinerLogger::config, "Passhrase.deleteKey == true, deleting the key...");
+						passphrase->set("key", "");
+					}
+				}
+
+				// there is a decrypted passphrase, we need to encrypt it
+				if (!decrypted.empty())
+				{
+					log_debug(MinerLogger::config, "Decrypted passphrase found, trying to encrypt...");
+
+					encrypted = encrypt(decrypted, algorithm, key, salt, iterations);
+					passPhrase_ = decrypted;
+
+					if (!encrypted.empty())
+					{
+						passphrase->set("decrypted", "");
+						passphrase->set("encrypted", encrypted);
+						passphrase->set("salt", salt);
+						passphrase->set("key", key);
+						passphrase->set("iterations", iterations);
+
+						log_debug(MinerLogger::config, "Passphrase encrypted!\n"
+							"encrypted: %s\n"
+							"salt: %s\n"
+							"key: %s\n"
+							"iterations: %u",
+							encrypted, salt, std::string(key.size(), '*'), iterations
+						);
+					}
+				}
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_error(MinerLogger::config,
+					"Error while reading passphrase in config file!\n"
+					"%s",
+					exc.displayText()
+				);
+
+				log_current_stackframe(MinerLogger::config);
+			}
+		}
+
 		config->set("mining", miningObj);
 	}
 
-	//submission_max_retry_ = getOrAdd(config, "submissionMaxRetry", 3);
-	//maxBufferSizeMB = getOrAdd(config, "maxBufferSizeMB", 128);
-
-	if (maxBufferSizeMB == 0)
-		maxBufferSizeMB = 128;
-
 	//http_ = config->optValue("http", 1u);
 	confirmedDeadlinesPath_ = config->optValue<std::string>("confirmed deadlines", "");
-	//timeout_ = getOrAdd(config, "timeout", 30.f);
-	startServer_ = getOrAdd(config, "Start Server", false);
-	//miningIntensity_ = getOrAdd(config, "miningIntensity", 2);
-	//maxPlotReaders_ = getOrAdd(config, "maxPlotReaders", 0u);
-
-	// target deadline
-	{
-		auto targetDeadline = config->get("targetDeadline");
-	
-		if (!targetDeadline.isEmpty())
-		{
-			// could be the raw deadline
-			if (targetDeadline.isInteger())
-				targetDeadline_ = targetDeadline.convert<uint64_t>();
-			// or a formated string
-			else if (targetDeadline.isString())
-				targetDeadline_ = formatDeadline(targetDeadline.convert<std::string>());
-			else
-			{
-				targetDeadline_ = 0;
-
-				log_error(MinerLogger::config, "The target deadline is not a valid!\n"
-					"Expected a number (amount of seconds) or a formated string (1m 1d 11:11:11)\n"
-					"Got: %s", targetDeadline.toString());
-			}
-		}
-		else
-		{
-			config->set("targetDeadline", "0y 0m 0d 00:00:00");
-			targetDeadline_ = 0;
-		}
-	}
-
-	// passphrase
-	{
-		try
-		{
-			auto passphraseJson = config->get("passphrase");
-			Poco::JSON::Object::Ptr passphrase = nullptr;
-
-			if (!passphraseJson.isEmpty())
-				passphrase = passphraseJson.extract<Poco::JSON::Object::Ptr>();
-			
-			if (passphrase.isNull())
-			{
-				passphrase = new Poco::JSON::Object;
-				config->set("passphrase", passphrase);
-			}
-
-			log_debug(MinerLogger::config, "Reading passphrase...");
-			
-			auto decrypted = getOrAdd<std::string>(passphrase, "decrypted", "");
-			auto encrypted = getOrAdd<std::string>(passphrase, "encrypted", "");
-			auto salt = getOrAdd<std::string>(passphrase, "salt", "");
-			auto key = getOrAdd<std::string>(passphrase, "key", "");
-			auto iterations = getOrAdd(passphrase, "iterations", 0u);
-			auto deleteKey = getOrAdd(passphrase, "deleteKey", false);
-			auto algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
-
-			if (!encrypted.empty() && !key.empty() && !salt.empty())
-			{
-				log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
-
-				passPhrase_ = decrypt(encrypted, algorithm, key, salt, iterations);
-
-				if (!passPhrase_.empty())
-					log_debug(MinerLogger::config, "Passphrase decrypted!");
-
-				if (deleteKey)
-				{
-					log_debug(MinerLogger::config, "Passhrase.deleteKey == true, deleting the key...");
-					passphrase->set("key", "");
-				}
-			}
-
-			// there is a decrypted passphrase, we need to encrypt it
-			if (!decrypted.empty())
-			{
-				log_debug(MinerLogger::config, "Decrypted passphrase found, trying to encrypt...");
-
-				encrypted = encrypt(decrypted, algorithm, key, salt, iterations);
-				passPhrase_ = decrypted;
-
-				if (!encrypted.empty())
-				{
-					passphrase->set("decrypted", "");
-					passphrase->set("encrypted", encrypted);
-					passphrase->set("salt", salt);
-					passphrase->set("key", key);
-					passphrase->set("iterations", iterations);
-
-					log_debug(MinerLogger::config, "Passphrase encrypted!\n"
-						"encrypted: %s\n"
-						"salt: %s\n"
-						"key: %s\n"
-						"iterations: %u",
-						encrypted, salt, std::string(key.size(), '*'), iterations
-					);
-				}
-			}
-		}
-		catch (Poco::Exception& exc)
-		{
-			log_error(MinerLogger::config,
-				"Error while reading passphrase in config file!\n"
-				"%s",
-				exc.displayText()
-			);
-
-			log_current_stackframe(MinerLogger::config);
-		}
-	}
 
 	// server credentials
 	{
 		auto webserverJson = config->get("webserver");
 
-		const auto plainUserId = "plain-user";
-		const auto plainPassId = "plain-pass";
-		const auto hashedUserId = "hashed-user";
-		const auto hashedPassId = "hashed-pass";
+		Poco::JSON::Object::Ptr webserverObj;
 
-		Poco::JSON::Object::Ptr webserver = nullptr;
+		if (webserverJson.type() == typeid(Poco::JSON::Object::Ptr))
+			webserverObj = webserverJson.extract<Poco::JSON::Object::Ptr>();
+		else
+			webserverObj.assign(new Poco::JSON::Object);
 
-		if (!webserverJson.isEmpty())
-			webserver = webserverJson.extract<Poco::JSON::Object::Ptr>();
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", "serverUrl");
+		startServer_ = getOrAddAlt(webserverObj, config, "start", true, "Start Server");
 
-		if (webserver.isNull())
+		// credentials
 		{
-			webserver = new Poco::JSON::Object;
-			config->set("webserver", webserver);
+			auto credentialsJson = webserverObj->get("credentials");
+			Poco::JSON::Object::Ptr credentials;
+
+			const auto plainUserId = "plain-user";
+			const auto plainPassId = "plain-pass";
+			const auto hashedUserId = "hashed-user";
+			const auto hashedPassId = "hashed-pass";
+			
+			if (!credentialsJson.isEmpty())
+				credentials = credentialsJson.extract<Poco::JSON::Object::Ptr>();
+
+			if (credentials.isNull())
+			{
+				credentials = new Poco::JSON::Object;
+				webserverObj->set("credentials", credentials);
+			}
+
+			auto plainUser = getOrAdd(credentials, plainUserId, std::string{});
+			auto hashedUser = getOrAdd(credentials, hashedUserId, std::string{});
+			auto plainPass = getOrAdd(credentials, plainPassId, std::string{});
+			auto hashedPass = getOrAdd(credentials, hashedPassId, std::string{});
+
+			if (!plainUser.empty())
+			{
+				hashedUser = hash_HMAC_SHA1(plainUser, WebserverPassphrase);
+				credentials->set(hashedUserId, hashedUser);
+				credentials->set(plainUserId, "");
+
+				log_debug(MinerLogger::config, "hashed  the webserver username\n"
+					"\thash: %s", hashedUser);
+			}
+
+			if (!plainPass.empty())
+			{
+				hashedPass = hash_HMAC_SHA1(plainPass, WebserverPassphrase);
+				credentials->set(hashedPassId, hashedPass);
+				credentials->set(plainPassId, "");
+
+				log_debug(MinerLogger::config, "hashed  the webserver password\n"
+					"\thash: %s", hashedPass);
+			}
+
+			if (!hashedUser.empty())
+				serverUser_ = hashedUser;
+
+			if (!hashedPass.empty())
+				serverPass_ = hashedPass;
 		}
 
-		auto plainUser = getOrAdd(webserver, plainUserId, std::string{});
-		auto hashedUser = getOrAdd(webserver, hashedUserId, std::string{});
-		auto plainPass = getOrAdd(webserver, plainPassId, std::string{});
-		auto hashedPass = getOrAdd(webserver, hashedPassId, std::string{});
-
-		if (!plainUser.empty())
-		{
-			hashedUser = hash_HMAC_SHA1(plainUser, WebserverPassphrase);
-			webserver->set(hashedUserId, hashedUser);
-			webserver->set(plainUserId, "");
-
-			log_debug(MinerLogger::config, "hashed  the webserver username\n"
-				"\thash: %s", hashedUser);
-		}
-
-		if (!plainPass.empty())
-		{
-			hashedPass = hash_HMAC_SHA1(plainPass, WebserverPassphrase);
-			webserver->set(hashedPassId, hashedPass);
-			webserver->set(plainPassId, "");
-
-			log_debug(MinerLogger::config, "hashed  the webserver password\n"
-				"\thash: %s", hashedPass);
-		}
-
-		if (!hashedUser.empty())
-			serverUser_ = hashedUser;
-
-		if (!hashedPass.empty())
-			serverPass_ = hashedPass;
+		config->set("webserver", webserverObj);
 	}
 	
 	std::ofstream outputFileStream{configPath};
