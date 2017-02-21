@@ -73,7 +73,7 @@ namespace Burst
 		Poco::ActiveMethod<std::shared_ptr<Account>, std::pair<const Wallet*, const Accounts*>, BlockData,
 			Poco::ActiveStarter<ActiveDispatcher>> activityLastWinner_;
 		MinerData* parent_;
-		mutable Poco::FastMutex mutex_;
+		mutable Poco::Mutex mutex_;
 
 		friend class Deadlines;
 	};

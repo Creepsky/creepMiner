@@ -41,8 +41,8 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadline(uint64_t nonce, u
 
 	auto accountId = account->getId();
 
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
-
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
+	
 	auto iter = deadlines_.find(accountId);
 
 	if (iter == deadlines_.end())
@@ -68,7 +68,7 @@ void Burst::BlockData::confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline
 
 	// set the best deadline for this block
 	{
-		Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+		Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 
 		if (bestDeadline_ == nullptr ||
 			bestDeadline_->getDeadline() > deadline->getDeadline())
@@ -87,7 +87,7 @@ void Burst::BlockData::setLastWinner(std::shared_ptr<Account> account)
 {
 	// set the winner for the last block
 	{
-		Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+		Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 		lastWinner_ = account;
 	}
 
@@ -108,7 +108,7 @@ void Burst::BlockData::setProgress(float progress) const
 
 void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 
 	entries_->emplace_back(std::move(entry));
 	
@@ -133,13 +133,13 @@ uint64_t Burst::BlockData::getBasetarget() const
 
 std::shared_ptr<Burst::Account> Burst::BlockData::getLastWinner() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	return lastWinner_;
 }
  
 Poco::ActiveResult<std::shared_ptr<Burst::Account>> Burst::BlockData::getLastWinnerAsync(const Wallet& wallet, const Accounts& accounts)
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	auto tuple = std::make_pair(&wallet, &accounts);
 	return activityLastWinner_(tuple);
 }
@@ -156,13 +156,13 @@ const std::string& Burst::BlockData::getGensigStr() const
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	return bestDeadline_;
 }
 
 bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 
 	if (entries_ == nullptr)
 		return false;
@@ -177,7 +177,7 @@ bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)>
 
 //std::vector<Poco::JSON::Object> Burst::BlockData::getEntries() const
 //{
-//	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+//	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 //	return *entries_;
 //}
 
@@ -189,7 +189,7 @@ bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)>
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(uint64_t accountId, BlockData::DeadlineSearchType searchType)
 {
-	Poco::ScopedLock<Poco::FastMutex> lock {mutex_};
+	Poco::ScopedLock<Poco::Mutex> lock {mutex_};
 
 	auto iter = deadlines_.find(accountId);
 
