@@ -12,7 +12,6 @@
 #include "MinerConfig.hpp"
 #include <fstream>
 #include "Miner.hpp"
-#include <cmath>
 #include <Poco/NotificationQueue.h>
 #include "PlotVerifier.hpp"
 #include <Poco/Timestamp.h>
@@ -135,22 +134,25 @@ void Burst::PlotReader::runTask()
 					miner_.getData().getBlockData()->setProgress(progress_->getProgress());
 				}
 
+				auto fileReadDiff = timeStartFile.elapsed();
+				auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
+				Poco::Timespan span{fileReadDiff};
+
+				const auto nonceBytes = static_cast<float>(nonceCount * Settings::ScoopSize);
+				const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
+
+				log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",
+					plotFile.getPath(),
+					memToString(plotFile.getSize(), 2),
+					Poco::DateTimeFormatter::format(span, "%s.%i"),
+					memToString(static_cast<uint64_t>(bytesPerSeconds), 2));
+
 				//MinerLogger::write("finished reading plot file " + inputPath_);
 				//MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
 			}
 
 			//if (MinerConfig::getConfig().output.debug)
 				//MinerLogger::write("finished reading plot file " + plotFile.getPath(), TextType::Debug);
-
-			auto fileReadDiff = timeStartFile.elapsed();
-			auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
-			Poco::Timespan span{fileReadDiff};
-
-			log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s done %s in %ss (~%.2hf GB/s)",
-				plotFile.getPath(),
-				memToString(plotFile.getSize(), 2),
-				Poco::DateTimeFormatter::format(span, "%s.%i"),
-				static_cast<float>(plotFile.getSize()) / 1024 / 1024 / 1024 / fileReadDiffSeconds);
 		}
 		
 		auto dirReadDiff = timeStartDir.elapsed();
@@ -162,14 +164,16 @@ void Burst::PlotReader::runTask()
 		for (const auto& plot : plotReadNotification->plotList)
 			totalSizeBytes += plot->getSize();
 
-		auto totalSizeMBytes = totalSizeBytes / 1024 / 1024 / 1024;
-
-		log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone), "Dir %s done: %z files, %s total, %ss (~%.2hf GB/s)",
+		const auto sumNonces = totalSizeBytes / Settings::PlotSize;
+		const auto sumNoncesBytes = static_cast<float>(sumNonces * Settings::ScoopSize);
+		const auto bytesPerSecond = sumNoncesBytes / dirReadDiffSeconds;
+		
+		log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone), "Dir %s read (%z files, %s total) in %ss (~%s/s)",
 			plotReadNotification->dir,
 			plotReadNotification->plotList.size(),
 			memToString(totalSizeBytes, 2),
 			Poco::DateTimeFormatter::format(span, "%s.%i"),
-			totalSizeMBytes / dirReadDiffSeconds);
+			memToString(static_cast<uint64_t>(bytesPerSecond), 2));
 	}
 }
 
