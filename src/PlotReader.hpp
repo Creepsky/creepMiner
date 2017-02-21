@@ -84,6 +84,6 @@ namespace Burst
 
 	private:
 		uintmax_t progress_ = 0, max_ = 0;
-		std::mutex lock_;
+		mutable Poco::Mutex lock_;
 	};
 }
