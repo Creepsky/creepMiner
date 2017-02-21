@@ -277,6 +277,10 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(uint64_t block
 	}
 
 	blockData_ = std::make_shared<BlockData>(block, baseTarget, genSig, this);
+	
+	currentBlockheight_ = block;
+	currentBasetarget_ = baseTarget;
+	currentScoopNum_ = blockData_->getScoop();
 
 	return blockData_;
 }
@@ -434,4 +438,19 @@ uint64_t Burst::MinerData::getAverageDeadline() const
 	});
 
 	return avg / historicalBlocks_.size();
+}
+
+uint64_t Burst::MinerData::getCurrentBlockheight() const
+{
+	return currentBlockheight_.load();
+}
+
+uint64_t Burst::MinerData::getCurrentBasetarget() const
+{
+	return currentBasetarget_.load();
+}
+
+uint64_t Burst::MinerData::getCurrentScoopNum() const
+{
+	return currentScoopNum_.load();
 }

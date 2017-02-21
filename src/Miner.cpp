@@ -248,33 +248,22 @@ const std::string& Burst::Miner::getGensigStr() const
 
 uint64_t Burst::Miner::getBaseTarget() const
 {
-	auto blockData = data_.getBlockData();
-
-	if (blockData == nullptr)
-		return 0;
-
-	return blockData->getBasetarget();
+	return data_.getCurrentBasetarget();
 }
 
 uint64_t Burst::Miner::getBlockheight() const
 {
-	auto blockData = data_.getBlockData();
-
-	if (blockData == nullptr)
-		return 0;
-
-	return blockData->getBlockheight();
+	return data_.getCurrentBlockheight();
 }
 
 uint64_t Burst::Miner::getTargetDeadline() const
 {
-	
 	return data_.getTargetDeadline();
 }
 
 size_t Burst::Miner::getScoopNum() const
 {
-	return data_.getBlockData()->getScoop();
+	return data_.getCurrentScoopNum();
 }
 
 void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile)

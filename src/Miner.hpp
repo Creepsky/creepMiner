@@ -14,8 +14,6 @@
 #include "Account.hpp"
 #include "Wallet.hpp"
 #include <Poco/TaskManager.h>
-#include <vector>
-#include <Poco/JSON/Object.h>
 #include "MinerData.hpp"
 #include <Poco/NotificationQueue.h>
 #include "PlotVerifier.hpp"

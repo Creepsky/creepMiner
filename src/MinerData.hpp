@@ -106,6 +106,10 @@ namespace Burst
 		bool compareToTargetDeadline(uint64_t deadline) const;
 		uint64_t getAverageDeadline() const;
 
+		uint64_t getCurrentBlockheight() const;
+		uint64_t getCurrentBasetarget() const;
+		uint64_t getCurrentScoopNum() const;
+
 		template <typename Observer>
 		void addObserverBlockDataChanged(Observer& observer,
 			typename Poco::Observer<Observer, BlockDataChangedNotification>::Callback function)
@@ -130,6 +134,10 @@ namespace Burst
 		std::deque<std::shared_ptr<BlockData>> historicalBlocks_;
 		mutable Poco::Mutex mutex_;
 		Poco::NotificationCenter notifiyBlockDataChanged_;
+
+		std::atomic<uint64_t> currentBlockheight_;
+		std::atomic<uint64_t> currentBasetarget_;
+		std::atomic<uint64_t> currentScoopNum_;
 
 		friend class BlockData;
 	};
