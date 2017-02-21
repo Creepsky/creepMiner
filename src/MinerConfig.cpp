@@ -73,7 +73,7 @@ T getOrAddAlt(Poco::JSON::Object::Ptr object, Poco::JSON::Object::Ptr alt, const
 	if (!alt.isNull() && alt->has(altkey))
 		jsonAlt = alt->get(altkey);
 
-	alt->remove(key);
+	alt->remove(altkey);
 
 	T defaultOrAltValue = defaultValue;
 
