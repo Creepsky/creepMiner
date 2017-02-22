@@ -19,5 +19,5 @@ Burst::ProjectData::ProjectData(std::string&& name, Version version)
 	: name{std::move(name)}, version{std::move(version)}
 {
 	nameAndVersion = this->name + " " + this->version.literal;
-	nameAndVersionAndOs = this->name + " " + this->version.literal + " " + Settings::OsFamily;
+	nameAndVersionAndOs = this->name + " " + this->version.literal + " " + Settings::OsFamily + " " + Settings::Arch;
 }

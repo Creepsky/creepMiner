@@ -42,7 +42,7 @@ namespace Burst
 		void run();
 		void stop();
 
-		size_t getScoopNum() const;
+		uint64_t getScoopNum() const;
 		uint64_t getBaseTarget() const;
 		uint64_t getBlockheight() const;
 		uint64_t getTargetDeadline() const;

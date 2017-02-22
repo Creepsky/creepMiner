@@ -33,14 +33,14 @@ namespace Burst
 	class PlotFile
 	{
 	public:
-		PlotFile(std::string&& path, size_t size);
+		PlotFile(std::string&& path, uint64_t size);
 
 		const std::string& getPath() const;
-		size_t getSize() const;
-
+		uint64_t getSize() const;
+		
 	private:
-		std::string path;
-		size_t size;
+		std::string path_;
+		uint64_t size_;
 	};
 
 	class Socket;

@@ -87,7 +87,7 @@ void Burst::RandomNonceGenerator::runTask()
 	std::mt19937 mt(rd());
 	std::uniform_int_distribution<uint64_t> dist;
 	
-	auto mem = calloc(Settings::PlotSize, staggerSize_);
+	auto mem = calloc(Settings::PlotSize, static_cast<size_t>(staggerSize_));
 	auto gensig = miner_->getGensig();
 
 	std::vector<ScoopData> buffer;

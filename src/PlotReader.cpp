@@ -112,7 +112,7 @@ void Burst::PlotReader::runTask()
 					verification->block = block;
 					verification->inputPath = plotFile.getPath();
 					verification->gensig = gensig;
-					verification->buffer.resize(staggerSize);
+					verification->buffer.resize(static_cast<size_t>(staggerSize));
 
 					auto staggerBlockOffset = staggerBlock * staggerBlockSize;
 					auto staggerScoopOffset = plotReadNotification->scoopNum * staggerSize * Settings::ScoopSize;

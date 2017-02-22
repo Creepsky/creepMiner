@@ -261,7 +261,7 @@ uint64_t Burst::Miner::getTargetDeadline() const
 	return data_.getTargetDeadline();
 }
 
-size_t Burst::Miner::getScoopNum() const
+uint64_t Burst::Miner::getScoopNum() const
 {
 	return data_.getCurrentScoopNum();
 }

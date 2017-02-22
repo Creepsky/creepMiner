@@ -34,18 +34,18 @@ void Burst::MinerConfig::rescan()
 	readConfigFile(configPath_);
 }
 
-Burst::PlotFile::PlotFile(std::string&& path, size_t size)
-	: path(move(path)), size(size)
+Burst::PlotFile::PlotFile(std::string&& path, uint64_t size)
+	: path_(move(path)), size_(size)
 {}
 
 const std::string& Burst::PlotFile::getPath() const
 {
-	return path;
+	return path_;
 }
 
-size_t Burst::PlotFile::getSize() const
+uint64_t Burst::PlotFile::getSize() const
 {
-	return size;
+	return size_;
 }
 
 template <typename T>
@@ -582,7 +582,7 @@ const std::vector<std::shared_ptr<Burst::PlotFile>>& Burst::MinerConfig::getPlot
 
 uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 {
-	uintmax_t sum = 0;
+	uint64_t sum = 0;
 
 	for (auto plotFile : plotList_)
 		sum += plotFile->getSize();

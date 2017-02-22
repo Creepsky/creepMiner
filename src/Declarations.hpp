@@ -54,6 +54,12 @@ namespace Burst
 		static constexpr auto OsFamily = "";
 #endif
 
+#if POCO_ARCH == POCO_ARCH_IA64 || POCO_ARCH == POCO_ARCH_AMD64 || POCO_ARCH == POCO_ARCH_AARCH64
+		static constexpr auto Arch = "x64";
+#else
+		static constexpr auto Arch = "x32";
+#endif
+
 		static const Version ProjectVersion;
 		static const ProjectData Project;
 	};
