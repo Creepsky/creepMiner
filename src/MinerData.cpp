@@ -101,9 +101,14 @@ void Burst::BlockData::refreshBlockEntry() const
 	addBlockEntry(createJsonNewBlock(*parent_));
 }
 
-void Burst::BlockData::setProgress(float progress) const
+void Burst::BlockData::setProgress(float progress)
 {
-	addBlockEntry(createJsonProgress(progress));
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
+
+	jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progress)};
+
+	if (parent_ != nullptr)
+		parent_->notifiyBlockDataChanged_.postNotification(new BlockDataChangedNotification{jsonProgress_});
 }
 
 void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
@@ -170,7 +175,11 @@ bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)>
 	auto error = false;
 
 	for (auto iter = entries_->begin(); iter != entries_->end() && !error; ++iter)
-		error = traverseFunction(*iter);
+		error = !traverseFunction(*iter);
+
+	// send the progress, if any
+	if (!error && !jsonProgress_.isNull())
+		error = !traverseFunction(*jsonProgress_);
 
 	return error;
 }

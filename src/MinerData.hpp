@@ -40,7 +40,7 @@ namespace Burst
 		void setLastWinner(std::shared_ptr<Account> account);
 		
 		void refreshBlockEntry() const;
-		void setProgress(float progress) const;
+		void setProgress(float progress);
 
 		uint64_t getBlockheight() const;
 		uint64_t getScoop() const;
@@ -73,6 +73,7 @@ namespace Burst
 		Poco::ActiveMethod<std::shared_ptr<Account>, std::pair<const Wallet*, const Accounts*>, BlockData,
 			Poco::ActiveStarter<ActiveDispatcher>> activityLastWinner_;
 		MinerData* parent_;
+		Poco::JSON::Object::Ptr jsonProgress_;
 		mutable Poco::Mutex mutex_;
 
 		friend class Deadlines;
