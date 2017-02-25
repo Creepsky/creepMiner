@@ -72,6 +72,7 @@ namespace Burst
 	private:
 		void deadlineEvent(std::shared_ptr<Deadline> deadline, const std::string& type) const;
 		void deadlineConfirmed(std::shared_ptr<Deadline> deadline) const;
+		void resort();
 
 		struct LessThan : std::binary_function<std::shared_ptr<Deadline>, std::shared_ptr<Deadline>, bool>
 		{

@@ -72,6 +72,9 @@ const std::string& Burst::Deadline::getPlotFile() const
 void Burst::Deadline::setDeadline(uint64_t deadline)
 {
 	deadline_ = deadline;
+
+	if (parent_ != nullptr)
+		parent_->resort();
 }
 
 bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
@@ -224,4 +227,10 @@ void Burst::Deadlines::deadlineConfirmed(std::shared_ptr<Deadline> deadline) con
 {
 	if (parent_ != nullptr)
 		parent_->confirmedDeadlineEvent(deadline);
+}
+
+void Burst::Deadlines::resort()
+{
+	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	deadlines_ = { deadlines_.begin(), deadlines_.end() };
 }
