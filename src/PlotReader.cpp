@@ -95,10 +95,11 @@ void Burst::PlotReader::runTask()
 				const auto staggerBlocks = nonceCount / staggerSize;
 				const auto staggerBlockSize = staggerSize * Settings::PlotSize;
 				const auto staggerScoopBytes = staggerSize * Settings::ScoopSize;
-				const auto staggerChunkBytes = [staggerScoopBytes]()
+				unsigned long long int templateArg = 0;
+				const auto staggerChunkBytes = [staggerScoopBytes](auto arg)
 				{
-					auto a = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
-					auto b = staggerScoopBytes;
+					decltype(arg) a = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
+					decltype(arg) b = staggerScoopBytes;
 
 					for(;;) 
 					{ 
@@ -113,8 +114,8 @@ void Burst::PlotReader::runTask()
 						a %= b; // otherwise here would be an error 
 					}
 
-					return 0ull;
-				}();
+					return decltype(arg)();
+				}(templateArg);
 				const auto staggerChunks = staggerScoopBytes / staggerChunkBytes;
 				const auto staggerChunkSize = staggerSize / staggerChunks;
 
