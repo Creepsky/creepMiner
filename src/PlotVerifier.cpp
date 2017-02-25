@@ -23,8 +23,8 @@ void Burst::PlotVerifier::runTask()
 	auto blockSize = 0;
 	auto gridSize = 0;
 
-	if (!alloc_memory_cuda(MemoryType::Gensig, 0, reinterpret_cast<void**>(&cudaGensig)))
-		log_error(MinerLogger::plotVerifier, "Could not allocate memmory for gensig on CUDA GPU!");
+	//if (!alloc_memory_cuda(MemoryType::Gensig, 0, reinterpret_cast<void**>(&cudaGensig)))
+		//log_error(MinerLogger::plotVerifier, "Could not allocate memmory for gensig on CUDA GPU!");
 #endif
 
 	while (!isCancelled())
@@ -37,16 +37,22 @@ void Burst::PlotVerifier::runTask()
 		else
 			break;
 
+#if defined MINING_CUDA
 #define check(x) if (!x) log_critical(MinerLogger::plotVerifier, "Error on %s", std::string(#x));
 
-#if defined MINING_CUDA
-		if (calculatedDeadlines.size() < verifyNotification->buffer.size())
+		check(alloc_memory_cuda(MemoryType::Gensig, 0, reinterpret_cast<void**>(&cudaGensig)));
+		check(alloc_memory_cuda(MemoryType::Buffer, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaBuffer)));
+		check(alloc_memory_cuda(MemoryType::Deadlines, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaDeadlines)));
+		calculatedDeadlines.resize(verifyNotification->buffer.size(), CalculatedDeadline{0, 0});
+		calc_occupancy_cuda(verifyNotification->buffer.size(), gridSize, blockSize);
+
+		/*if (calculatedDeadlines.size() < verifyNotification->buffer.size())
 		{
 			check(realloc_memory_cuda(MemoryType::Buffer, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaBuffer)));
 			check(realloc_memory_cuda(MemoryType::Deadlines, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaDeadlines)));
 			calculatedDeadlines.resize(verifyNotification->buffer.size(), CalculatedDeadline{0, 0});
 			calc_occupancy_cuda(verifyNotification->buffer.size(), gridSize, blockSize);
-		}
+		}*/
 
 		check(copy_memory_cuda(MemoryType::Buffer, verifyNotification->buffer.size(), verifyNotification->buffer.data(), cudaBuffer, MemoryCopyDirection::ToDevice));
 		check(copy_memory_cuda(MemoryType::Gensig, 0, &miner_->getGensig(), cudaGensig, MemoryCopyDirection::ToDevice));
@@ -81,6 +87,11 @@ void Burst::PlotVerifier::runTask()
 				verifyNotification->inputPath, verifyNotification->buffer.size(), verifyNotification->nonceStart, verifyNotification->nonceRead
 			);
 		}
+
+		check(free_memory_cuda(cudaBuffer));
+		check(free_memory_cuda(cudaGensig));
+		check(free_memory_cuda(cudaDeadlines));
+		calculatedDeadlines.clear();
 #else
 		auto targetDeadline = miner_->getTargetDeadline();
 
@@ -122,9 +133,9 @@ void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceR
 	memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
 	auto deadline = targetResult / miner.getBaseTarget();
 	
-	//if (targetDeadline > deadline)
-	//{
+	if (targetDeadline > deadline)
+	{
 		auto nonceNum = nonceStart + nonceRead + offset;
 		miner.submitNonce(nonceNum, accountId, deadline, inputPath);
-	//}
+	}
 }
