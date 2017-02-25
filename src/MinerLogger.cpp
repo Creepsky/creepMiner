@@ -31,6 +31,8 @@
 #include <Poco/SplitterChannel.h>
 #include <Poco/File.h>
 #include "Output.hpp"
+#include <fstream>
+#include <Poco/FileStream.h>
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -266,6 +268,34 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 		auto logPath = fullPath.toString();
 
 		fileChannel_->close();
+
+		auto oldLogfilePath = fileChannel_->getProperty("path");
+
+		if (!oldLogfilePath.empty())
+		{
+			std::ifstream oldLogfile{ oldLogfilePath, std::ios::in | std::ios::binary | std::ios::ate };
+
+			if (oldLogfile)
+			{
+				auto fileSize = oldLogfile.tellg();
+				oldLogfile.seekg(0, std::ios::beg);
+
+				std::vector<char> bytes(fileSize);
+				oldLogfile.read(&bytes[0], fileSize);
+
+				std::string oldContent{&bytes[0], fileSize};
+
+				std::ofstream newLogfile{ logPath, std::ios::out | std::ios::binary };
+				newLogfile << oldContent;
+
+				oldLogfile.close();
+				newLogfile.close();
+
+				Poco::File oldLogfileObj{ oldLogfilePath };
+				oldLogfileObj.remove();
+			}
+		}
+
 		fileChannel_->setProperty("path", logPath);
 		fileChannel_->open();
 
