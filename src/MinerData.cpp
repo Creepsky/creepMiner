@@ -32,6 +32,8 @@ Burst::BlockData::BlockData(uint64_t blockHeight, uint64_t baseTarget, std::stri
 	hash.close(&newGenSig[0]);
 
 	scoop_ = (static_cast<int>(newGenSig[newGenSig.size() - 2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size() - 1]);
+
+	refreshBlockEntry();
 }
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadline(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile)
