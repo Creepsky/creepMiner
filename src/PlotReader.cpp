@@ -94,36 +94,66 @@ void Burst::PlotReader::runTask()
 
 				const auto staggerBlocks = nonceCount / staggerSize;
 				const auto staggerBlockSize = staggerSize * Settings::PlotSize;
-				const auto staggerScoopSize = staggerSize * Settings::ScoopSize;
-				
-				for (auto staggerBlock = 0ul; staggerBlock < staggerBlocks; ++staggerBlock)
+				const auto staggerScoopBytes = staggerSize * Settings::ScoopSize;
+				const auto staggerChunkBytes = [staggerScoopBytes]()
 				{
-					while (!isCancelled() &&
-						miner_.getBlockheight() == plotReadNotification->blockheight &&
-						!globalBufferSize.add(staggerScoopSize))
-					{ }
+					auto a = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
+					auto b = staggerScoopBytes;
 
-					if (isCancelled() || miner_.getBlockheight() != plotReadNotification->blockheight)
-						break;
+					for(;;) 
+					{ 
+						if (a == 0) // trap if a==0 
+							return b;
 
-					VerifyNotification::Ptr verification = new VerifyNotification{};
-					verification->accountId = accountId;
-					verification->nonceStart = nonceStart;
-					verification->block = block;
-					verification->inputPath = plotFile.getPath();
-					verification->gensig = gensig;
-					verification->buffer.resize(static_cast<size_t>(staggerSize));
+						b %= a; // otherwise here would be an error 
+						
+						if (b == 0) // trap if b==0 
+							return a;
 
-					auto staggerBlockOffset = staggerBlock * staggerBlockSize;
-					auto staggerScoopOffset = plotReadNotification->scoopNum * staggerSize * Settings::ScoopSize;
+						a %= b; // otherwise here would be an error 
+					}
 
-					inputStream.seekg(staggerBlockOffset + staggerScoopOffset);
-					
-					inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
-					
-					verification->nonceRead = staggerBlock * staggerSize;
-										
-					verificationQueue_->enqueueNotification(verification);
+					return 0ull;
+				}();
+				const auto staggerChunks = staggerScoopBytes / staggerChunkBytes;
+				const auto staggerChunkSize = staggerSize / staggerChunks;
+
+				for (auto staggerBlock = 0ul;
+				     !isCancelled() &&
+				     miner_.getBlockheight() == plotReadNotification->blockheight &&
+				     staggerBlock < staggerBlocks;
+				     ++staggerBlock)
+				{
+					const auto staggerBlockOffset = staggerBlock * staggerBlockSize;
+					const auto staggerScoopOffset = plotReadNotification->scoopNum * staggerSize * Settings::ScoopSize;
+
+					for (auto staggerChunk = 0u; staggerChunk < staggerChunks; ++staggerChunk)
+					{
+						while (!isCancelled() &&
+							!globalBufferSize.add(staggerChunkBytes))
+							if (miner_.getBlockheight() != plotReadNotification->blockheight)
+								break;
+
+						if (isCancelled() || miner_.getBlockheight() != plotReadNotification->blockheight)
+							break;
+
+						const auto chunkOffset = staggerChunk * staggerChunkBytes;
+
+						VerifyNotification::Ptr verification = new VerifyNotification{};
+						verification->accountId = accountId;
+						verification->nonceStart = nonceStart;
+						verification->block = block;
+						verification->inputPath = plotFile.getPath();
+						verification->gensig = gensig;
+						verification->buffer.resize(static_cast<size_t>(staggerChunkSize));
+						verification->nonceRead = staggerBlock * staggerSize + staggerChunkSize * staggerChunk;
+
+						inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
+						//inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
+						inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerChunkBytes);
+
+						verificationQueue_->enqueueNotification(verification);
+					}
 				}
 
 				inputStream.close();
