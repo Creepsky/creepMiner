@@ -8,7 +8,6 @@
 
 #include "MinerLogger.hpp"
 #include <iostream>
-#include <iomanip>
 #include <mutex>
 #include "MinerConfig.hpp"
 #include <Poco/NestedDiagnosticContext.h>
@@ -78,6 +77,7 @@ const std::unordered_map<std::string, Burst::MinerLogger::ColoredPriorityConsole
 
 Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel{"startup.log"};
 Poco::FormattingChannel* Burst::MinerLogger::fileFormatter_ = nullptr;
+std::string Burst::MinerLogger::logFileName_ = getFilenameWithtimestamp("creepMiner", "log");
 
 std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
 	{
@@ -247,32 +247,22 @@ std::string Burst::MinerLogger::getChannelPriority(const std::string& channel)
 	return "";
 }
 
-std::string Burst::MinerLogger::setFilePath(const std::string& path)
+std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 {
 	try
 	{
-		Poco::Path fullPath{ path };
+		Poco::Path fullPath;
+		fullPath.parseDirectory(dir);
 
-		if (!path.empty())
+		if (!fullPath.toString().empty())
 		{
-			if (!fullPath.isDirectory())
-				throw Poco::ApplicationException(Poco::format("%s is not a directory!", path));
-
 			Poco::File file{ fullPath };
 
-			try
-			{
-				if (!file.exists())
-					file.createDirectories();
-			}
-			catch (...)
-			{
-				throw;
-			}
+			if (!file.exists())
+				file.createDirectories();
 		}
-
-		fullPath.append(getFilenameWithtimestamp("creepMiner", "log"));
 		
+		fullPath.append(logFileName_);
 		auto logPath = fullPath.toString();
 
 		fileChannel_->close();
@@ -432,16 +422,12 @@ void Burst::MinerLogger::setup()
 {
 	// create (not open yet) FileChannel
 	{
-		fileChannel_ = new Poco::FileChannel{getFilenameWithtimestamp("creepMiner", "log")};
+		fileChannel_ = new Poco::FileChannel;
 
-		// rotate every 5 MB
+		// rotate every 1 MB
 		fileChannel_->setProperty("rotation", "1 M");
-		// archive log
-		fileChannel_->setProperty("archive", "number");
-		// compress log
-		fileChannel_->setProperty("compress", "true");
 		// purge old logs
-		fileChannel_->setProperty("purgeAge", "1 weeks");
+		fileChannel_->setProperty("purgeAge", "1 days");
 
 		auto filePattern = new Poco::PatternFormatter{"%d.%m.%Y %H:%M:%S (%I, %U, %u, %p): %t"};
 		fileFormatter_ = new Poco::FormattingChannel{filePattern, fileChannel_};
@@ -463,6 +449,7 @@ void Burst::MinerLogger::setup()
 		Poco::Logger::get(name).setChannel(splitter);
 	}
 	
+	setLogDir("");
 }
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::getTextTypeColor(TextType type)

@@ -98,7 +98,7 @@ namespace Burst
 		static bool setChannelPriority(const std::string& channel, Poco::Message::Priority priority);
 		static bool setChannelPriority(const std::string& channel, const std::string& priority);
 		static std::string getChannelPriority(const std::string& channel);
-		static std::string setFilePath(const std::string& path);
+		static std::string setLogDir(const std::string& dir);
 
 		static Poco::Logger& miner;
 		static Poco::Logger& config;
@@ -142,6 +142,7 @@ namespace Burst
 		static std::unordered_map<uint32_t, bool> output_;
 		static Poco::Channel* fileChannel_;
 		static Poco::FormattingChannel* fileFormatter_;
+		static std::string logFileName_;
 	};
 
 	using TextType = MinerLogger::TextType;
