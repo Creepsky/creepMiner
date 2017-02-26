@@ -215,9 +215,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			// new one exists
 			if (!outputLoggingObj.isNull())
 				outputObj = outputLoggingObj;
-
 			// old one exists
-			if (!outputConfigObj.isNull())
+			else if (!outputConfigObj.isNull())
 			{
 				// if only the old one exists, move it to the new place
 				if (outputLoggingObj.isNull())
@@ -226,6 +225,11 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				// delete the old one
 				config->remove("output");
 			}
+			// none exists
+			else
+				outputObj = new Poco::JSON::Object;
+
+			outputObj = readOutput(outputObj);
 
 			loggingObj->set("output", outputObj);
 		}
