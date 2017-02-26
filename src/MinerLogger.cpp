@@ -285,14 +285,14 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 
 				std::string oldContent{&bytes[0], fileSize};
 
-				std::ofstream newLogfile{ logPath, std::ios::out | std::ios::binary };
-				newLogfile << oldContent;
-
 				oldLogfile.close();
-				newLogfile.close();
 
 				Poco::File oldLogfileObj{ oldLogfilePath };
 				oldLogfileObj.remove();
+
+				std::ofstream newLogfile{ logPath, std::ios::out | std::ios::binary };
+				newLogfile << oldContent;
+				newLogfile.close();
 			}
 		}
 
