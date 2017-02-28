@@ -23,18 +23,20 @@ Burst::Account::Account(const Wallet& wallet, AccountId id, bool fetchAll)
 
 void Burst::Account::setWallet(const Wallet& wallet)
 {
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	wallet_ = &wallet;
 }
 
 Burst::AccountId Burst::Account::getId() const
 {
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	return id_;
 }
 
 template <typename T>
-const T& getHelper(Poco::Nullable<T>& val, bool reset, std::function<bool(T&)> fetchFunction)
+const T& getHelper(Poco::Nullable<T>& val, bool reset, Poco::Mutex& mutex, std::function<bool(T&)> fetchFunction)
 {
-	// mutex rein
+	Poco::Mutex::ScopedLock lock{ mutex };
 
 	// delete cached name if resetflag is set
 	if (reset && !val.isNull())
@@ -60,7 +62,6 @@ const T& getHelper(Poco::Nullable<T>& val, bool reset, std::function<bool(T&)> f
 
 std::string Burst::Account::getName(bool reset)
 {
-	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 	return runGetName(reset);
 }
 
@@ -84,11 +85,6 @@ Burst::AccountId Burst::Account::getRewardRecipient() const
 //	return getRewardRecipient_(reset);
 //}
 
-Burst::Deadlines& Burst::Account::getDeadlines()
-{
-	return deadlines_;
-}
-
 std::string Burst::Account::getAddress() const
 {
 	return NxtAddress(getId()).to_string();
@@ -96,6 +92,8 @@ std::string Burst::Account::getAddress() const
 
 Poco::JSON::Object::Ptr Burst::Account::toJSON() const
 {
+	Poco::Mutex::ScopedLock lock{ mutex_ };
+
 	Poco::JSON::Object::Ptr json(new Poco::JSON::Object);
 
 	json->set("numeric", getId());
@@ -111,7 +109,9 @@ Poco::JSON::Object::Ptr Burst::Account::toJSON() const
 
 std::string Burst::Account::runGetName(const bool& reset)
 {
-	return getHelper<std::string>(name_, reset, [this](std::string& name)
+	Poco::Mutex::ScopedLock lock{ mutex_ };
+
+	return getHelper<std::string>(name_, reset, mutex_, [this](std::string& name)
 	{
 		return wallet_->getNameOfAccount(id_, name);
 	});
@@ -119,7 +119,9 @@ std::string Burst::Account::runGetName(const bool& reset)
 
 Burst::AccountId Burst::Account::runGetRewardRecipient(const bool& reset)
 {
-	return getHelper<AccountId>(rewardRecipient_, reset, [this](AccountId& recipient)
+	Poco::Mutex::ScopedLock lock{ mutex_ };
+
+	return getHelper<AccountId>(rewardRecipient_, reset, mutex_, [this](AccountId& recipient)
 	{
 		return wallet_->getRewardRecipientOfAccount(id_, recipient);
 	});
@@ -127,6 +129,8 @@ Burst::AccountId Burst::Account::runGetRewardRecipient(const bool& reset)
 
 std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, Wallet& wallet, bool persistent)
 {
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
+
 	auto iter = accounts_.find(id);
 
 	// if the account is not in the cache, we have to fetch him
@@ -147,5 +151,6 @@ std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, Wallet
 
 bool Burst::Accounts::isLoaded(AccountId id) const
 {
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	return accounts_.find(id) != accounts_.end();
 }

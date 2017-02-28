@@ -51,6 +51,7 @@ namespace Burst
 		uint64_t scoopNum = 0;
 		GensigData gensig;
 		uint64_t blockheight = 0;
+		uint64_t baseTarget = 0;
 	};
 
 	class PlotReader : public Poco::Task

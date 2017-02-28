@@ -215,6 +215,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		plotRead->gensig = getGensig();
 		plotRead->scoopNum = getScoopNum();
 		plotRead->blockheight = getBlockheight();
+		plotRead->baseTarget = getBaseTarget();
 
 		plotReadQueue_.enqueueNotification(plotRead);
 	}

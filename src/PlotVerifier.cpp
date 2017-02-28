@@ -95,9 +95,10 @@ void Burst::PlotVerifier::runTask()
 #else
 		auto targetDeadline = miner_->getTargetDeadline();
 
-		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled() && miner_->getBlockheight() == verifyNotification->block; i++)
+		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i++)
 			verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
-				verifyNotification->gensig, verifyNotification->accountId, verifyNotification->inputPath, *miner_, targetDeadline);
+				verifyNotification->gensig, verifyNotification->accountId, verifyNotification->inputPath,
+				verifyNotification->baseTarget, *miner_, targetDeadline);
 #endif
 		
 		if (verifyNotification->block == miner_->getBlockheight())
@@ -119,7 +120,7 @@ void Burst::PlotVerifier::runTask()
 }
 
 void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset, const GensigData& gensig,
-	uint64_t accountId, const std::string& inputPath, Miner& miner, uint64_t targetDeadline)
+	uint64_t accountId, const std::string& inputPath, uint64_t baseTarget, Miner& miner, uint64_t targetDeadline)
 {
 	HashData target;
 	Shabal256 hash;
@@ -131,7 +132,7 @@ void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceR
 
 	uint64_t targetResult = 0;
 	memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
-	auto deadline = targetResult / miner.getBaseTarget();
+	auto deadline = targetResult / baseTarget;
 	
 	if (targetDeadline > deadline)
 	{

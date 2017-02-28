@@ -24,7 +24,6 @@ namespace Burst
 		Poco::ActiveResult<std::string> getNameAsync(bool reset = false);
 		AccountId getRewardRecipient() const;
 		//Poco::ActiveResult<AccountId> getRewardRecipientAsync(bool reset = false);
-		Deadlines& getDeadlines();
 		std::string getAddress() const;
 
 		Poco::JSON::Object::Ptr toJSON() const;
@@ -37,7 +36,6 @@ namespace Burst
 		AccountId id_;
 		Poco::Nullable<std::string> name_;
 		Poco::Nullable<AccountId> rewardRecipient_;
-		Deadlines deadlines_;
 		const Wallet* wallet_;
 		Poco::ActiveMethod<std::string, bool, Account> getName_;
 		//Poco::ActiveMethod<AccountId, bool, Account> getRewardRecipient_;
@@ -52,5 +50,6 @@ namespace Burst
 
 	private:
 		std::unordered_map<AccountId, std::shared_ptr<Account>> accounts_;
+		mutable Poco::FastMutex mutex_;
 	};
 }
