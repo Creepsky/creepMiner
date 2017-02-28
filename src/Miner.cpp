@@ -322,6 +322,9 @@ bool Burst::Miner::getMiningInfo()
 	using namespace Poco::Net;
 	poco_ndc(Miner::getMiningInfo);
 
+	if (miningInfoSession_ == nullptr && !MinerConfig::getConfig().getMiningInfoUrl().empty())
+		miningInfoSession_ = MinerConfig::getConfig().getMiningInfoUrl().createSession();
+
 	Request request(std::move(miningInfoSession_));
 
 	HTTPRequest requestData { HTTPRequest::HTTP_GET, "/burst?requestType=getMiningInfo", HTTPRequest::HTTP_1_1 };
