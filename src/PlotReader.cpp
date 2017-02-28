@@ -69,13 +69,12 @@ void Burst::PlotReader::runTask()
 			break;
 
 		Poco::Timestamp timeStartDir;
-		auto block = miner_.getBlockheight();
-		auto gensig = miner_.getGensig();
+		auto rightBlock = miner_.getBlockheight() == plotReadNotification->blockheight;
 
 		for (auto plotFileIter = plotReadNotification->plotList.begin();
 			plotFileIter != plotReadNotification->plotList.end() &&
 			!isCancelled() &&
-			miner_.getBlockheight() == plotReadNotification->blockheight;
+			rightBlock;
 			++plotFileIter)
 		{
 			auto& plotFile = *(*plotFileIter);
@@ -83,7 +82,9 @@ void Burst::PlotReader::runTask()
 			
 			Poco::Timestamp timeStartFile;
 			
-			if (inputStream.is_open())
+			rightBlock = miner_.getBlockheight() == plotReadNotification->blockheight;
+
+			if (rightBlock && inputStream.is_open())
 			{
 				auto accountId = stoull(getAccountIdFromPlotFile(plotFile.getPath()));
 				auto nonceStart = stoull(getStartNonceFromPlotFile(plotFile.getPath()));
@@ -119,23 +120,24 @@ void Burst::PlotReader::runTask()
 				const auto staggerChunks = staggerScoopBytes / staggerChunkBytes;
 				const auto staggerChunkSize = staggerSize / staggerChunks;
 
-				for (auto staggerBlock = 0ul;
-				     !isCancelled() &&
-				     miner_.getBlockheight() == plotReadNotification->blockheight &&
-				     staggerBlock < staggerBlocks;
-				     ++staggerBlock)
+				for (auto staggerBlock = 0ul; !isCancelled() && rightBlock && staggerBlock < staggerBlocks; ++staggerBlock)
 				{
 					const auto staggerBlockOffset = staggerBlock * staggerBlockSize;
 					const auto staggerScoopOffset = plotReadNotification->scoopNum * staggerSize * Settings::ScoopSize;
 
-					for (auto staggerChunk = 0u; staggerChunk < staggerChunks; ++staggerChunk)
+					for (auto staggerChunk = 0u; staggerChunk < staggerChunks && !isCancelled() && rightBlock; ++staggerChunk)
 					{
-						while (!isCancelled() &&
-							!globalBufferSize.add(staggerChunkBytes))
-							if (miner_.getBlockheight() != plotReadNotification->blockheight)
-								break;
+						auto memoryAcquired = false;
 
-						if (isCancelled() || miner_.getBlockheight() != plotReadNotification->blockheight)
+						while (!isCancelled() && !memoryAcquired && rightBlock)
+						{
+							if (miner_.getBlockheight() == plotReadNotification->blockheight)
+								memoryAcquired = globalBufferSize.add(staggerChunkBytes);
+							else
+								rightBlock = false;
+						}
+
+						if (!memoryAcquired)
 							break;
 
 						const auto chunkOffset = staggerChunk * staggerChunkBytes;
@@ -143,11 +145,12 @@ void Burst::PlotReader::runTask()
 						VerifyNotification::Ptr verification = new VerifyNotification{};
 						verification->accountId = accountId;
 						verification->nonceStart = nonceStart;
-						verification->block = block;
+						verification->block = plotReadNotification->blockheight;
 						verification->inputPath = plotFile.getPath();
-						verification->gensig = gensig;
+						verification->gensig = plotReadNotification->gensig;
 						verification->buffer.resize(static_cast<size_t>(staggerChunkSize));
 						verification->nonceRead = staggerBlock * staggerSize + staggerChunkSize * staggerChunk;
+						verification->baseTarget = plotReadNotification->baseTarget;
 
 						inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 						//inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
@@ -158,6 +161,9 @@ void Burst::PlotReader::runTask()
 				}
 
 				inputStream.close();
+
+				if (!rightBlock)
+					break;
 
 				if (progress_ != nullptr && !isCancelled())
 				{
@@ -184,6 +190,17 @@ void Burst::PlotReader::runTask()
 
 			//if (MinerConfig::getConfig().output.debug)
 				//MinerLogger::write("finished reading plot file " + plotFile.getPath(), TextType::Debug);
+		}
+
+		if (!rightBlock)
+		{
+			log_debug(MinerLogger::plotReader, "Plot reader stopped work\n"
+				"\tdir: %s\n"
+				"\tblockheight: %Lu",
+				plotReadNotification->dir, plotReadNotification->blockheight
+			);
+
+			continue;
 		}
 		
 		auto dirReadDiff = timeStartDir.elapsed();
