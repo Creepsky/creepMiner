@@ -19,16 +19,20 @@
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
-void Burst::GlobalBufferSize::reset(uint64_t max)
+void Burst::GlobalBufferSize::reset(uint64_t max, uint64_t blockheight)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	size_ = 0;
 	max_ = max;
+	blockheight_ = blockheight;
 }
 
-bool Burst::GlobalBufferSize::add(uint64_t sizeToAdd)
+bool Burst::GlobalBufferSize::add(uint64_t sizeToAdd, uint64_t blockheight)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
+
+	if (blockheight != blockheight_)
+		return false;
 
 	if (size_ + sizeToAdd > max_)
 		return false;
@@ -37,9 +41,12 @@ bool Burst::GlobalBufferSize::add(uint64_t sizeToAdd)
 	return true;
 }
 
-void Burst::GlobalBufferSize::remove(uint64_t sizeToRemove)
+void Burst::GlobalBufferSize::remove(uint64_t sizeToRemove, uint64_t blockheight)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
+
+	if (blockheight != blockheight_)
+		return;
 
 	if (sizeToRemove > size_)
 		sizeToRemove = size_;
@@ -132,7 +139,7 @@ void Burst::PlotReader::runTask()
 						while (!isCancelled() && !memoryAcquired && rightBlock)
 						{
 							if (miner_.getBlockheight() == plotReadNotification->blockheight)
-								memoryAcquired = globalBufferSize.add(staggerChunkBytes);
+								memoryAcquired = globalBufferSize.add(staggerChunkBytes, plotReadNotification->blockheight);
 							else
 								rightBlock = false;
 						}

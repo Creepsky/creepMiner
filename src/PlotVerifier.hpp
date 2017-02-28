@@ -32,8 +32,8 @@ namespace Burst
 		void runTask() override;
 
 		static void verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset,
-			const GensigData& gensig, uint64_t accountId, const std::string& inputPath, uint64_t baseTarget,
-			Miner& miner, uint64_t targetDeadline = 0); 
+		                   const GensigData& gensig, uint64_t accountId, const std::string& inputPath, uint64_t baseTarget,
+		                   Miner& miner); 
 
 	private:
 		Miner* miner_;

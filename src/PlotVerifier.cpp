@@ -37,6 +37,9 @@ void Burst::PlotVerifier::runTask()
 		else
 			break;
 
+		if (verifyNotification->block != miner_->getBlockheight())
+			continue;
+
 #if defined MINING_CUDA
 #define check(x) if (!x) log_critical(MinerLogger::plotVerifier, "Error on %s", std::string(#x));
 
@@ -44,7 +47,7 @@ void Burst::PlotVerifier::runTask()
 		check(alloc_memory_cuda(MemoryType::Buffer, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaBuffer)));
 		check(alloc_memory_cuda(MemoryType::Deadlines, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaDeadlines)));
 		calculatedDeadlines.resize(verifyNotification->buffer.size(), CalculatedDeadline{0, 0});
-		calc_occupancy_cuda(verifyNotification->buffer.size(), gridSize, blockSize);
+		calc_occupancy_cuda(static_cast<int>(verifyNotification->buffer.size()), gridSize, blockSize);
 
 		/*if (calculatedDeadlines.size() < verifyNotification->buffer.size())
 		{
@@ -73,12 +76,7 @@ void Burst::PlotVerifier::runTask()
 				log_trace(MinerLogger::plotVerifier, "zero deadline!");
 		}
 
-		if (bestDeadline != nullptr && bestDeadline->deadline > 0 && verifyNotification->block == miner_->getBlockheight())
-		{
-			miner_->submitNonce(bestDeadline->nonce, verifyNotification->accountId, bestDeadline->deadline, verifyNotification->inputPath);
-		}
-		else
-		{
+		if (bestDeadline == nullptr || bestDeadline->deadline == 0)
 			log_debug(MinerLogger::plotVerifier, "CUDA processing gave null deadline!\n"
 				"\tplotfile = %s\n"
 				"\tbuffer.size() = %z\n"
@@ -86,23 +84,23 @@ void Burst::PlotVerifier::runTask()
 				"\tnonceRead = %Lu",
 				verifyNotification->inputPath, verifyNotification->buffer.size(), verifyNotification->nonceStart, verifyNotification->nonceRead
 			);
-		}
+		
+		if (verifyNotification->block == miner_->getBlockheight())
+			miner_->submitNonce(bestDeadline->nonce, verifyNotification->accountId, bestDeadline->deadline, verifyNotification->inputPath);
 
 		check(free_memory_cuda(cudaBuffer));
 		check(free_memory_cuda(cudaGensig));
 		check(free_memory_cuda(cudaDeadlines));
-		calculatedDeadlines.clear();
+		calculatedDeadlines.resize(0);
 #else
-		auto targetDeadline = miner_->getTargetDeadline();
-
 		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i++)
 			verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
 				verifyNotification->gensig, verifyNotification->accountId, verifyNotification->inputPath,
-				verifyNotification->baseTarget, *miner_, targetDeadline);
+				verifyNotification->baseTarget, *miner_);
 #endif
 		
 		if (verifyNotification->block == miner_->getBlockheight())
-			PlotReader::globalBufferSize.remove(verifyNotification->buffer.size() * sizeof(ScoopData));
+			PlotReader::globalBufferSize.remove(verifyNotification->buffer.size() * sizeof(ScoopData), verifyNotification->block);
 		else
 			log_debug(MinerLogger::plotVerifier, "Plot verifier is done with work, but not for this block!\n"
 				"\tBlock#: %Lu (vs. this block#: %Lu)\n"
@@ -120,7 +118,7 @@ void Burst::PlotVerifier::runTask()
 }
 
 void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset, const GensigData& gensig,
-	uint64_t accountId, const std::string& inputPath, uint64_t baseTarget, Miner& miner, uint64_t targetDeadline)
+	uint64_t accountId, const std::string& inputPath, uint64_t baseTarget, Miner& miner)
 {
 	HashData target;
 	Shabal256 hash;
@@ -134,9 +132,6 @@ void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceR
 	memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
 	auto deadline = targetResult / baseTarget;
 	
-	if (targetDeadline > deadline)
-	{
-		auto nonceNum = nonceStart + nonceRead + offset;
-		miner.submitNonce(nonceNum, accountId, deadline, inputPath);
-	}
+	auto nonceNum = nonceStart + nonceRead + offset;
+	miner.submitNonce(nonceNum, accountId, deadline, inputPath);
 }

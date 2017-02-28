@@ -82,7 +82,7 @@ void Burst::Miner::run()
 		nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>();
 
 		// create the plot verifiers
-		verifier_ = std::make_unique<WorkerList<PlotVerifier>>(Poco::Thread::Priority::PRIO_HIGHEST, MinerConfig::getConfig().getMiningIntensity(),
+		verifier_ = std::make_unique<WorkerList<PlotVerifier>>(Poco::Thread::Priority::PRIO_HIGH, MinerConfig::getConfig().getMiningIntensity(),
 			*this, verificationQueue_);
 
 		auto verifiers = verifier_->size();
@@ -175,7 +175,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	{
 		plotReadQueue_.clear();
 		verificationQueue_.clear();
-		PlotReader::globalBufferSize.reset(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024);
+		PlotReader::globalBufferSize.reset(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, blockHeight);
 		log_debug(MinerLogger::miner, "Verification queue cleared.");
 	}
 			
@@ -271,6 +271,11 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 {
 	poco_ndc(Miner::submitNonce);
 
+	auto targetDeadline = getTargetDeadline();
+
+	if (targetDeadline > 0 && deadline > targetDeadline)
+		return;
+
 	auto block = data_.getBlockData();
 
 	if (block == nullptr)
@@ -294,23 +299,11 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 			"\tnonce: %Lu\n"
 			"\tin: %s",
 			newDeadline->getAccountName(), deadlineFormat(deadline), newDeadline->getNonce(), plotFile);
-
-		auto createSendThread = true;
-		auto targetDeadline = getTargetDeadline();
-
-		if (targetDeadline > 0 && newDeadline->getDeadline() >= targetDeadline)
-		{
-			createSendThread = false;
-
-			log_debug(MinerLogger::miner, "Nonce is higher then the target deadline of the pool (%s)",
-				deadlineFormat(targetDeadline));
-		}
-
+		
 		newDeadline->onTheWay();
 
-		if (createSendThread)
 #ifdef NDEBUG
-			nonceSubmitterManager_->start(new NonceSubmitter{ *this, newDeadline });
+		nonceSubmitterManager_->start(new NonceSubmitter{ *this, newDeadline });
 #else
 		{} // in debug mode we dont submit nonces
 #endif
