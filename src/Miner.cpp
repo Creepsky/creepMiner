@@ -267,9 +267,12 @@ uint64_t Burst::Miner::getScoopNum() const
 	return data_.getCurrentScoopNum();
 }
 
-void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile)
+void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile)
 {
 	poco_ndc(Miner::submitNonce);
+
+	if (blockheight != getBlockheight())
+		return;
 
 	auto targetDeadline = getTargetDeadline();
 

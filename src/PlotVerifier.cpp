@@ -84,9 +84,9 @@ void Burst::PlotVerifier::runTask()
 				"\tnonceRead = %Lu",
 				verifyNotification->inputPath, verifyNotification->buffer.size(), verifyNotification->nonceStart, verifyNotification->nonceRead
 			);
-		
-		if (verifyNotification->block == miner_->getBlockheight())
-			miner_->submitNonce(bestDeadline->nonce, verifyNotification->accountId, bestDeadline->deadline, verifyNotification->inputPath);
+
+		miner_->submitNonce(bestDeadline->nonce, verifyNotification->accountId, bestDeadline->deadline,
+			verifyNotification->block, verifyNotification->inputPath);
 
 		check(free_memory_cuda(cudaBuffer));
 		check(free_memory_cuda(cudaGensig));
@@ -96,7 +96,7 @@ void Burst::PlotVerifier::runTask()
 		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i++)
 			verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
 				verifyNotification->gensig, verifyNotification->accountId, verifyNotification->inputPath,
-				verifyNotification->baseTarget, *miner_);
+				verifyNotification->baseTarget, verifyNotification->block, *miner_);
 #endif
 		
 		if (verifyNotification->block == miner_->getBlockheight())
@@ -118,7 +118,7 @@ void Burst::PlotVerifier::runTask()
 }
 
 void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset, const GensigData& gensig,
-	uint64_t accountId, const std::string& inputPath, uint64_t baseTarget, Miner& miner)
+	uint64_t accountId, const std::string& inputPath, uint64_t baseTarget, uint64_t blockheight, Miner& miner)
 {
 	HashData target;
 	Shabal256 hash;
@@ -133,5 +133,5 @@ void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceR
 	auto deadline = targetResult / baseTarget;
 	
 	auto nonceNum = nonceStart + nonceRead + offset;
-	miner.submitNonce(nonceNum, accountId, deadline, inputPath);
+	miner.submitNonce(nonceNum, accountId, deadline, blockheight, inputPath);
 }

@@ -49,7 +49,7 @@ namespace Burst
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
 		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
-		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile);
+		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile);
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
