@@ -560,9 +560,15 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	
 	std::ofstream outputFileStream{configPath};
 
+	std::stringstream sstr;
+	config->stringify(sstr, 4);
+	auto outJsonStr = sstr.str();
+
+	Poco::replaceInPlace(outJsonStr, "\\/", "/");
+
 	if (outputFileStream.is_open())
 	{
-		config->stringify(outputFileStream, 4);
+		outputFileStream << outJsonStr << std::flush;
 		outputFileStream.close();
 	}
 
