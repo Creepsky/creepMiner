@@ -202,7 +202,7 @@ void Burst::MiningInfoHandler::handleRequest(Poco::Net::HTTPServerRequest& reque
 	poco_ndc(MiningInfoHandler::handleRequest);
 
 	Poco::JSON::Object json;
-	json.set("baseTarget", miner_->getBaseTarget());
+	json.set("baseTarget", std::to_string(miner_->getBaseTarget()));
 	json.set("generationSignature", miner_->getGensigStr());
 	json.set("targetDeadline", miner_->getTargetDeadline());
 	json.set("height", miner_->getBlockheight());
