@@ -350,7 +350,7 @@ bool Burst::Miner::getMiningInfo()
 
 					if (root->has("baseTarget"))
 					{
-						baseTargetStr = root->get("baseTarget").extract<std::string>();
+						baseTargetStr = root->get("baseTarget").convert<std::string>();
 					}
 
 					if (root->has("generationSignature"))
