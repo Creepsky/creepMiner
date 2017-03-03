@@ -64,9 +64,9 @@ const T& getHelper(Poco::Nullable<T>& val, bool reset, Poco::Mutex& mutex, std::
 	return val;
 }
 
-std::string Burst::Account::getName(bool reset)
+std::string Burst::Account::getName() const
 {
-	return runGetName(reset);
+	return name_.value("");
 }
 
 Poco::ActiveResult<std::string> Burst::Account::getNameAsync(bool reset)
