@@ -60,7 +60,7 @@ void Burst::NonceSubmitter::runTask()
 
 		NonceRequest request{MinerConfig::getConfig().createSession(HostType::Pool)};
 
-		auto response = request.submit(deadline->getNonce(), deadline->getAccountId());
+		auto response = request.submit(deadline->getNonce(), deadline->getAccountId(), deadline->getDeadline());
 		auto receiveTryCount = 0u;
 
 		if (response.canReceive() && firstSendAttempt)

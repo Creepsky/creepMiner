@@ -36,7 +36,7 @@ namespace Burst
 	public:
 		NonceRequest(std::unique_ptr<Poco::Net::HTTPClientSession> socket);
 
-		NonceResponse submit(uint64_t nonce, uint64_t accountId);
+		NonceResponse submit(uint64_t nonce, uint64_t accountId, uint64_t deadline);
 
 		std::unique_ptr<Poco::Net::HTTPClientSession> transferSession();
 

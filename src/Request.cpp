@@ -62,7 +62,7 @@ Burst::NonceRequest::NonceRequest(std::unique_ptr<Poco::Net::HTTPClientSession> 
 	: request_(std::move(socket))
 {}
 
-Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accountId)
+Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accountId, uint64_t deadline)
 {
 	poco_ndc(NonceRequest::submit);
 
@@ -73,6 +73,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 	uri.addQueryParameter("requestType", "submitNonce");
 	uri.addQueryParameter("nonce", std::to_string(nonce));
 	uri.addQueryParameter("accountId", std::to_string(accountId));
+	uri.addQueryParameter("deadline", std::to_string(deadline));
 
 	if (!MinerConfig::getConfig().getPassphrase().empty())
 		uri.addQueryParameter("secretPhrase", MinerConfig::getConfig().getPassphrase());
