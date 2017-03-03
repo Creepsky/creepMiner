@@ -20,7 +20,7 @@ namespace Burst
 		void setWallet(const Wallet& wallet);
 
 		AccountId getId() const;
-		std::string getName(bool reset = false);
+		std::string getName() const;
 		Poco::ActiveResult<std::string> getNameAsync(bool reset = false);
 		AccountId getRewardRecipient() const;
 		//Poco::ActiveResult<AccountId> getRewardRecipientAsync(bool reset = false);
