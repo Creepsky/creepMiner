@@ -54,6 +54,9 @@ namespace Burst
 		bool forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const;
 		//const std::unordered_map<AccountId, Deadlines>& getDeadlines() const;
 		std::shared_ptr<Deadline> getBestDeadline(uint64_t accountId, DeadlineSearchType searchType);
+		
+		std::shared_ptr<Deadline> addDeadlineIfBest(uint64_t nonce, uint64_t deadline,
+			std::shared_ptr<Account> account, uint64_t block, std::string plotFile);
 
 	protected:
 		std::shared_ptr<Account> runGetLastWinner(const std::pair<const Wallet*, const Accounts*>& args);

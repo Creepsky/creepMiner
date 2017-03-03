@@ -288,16 +288,17 @@ void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t dead
 
 	//MinerLogger::write("nonce found with deadline: " + deadlineFormat(deadline), TextType::Debug);
 
+	auto newDeadline = block->addDeadlineIfBest(
+		nonce,
+		deadline,
+		accounts_.getAccount(accountId, wallet_, true),
+		data_.getBlockData()->getBlockheight(),
+		plotFile
+	);
+
 	// is the new nonce better then the best one we already have?
-	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
-	{
-		auto newDeadline = block->addDeadline(nonce,
-			deadline,
-			accounts_.getAccount(accountId, wallet_, true),
-			data_.getBlockData()->getBlockheight(),
-			plotFile
-		);
-		
+	if (newDeadline != nullptr)
+	{		
 		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound), "%s: nonce found (%s)\n"
 			"\tnonce: %Lu\n"
 			"\tin: %s",

@@ -220,6 +220,18 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(uint64_t acco
 	}
 }
 
+std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadlineIfBest(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile)
+{
+	Poco::ScopedLock<Poco::Mutex> lock {mutex_};
+
+	auto bestDeadline = this->getBestDeadline(account->getId(), BlockData::DeadlineSearchType::Found);
+
+	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
+		return addDeadline(nonce, deadline, account, block, plotFile);
+
+	return nullptr;
+}
+
 std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pair<const Wallet*, const Accounts*>& args)
 {
 	poco_ndc(Miner::runGetLastWinner);
