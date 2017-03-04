@@ -96,10 +96,12 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 			Poco::JSON::Parser parser;
 			auto root = parser.parse(response).extract<Poco::JSON::Object::Ptr>();
 
+			confirmation.json = response;
+
 			if (root->has("deadline"))
 			{
 				confirmation.deadline = root->get("deadline");
-				confirmation.errorCode = SubmitResponse::Submitted;
+				confirmation.errorCode = SubmitResponse::Confirmed;
 			}
 			else if (root->has("errorCode"))
 			{

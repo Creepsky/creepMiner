@@ -18,6 +18,7 @@
 #include <Poco/NotificationQueue.h>
 #include "PlotVerifier.hpp"
 #include "WorkerList.hpp"
+#include "Response.hpp"
 
 namespace Poco
 {
@@ -49,15 +50,21 @@ namespace Burst
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
 		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
+
 		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile);
+		Poco::ActiveMethod<NonceConfirmation, std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>, Miner> submitNonceAsync;
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
 		//std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
-		
+		std::shared_ptr<Account> getAccount(AccountId id);
+
 	private:
 		bool getMiningInfo();
+		NonceConfirmation submitNonceAsyncImpl(const std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>& data);
+		SubmitResponse addNewDeadline(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile,
+			 std::shared_ptr<Deadline>& newDeadline);
 
 		bool running_ = false;
 		MinerData data_;

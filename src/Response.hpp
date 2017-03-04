@@ -31,9 +31,13 @@ namespace Burst
 
 	enum class SubmitResponse
 	{
+		Confirmed,
 		Submitted,
+		NotBest,
 		TooHigh,
+		WrongBlock,
 		Error,
+		Found,
 		None
 	};
 
@@ -41,6 +45,7 @@ namespace Burst
 	{
 		uint64_t deadline;
 		SubmitResponse errorCode;
+		std::string json;
 	};
 
 	class NonceResponse
