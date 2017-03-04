@@ -20,10 +20,10 @@ namespace Burst
 		void setWallet(const Wallet& wallet);
 
 		AccountId getId() const;
-		std::string getName() const;
+		std::string getName();
 		Poco::ActiveResult<std::string> getNameAsync(bool reset = false);
-		AccountId getRewardRecipient() const;
-		//Poco::ActiveResult<AccountId> getRewardRecipientAsync(bool reset = false);
+		AccountId getRewardRecipient();
+		Poco::ActiveResult<AccountId> getRewardRecipientAsync(bool reset = false);
 		std::string getAddress() const;
 
 		Poco::JSON::Object::Ptr toJSON() const;
@@ -38,7 +38,7 @@ namespace Burst
 		Poco::Nullable<AccountId> rewardRecipient_;
 		const Wallet* wallet_;
 		Poco::ActiveMethod<std::string, bool, Account> getName_;
-		//Poco::ActiveMethod<AccountId, bool, Account> getRewardRecipient_;
+		Poco::ActiveMethod<AccountId, bool, Account> getRewardRecipient_;
 		mutable Poco::Mutex mutex_;
 	};
 
