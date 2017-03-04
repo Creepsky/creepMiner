@@ -13,17 +13,22 @@ Burst::Account::Account()
 Burst::Account::Account(AccountId id)
 	: id_{id},
 	  wallet_{nullptr},
-	  getName_{this, &Account::runGetName}
-	  //getRewardRecipient_ {this, &Account::runGetRewardRecipient}
+	  getName_{this, &Account::runGetName},
+	  getRewardRecipient_ {this, &Account::runGetRewardRecipient}
 {}
 
 Burst::Account::Account(const Wallet& wallet, AccountId id, bool fetchAll)
 	: id_{id},
 	  wallet_{&wallet},
-	  getName_{this, &Account::runGetName}
-	  //getRewardRecipient_ {this, &Account::runGetRewardRecipient}
-
-{}
+	  getName_{this, &Account::runGetName},
+	  getRewardRecipient_ {this, &Account::runGetRewardRecipient}
+{
+	if (fetchAll)
+	{
+		getNameAsync(true);
+		getRewardRecipientAsync();
+	}
+}
 
 void Burst::Account::setWallet(const Wallet& wallet)
 {
@@ -40,7 +45,7 @@ Burst::AccountId Burst::Account::getId() const
 template <typename T>
 const T& getHelper(Poco::Nullable<T>& val, bool reset, Poco::Mutex& mutex, std::function<bool(T&)> fetchFunction)
 {
-	Poco::Mutex::ScopedLock lock{ mutex };
+	Poco::ScopedLockWithUnlock<Poco::Mutex> lock{ mutex };
 
 	// delete cached name if resetflag is set
 	if (reset && !val.isNull())
@@ -53,19 +58,33 @@ const T& getHelper(Poco::Nullable<T>& val, bool reset, Poco::Mutex& mutex, std::
 		// we insert an empty name in the map
 		val = T{};
 
+		lock.unlock();
+
 		T fetchedVal;
 
 		if (fetchFunction(fetchedVal))
+		{
+			Poco::Mutex::ScopedLock innerLock{ mutex };
 			val = fetchedVal;
+		}
 		else
+		{
+			Poco::Mutex::ScopedLock innerLock{ mutex };
 			val.clear();
+		}
 	}
 
+	Poco::Mutex::ScopedLock innerLock{ mutex };
 	return val;
 }
 
-std::string Burst::Account::getName() const
+std::string Burst::Account::getName()
 {
+	Poco::Mutex::ScopedLock lock{ mutex_ };
+
+	if (name_.isNull())
+		getNameAsync();
+
 	return name_.value("");
 }
 
@@ -74,20 +93,20 @@ Poco::ActiveResult<std::string> Burst::Account::getNameAsync(bool reset)
 	return getName_(reset);
 }
 
-Burst::AccountId Burst::Account::getRewardRecipient() const
+Burst::AccountId Burst::Account::getRewardRecipient()
 {
 	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
 	if (rewardRecipient_.isNull())
-		return 0;
+		getRewardRecipientAsync();
 
-	return rewardRecipient_.value();
+	return rewardRecipient_.value(0);
 }
 
-//Poco::ActiveResult<Burst::AccountId> Burst::Account::getRewardRecipientAsync(bool reset)
-//{
-//	return getRewardRecipient_(reset);
-//}
+Poco::ActiveResult<Burst::AccountId> Burst::Account::getRewardRecipientAsync(bool reset)
+{
+	return getRewardRecipient_(reset);
+}
 
 std::string Burst::Account::getAddress() const
 {
@@ -113,8 +132,6 @@ Poco::JSON::Object::Ptr Burst::Account::toJSON() const
 
 std::string Burst::Account::runGetName(const bool& reset)
 {
-	Poco::Mutex::ScopedLock lock{ mutex_ };
-
 	return getHelper<std::string>(name_, reset, mutex_, [this](std::string& name)
 	{
 		return wallet_->getNameOfAccount(id_, name);
@@ -123,8 +140,6 @@ std::string Burst::Account::runGetName(const bool& reset)
 
 Burst::AccountId Burst::Account::runGetRewardRecipient(const bool& reset)
 {
-	Poco::Mutex::ScopedLock lock{ mutex_ };
-
 	return getHelper<AccountId>(rewardRecipient_, reset, mutex_, [this](AccountId& recipient)
 	{
 		return wallet_->getRewardRecipientOfAccount(id_, recipient);
