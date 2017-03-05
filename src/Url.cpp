@@ -4,6 +4,7 @@
 #include <Poco/Net/DNS.h>
 #include <Poco/Net/HTTPSessionFactory.h>
 #include <Poco/Net/HTTPClientSession.h>
+#include <Poco/String.h>
 
 Burst::Url::Url(const std::string& url, const std::string& defaultScheme, unsigned short defaultPort)
 	: uri_{url}
@@ -13,16 +14,17 @@ Burst::Url::Url(const std::string& url, const std::string& defaultScheme, unsign
 		// if something is wrong with the uri...
 		auto invalid = uri_.getScheme().empty() || uri_.getHost().empty() || uri_.getPort() == 0;
 		//
-		if (invalid &&
-			!defaultScheme.empty())
+		if (invalid && !defaultScheme.empty() && !url.empty())
+		{
 			// we try to prepend the default scheme and hope that it can get resolved now
 			uri_ = defaultScheme + "://" + url;
 
-		// if nevertheless the port is empty, we set it to the default port
-		if (uri_.getPort() == 0)
-			uri_.setPort(defaultPort);
+			if (uri_.getPort() == 0)
+				uri_.setPort(defaultPort);
+		}
 
-		ip_ = Poco::Net::DNS::resolveOne(uri_.getHost());
+		if (!uri_.empty())
+			ip_ = Poco::Net::DNS::resolveOne(uri_.getHost());
 	}
 	catch (...)
 	{}
