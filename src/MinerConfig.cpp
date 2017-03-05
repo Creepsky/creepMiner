@@ -136,14 +136,27 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 
 	auto checkCreateUrlFunc = [&config](Poco::JSON::Object::Ptr urlsObj, const std::string& name, Url& url,
-		const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl, std::string altName = "")
+		const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl, std::string altName = "", bool forceInsert = false)
 	{
 		if (altName.empty())
 			altName = name;
 
 		auto var = getOrAddAlt(urlsObj, config, name, createUrl, altName);
-		url = {var, defaultScheme, defaultPort};
-		urlsObj->set(name, url.getUri().toString());
+
+		if (var.empty() && forceInsert)
+		{
+			url = { createUrl };
+			urlsObj->set(name, url.getUri().toString());
+		}
+		else if (!var.empty())
+		{
+			url = { var, defaultScheme, defaultPort };
+			urlsObj->set(name, url.getUri().toString());
+		}
+		else
+		{
+			url = { "" };
+		}
 	};
 
 	// logging
@@ -269,7 +282,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8124, "http://pool.burst-team.us:8124", "poolUrl");
 			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8124, "", "miningInfoUrl");
-			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 8128, "https://wallet.burst-team.us:8128", "walletUrl");
+			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 8125, "https://wallet.burst-team.us:8128", "walletUrl");
 
 			if (urlMiningInfo_.empty() && !urlPool_.empty())
 			{
@@ -501,8 +514,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		else
 			webserverObj.assign(new Poco::JSON::Object);
 
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", "serverUrl");
 		startServer_ = getOrAddAlt(webserverObj, config, "start", true, "Start Server");
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", "serverUrl", startServer_);
 
 		// credentials
 		{
