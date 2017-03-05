@@ -35,13 +35,13 @@ namespace Burst
 		bool getLastBlock(uint64_t& block) const;
 		void getAccount(AccountId id, Account& account) const;
 
+		bool isActive() const;
+
 		Wallet& operator=(const Wallet& rhs) = delete;
 		Wallet& operator=(Wallet&& rhs) = default;
 
 	private:
 		bool sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::Ptr& json) const;
-
-		mutable std::unique_ptr<Poco::Net::HTTPClientSession> walletSession_;
 		Url url_;
 	};
 }

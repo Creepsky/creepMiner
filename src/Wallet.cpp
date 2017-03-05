@@ -19,7 +19,6 @@ Burst::Wallet::Wallet(const Url& url)
 	: url_(url)
 {
 	poco_ndc(Wallet(const Url& url));
-	walletSession_ = url_.createSession();
 }
 
 Burst::Wallet::~Wallet()
@@ -30,7 +29,7 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId) const
 	poco_ndc(Wallet::getWinnerOfBlock);
 	winnerId = 0;
 
-	if (url_.empty())
+	if (!isActive())
 		return false;
 
 	Poco::JSON::Object::Ptr json;
@@ -61,7 +60,7 @@ bool Burst::Wallet::getNameOfAccount(AccountId account, std::string& name) const
 	Poco::JSON::Object::Ptr json;
 	name = "";
 
-	if (url_.empty())
+	if (!isActive())
 		return false;
 
 	Poco::URI uri;
@@ -90,7 +89,7 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 	Poco::JSON::Object::Ptr json;
 	rewardRecipient = 0;
 
-	if (url_.empty())
+	if (!isActive())
 		return false;
 
 	Poco::URI uri;
@@ -119,10 +118,8 @@ bool Burst::Wallet::getLastBlock(uint64_t& block) const
 	Poco::JSON::Object::Ptr json;
 	block = 0;
 
-	if (url_.empty())
-	{
+	if (!isActive())
 		return false;
-	}
 
 	Poco::URI uri;
 	uri.setPath("/burst");
@@ -150,27 +147,35 @@ void Burst::Wallet::getAccount(AccountId id, Account& account) const
 		//account = {*this, id};
 }
 
+bool Burst::Wallet::isActive() const
+{
+	return !url_.empty();
+}
+
 bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::Ptr& json) const
 {
 	poco_ndc(Wallet::sendWalletRequest);
 
+	if (!isActive())
+		return false;
+
+	log_debug(MinerLogger::wallet, "Sending wallet request '%s'", uri.toString());
+
 	HTTPRequest request{ HTTPRequest::HTTP_GET, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
 	request.setKeepAlive(true);
-
-	if (walletSession_ == nullptr)
-		walletSession_ = url_.createSession();
-	
-	Request req{std::move(walletSession_)};
+		
+	Request req{ url_.createSession() };
 	auto resp = req.send(request);
 	std::string data;
 
 	if (resp.receive(data))
 	{
+		log_debug(MinerLogger::wallet, "Got response for wallet request '%s'\n%s", uri.toString(), data);
+
 		try
 		{
 			Poco::JSON::Parser parser;
 			json = parser.parse(data).extract<Poco::JSON::Object::Ptr>();
-			transferSession(resp, walletSession_);
 			return true;
 		}
 		catch (Poco::Exception& exc)
@@ -183,16 +188,11 @@ bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::
 			);
 
 			log_current_stackframe(MinerLogger::wallet);
-			
-			transferSession(resp, walletSession_);
 			return false;
 		}
 	}
 
-	transferSession(resp, walletSession_);
-	transferSession(req, walletSession_);
-
-	assert(walletSession_ != nullptr);
+	log_error(MinerLogger::wallet, "Got no response for wallet request '%s'", uri.toString());
 
 	return false;
 }
