@@ -78,6 +78,11 @@ void Burst::PlotReader::runTask()
 		Poco::Timestamp timeStartDir;
 		auto rightBlock = miner_.getBlockheight() == plotReadNotification->blockheight;
 
+		// put in all related plot files
+		for (const auto& relatedPlotList : plotReadNotification->relatedPlotLists)
+			for (const auto& relatedPlotFile : relatedPlotList.second)
+				plotReadNotification->plotList.emplace_back(relatedPlotFile);
+
 		for (auto plotFileIter = plotReadNotification->plotList.begin();
 			plotFileIter != plotReadNotification->plotList.end() &&
 			!isCancelled() &&
@@ -218,17 +223,27 @@ void Burst::PlotReader::runTask()
 
 		for (const auto& plot : plotReadNotification->plotList)
 			totalSizeBytes += plot->getSize();
-
-		const auto sumNonces = totalSizeBytes / Settings::PlotSize;
-		const auto sumNoncesBytes = static_cast<float>(sumNonces * Settings::ScoopSize);
-		const auto bytesPerSecond = sumNoncesBytes / dirReadDiffSeconds;
 		
-		log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone), "Dir %s read (%z files, %s total) in %ss (~%s/s)",
-			plotReadNotification->dir,
-			plotReadNotification->plotList.size(),
-			memToString(totalSizeBytes, 2),
-			Poco::DateTimeFormatter::format(span, "%s.%i"),
-			memToString(static_cast<uint64_t>(bytesPerSecond), 2));
+		if (plotReadNotification->type == PlotDir::Type::Sequential)
+		{
+			const auto sumNonces = totalSizeBytes / Settings::PlotSize;
+			const auto sumNoncesBytes = static_cast<float>(sumNonces * Settings::ScoopSize);
+			const auto bytesPerSecond = sumNoncesBytes / dirReadDiffSeconds;
+			
+			std::stringstream sstr;
+
+			sstr << plotReadNotification->dir;
+
+			for (const auto& relatedPlotList : plotReadNotification->relatedPlotLists)
+				sstr << " + " << relatedPlotList.first;
+
+			log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone), "Dir %s read (%z files, %s total) in %ss (~%s/s)",
+				sstr.str(),
+				plotReadNotification->plotList.size(),
+				memToString(totalSizeBytes, 2),
+				Poco::DateTimeFormatter::format(span, "%s.%i"),
+				memToString(static_cast<uint64_t>(bytesPerSecond), 2));
+		}
 	}
 }
 

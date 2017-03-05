@@ -8,7 +8,6 @@
 
 #include "MinerUtil.hpp"
 #include <sstream>
-#include <fstream>
 #include <iomanip>
 #include <algorithm>
 #include "Declarations.hpp"
@@ -32,7 +31,7 @@
 #include "Account.hpp"
 #include <Poco/HMACEngine.h>
 #include <Poco/SHA1Engine.h>
-#include <Poco/StreamCopier.h>
+#include <Poco/File.h>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -90,30 +89,44 @@ std::vector<std::string>& Burst::splitStr(const std::string& s, char delim, std:
 
 bool Burst::isValidPlotFile(const std::string& filePath)
 {
-	auto result = false;
-	auto fileName = getFileNameFromPath(filePath);
-
-	if (getAccountIdFromPlotFile(fileName) != "" &&
-		getStartNonceFromPlotFile(fileName) != "")
+	try
 	{
-		//struct stat info;
-		//int statResult = stat( filePath.c_str(), &info );
+		auto fileName = getFileNameFromPath(filePath);
 
-		//if( statResult >= 0)
-		//{
-		//    if( (info.st_mode & S_IFDIR) == 0)
-		//    {
-		std::ifstream testRead(filePath);
+		auto accountIdStr = getAccountIdFromPlotFile(fileName);
+		auto nonceStartStr = getStartNonceFromPlotFile(fileName);
+		auto nonceCountStr = getNonceCountFromPlotFile(fileName);
+		auto staggerStr = getStaggerSizeFromPlotFile(fileName);
 
-		if (testRead.good())
-			result = true;
+		if (accountIdStr == "" ||
+			nonceStartStr == "" ||
+			nonceCountStr == "" ||
+			staggerStr == "")
+			return false;
 
-		testRead.close();
-		//    }
-		//}
+
+		auto accountId = std::stoull(accountIdStr);
+		auto nonceStart = std::stoull(nonceStartStr);
+		auto nonceCount = std::stoull(nonceCountStr);
+		auto staggerSize = std::stoull(staggerStr);
+
+		// values are 0
+		if (accountId == 0 ||
+			nonceStart == 0 ||
+			nonceCount == 0 ||
+			staggerSize == 0)
+			return false;
+
+		// stagger not multiplier of nonce count
+		if (nonceCount % staggerSize != 0)
+			return false;
+
+		return true;
 	}
-
-	return result;
+	catch (...)
+	{
+		return false;
+	}
 }
 
 std::string Burst::getAccountIdFromPlotFile(const std::string& path)
@@ -392,7 +405,6 @@ Poco::JSON::Object Burst::createJsonDeadline(const Deadline& deadline, const std
 
 Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 {
-	// TODO REWORK
 	Poco::JSON::Object json;
 	auto blockPtr = data.getBlockData();
 
@@ -447,9 +459,7 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	json.set("bufferSize", memToString(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, 0));
 	json.set("targetDeadline", deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
-	json.set("maxPlotReaders", MinerConfig::getConfig().getMaxPlotReaders() == 0
-		? MinerConfig::getConfig().getPlotList().size()
-		: MinerConfig::getConfig().getMaxPlotReaders());
+	json.set("maxPlotReaders", MinerConfig::getConfig().getMaxPlotReaders());
 	json.set("miningIntensity", MinerConfig::getConfig().getMiningIntensity());
 	json.set("submissionMaxRetry", MinerConfig::getConfig().getSubmissionMaxRetry() == 0 ?
 		"unlimited" :
@@ -467,7 +477,6 @@ Poco::JSON::Object Burst::createJsonProgress(float progress)
 
 Poco::JSON::Object Burst::createJsonLastWinner(const MinerData& data)
 {
-	// TODO REWORK
 	auto block = data.getBlockData();
 
 	if (block == nullptr || block->getLastWinner() == nullptr)

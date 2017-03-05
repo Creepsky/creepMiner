@@ -17,7 +17,7 @@
 #include <Poco/Task.h>
 #include <atomic>
 #include <Poco/Notification.h>
-#include <atomic>
+#include "MinerConfig.hpp"
 
 namespace Poco
 {
@@ -53,6 +53,8 @@ namespace Burst
 		GensigData gensig;
 		uint64_t blockheight = 0;
 		uint64_t baseTarget = 0;
+		std::vector<std::pair<std::string, std::vector<std::shared_ptr<PlotFile>>>> relatedPlotLists;
+		PlotDir::Type type = PlotDir::Type::Sequential;
 	};
 
 	class PlotReader : public Poco::Task
