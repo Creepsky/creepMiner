@@ -64,10 +64,11 @@ std::unique_ptr<Poco::Net::HTTPClientSession> Burst::Url::createSession() const
 			Poco::Net::HTTPSessionFactory::defaultFactory().createClientSession(uri_)
 		};
 	}
-	catch (...)
+	catch (Poco::Exception& exc)
 	{
-		log_warning(MinerLogger::session, "Could not send request to host: unknown protocol '%s'!\nURI: %s",
-			uri_.getScheme(), getCanonical());
+		log_warning(MinerLogger::session, "Could not send request to host: unknown protocol '%s'!\n\tURI: %s\n\t%s",
+			uri_.getScheme(), getCanonical(), exc.displayText());
+		log_current_stackframe(MinerLogger::session);
 
 		return nullptr;
 	}
