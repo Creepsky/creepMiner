@@ -87,8 +87,6 @@ void Burst::NonceSubmitter::runTask()
 	// it has to be the same block
 	if (deadline->getBlock() == miner.getBlockheight())
 	{
-		log_trace(MinerLogger::nonceSubmitter, "miner.getBlockheight");
-
 		if (confirmation.errorCode == SubmitResponse::Submitted)
 		{
 			auto confirmedDeadlinesPath = MinerConfig::getConfig().getConfirmedDeadlinesPath();
