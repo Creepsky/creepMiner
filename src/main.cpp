@@ -19,6 +19,8 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "MinerServer.hpp"
 #include <Poco/Logger.h>
+#include "Request.hpp"
+#include <Poco/Net/HTTPRequest.h>
 
 class SSLInitializer
 {
@@ -84,6 +86,37 @@ int main(int argc, const char* argv[])
 
 		HTTPSessionInstantiator::registerInstantiator();
 		HTTPSSessionInstantiator::registerInstantiator();
+
+		// check for a new version
+		try
+		{
+			const std::string host = "https://github.com/Creepsky/creepMiner";
+			const std::string versionPrefix = "version:";
+
+			Burst::Url url{ "https://raw.githubusercontent.com" };
+			
+			Poco::Net::HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
+
+			Burst::Request request{ url.createSession() };
+			auto response = request.send(getRequest);
+
+			std::string responseString;
+
+			if (response.receive(responseString))
+			{
+				if (Poco::icompare(responseString, 0, versionPrefix.size(), versionPrefix) == 0)
+				{
+					auto originVersion = responseString.substr(versionPrefix.size());
+
+					if (originVersion != Burst::Settings::ProjectVersion.literal)
+						log_system(general, "There is a new version (%s) on\n\t%s", originVersion, host);
+				}
+			}
+		}
+		catch (...)
+		{
+			
+		}
 
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 		{
