@@ -236,21 +236,89 @@ void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& requ
 
 	try
 	{
+		std::string plotsHash = "";
+
 		try
 		{
-			if (request.has("X-PlotsHash"))
-				PlotSizes::set(request.get("X-PlotsHash"), Poco::NumberParser::parseUnsigned64(request.get("X-Capacity")));
+			if (request.has(X_PlotsHash))
+			{
+				plotsHash = request.get(X_PlotsHash);
+				PlotSizes::set(plotsHash, Poco::NumberParser::parseUnsigned64(request.get(X_Capacity)));
+			}
 		}
 		catch (Poco::Exception&)
 		{
-			log_debug(MinerLogger::server, "The X-PlotsHash from the other miner is not a number! %s", request.get("X-PlotsHash"));
+			log_debug(MinerLogger::server, "The X-PlotsHash from the other miner is not a number! %s", request.get(X_PlotsHash));
 		}
 
-		// sum up the capacity
-		request.set("X-Capacity", std::to_string(PlotSizes::getTotal()));
+		Poco::URI uri{ request.getURI() };
 
-		// forward the request to the pool
-		ForwardHandler{MinerConfig::getConfig().createSession(HostType::Pool)}.handleRequest(request, response);
+		uint64_t accountId = 0;
+		uint64_t nonce = 0;
+		uint64_t deadline = 0;
+		std::string plotfile = "";
+
+		for (const auto& param : uri.getQueryParameters())
+		{
+			if (param.first == "accountId")
+				accountId = Poco::NumberParser::parseUnsigned64(param.second);
+			else if (param.first == "nonce")
+				nonce = Poco::NumberParser::parseUnsigned64(param.second);
+		}
+
+		if (request.has(X_Plotfile))
+		{
+			std::stringstream sstr{ request.get(X_Plotfile) };
+			std::stringstream sstrDecoded;
+			Poco::Base64Decoder base64{ sstr };
+			Poco::StreamCopier::copyStream(base64, sstrDecoded);
+
+			plotfile = sstrDecoded.str();
+		}
+
+		if (request.has(X_Deadline))
+			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
+
+		auto account = miner_->getAccount(accountId);
+
+		if (account == nullptr)
+			account = std::make_shared<Account>(accountId);
+
+		if (plotfile.empty())
+			plotfile = !plotsHash.empty() ? plotsHash : "unknown";
+
+		log_information(MinerLogger::server, "Got nonce forward request (%s)\n"
+			"\tnonce: %Lu\n"
+			"\taccount: %s\n"
+			"\tin: %s",
+			deadlineFormat(deadline), nonce,
+			account->getName().empty() ? account->getAddress() : account->getName(),
+			plotfile
+		);
+
+		if (accountId != 0 && nonce != 0 && deadline != 0)
+		{
+			auto future = miner_->submitNonceAsync(std::make_tuple(nonce, accountId, deadline,
+				miner_->getBlockheight(), plotfile));
+
+			future.wait();
+
+			auto forwardResult = future.data();
+
+			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+			response.setChunkedTransferEncoding(true);
+			auto& responseData = response.send();
+
+			responseData << forwardResult.json;
+		}
+		else
+		{
+			// sum up the capacity
+			request.set("X-Capacity", std::to_string(PlotSizes::getTotal()));
+			
+			// forward the request to the pool
+			ForwardHandler{MinerConfig::getConfig().createSession(HostType::Pool)}.handleRequest(request, response);
+		}
 	}
 	catch (Poco::Exception& exc)
 	{
@@ -268,15 +336,21 @@ void Burst::ForwardHandler::handleRequest(Poco::Net::HTTPServerRequest& request,
 	if (session_ == nullptr)
 		return;
 
+	log_information(MinerLogger::server, "Forwarding request\n\t%s", request.getURI());
+
 	try
 	{
 		Request forwardRequest{std::move(session_)};
 		auto forwardResponse = forwardRequest.send(request);
 
+		log_debug(MinerLogger::server, "Request forwarded, waiting for response...");
+
 		std::string data;
 
 		if (forwardResponse.receive(data))
 		{
+			log_debug(MinerLogger::server, "Got response, sending back...\n\t%s", data);
+
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setContentLength(data.size());
 

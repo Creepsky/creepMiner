@@ -12,6 +12,8 @@
 #include "Declarations.hpp"
 #include "PlotSizes.hpp"
 #include <Poco/Net/HTMLForm.h>
+#include "Deadline.hpp"
+#include <Poco/Base64Encoder.h>
 
 using namespace Poco::Net;
 
@@ -62,7 +64,7 @@ Burst::NonceRequest::NonceRequest(std::unique_ptr<Poco::Net::HTTPClientSession> 
 	: request_(std::move(socket))
 {}
 
-Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accountId)
+Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 {
 	poco_ndc(NonceRequest::submit);
 
@@ -71,18 +73,26 @@ Burst::NonceResponse Burst::NonceRequest::submit(uint64_t nonce, uint64_t accoun
 	uri.setPath("/burst");
 
 	uri.addQueryParameter("requestType", "submitNonce");
-	uri.addQueryParameter("nonce", std::to_string(nonce));
-	uri.addQueryParameter("accountId", std::to_string(accountId));
+	uri.addQueryParameter("nonce", std::to_string(deadline.getNonce()));
+	uri.addQueryParameter("accountId", std::to_string(deadline.getAccountId()));
 
+	std::stringstream sstr;
+
+	Poco::Base64Encoder base64{ sstr };
+	base64 << deadline.getPlotFile();
+	base64.close();
+	
 	if (!MinerConfig::getConfig().getPassphrase().empty())
 		uri.addQueryParameter("secretPhrase", MinerConfig::getConfig().getPassphrase());
 
 	std::string responseData;
 
 	HTTPRequest request{HTTPRequest::HTTP_POST, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
-	request.set("X-Capacity", std::to_string(PlotSizes::getTotal()));
-	request.set("X-PlotsHash", MinerConfig::getConfig().getConfig().getPlotsHash());
-	request.set("X-Miner", Settings::Project.nameAndVersionAndOs);
+	request.set(X_Capacity, std::to_string(PlotSizes::getTotal()));
+	request.set(X_PlotsHash, MinerConfig::getConfig().getConfig().getPlotsHash());
+	request.set(X_Miner, Settings::Project.nameAndVersionAndOs);
+	request.set(X_Deadline, std::to_string(deadline.getDeadline()));
+	request.set(X_Plotfile, sstr.str());
 	request.setKeepAlive(false);
 	request.setContentLength(0);
 

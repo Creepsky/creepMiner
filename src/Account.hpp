@@ -15,6 +15,7 @@ namespace Burst
 	{
 	public:
 		Account();
+		Account(AccountId id);
 		Account(const Wallet& wallet, AccountId id, bool fetchAll = false);
 
 		void setWallet(const Wallet& wallet);

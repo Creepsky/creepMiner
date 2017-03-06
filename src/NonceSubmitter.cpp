@@ -9,10 +9,18 @@
 #include "Output.hpp"
 
 Burst::NonceSubmitter::NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline)
-	: Task(serializeDeadline(*deadline)), miner(miner), deadline(deadline)
+	: Task(serializeDeadline(*deadline)),
+	  submitAsync(this, &NonceSubmitter::submit),
+	  miner(miner),
+	  deadline(deadline)
 {}
 
 void Burst::NonceSubmitter::runTask()
+{
+	submit();
+}
+
+Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 {
 	auto accountName = deadline->getAccountName();
 	auto betterDeadlineInPipeline = false;
@@ -20,10 +28,10 @@ void Burst::NonceSubmitter::runTask()
 	auto loopConditionHelper = [this, &betterDeadlineInPipeline](size_t tryCount, size_t maxTryCount, SubmitResponse response)
 	{
 		if (maxTryCount > 0 && tryCount >= maxTryCount ||
-			response != SubmitResponse::None ||
+			response == SubmitResponse::Error ||
+			response == SubmitResponse::Confirmed ||
 			deadline->getBlock() != miner.getBlockheight() ||
-			betterDeadlineInPipeline ||
-			isCancelled())
+			betterDeadlineInPipeline)
 			return false;
 
 		auto bestSent = miner.getBestSent(deadline->getAccountId(), deadline->getBlock());
@@ -50,7 +58,7 @@ void Burst::NonceSubmitter::runTask()
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
 	auto firstSendAttempt = true;
-	
+
 	// submit-loop
 	while (loopConditionHelper(submitTryCount,
 		MinerConfig::getConfig().getSubmissionMaxRetry(),
@@ -60,12 +68,13 @@ void Burst::NonceSubmitter::runTask()
 
 		NonceRequest request{MinerConfig::getConfig().createSession(HostType::Pool)};
 
-		auto response = request.submit(deadline->getNonce(), deadline->getAccountId());
+		auto response = request.submit(*deadline);
 		auto receiveTryCount = 0u;
 
 		if (response.canReceive() && firstSendAttempt)
 		{
 			deadline->send();
+			confirmation.errorCode = SubmitResponse::Submitted;
 			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)\n"
 				"\tnonce: %Lu\n"
 				"\tin %s",
@@ -84,10 +93,12 @@ void Burst::NonceSubmitter::runTask()
 		++submitTryCount;
 	}
 
+	log_debug(MinerLogger::nonceSubmitter, "JSON confirmation (%s)\n\t%s", deadline->deadlineToReadableString(), confirmation.json);
+
 	// it has to be the same block
 	if (deadline->getBlock() == miner.getBlockheight())
 	{
-		if (confirmation.errorCode == SubmitResponse::Submitted)
+		if (confirmation.errorCode == SubmitResponse::Confirmed)
 		{
 			auto confirmedDeadlinesPath = MinerConfig::getConfig().getConfirmedDeadlinesPath();
 
@@ -161,4 +172,6 @@ void Burst::NonceSubmitter::runTask()
 		log_debug(MinerLogger::nonceSubmitter, "Found nonce was for the last block, stopped submitting! (%s)",
 			deadlineFormat(deadline->getDeadline()));
 	}
+
+	return confirmation;
 }

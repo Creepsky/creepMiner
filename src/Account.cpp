@@ -7,7 +7,11 @@
 #include "nxt/nxt_address.h"
 
 Burst::Account::Account()
-	: id_{0},
+	: Account {0}
+{}
+
+Burst::Account::Account(AccountId id)
+	: id_{id},
 	  wallet_{nullptr},
 	  getName_{this, &Account::runGetName},
 	  getRewardRecipient_ {this, &Account::runGetRewardRecipient}
