@@ -142,7 +142,9 @@ bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
 
 std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& file)
 {
-	if (isValidPlotFile(file.path()))
+	auto result = isValidPlotFile(file.path());
+
+	if (result == PlotCheckResult::Ok)
 	{
 		// plot file is already in our list
 		for (size_t i = 0; i < plotfiles_.size(); i++)
@@ -157,6 +159,21 @@ std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& f
 		return plotFile;
 	}
 
+	std::string errorString = "";
+
+	if (result == PlotCheckResult::Incomplete)
+		errorString = "The plotfile is incomplete!";
+
+	if (result == PlotCheckResult::EmptyParameter)
+		errorString = "The plotfile does not have all the required parameters!";
+
+	if (result == PlotCheckResult::InvalidParameter)
+		errorString = "The plotfile has invalid parameters!";
+
+	if (result == PlotCheckResult::WrongStaggersize)
+		errorString = "The plotfile has an invalid staggersize!";
+
+	log_warning(MinerLogger::config, "Found an invalid plotfile, skipping it!\n\tPath: %s\n\tReason: %s", file.path(), errorString);
 	return nullptr;
 }
 
