@@ -32,6 +32,7 @@
 #include <Poco/HMACEngine.h>
 #include <Poco/SHA1Engine.h>
 #include <Poco/File.h>
+#include <fstream>
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -124,6 +125,19 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 		// file is incomplete
 		if (nonceCount * Settings::PlotSize != file.getSize())
 			return PlotCheckResult::Incomplete;
+
+		std::ifstream alternativeFileData{ filePath + ":stream" };
+
+		if (alternativeFileData)
+		{
+			std::string content(std::istreambuf_iterator<char>(alternativeFileData), {});
+			alternativeFileData.close();
+
+			auto noncesWrote = reinterpret_cast<const uint64_t*>(content.data());
+
+			if (*noncesWrote != nonceCount)
+				return PlotCheckResult::Incomplete;
+		}
 
 		return PlotCheckResult::Ok;
 	}
