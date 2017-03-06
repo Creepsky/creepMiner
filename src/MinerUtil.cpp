@@ -87,7 +87,7 @@ std::vector<std::string>& Burst::splitStr(const std::string& s, char delim, std:
 	return elems;
 }
 
-bool Burst::isValidPlotFile(const std::string& filePath)
+Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 {
 	try
 	{
@@ -102,30 +102,34 @@ bool Burst::isValidPlotFile(const std::string& filePath)
 			nonceStartStr == "" ||
 			nonceCountStr == "" ||
 			staggerStr == "")
-			return false;
+			return PlotCheckResult::EmptyParameter;
 
-
-		auto accountId = std::stoull(accountIdStr);
-		auto nonceStart = std::stoull(nonceStartStr);
-		auto nonceCount = std::stoull(nonceCountStr);
-		auto staggerSize = std::stoull(staggerStr);
+		volatile auto accountId = std::stoull(accountIdStr);
+		volatile auto nonceStart = std::stoull(nonceStartStr);
+		volatile auto nonceCount = std::stoull(nonceCountStr);
+		volatile auto staggerSize = std::stoull(staggerStr);
 
 		// values are 0
 		if (accountId == 0 ||
-			nonceStart == 0 ||
 			nonceCount == 0 ||
 			staggerSize == 0)
-			return false;
+			return PlotCheckResult::InvalidParameter;
 
 		// stagger not multiplier of nonce count
 		if (nonceCount % staggerSize != 0)
-			return false;
+			return PlotCheckResult::WrongStaggersize;
 
-		return true;
+		Poco::File file{ filePath };
+		
+		// file is incomplete
+		if (nonceCount * Settings::PlotSize != file.getSize())
+			return PlotCheckResult::Incomplete;
+
+		return PlotCheckResult::Ok;
 	}
 	catch (...)
 	{
-		return false;
+		return PlotCheckResult::Error;
 	}
 }
 
