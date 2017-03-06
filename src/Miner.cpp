@@ -68,8 +68,7 @@ void Burst::Miner::run()
 	if (config.getTargetDeadline() > 0)
 		log_system(MinerLogger::miner, "Target deadline : %s", deadlineFormat(config.getTargetDeadline()));
 	log_system(MinerLogger::miner, "Mining intensity : %u", config.getMiningIntensity());
-	log_system(MinerLogger::miner, "Max plot readers : %z",
-		config.getMaxPlotReaders() == 0 ? config.getPlotList().size() : config.getMaxPlotReaders());
+	log_system(MinerLogger::miner, "Max plot readers : %u", config.getMaxPlotReaders());
 
 	log_system(MinerLogger::miner, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
 
@@ -97,10 +96,8 @@ void Burst::Miner::run()
 		// create plot reader
 		size_t plotReaderToCreate = MinerConfig::getConfig().getMaxPlotReaders();
 
-		if (plotReaderToCreate == 0)
-			plotReaderToCreate = MinerConfig::getConfig().getPlotList().size();
-
-		plotReader_ = std::make_unique<WorkerList<PlotReader>>(Poco::Thread::Priority::PRIO_HIGHEST, plotReaderToCreate,
+		plotReader_ = std::make_unique<WorkerList<PlotReader>>(Poco::Thread::Priority::PRIO_HIGHEST,
+			plotReaderToCreate,
 			*this, progress_, verificationQueue_, plotReadQueue_);
 
 		auto plotReader = plotReader_->size();
@@ -183,7 +180,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	// why we start a new thread to gather the last winner:
 	// it could be slow and is not necessary for the whole process
 	// so show it when it's done
-	if (blockHeight > 0 && !MinerConfig::getConfig().getWalletUrl().getIp().empty())
+	if (blockHeight > 0 && wallet_.isActive())
 		block->getLastWinnerAsync(wallet_, accounts_);
 
 	// printing block info and transfer it to local server
@@ -205,17 +202,46 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	PlotSizes::nextRound();
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
 
-	for (auto& plotDir : MinerConfig::getConfig().getPlotList())
+	const auto initPlotReadNotification = [this](PlotDir& plotDir)
 	{
-		auto plotRead = new PlotReadNotification;
-		plotRead->dir = plotDir.first;
-		plotRead->plotList = plotDir.second;
-		plotRead->gensig = getGensig();
-		plotRead->scoopNum = getScoopNum();
-		plotRead->blockheight = getBlockheight();
-		plotRead->baseTarget = getBaseTarget();
+		auto notification = new PlotReadNotification;
+		notification->dir = plotDir.getPath();
+		notification->gensig = getGensig();
+		notification->scoopNum = getScoopNum();
+		notification->blockheight = getBlockheight();
+		notification->baseTarget = getBaseTarget();
+		notification->type = plotDir.getType();
+		return notification;
+	};
 
+	const auto addParallel = [this, &initPlotReadNotification](PlotDir& plotDir, std::shared_ptr<PlotFile> plotFile)
+	{
+		auto plotRead = initPlotReadNotification(plotDir);
+		plotRead->plotList.emplace_back(plotFile);
 		plotReadQueue_.enqueueNotification(plotRead);
+	};
+
+	for (auto& plotDir : MinerConfig::getConfig().getPlotDirs())
+	{
+		if (plotDir->getType() == PlotDir::Type::Parallel)
+		{
+			for (const auto& plotFile : plotDir->getPlotfiles())
+				addParallel(*plotDir, plotFile);
+			
+			for (const auto& relatedPlotDir : plotDir->getRelatedDirs())
+				for (const auto& plotFile : relatedPlotDir->getPlotfiles())
+					addParallel(*plotDir, plotFile);
+		}
+		else
+		{
+			auto plotRead = initPlotReadNotification(*plotDir);
+			plotRead->plotList = plotDir->getPlotfiles();
+
+			for (const auto& relatedPlotDir : plotDir->getRelatedDirs())
+				plotRead->relatedPlotLists.emplace_back(relatedPlotDir->getPath(), relatedPlotDir->getPlotfiles());
+
+			plotReadQueue_.enqueueNotification(plotRead);
+		}
 	}
 }
 

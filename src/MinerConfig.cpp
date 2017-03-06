@@ -19,7 +19,6 @@
 #include <Poco/JSON/Parser.h>
 #include <Poco/JSON/Array.h>
 #include <Poco/NestedDiagnosticContext.h>
-#include <unordered_map>
 #include <Poco/SHA1Engine.h>
 #include <Poco/DigestStream.h>
 #include "PlotSizes.hpp"
@@ -46,6 +45,136 @@ const std::string& Burst::PlotFile::getPath() const
 uint64_t Burst::PlotFile::getSize() const
 {
 	return size_;
+}
+
+Burst::PlotDir::PlotDir(std::string plotPath, Type type)
+	: path_{std::move(plotPath)},
+	  type_{type},
+	  size_{0}
+{
+	addPlotLocation(path_);
+}
+
+Burst::PlotDir::PlotDir(std::string path, const std::vector<std::string>& relatedPaths, Type type)
+	: path_{std::move(path)},
+	  type_{type},
+	  size_{0}
+{
+	addPlotLocation(path_);
+
+	for (const auto& relatedPath : relatedPaths)
+		relatedDirs_.emplace_back(new PlotDir{ relatedPath, type_ });
+}
+
+const std::vector<std::shared_ptr<Burst::PlotFile>>& Burst::PlotDir::getPlotfiles() const
+{
+	return plotfiles_;
+}
+
+const std::string& Burst::PlotDir::getPath() const
+{
+	return path_;
+}
+
+uint64_t Burst::PlotDir::getSize() const
+{
+	return size_;
+}
+
+Burst::PlotDir::Type Burst::PlotDir::getType() const
+{
+	return type_;
+}
+
+std::vector<std::shared_ptr<Burst::PlotDir>> Burst::PlotDir::getRelatedDirs() const
+{
+	return relatedDirs_;
+}
+
+bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
+{
+	try
+	{
+		Poco::Path path;
+
+		if (!path.tryParse(fileOrPath))
+		{
+			log_warning(MinerLogger::config, "%s is an invalid file/dir (syntax), skipping it!", fileOrPath);
+			return false;
+		}
+
+		Poco::File fileOrDir{ path };
+
+		if (!fileOrDir.exists())
+		{
+			log_warning(MinerLogger::config, "Plot file/dir does not exist: '%s'", path.toString());
+			return false;
+		}
+	
+		// its a single plot file, add it if its really a plot file
+		if (fileOrDir.isFile())
+			return addPlotFile(fileOrPath) != nullptr;
+
+		// its a dir, so we need to parse all plot files in it and add them
+		if (fileOrDir.isDirectory())
+		{
+			Poco::DirectoryIterator iter{ fileOrDir };
+			Poco::DirectoryIterator end;
+
+			while (iter != end)
+			{
+				if (iter->isFile())
+					addPlotFile(*iter);
+
+				++iter;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& file)
+{
+	auto result = isValidPlotFile(file.path());
+
+	if (result == PlotCheckResult::Ok)
+	{
+		// plot file is already in our list
+		for (size_t i = 0; i < plotfiles_.size(); i++)
+			if (plotfiles_[i]->getPath() == file.path())
+				return plotfiles_[i];
+
+		// make a new plotfile and add it to the list
+		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()), file.getSize());
+		plotfiles_.emplace_back(plotFile);
+		size_ += file.getSize();
+
+		return plotFile;
+	}
+
+	std::string errorString = "";
+
+	if (result == PlotCheckResult::Incomplete)
+		errorString = "The plotfile is incomplete!";
+
+	if (result == PlotCheckResult::EmptyParameter)
+		errorString = "The plotfile does not have all the required parameters!";
+
+	if (result == PlotCheckResult::InvalidParameter)
+		errorString = "The plotfile has invalid parameters!";
+
+	if (result == PlotCheckResult::WrongStaggersize)
+		errorString = "The plotfile has an invalid staggersize!";
+
+	log_warning(MinerLogger::config, "Found an invalid plotfile, skipping it!\n\tPath: %s\n\tReason: %s", file.path(), errorString);
+	return nullptr;
 }
 
 template <typename T>
@@ -104,7 +233,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
-	plotList_.clear();
+	plotDirs_.clear();
 
 	Poco::JSON::Parser parser;
 	Poco::JSON::Object::Ptr config;
@@ -136,14 +265,27 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 
 	auto checkCreateUrlFunc = [&config](Poco::JSON::Object::Ptr urlsObj, const std::string& name, Url& url,
-		const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl, std::string altName = "")
+		const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl, std::string altName = "", bool forceInsert = false)
 	{
 		if (altName.empty())
 			altName = name;
 
 		auto var = getOrAddAlt(urlsObj, config, name, createUrl, altName);
-		url = {var, defaultScheme, defaultPort};
-		urlsObj->set(name, url.getUri().toString());
+
+		if (var.empty() && forceInsert)
+		{
+			url = { createUrl };
+			urlsObj->set(name, url.getUri().toString());
+		}
+		else if (!var.empty())
+		{
+			url = { var, defaultScheme, defaultPort };
+			urlsObj->set(name, url.getUri().toString());
+		}
+		else
+		{
+			url = { "" };
+		}
 	};
 
 	// logging
@@ -269,7 +411,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8124, "http://pool.burst-team.us:8124", "poolUrl");
 			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8124, "", "miningInfoUrl");
-			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 8128, "https://wallet.burst-team.us:8128", "walletUrl");
+			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 8125, "https://wallet.burst-team.us:8128", "walletUrl");
 
 			if (urlMiningInfo_.empty() && !urlPool_.empty())
 			{
@@ -294,7 +436,63 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 					auto plots = plotsDyn.extract<Poco::JSON::Array::Ptr>();
 
 					for (auto& plot : *plots)
-						addPlotLocation(plot.convert<std::string>());
+					{
+						// string means sequential plot dir
+						if (plot.isString())
+							plotDirs_.emplace_back(new PlotDir{ plot.extract<std::string>(), PlotDir::Type::Sequential });
+						// object means custom (sequential/parallel) plot dir
+						else if (plot.type() == typeid(Poco::JSON::Object::Ptr))
+						{
+							const auto sequential = "sequential";
+							const auto parallel = "parallel";
+
+							auto plotJson = plot.extract<Poco::JSON::Object::Ptr>();
+							auto type = PlotDir::Type::Sequential;
+
+							auto typeStr = plotJson->optValue<std::string>("type", "");
+
+							auto path = plotJson->get("path");
+							
+							if (path.isEmpty())
+								log_error(MinerLogger::config, "Empty dir given as plot dir/file! Skipping it...");
+							else if (typeStr.empty())
+								log_error(MinerLogger::config, "Invalid type of plot dir/file %s! Skipping it...", path.toString());
+							else if (typeStr != sequential && typeStr != parallel)
+								log_error(MinerLogger::config, "Type of plot dir/file %s is invalid (%s)! Skipping it...", path.toString(), typeStr);
+							else
+							{
+								if (typeStr == sequential)
+									type = PlotDir::Type::Sequential;
+								else if (typeStr == parallel)
+									type = PlotDir::Type::Parallel;
+
+								// related dirs
+								if (path.type() == typeid(Poco::JSON::Array::Ptr))
+								{
+									auto relatedPathsJson = path.extract<Poco::JSON::Array::Ptr>();
+									std::vector<std::string> relatedPaths;
+
+									for (const auto& relatedPath : *relatedPathsJson)
+									{
+										if (relatedPath.isString())
+											relatedPaths.emplace_back(relatedPath.extract<std::string>());
+										else
+											log_error(MinerLogger::config, "Invalid plot dir/file %s! Skipping it...", relatedPath.toString());
+									}
+
+									if (relatedPaths.size() == 1)
+										plotDirs_.emplace_back(new PlotDir{ *relatedPaths.begin(), type });
+									else if (relatedPaths.size() > 1)
+										plotDirs_.emplace_back(new PlotDir{ *relatedPaths.begin(), { relatedPaths.begin() + 1, relatedPaths.end() }, type });
+								}
+								// single dir
+								else if (path.isString())
+									plotDirs_.emplace_back(new PlotDir{ path, type });
+								else
+									log_error(MinerLogger::config, "Invalid plot dir/file %s! Skipping it...", path.toString());
+							}
+						}
+					}
 				}
 				/*else if (plotsDyn.isString())
 				{
@@ -328,31 +526,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				Poco::DigestOutputStream shaStream{sha};
 
 				for (const auto plotFile : getPlotFiles())
-				{
-					Poco::Path path{ plotFile->getPath() };
-
 					shaStream << plotFile->getPath();
-
-					auto dir = path.getDevice();
-
-					// if its empty its unix and we have to look for the top dir
-					if (dir.empty() && path.depth() > 0)
-						dir = path.directory(0);
-
-					// if its now empty, we have a really weird plotfile and skip it
-					if (dir.empty())
-					{
-						log_debug(MinerLogger::config, "Plotfile with invalid path!\n%s", plotFile->getPath());
-						continue;
-					}
-
-					auto iter = plotDirs_.find(dir);
-
-					if (iter == plotDirs_.end())
-						plotDirs_.emplace(std::make_pair(dir, PlotList {}));
-
-					plotDirs_[dir].emplace_back(plotFile);
-				}
 
 				shaStream << std::flush;
 				plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
@@ -501,8 +675,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		else
 			webserverObj.assign(new Poco::JSON::Object);
 
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", "serverUrl");
 		startServer_ = getOrAddAlt(webserverObj, config, "start", true, "Start Server");
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", "serverUrl", startServer_);
 
 		// credentials
 		{
@@ -580,17 +754,34 @@ const std::string& Burst::MinerConfig::getPath() const
 	return configPath_;
 }
 
-const std::vector<std::shared_ptr<Burst::PlotFile>>& Burst::MinerConfig::getPlotFiles() const
+std::vector<std::shared_ptr<Burst::PlotFile>> Burst::MinerConfig::getPlotFiles() const
 {
-	return plotList_;
+	std::vector<std::shared_ptr<Burst::PlotFile>> plotFiles;
+
+	for (auto& plotDir : plotDirs_)
+	{
+		plotFiles.insert(plotFiles.end(),
+			plotDir->getPlotfiles().begin(), plotDir->getPlotfiles().end());
+		
+		for (const auto& relatedDir : plotDir->getRelatedDirs())
+			plotFiles.insert(plotFiles.end(),
+				relatedDir->getPlotfiles().begin(), relatedDir->getPlotfiles().end());
+	}
+
+	return plotFiles;
 }
 
 uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 {
 	uint64_t sum = 0;
 
-	for (auto plotFile : plotList_)
-		sum += plotFile->getSize();
+	for (auto plotDir : plotDirs_)
+	{
+		sum += plotDir->getSize();
+		
+		for (auto relatedDir : plotDir->getRelatedDirs())
+			sum += relatedDir->getSize();
+	}
 
 	return sum;
 }
@@ -740,76 +931,12 @@ Poco::JSON::Object::Ptr Burst::MinerConfig::readOutput(Poco::JSON::Object::Ptr j
 	return json;
 }
 
-bool Burst::MinerConfig::addPlotLocation(const std::string& fileOrPath)
-{
-	Poco::Path path;
-
-	if (!path.tryParse(fileOrPath))
-	{
-		log_warning(MinerLogger::config, "%s is an invalid file/dir (syntax), skipping it!", fileOrPath);
-		return false;
-	}
-		
-	Poco::File fileOrDir{ path };
-	
-	if (!fileOrDir.exists())
-	{
-		log_warning(MinerLogger::config, "Plot file/dir does not exist: '%s'", path.toString());
-		return false;
-	}
-	
-	// its a single plot file, add it if its really a plot file
-	if (fileOrDir.isFile())
-	{
-		return addPlotFile(fileOrPath) != nullptr;
-	}
-
-	// its a dir, so we need to parse all plot files in it and add them
-	if (fileOrDir.isDirectory())
-	{
-		Poco::DirectoryIterator iter{ fileOrDir };
-		Poco::DirectoryIterator end;
-
-		while (iter != end)
-		{
-			if (iter->isFile())
-				addPlotFile(*iter);
-			
-			++iter;
-		}
-
-		return true;
-	}
-
-	return false;
-}
-
-std::shared_ptr<Burst::PlotFile> Burst::MinerConfig::addPlotFile(const Poco::File& file)
-{
-	if (isValidPlotFile(file.path()))
-	{
-		// plot file is already in our list
-		for (size_t i = 0; i < plotList_.size(); i++)
-			if (plotList_[i]->getPath() == file.path())
-				return plotList_[i];
-
-		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()), file.getSize());
-		plotList_.emplace_back(plotFile);
-
-		// MinerLogger::write("Plot " + std::to_string(this->plotList.size()) + ": " + file);
-
-		return plotFile;
-	}
-
-	return nullptr;
-}
-
 uint32_t Burst::MinerConfig::getMiningIntensity() const
 {
 	return miningIntensity_;
 }
 
-const std::unordered_map<std::string, Burst::MinerConfig::PlotList>& Burst::MinerConfig::getPlotList() const
+const std::vector<std::shared_ptr<Burst::PlotDir>>& Burst::MinerConfig::getPlotDirs() const
 {
 	return plotDirs_;
 }
@@ -826,6 +953,9 @@ const std::string& Burst::MinerConfig::getPassphrase() const
 
 uint32_t Burst::MinerConfig::getMaxPlotReaders() const
 {
+	if (maxPlotReaders_ == 0)
+		return static_cast<uint32_t>(plotDirs_.size());
+
 	return maxPlotReaders_;
 }
 

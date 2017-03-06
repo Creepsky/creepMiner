@@ -241,13 +241,16 @@ std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pa
 	auto& wallet = *args.first;
 	auto& accounts = *args.second;
 
-	// we cheat here a little bit and use the submission max retry set in config
-	// for max retry fetching the last winner
-	for (auto loop = 0u;
-		loop < MinerConfig::getConfig().getSubmissionMaxRetry() ||
-		MinerConfig::getConfig().getSubmissionMaxRetry() == 0;
-		++loop)
+	if (!wallet.isActive())
+		return nullptr;
+
+	// TODO: would be good to have a setting for this 
+	const auto maxLoops = 5;
+
+	for (auto loop = 0; loop < maxLoops; ++loop)
 	{
+		log_debug(MinerLogger::wallet, "get last winner loop %i/%i", loop + 1, maxLoops);
+
 		if (wallet.getWinnerOfBlock(lastBlockheight, lastWinner))
 		{
 			// we are the winner :)
@@ -259,7 +262,8 @@ std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pa
 			}
 
 			auto winnerAccount = std::make_shared<Account>(wallet, lastWinner);
-			winnerAccount->getName();
+			auto futureName = winnerAccount->getNameAsync();
+			futureName.wait();
 
 			log_ok_if(MinerLogger::miner, MinerLogger::hasOutput(LastWinner), std::string(50, '-') + "\n"
 				"last block winner: \n"

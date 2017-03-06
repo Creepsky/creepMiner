@@ -82,7 +82,7 @@ std::string Burst::Account::getName()
 {
 	Poco::Mutex::ScopedLock lock{ mutex_ };
 
-	if (name_.isNull())
+	if (name_.isNull() && wallet_->isActive())
 		getNameAsync();
 
 	return name_.value("");
@@ -96,6 +96,9 @@ Poco::ActiveResult<std::string> Burst::Account::getNameAsync(bool reset)
 Burst::AccountId Burst::Account::getRewardRecipient()
 {
 	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
+
+	if (!wallet_->isActive())
+		return rewardRecipient_.value(0);
 
 	if (rewardRecipient_.isNull())
 		getRewardRecipientAsync();
@@ -132,6 +135,9 @@ Poco::JSON::Object::Ptr Burst::Account::toJSON() const
 
 std::string Burst::Account::runGetName(const bool& reset)
 {
+	if (!wallet_->isActive())
+		return "";
+
 	return getHelper<std::string>(name_, reset, mutex_, [this](std::string& name)
 	{
 		return wallet_->getNameOfAccount(id_, name);
@@ -140,6 +146,9 @@ std::string Burst::Account::runGetName(const bool& reset)
 
 Burst::AccountId Burst::Account::runGetRewardRecipient(const bool& reset)
 {
+	if (!wallet_->isActive())
+		return 0;
+
 	return getHelper<AccountId>(rewardRecipient_, reset, mutex_, [this](AccountId& recipient)
 	{
 		return wallet_->getRewardRecipientOfAccount(id_, recipient);

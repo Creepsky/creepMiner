@@ -52,12 +52,22 @@ namespace Burst
 		return stream.str();
 	}
 
+	enum class PlotCheckResult
+	{
+		Ok,
+		Error,
+		EmptyParameter,
+		InvalidParameter,
+		WrongStaggersize,
+		Incomplete
+	};
+
 	bool isNumberStr(const std::string& str);
 	std::string getFileNameFromPath(const std::string& strPath);
 	std::vector<std::string>& splitStr(const std::string& s, char delim, std::vector<std::string>& elems);
 	std::vector<std::string> splitStr(const std::string& s, char delim);
 	std::vector<std::string> splitStr(const std::string& s, const std::string& delim);
-	bool isValidPlotFile(const std::string& filePath);
+	PlotCheckResult isValidPlotFile(const std::string& filePath);
 	std::string getAccountIdFromPlotFile(const std::string& path);
 	std::string getStartNonceFromPlotFile(const std::string& path);
 	std::string getNonceCountFromPlotFile(const std::string& path);
