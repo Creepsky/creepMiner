@@ -87,7 +87,7 @@ void Burst::RandomNonceGenerator::runTask()
 	std::mt19937 mt(rd());
 	std::uniform_int_distribution<uint64_t> dist;
 	
-	auto mem = calloc(Settings::PlotSize, staggerSize_);
+	auto mem = calloc(Settings::PlotSize, static_cast<size_t>(staggerSize_));
 	auto gensig = miner_->getGensig();
 
 	std::vector<ScoopData> buffer;
@@ -97,31 +97,31 @@ void Burst::RandomNonceGenerator::runTask()
 
 	for (auto i = 0u; (i < randomNonces_ || randomNonces_ == 0) && !isCancelled(); ++i)
 	{
-		auto startNonce = dist(mt);
+		//auto startNonce = dist(mt);
 
-		PlotGenerator plotGenerator{account_, staggerSize_, startNonce, 1, mem};
-		plotGenerator.run();
+		//PlotGenerator plotGenerator{account_, staggerSize_, startNonce, 1, mem};
+		//plotGenerator.run();
 
-		//PlotGenerator::generate(account_, staggerSize_, startNonce, mem);
+		////PlotGenerator::generate(account_, staggerSize_, startNonce, mem);
 
-		auto begin = reinterpret_cast<char*>(mem);
-		//auto end = begin + Settings::PlotSize * staggerSize_;
-		
-		Shabal256 hash;
-		std::istringstream{begin}.read(scoopData, staggerSize_);
+		//auto begin = reinterpret_cast<char*>(mem);
+		////auto end = begin + Settings::PlotSize * staggerSize_;
+		//
+		//Shabal256 hash;
+		//std::istringstream{begin}.read(scoopData, staggerSize_);
 
-		HashData target;
-		auto test = buffer.data();
-		hash.update(gensig.data(), Settings::HashSize);
-		hash.update(test, Settings::ScoopSize);
-		hash.close(&target[0]);
+		//HashData target;
+		//auto test = buffer.data();
+		//hash.update(gensig.data(), Settings::HashSize);
+		//hash.update(test, Settings::ScoopSize);
+		//hash.close(&target[0]);
 
-		uint64_t targetResult = 0;
-		memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
-		auto deadline = targetResult / miner_->getBaseTarget();
+		//uint64_t targetResult = 0;
+		//memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
+		//auto deadline = targetResult / miner_->getBaseTarget();
 
-		auto nonceNum = startNonce;
-		miner_->submitNonce(nonceNum, account_, deadline, "");
+		//auto nonceNum = startNonce;
+		//miner_->submitNonce(nonceNum, account_, deadline, "");
 
 		//PlotReader plotReader{ *miner_, std::make_unique<std::istringstream>(begin), account_, startNonce,
 			//1, staggerSize_ };

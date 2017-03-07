@@ -11,6 +11,14 @@ namespace Poco {namespace Net {
 
 namespace Burst
 {
+	const std::string X_Plotfile = "X-Plotfile";
+	const std::string X_Deadline = "X-Deadline";
+	const std::string X_PlotsHash = "X-PlotsHash";
+	const std::string X_Capacity = "X-Capacity";
+	const std::string X_Miner = "X-Miner";
+
+	class Deadline;
+
 	class Request
 	{
 	public:
@@ -36,7 +44,7 @@ namespace Burst
 	public:
 		NonceRequest(std::unique_ptr<Poco::Net::HTTPClientSession> socket);
 
-		NonceResponse submit(uint64_t nonce, uint64_t accountId);
+		NonceResponse submit(const Deadline& deadline);
 
 		std::unique_ptr<Poco::Net::HTTPClientSession> transferSession();
 

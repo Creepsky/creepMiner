@@ -8,7 +8,6 @@
 
 #include "MinerLogger.hpp"
 #include <iostream>
-#include <iomanip>
 #include <mutex>
 #include "MinerConfig.hpp"
 #include <Poco/NestedDiagnosticContext.h>
@@ -32,6 +31,8 @@
 #include <Poco/SplitterChannel.h>
 #include <Poco/File.h>
 #include "Output.hpp"
+#include <fstream>
+#include <Poco/FileStream.h>
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -54,6 +55,7 @@ Poco::Logger& Burst::MinerLogger::general = Poco::Logger::get("general");
 std::unordered_map<uint32_t, bool> Burst::MinerLogger::output_ = {
 	{ LastWinner, true },
 	{ NonceFound, true },
+	{ NonceOnTheWay, true },
 	{ NonceSent, true },
 	{ NonceConfirmed, true },
 	{ PlotDone, false },
@@ -77,6 +79,7 @@ const std::unordered_map<std::string, Burst::MinerLogger::ColoredPriorityConsole
 
 Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel{"startup.log"};
 Poco::FormattingChannel* Burst::MinerLogger::fileFormatter_ = nullptr;
+std::string Burst::MinerLogger::logFileName_ = getFilenameWithtimestamp("creepMiner", "log");
 
 std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
 	{
@@ -163,6 +166,11 @@ void Burst::MinerLogger::ColoredPriorityConsoleChannel::setPriority(Poco::Messag
 	priority_ = priority;
 }
 
+Poco::Message::Priority Burst::MinerLogger::ColoredPriorityConsoleChannel::getPriority() const
+{
+	return priority_;
+}
+
 bool Burst::MinerLogger::setChannelPriority(const std::string& channel, Poco::Message::Priority priority)
 {
 	auto iter = channels_.find(channel);
@@ -211,35 +219,83 @@ bool Burst::MinerLogger::setChannelPriority(const std::string& channel, const st
 	return false;
 }
 
-std::string Burst::MinerLogger::setFilePath(const std::string& path)
+std::string Burst::MinerLogger::getChannelPriority(const std::string& channel)
+{
+	auto iter = channels_.find(channel);
+
+	if (iter != channels_.end())
+	{
+		switch (iter->second->getPriority())
+		{
+		case Poco::Message::PRIO_FATAL:
+			return "fatal";
+		case Poco::Message::PRIO_CRITICAL:
+			return "critical";
+		case Poco::Message::PRIO_ERROR:
+			return "error";
+		case Poco::Message::PRIO_WARNING:
+			return "warning";
+		case Poco::Message::PRIO_NOTICE:
+			return "notice";
+		case Poco::Message::PRIO_INFORMATION:
+			return "information";
+		case Poco::Message::PRIO_DEBUG:
+			return "debug";
+		case Poco::Message::PRIO_TRACE:
+			return "trace";
+		}
+	}
+
+	return "";
+}
+
+std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 {
 	try
 	{
-		Poco::Path fullPath{ path };
+		Poco::Path fullPath;
+		fullPath.parseDirectory(dir);
 
-		if (!path.empty())
+		if (!fullPath.toString().empty())
 		{
-			if (!fullPath.isDirectory())
-				throw Poco::ApplicationException(Poco::format("%s is not a directory!", path));
-
 			Poco::File file{ fullPath };
 
-			try
-			{
-				if (!file.exists())
-					file.createDirectories();
-			}
-			catch (...)
-			{
-				throw;
-			}
+			if (!file.exists())
+				file.createDirectories();
 		}
-
-		fullPath.append(getFilenameWithtimestamp("creepMiner", "log"));
 		
+		fullPath.append(logFileName_);
 		auto logPath = fullPath.toString();
 
 		fileChannel_->close();
+
+		auto oldLogfilePath = fileChannel_->getProperty("path");
+
+		if (!oldLogfilePath.empty())
+		{
+			std::ifstream oldLogfile{ oldLogfilePath, std::ios::in | std::ios::binary | std::ios::ate };
+
+			if (oldLogfile)
+			{
+				auto fileSize = oldLogfile.tellg();
+				oldLogfile.seekg(0, std::ios::beg);
+
+				std::vector<char> bytes(fileSize);
+				oldLogfile.read(&bytes[0], fileSize);
+
+				std::string oldContent{&bytes[0], fileSize};
+
+				oldLogfile.close();
+
+				Poco::File oldLogfileObj{ oldLogfilePath };
+				oldLogfileObj.remove();
+
+				std::ofstream newLogfile{ logPath, std::ios::out | std::ios::binary };
+				newLogfile << oldContent;
+				newLogfile.close();
+			}
+		}
+
 		fileChannel_->setProperty("path", logPath);
 		fileChannel_->open();
 
@@ -396,16 +452,12 @@ void Burst::MinerLogger::setup()
 {
 	// create (not open yet) FileChannel
 	{
-		fileChannel_ = new Poco::FileChannel{getFilenameWithtimestamp("creepMiner", "log")};
+		fileChannel_ = new Poco::FileChannel;
 
-		// rotate every 5 MB
+		// rotate every 1 MB
 		fileChannel_->setProperty("rotation", "1 M");
-		// archive log
-		fileChannel_->setProperty("archive", "number");
-		// compress log
-		fileChannel_->setProperty("compress", "true");
 		// purge old logs
-		fileChannel_->setProperty("purgeAge", "1 weeks");
+		fileChannel_->setProperty("purgeAge", "1 days");
 
 		auto filePattern = new Poco::PatternFormatter{"%d.%m.%Y %H:%M:%S (%I, %U, %u, %p): %t"};
 		fileFormatter_ = new Poco::FormattingChannel{filePattern, fileChannel_};
@@ -427,6 +479,7 @@ void Burst::MinerLogger::setup()
 		Poco::Logger::get(name).setChannel(splitter);
 	}
 	
+	setLogDir("");
 }
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::getTextTypeColor(TextType type)

@@ -8,21 +8,17 @@
 
 #pragma once
 
-#include <unordered_map>
-#include "MinerShabal.hpp"
 #include "Declarations.hpp"
 #include "Deadline.hpp"
 #include <memory>
 #include "Account.hpp"
 #include "Wallet.hpp"
 #include <Poco/TaskManager.h>
-#include <vector>
-#include <Poco/JSON/Object.h>
 #include "MinerData.hpp"
 #include <Poco/NotificationQueue.h>
-#include <Poco/ThreadPool.h>
 #include "PlotVerifier.hpp"
 #include "WorkerList.hpp"
+#include "Response.hpp"
 
 namespace Poco
 {
@@ -47,34 +43,32 @@ namespace Burst
 		void run();
 		void stop();
 
-		size_t getScoopNum() const;
+		uint64_t getScoopNum() const;
 		uint64_t getBaseTarget() const;
 		uint64_t getBlockheight() const;
 		uint64_t getTargetDeadline() const;
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
 		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
-		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, std::string plotFile);
+
+		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile);
+		Poco::ActiveMethod<NonceConfirmation, std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>, Miner> submitNonceAsync;
 
 		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
 		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
-		std::vector<Poco::JSON::Object> getBlockData() const;
+		//std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
+		std::shared_ptr<Account> getAccount(AccountId id);
 
 	private:
 		bool getMiningInfo();
+		NonceConfirmation submitNonceAsyncImpl(const std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>& data);
+		SubmitResponse addNewDeadline(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile,
+			 std::shared_ptr<Deadline>& newDeadline);
 
 		bool running_ = false;
 		MinerData data_;
-		Shabal256 hash;
-		GensigData gensig_;
-		std::string gensigStr_;
-		std::unordered_map<AccountId, Deadlines> deadlines_;
-		Poco::FastMutex deadlinesLock_;
 		std::shared_ptr<PlotReadProgress> progress_;
-		uint64_t currentBlockHeight_ = 0u;
-		uint64_t currentBaseTarget_ = 0u;
-		uint64_t targetDeadline_ = 0u;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
 		Accounts accounts_;
 		Wallet wallet_;

@@ -22,6 +22,7 @@ namespace Burst
 		std::string inputPath = "";
 		uint64_t block = 0;
 		GensigData gensig;
+		uint64_t baseTarget = 0;
 	};
 
 	class PlotVerifier : public Poco::Task
@@ -31,7 +32,8 @@ namespace Burst
 		void runTask() override;
 
 		static void verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset,
-			const GensigData& gensig, uint64_t accountId, const std::string& inputPath, Miner& miner, uint64_t targetDeadline = 0); 
+		                   const GensigData& gensig, uint64_t accountId, const std::string& inputPath, uint64_t baseTarget,
+		                   uint64_t blockheight, Miner& miner); 
 
 	private:
 		Miner* miner_;

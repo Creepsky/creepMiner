@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <Poco/Task.h>
+#include "Response.hpp"
 
 namespace Burst
 {
@@ -13,6 +14,9 @@ namespace Burst
 	public:
 		NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline);
 		~NonceSubmitter() override = default;
+
+		Poco::ActiveMethod<NonceConfirmation, void, NonceSubmitter> submitAsync;
+		NonceConfirmation submit();
 
 		void runTask() override;
 

@@ -1,6 +1,41 @@
+class Block
+{
+	constructor()
+	{
+		this.panel = $("<div class='panel panel-primary'></div>");
+		this.head = $("<div class='panel-heading'></div>");
+		this.body = $("<div class='panel-body'></div>");
+		this.data = $("<ul id='blkdata' class='list-group'></ul>");
+				
+		this.panel.append(this.head);
+		this.panel.append(this.body);
+		this.panel.append(this.data);
+		
+		this.bestDeadline = null;
+	}
+	
+	newBlock(block)
+	{
+		this.head.html("Block " + block["block"]);
+		this.body.html("<div class='row'><div class='col-md-2 col-xs-4'>Time</div><div class='col-md-10 col-xs-8'>" + block["time"] + "</div></div>");
+		this.body.append($("<div class='row'><div class='col-md-2 col-xs-4'>Scoop</div><div class='col-md-10 col-xs-8'>" + block["scoop"] + "</div></div>"));
+		this.body.append($("<div class='row'><div class='col-md-2 col-xs-4'>Base target</div><div class='col-md-10 col-xs-8'>" + block["baseTarget"] + "</div></div>"));
+		//this.body.append($("<div class='row'><div class='col-md-2 col-xs-4'>Gensignature</div><div class='col-md-10 col-xs-8'>" + block["gensigStr"] + "</div></div>"));
+		
+		this.data.empty();
+	}
+	
+	addLine(message, id, time, type)
+	{
+		if (!type)
+			type = "";
+		
+		this.data.prepend(getNewLine(message, id, time, type));
+		//window.scrollTo(0, document.body.scrollHeight);
+	}
+}
+
 var ws;
-var cnt = $("#container");
-var blkdata;
 var system = $("#system");
 var thisBlockBest;
 var thisBlockBestElement = $("#thisBlockBest");
@@ -26,39 +61,24 @@ var wonBlocks = $("#wonBlocks");
 var bestDeadlinesChart = $("#deadlinesChart");
 var plot;
 var deadlinesInfo = $("#deadlinesInfo");
+var block = new Block();
 
 if (confirmedSound)
 	confirmedSound.volume = 0.5;
 
-function newBlock(block)
-{		
-	var html = "<div class='panel panel-primary'>";
-	html	+= "	<div class='panel-heading'>Block " + block["block"] + "</div>";
-	html	+= "	<div class='panel-body'>";
-	html	+= "		<p>";
-	html	+= "			<div class='row'><div class='col-md-2 col-xs-4'>Time</div><div class='col-md-10 col-xs-8'>" + block["time"] + "</div></div>";
-	html	+= "			<div class='row'><div class='col-md-2 col-xs-4'>Scoop</div><div class='col-md-10 col-xs-8'>" + block["scoop"] + "</div></div>";
-	html	+= "			<div class='row'><div class='col-md-2 col-xs-4'>Base target</div><div class='col-md-10 col-xs-8'>" + block["baseTarget"] + "</div></div>";
-	//html	+= "			<div class='row'><div class='col-md-2 col-xs-4'>Gensignature</div><div class='col-md-10 col-xs-8'>" + block["gensigStr"] + "</div></div>";
-	html	+= "		</p>";
-	html	+= "	</div>";
-	html	+= "	<ul id='blkdata' class='list-group'>";
-	html	+= "	</ul>";
-	html	+= "</div>";
-	
-	cnt.html(html);
-	blkdata = $("#blkdata");
-	thisBlockBest = null;
+function newBlock(json)
+{
+	block.newBlock(json);
 	thisBlockBestElement.html(nullDeadline);
-	setMinedBlocks(block["blocksMined"]);
-	document.title = name + " (" + block["block"] + ")";
-	checkAddBestOverall(block["bestOverallNum"], block["bestOverall"]);
-	setConfirmedDeadlines(block["deadlinesConfirmed"]);
+	setMinedBlocks(json["blocksMined"]);
+	document.title = name + " (" + json["block"] + ")";
+	checkAddBestOverall(json["bestOverallNum"], json["bestOverall"]);
+	setConfirmedDeadlines(json["deadlinesConfirmed"]);
 	setProgress(0);
 	lastWinnerContainer.hide();
-	avgDeadline.html(block["deadlinesAvg"]);
-	wonBlocks.html(block["blocksWon"]);
-	plot.setData([block["bestDeadlines"]]);
+	avgDeadline.html(json["deadlinesAvg"]);
+	wonBlocks.html(json["blocksWon"]);
+	plot.setData([json["bestDeadlines"]]);
 	plot.setupGrid();
 	plot.draw();
 	showDeadlinesInfo(null);
@@ -72,16 +92,6 @@ function getNewLine(message, id, time, type)
 	return "<li id='" + id + "' class='list-group-item clearfix" + type + "'>" +
 		message + "<p class='pull-right'>" + time + "</p>" +
 		"</li>";
-}
-		
-function addLine(message, id, time, type)
-{
-	if (!type)
-		type = "";
-		
-	blkdata.prepend(getNewLine(message, id, time, type));
-	
-	//window.scrollTo(0, document.body.scrollHeight);
 }
 
 function addMinedBlocks()
@@ -100,7 +110,7 @@ function nonceFound(deadline)
 {
 	if (noncesFound.prop("checked"))
 	{
-		addLine("<span class='glyphicon glyphicon-zoom-in' aria-hidden='true'></span> <b>" +
+		block.addLine("<span class='glyphicon glyphicon-zoom-in' aria-hidden='true'></span> <b>" +
 			deadline["account"] + "</b>: nonce found (" + deadline["deadline"] + ")",
 			deadline["nonce"], deadline["time"], "nonce-found");
 	}
@@ -173,7 +183,7 @@ function addOrConfirm(deadline)
 }
 
 function addSystemEntry(key, value)
-{
+{	
 	var html = "<div class='row'>";
 	html	+= "	<div class='col-md-5 col-xs-5'>" + key + "</div>";
 	html	+= "	<div class='col-md-7 col-xs-7'>" + value + "</div>";
@@ -193,7 +203,11 @@ function config(cfg)
 	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"]));
 	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"]));
 	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
-	addSystemEntry("Timeout", cfg["timeout"]);
+	addSystemEntry("Buffersize", cfg["bufferSize"]);
+	addSystemEntry("Target deadline", cfg["targetDeadline"]);
+	addSystemEntry("Plot readers", cfg["maxPlotReaders"]);
+	addSystemEntry("Mining intensity", cfg["miningIntensity"]);
+	addSystemEntry("Submission retry", cfg["submissionMaxRetry"]);
 }
 
 function setConfirmedDeadlines(deadlines)
@@ -341,7 +355,8 @@ function connect()
 	}
 }
 
-function deadlineFormat(val) {
+function deadlineFormat(val)
+{
 	var secs = Math.floor(val);
 	var mins = Math.floor(secs / 60);
 	var hours = Math.floor(mins / 60);
@@ -429,6 +444,7 @@ window.onload = function(evt)
 	connect();
 	deActivateConfirmationSound(true);
 	showDeadlinesInfo(null);
+	$("#container").html(block.panel);
 }
 
 window.onresize = function(evt)

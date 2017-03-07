@@ -17,7 +17,7 @@
 #include <Poco/Task.h>
 #include <atomic>
 #include <Poco/Notification.h>
-#include <atomic>
+#include "MinerConfig.hpp"
 
 namespace Poco
 {
@@ -30,6 +30,20 @@ namespace Burst
 	class PlotFile;
 	class PlotReadProgress;
 
+	class GlobalBufferSize
+	{
+	public:
+		void reset(uint64_t max, uint64_t blockheight);
+		bool add(uint64_t sizeToAdd, uint64_t blockheight);
+		void remove(uint64_t sizeToRemove, uint64_t blockheight);
+
+	private:
+		uint64_t size_ = 0;
+		uint64_t max_ = 0;
+		uint64_t blockheight_ = 0;
+		mutable Poco::FastMutex mutex_;
+	};
+
 	struct PlotReadNotification : Poco::Notification
 	{
 		typedef Poco::AutoPtr<PlotReadNotification> Ptr;
@@ -38,6 +52,9 @@ namespace Burst
 		uint64_t scoopNum = 0;
 		GensigData gensig;
 		uint64_t blockheight = 0;
+		uint64_t baseTarget = 0;
+		std::vector<std::pair<std::string, std::vector<std::shared_ptr<PlotFile>>>> relatedPlotLists;
+		PlotDir::Type type = PlotDir::Type::Sequential;
 	};
 
 	class PlotReader : public Poco::Task
@@ -49,7 +66,7 @@ namespace Burst
 
 		void runTask() override;
 
-		static std::atomic_uint_fast64_t sumBufferSize_;
+		static GlobalBufferSize globalBufferSize;
 
 	private:
 		Miner& miner_;
@@ -71,6 +88,6 @@ namespace Burst
 
 	private:
 		uintmax_t progress_ = 0, max_ = 0;
-		std::mutex lock_;
+		mutable Poco::Mutex lock_;
 	};
 }

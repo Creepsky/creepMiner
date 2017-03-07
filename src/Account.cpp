@@ -4,30 +4,48 @@
 #include "Wallet.hpp"
 //#include "Wallet.hpp"
 #include <thread>
+#include "nxt/nxt_address.h"
 
-Burst::Account::Account(): id_(0)
-						 , wallet_(nullptr)
+Burst::Account::Account()
+	: Account {0}
 {}
 
-Burst::Account::Account(Burst::Wallet& wallet, AccountId id, bool fetchAll)
-	: id_{ id }, wallet_{ &wallet }
+Burst::Account::Account(AccountId id)
+	: id_{id},
+	  wallet_{nullptr},
+	  getName_{this, &Account::runGetName},
+	  getRewardRecipient_ {this, &Account::runGetRewardRecipient}
 {}
 
-void Burst::Account::setWallet(Wallet& wallet)
+Burst::Account::Account(const Wallet& wallet, AccountId id, bool fetchAll)
+	: id_{id},
+	  wallet_{&wallet},
+	  getName_{this, &Account::runGetName},
+	  getRewardRecipient_ {this, &Account::runGetRewardRecipient}
 {
+	if (fetchAll)
+	{
+		getNameAsync(true);
+		getRewardRecipientAsync();
+	}
+}
+
+void Burst::Account::setWallet(const Wallet& wallet)
+{
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	wallet_ = &wallet;
 }
 
 Burst::AccountId Burst::Account::getId() const
 {
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	return id_;
 }
 
 template <typename T>
-const T& getAsyncHelper(Poco::Nullable<T>& val, bool reset, std::function<bool(T&)> fetchFunction)
+const T& getHelper(Poco::Nullable<T>& val, bool reset, Poco::Mutex& mutex, std::function<bool(T&)> fetchFunction)
 {
-	static Poco::FastMutex mutex;
-	Poco::ScopedLock<Poco::FastMutex> lock(mutex);
+	Poco::ScopedLockWithUnlock<Poco::Mutex> lock{ mutex };
 
 	// delete cached name if resetflag is set
 	if (reset && !val.isNull())
@@ -40,52 +58,107 @@ const T& getAsyncHelper(Poco::Nullable<T>& val, bool reset, std::function<bool(T
 		// we insert an empty name in the map
 		val = T{};
 
-		// start thread to fetch name of account
-		std::thread fetchThread([&val, fetchFunction]()
-			{
-				T fetchedVal;
+		lock.unlock();
 
-				if (fetchFunction(fetchedVal))
-				{
-					Poco::ScopedLock<Poco::FastMutex> lock(mutex);
-					val = fetchedVal;
-				}
-				else
-				{
-					Poco::ScopedLock<Poco::FastMutex> lock(mutex);
-					val.clear();
-				}
-			});
+		T fetchedVal;
 
-		fetchThread.detach();
+		if (fetchFunction(fetchedVal))
+		{
+			Poco::Mutex::ScopedLock innerLock{ mutex };
+			val = fetchedVal;
+		}
+		else
+		{
+			Poco::Mutex::ScopedLock innerLock{ mutex };
+			val.clear();
+		}
 	}
 
+	Poco::Mutex::ScopedLock innerLock{ mutex };
 	return val;
 }
 
-const std::string& Burst::Account::getName(bool reset)
+std::string Burst::Account::getName()
 {
-	return getAsyncHelper<std::string>(name_, reset, [this](std::string& name)
-		{
-			return wallet_->getNameOfAccount(id_, name);
-		});
+	Poco::Mutex::ScopedLock lock{ mutex_ };
+
+	if (name_.isNull() && wallet_->isActive())
+		getNameAsync();
+
+	return name_.value("");
 }
 
-const Burst::AccountId& Burst::Account::getRewardRecipient(bool reset)
+Poco::ActiveResult<std::string> Burst::Account::getNameAsync(bool reset)
 {
-	return getAsyncHelper<AccountId>(rewardRecipient_, reset, [this](AccountId& recipient)
-		{
-			return wallet_->getRewardRecipientOfAccount(id_, recipient);
-		});
+	return getName_(reset);
 }
 
-Burst::Deadlines& Burst::Account::getDeadlines()
+Burst::AccountId Burst::Account::getRewardRecipient()
 {
-	return deadlines_;
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
+
+	if (!wallet_->isActive())
+		return rewardRecipient_.value(0);
+
+	if (rewardRecipient_.isNull())
+		getRewardRecipientAsync();
+
+	return rewardRecipient_.value(0);
+}
+
+Poco::ActiveResult<Burst::AccountId> Burst::Account::getRewardRecipientAsync(bool reset)
+{
+	return getRewardRecipient_(reset);
+}
+
+std::string Burst::Account::getAddress() const
+{
+	return NxtAddress(getId()).to_string();
+}
+
+Poco::JSON::Object::Ptr Burst::Account::toJSON() const
+{
+	Poco::Mutex::ScopedLock lock{ mutex_ };
+
+	Poco::JSON::Object::Ptr json(new Poco::JSON::Object);
+
+	json->set("numeric", getId());
+	json->set("address", getAddress());
+
+	auto name = name_.value("");
+
+	if (!name.empty())
+		json->set("name", name);
+
+	return json;
+}
+
+std::string Burst::Account::runGetName(const bool& reset)
+{
+	if (!wallet_->isActive())
+		return "";
+
+	return getHelper<std::string>(name_, reset, mutex_, [this](std::string& name)
+	{
+		return wallet_->getNameOfAccount(id_, name);
+	});
+}
+
+Burst::AccountId Burst::Account::runGetRewardRecipient(const bool& reset)
+{
+	if (!wallet_->isActive())
+		return 0;
+
+	return getHelper<AccountId>(rewardRecipient_, reset, mutex_, [this](AccountId& recipient)
+	{
+		return wallet_->getRewardRecipientOfAccount(id_, recipient);
+	});
 }
 
 std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, Wallet& wallet, bool persistent)
 {
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
+
 	auto iter = accounts_.find(id);
 
 	// if the account is not in the cache, we have to fetch him
@@ -106,5 +179,6 @@ std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, Wallet
 
 bool Burst::Accounts::isLoaded(AccountId id) const
 {
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	return accounts_.find(id) != accounts_.end();
 }

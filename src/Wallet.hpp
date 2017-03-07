@@ -29,19 +29,19 @@ namespace Burst
 		Wallet(Wallet&& rhs) = default;
 		~Wallet();
 
-		bool getWinnerOfBlock(uint64_t block, AccountId& winnerId);
-		bool getNameOfAccount(AccountId account, std::string& name);
-		bool getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient);
-		bool getLastBlock(uint64_t& block);
-		void getAccount(AccountId id, Account& account);
+		bool getWinnerOfBlock(uint64_t block, AccountId& winnerId) const;
+		bool getNameOfAccount(AccountId account, std::string& name) const;
+		bool getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient) const;
+		bool getLastBlock(uint64_t& block) const;
+		void getAccount(AccountId id, Account& account) const;
+
+		bool isActive() const;
 
 		Wallet& operator=(const Wallet& rhs) = delete;
 		Wallet& operator=(Wallet&& rhs) = default;
 
 	private:
-		bool sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::Ptr& json);
-
-		std::unique_ptr<Poco::Net::HTTPClientSession> walletSession_;
+		bool sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::Ptr& json) const;
 		Url url_;
 	};
 }

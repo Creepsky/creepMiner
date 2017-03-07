@@ -1,7 +1,7 @@
 #include "Declarations.hpp"
 #include <string>
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 4, 3 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 5, 0 };
 
 #if defined MINING_CUDA
 const Burst::ProjectData Burst::Settings::Project = { "creepMiner CUDA", ProjectVersion };
@@ -19,5 +19,5 @@ Burst::ProjectData::ProjectData(std::string&& name, Version version)
 	: name{std::move(name)}, version{std::move(version)}
 {
 	nameAndVersion = this->name + " " + this->version.literal;
-	nameAndVersionAndOs = this->name + " " + this->version.literal + " " + Settings::OsFamily;
+	nameAndVersionAndOs = this->name + " " + this->version.literal + " " + Settings::OsFamily + " " + Settings::Arch;
 }
