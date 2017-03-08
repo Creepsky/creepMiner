@@ -164,20 +164,21 @@ std::string Burst::getStaggerSizeFromPlotFile(const std::string& path)
 
 std::string Burst::getStartNonceFromPlotFile(const std::string& path)
 {
-	size_t filenamePos = path.find_last_of("/\\");
+	auto filenamePos = path.find_last_of("/\\");
+
 	if (filenamePos == std::string::npos)
-	{
 		filenamePos = 0;
-	}
-	std::vector<std::string> fileNamePart = splitStr(path.substr(filenamePos + 1, path.length() - (filenamePos + 1)), '_');
+
+	auto fileNamePart = splitStr(path.substr(filenamePos + 1, path.length() - (filenamePos + 1)), '_');
+
 	if (fileNamePart.size() > 3)
 	{
-		std::string nonceStartPart = fileNamePart[1];
+		auto nonceStartPart = fileNamePart[1];
+
 		if (isNumberStr(nonceStartPart))
-		{
 			return nonceStartPart;
-		}
 	}
+
 	return "";
 }
 
@@ -404,12 +405,12 @@ std::string Burst::serializeDeadline(const Deadline& deadline, std::string delim
 Poco::JSON::Object Burst::createJsonDeadline(const Deadline& deadline)
 {
 	Poco::JSON::Object json;
-	json.set("nonce", deadline.getNonce());
+	json.set("nonce", std::to_string(deadline.getNonce()));
 	json.set("deadline", deadlineFormat(deadline.getDeadline()));
 	json.set("account", deadline.getAccountName());
-	json.set("accountId", deadline.getAccountId());
+	json.set("accountId", std::to_string(deadline.getAccountId()));
 	json.set("plotfile", deadline.getPlotFile());
-	json.set("deadlineNum", deadline.getDeadline());
+	json.set("deadlineNum", std::to_string(deadline.getDeadline()));
 	return json;
 }
 
@@ -433,19 +434,19 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	auto bestOverall = data.getBestDeadlineOverall();
 
 	json.set("type", "new block");
-	json.set("block", block.getBlockheight());
-	json.set("scoop", block.getScoop());
-	json.set("baseTarget", block.getBasetarget());
+	json.set("block", std::to_string(block.getBlockheight()));
+	json.set("scoop", std::to_string(block.getScoop()));
+	json.set("baseTarget", std::to_string(block.getBasetarget()));
 	json.set("gensigStr", block.getGensigStr());
 	json.set("time", getTime());
-	json.set("blocksMined", data.getBlocksMined());
-	json.set("blocksWon", data.getBlocksWon());
+	json.set("blocksMined", std::to_string(data.getBlocksMined()));
+	json.set("blocksWon", std::to_string(data.getBlocksWon()));
 	if (bestOverall != nullptr)
 	{
-		json.set("bestOverallNum", bestOverall->getDeadline());
+		json.set("bestOverallNum", std::to_string(bestOverall->getDeadline()));
 		json.set("bestOverall", deadlineFormat(bestOverall->getDeadline()));
 	}
-	json.set("deadlinesConfirmed", data.getConfirmedDeadlines());
+	json.set("deadlinesConfirmed", std::to_string(data.getConfirmedDeadlines()));
 	json.set("deadlinesAvg", deadlineFormat(data.getAverageDeadline()));
 		
 	Poco::JSON::Array bestDeadlines;
@@ -455,8 +456,8 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 		if (historicalDeadline->getBestDeadline() != nullptr)
 		{
 			Poco::JSON::Array jsonBestDeadline;
-			jsonBestDeadline.add(historicalDeadline->getBlockheight());
-			jsonBestDeadline.add(historicalDeadline->getBestDeadline()->getDeadline());
+			jsonBestDeadline.add(std::to_string(historicalDeadline->getBlockheight()));
+			jsonBestDeadline.add(std::to_string(historicalDeadline->getBestDeadline()->getDeadline()));
 			bestDeadlines.add(jsonBestDeadline);
 		}
 	}
@@ -477,8 +478,8 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	json.set("bufferSize", memToString(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, 0));
 	json.set("targetDeadline", deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
-	json.set("maxPlotReaders", MinerConfig::getConfig().getMaxPlotReaders());
-	json.set("miningIntensity", MinerConfig::getConfig().getMiningIntensity());
+	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
+	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));
 	json.set("submissionMaxRetry", MinerConfig::getConfig().getSubmissionMaxRetry() == 0 ?
 		"unlimited" :
 		std::to_string(MinerConfig::getConfig().getSubmissionMaxRetry()));
@@ -514,7 +515,7 @@ Poco::JSON::Object Burst::createJsonWonBlocks(const MinerData& data)
 {
 	Poco::JSON::Object json;
 	json.set("type", "blocksWonUpdate");
-	json.set("blocksWon", data.getBlocksWon());
+	json.set("blocksWon", std::to_string(data.getBlocksWon()));
 	return json;
 }
 
