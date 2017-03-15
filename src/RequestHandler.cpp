@@ -267,14 +267,7 @@ void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& requ
 		}
 
 		if (request.has(X_Plotfile))
-		{
-			std::stringstream sstr{ request.get(X_Plotfile) };
-			std::stringstream sstrDecoded;
-			Poco::Base64Decoder base64{ sstr };
-			Poco::StreamCopier::copyStream(base64, sstrDecoded);
-
-			plotfile = sstrDecoded.str();
-		}
+			plotfile = request.get(X_Plotfile);
 
 		if (request.has(X_Deadline))
 			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));

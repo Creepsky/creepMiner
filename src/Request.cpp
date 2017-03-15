@@ -75,26 +75,19 @@ Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 	uri.addQueryParameter("requestType", "submitNonce");
 	uri.addQueryParameter("nonce", std::to_string(deadline.getNonce()));
 	uri.addQueryParameter("accountId", std::to_string(deadline.getAccountId()));
-
-	std::stringstream sstr;
-
-	Poco::Base64Encoder base64{ sstr };
-	base64 << deadline.getPlotFile();
-	base64.close();
 	
 	if (!MinerConfig::getConfig().getPassphrase().empty())
 		uri.addQueryParameter("secretPhrase", MinerConfig::getConfig().getPassphrase());
-
-	std::string responseData;
-
+	
 	HTTPRequest request{HTTPRequest::HTTP_POST, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
 	request.set(X_Capacity, std::to_string(PlotSizes::getTotal()));
 	request.set(X_PlotsHash, MinerConfig::getConfig().getConfig().getPlotsHash());
 	request.set(X_Miner, Settings::Project.nameAndVersionAndOs);
 	request.set(X_Deadline, std::to_string(deadline.getDeadline()));
-	request.set(X_Plotfile, sstr.str());
+	request.set(X_Plotfile, deadline.getPlotFile());
 	request.setKeepAlive(false);
-	request.setContentLength(0);
+	request.setChunkedTransferEncoding(true);
+	request.setContentType("text/plain");
 
 	auto response = request_.send(request);
 
