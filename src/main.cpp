@@ -90,33 +90,36 @@ int main(int argc, const char* argv[])
 		// check for a new version
 		try
 		{
+			// fetch the online version file
 			const std::string host = "https://github.com/Creepsky/creepMiner";
 			const std::string versionPrefix = "version:";
-
+			//
 			Burst::Url url{ "https://raw.githubusercontent.com" };
-			
+			//
 			Poco::Net::HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
-
+			//
 			Burst::Request request{ url.createSession() };
 			auto response = request.send(getRequest);
-
+			//
 			std::string responseString;
-
+			//
 			if (response.receive(responseString))
 			{
+				// first we check if the online version begins with the prefix
 				if (Poco::icompare(responseString, 0, versionPrefix.size(), versionPrefix) == 0)
 				{
-					auto originVersion = responseString.substr(versionPrefix.size());
+					auto onlineVersionStr = responseString.substr(versionPrefix.size());
 
-					if (originVersion != Burst::Settings::ProjectVersion.literal)
-						log_system(general, "There is a new version (%s) on\n\t%s", originVersion, host);
+					Burst::Version onlineVersion{ onlineVersionStr };
+
+					if (onlineVersion > Burst::Settings::ProjectVersion)
+						log_system(general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
 				}
 			}
 		}
+		// just skip if version could not be determined
 		catch (...)
-		{
-			
-		}
+		{ }
 
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 		{
