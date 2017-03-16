@@ -242,7 +242,8 @@ void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& requ
 		{
 			if (request.has(X_PlotsHash))
 			{
-				plotsHash = request.get(X_PlotsHash);
+				auto plotsHashEncoded = request.get(X_PlotsHash);
+				Poco::URI::decode(plotsHashEncoded, plotsHash);
 				PlotSizes::set(plotsHash, Poco::NumberParser::parseUnsigned64(request.get(X_Capacity)));
 			}
 		}
@@ -267,7 +268,10 @@ void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& requ
 		}
 
 		if (request.has(X_Plotfile))
-			plotfile = request.get(X_Plotfile);
+		{
+			auto plotfileEncoded = request.get(X_Plotfile);
+			Poco::URI::decode(plotfileEncoded, plotfile);
+		}
 
 		if (request.has(X_Deadline))
 			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
