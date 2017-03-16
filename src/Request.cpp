@@ -94,8 +94,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 	request.set(X_Deadline, std::to_string(deadline.getDeadline()));
 	request.set(X_Plotfile, plotFileStr);
 	request.setKeepAlive(false);
-	request.setChunkedTransferEncoding(true);
-	request.setContentType("text/plain");
+	request.setContentLength(0);
 
 	auto response = request_.send(request);
 
