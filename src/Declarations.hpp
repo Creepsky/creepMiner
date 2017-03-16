@@ -16,6 +16,9 @@ namespace Burst
 	struct Version
 	{
 		Version(uint32_t major, uint32_t minor, uint32_t build);
+		Version(std::string version);
+
+		bool operator>(const Version& rhs) const;
 
 		uint32_t major, minor, build;
 		std::string literal;
