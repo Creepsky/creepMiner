@@ -41,17 +41,82 @@ void Burst::RootHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Po
 	response.setChunkedTransferEncoding(true);
 	auto& out = response.send();
 
+	Poco::FileInputStream fileIndex, fileBlock;
+	std::string indexStr;
+
+	try
+	{
+		fileIndex.open("public/index.html", std::ios::in);
+		indexStr = std::string{ std::istreambuf_iterator<char>{fileIndex}, {} };
+		variables_->inject(indexStr);
+	}
+	catch (Poco::Exception& exc)
+	{
+		log_error(MinerLogger::server, "Could not open public/index.html!");
+		log_exception(MinerLogger::server, exc);
+
+		if (fileIndex)
+			fileIndex.close();
+
+		return;
+	}
+
+	try
+	{
+		fileBlock.open("public/block.html", std::ios::in);
+		std::string strBlock(std::istreambuf_iterator<char>{fileBlock}, {});
+
+		TemplateVariables rootVariables;
+		rootVariables.variables.emplace("includes", []() { return "<script src='js/miner.js'></script>"; });
+		rootVariables.variables.emplace("content", [&strBlock]() { return strBlock; });
+		rootVariables.inject(indexStr);
+	}
+	catch (Poco::Exception& exc)
+	{
+		log_error(MinerLogger::server, "Could not open public/block.html!");
+		log_exception(MinerLogger::server, exc);
+		
+		if (fileBlock)
+			fileBlock.close();
+
+		return;
+	}
+	
+	fileIndex.close();
+	fileBlock.close();
+
+	out << indexStr;
+}
+
+Burst::PlotfilesHandler::PlotfilesHandler(const TemplateVariables& variables)
+	: variables_{ &variables }
+{}
+
+void Burst::PlotfilesHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+	response.setChunkedTransferEncoding(true);
+	auto& out = response.send();
+
 	try
 	{
 		Poco::FileInputStream file{ "public/index.html", std::ios::in };
 		std::string str(std::istreambuf_iterator<char>{file}, {});
 		variables_->inject(str);
 
+		Poco::FileInputStream filePlotfiles{ "public/plotfiles.html", std::ios::in };
+		std::string strPlotfiles(std::istreambuf_iterator<char>{filePlotfiles}, {});
+
+		TemplateVariables rootVariables;
+		rootVariables.variables.emplace("includes", []() { return "<script src='js/plotfiles.js'></script>"; });
+		rootVariables.variables.emplace("content", [&strPlotfiles]() { return strPlotfiles; });
+		rootVariables.inject(str);
+
 		out << str;
 	}
 	catch (Poco::Exception& exc)
 	{
-		log_error(MinerLogger::server, "Could not open public/index.html!");
+		log_error(MinerLogger::server, "Could not open public/plotfiles.html!");
 		log_exception(MinerLogger::server, exc);
 	}
 }

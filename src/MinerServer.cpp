@@ -14,6 +14,7 @@
 #include <Poco/Path.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include <Poco/String.h>
+#include <Poco/Delegate.h>
 
 using namespace Poco;
 using namespace Net;
@@ -31,7 +32,10 @@ Burst::MinerServer::MinerServer(Miner& miner)
 }
 
 Burst::MinerServer::~MinerServer()
-{}
+{
+	if (minerData_ != nullptr)
+		minerData_->blockDataChangedEvent -= Poco::delegate(this, &MinerServer::onMinerDataChangeEvent);
+}
 
 void Burst::MinerServer::run(uint16_t port)
 {
@@ -95,7 +99,7 @@ void Burst::MinerServer::stop()
 void Burst::MinerServer::connectToMinerData(MinerData& minerData)
 {
 	minerData_ = &minerData;
-	minerData.addObserverBlockDataChanged(*this, &MinerServer::blockDataChanged);
+	minerData_->blockDataChangedEvent += Poco::delegate(this, &MinerServer::onMinerDataChangeEvent);
 }
 
 void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> websocket)
@@ -125,7 +129,11 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 	if (error)
 		websocket.release();
 	else
-		websockets_.emplace_back(move(websocket));		
+		websockets_.emplace_back(move(websocket));
+	
+	// check the status of all connected websockets by sending a "ping" message
+	// if the message can't be delivered, the websocket gets dropped
+	sendToWebsockets("ping");
 }
 
 void Burst::MinerServer::sendToWebsockets(const std::string& data)
@@ -151,11 +159,9 @@ void Burst::MinerServer::sendToWebsockets(const JSON::Object& json)
 	sendToWebsockets(ss.str());
 }
 
-void Burst::MinerServer::blockDataChanged(BlockDataChangedNotification* notification)
+void Burst::MinerServer::onMinerDataChangeEvent(const void* sender, const Poco::JSON::Object& data)
 {
-	poco_ndc(MinerServer::blockDataChanged);
-	sendToWebsockets(*notification->blockData);
-	notification->release();
+	sendToWebsockets(data);
 }
 
 bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string& data) const
@@ -198,6 +204,10 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		// root
 		if (uri.getPath() == "/")
 			return new RootHandler{server_->variables_};
+
+		// plotfiles
+		if (uri.getPath() == "/plotfiles")
+			return new PlotfilesHandler{ server_->variables_ };
 
 		// shutdown everything
 		if (uri.getPath() == "/shutdown")

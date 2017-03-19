@@ -49,6 +49,17 @@ namespace Burst
 		const TemplateVariables* variables_;
 	};
 
+	class PlotfilesHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		PlotfilesHandler(const TemplateVariables& variables);
+		~PlotfilesHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		const TemplateVariables* variables_;
+	};
+
 	class ShutdownHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
