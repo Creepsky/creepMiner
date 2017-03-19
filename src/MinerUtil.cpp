@@ -537,6 +537,7 @@ std::string Burst::getTime()
 #else 
 	auto now = std::chrono::system_clock::now();
 	auto now_c = std::chrono::system_clock::to_time_t(now);
+	ss.imbue(std::locale());
 	ss << std::put_time(std::localtime(&now_c), "%X");
 #endif
 
