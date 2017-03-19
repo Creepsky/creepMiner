@@ -19,6 +19,7 @@
 #include <Poco/FormattingChannel.h>
 #include <sstream>
 #include <Poco/NestedDiagnosticContext.h>
+#include "MinerServer.hpp"
 
 namespace Poco
 {
@@ -27,6 +28,8 @@ namespace Poco
 
 namespace Burst
 {
+	class BlockData;
+
 	class MinerLogger
 	{
 	public:
@@ -75,7 +78,8 @@ namespace Burst
 		public:
 			ColoredPriorityConsoleChannel();
 			explicit ColoredPriorityConsoleChannel(Poco::Message::Priority priority);
-			
+			~ColoredPriorityConsoleChannel() override = default;
+
 			void log(const Poco::Message& msg) override;
 			void setPriority(Poco::Message::Priority priority);
 			Poco::Message::Priority getPriority() const;
@@ -83,6 +87,22 @@ namespace Burst
 		private:
 			static Poco::FastMutex mutex_;
 			Poco::Message::Priority priority_;
+		};
+
+		class MinerDataChannel : public Poco::Channel
+		{
+		public:
+			MinerDataChannel();
+			explicit MinerDataChannel(MinerData* minerData);
+			~MinerDataChannel() override = default;
+
+			void log(const Poco::Message& msg) override;
+
+			void setMinerData(MinerData* minerData);
+			MinerData* getMinerData() const;
+
+		private:
+			MinerData* minerData_;
 		};
 
 		static const std::vector<std::string> channelNames;
@@ -99,7 +119,8 @@ namespace Burst
 		static bool setChannelPriority(const std::string& channel, const std::string& priority);
 		static std::string getChannelPriority(const std::string& channel);
 		static std::string setLogDir(const std::string& dir);
-
+		static void setChannelMinerData(MinerData* minerData);
+		
 		static Poco::Logger& miner;
 		static Poco::Logger& config;
 		static Poco::Logger& server;
@@ -139,6 +160,7 @@ namespace Burst
 		static size_t lastPipeCount_;
 
 		static const std::unordered_map<std::string, ColoredPriorityConsoleChannel*> channels_;
+		static const std::unordered_map<std::string, MinerDataChannel*> websocketChannels_;
 		static std::unordered_map<uint32_t, bool> output_;
 		static Poco::Channel* fileChannel_;
 		static Poco::FormattingChannel* fileFormatter_;
@@ -223,6 +245,7 @@ namespace Burst
 			message.setPriority(Priority);
 			message.set("type", std::to_string(static_cast<int>(Type)));
 			message.set("condition", std::to_string(condition));
+			message.setSource(logger.name());
 			message.setSourceFile(file);
 			message.setSourceLine(line);
 			logger.log(message);

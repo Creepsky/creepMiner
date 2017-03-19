@@ -132,6 +132,8 @@ int main(int argc, const char* argv[])
 				server.run(Burst::MinerConfig::getConfig().getServerUrl().getPort());
 			}
 
+			Burst::MinerLogger::setChannelMinerData(&miner.getData());
+
 			miner.run();
 			server.stop();
 		}

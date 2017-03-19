@@ -6,13 +6,13 @@
 #include <Poco/JSON/Object.h>
 #include <Poco/Mutex.h>
 #include <deque>
-#include <Poco/NotificationCenter.h>
-#include <Poco/Observer.h>
 #include <Poco/ActiveDispatcher.h>
 #include <Poco/ActiveMethod.h>
 #include <unordered_map>
 #include <atomic>
 #include <functional>
+#include <Poco/BasicEvent.h>
+#include <Poco/Message.h>
 
 namespace Burst
 {
@@ -58,6 +58,9 @@ namespace Burst
 		std::shared_ptr<Deadline> addDeadlineIfBest(uint64_t nonce, uint64_t deadline,
 			std::shared_ptr<Account> account, uint64_t block, std::string plotFile);
 
+		void addMessage(const Poco::Message& message) const;
+		void clearEntries() const;
+
 	protected:
 		std::shared_ptr<Account> runGetLastWinner(const std::pair<const Wallet*, const Accounts*>& args);
 		void addBlockEntry(Poco::JSON::Object entry) const;
@@ -82,19 +85,12 @@ namespace Burst
 		friend class Deadlines;
 	};
 
-	struct BlockDataChangedNotification : Poco::Notification
-	{
-		BlockDataChangedNotification(Poco::JSON::Object* blockData)
-			: blockData{blockData} {}
-		~BlockDataChangedNotification() override = default;
-		Poco::JSON::Object* blockData;
-	};
-
 	class MinerData
 	{
 	public:
 		std::shared_ptr<BlockData> startNewBlock(uint64_t block, uint64_t baseTarget, const std::string& genSig);
 		void setTargetDeadline(uint64_t deadline);
+		void addMessage(const Poco::Message& message);
 
 		std::shared_ptr<Deadline> getBestDeadlineOverall() const;
 		const Poco::Timestamp& getStartTime() const;
@@ -114,14 +110,7 @@ namespace Burst
 		uint64_t getCurrentBasetarget() const;
 		uint64_t getCurrentScoopNum() const;
 
-		template <typename Observer>
-		void addObserverBlockDataChanged(Observer& observer,
-			typename Poco::Observer<Observer, BlockDataChangedNotification>::Callback function)
-		{
-			notifiyBlockDataChanged_.addObserver(Poco::Observer<Observer, BlockDataChangedNotification>{
-				observer, function
-			});
-		}
+		Poco::BasicEvent<const Poco::JSON::Object> blockDataChangedEvent;
 
 	private:
 		void addWonBlock();
@@ -137,7 +126,6 @@ namespace Burst
 		std::shared_ptr<BlockData> blockData_ = nullptr;
 		std::deque<std::shared_ptr<BlockData>> historicalBlocks_;
 		mutable Poco::Mutex mutex_;
-		Poco::NotificationCenter notifiyBlockDataChanged_;
 
 		std::atomic<uint64_t> currentBlockheight_;
 		std::atomic<uint64_t> currentBasetarget_;

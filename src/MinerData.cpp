@@ -110,7 +110,7 @@ void Burst::BlockData::setProgress(float progress)
 	jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progress)};
 
 	if (parent_ != nullptr)
-		parent_->notifiyBlockDataChanged_.postNotification(new BlockDataChangedNotification{jsonProgress_});
+		parent_->blockDataChangedEvent.notifyAsync(this, *jsonProgress_);
 }
 
 void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
@@ -120,7 +120,7 @@ void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
 	entries_->emplace_back(std::move(entry));
 	
 	if (parent_ != nullptr)
-		parent_->notifiyBlockDataChanged_.postNotification(new BlockDataChangedNotification{&entry});
+		parent_->blockDataChangedEvent.notifyAsync(this, entry);
 }
 
 uint64_t Burst::BlockData::getBlockheight() const
@@ -232,6 +232,33 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadlineIfBest(uint64_t no
 	return nullptr;
 }
 
+void Burst::BlockData::addMessage(const Poco::Message& message) const
+{
+	Poco::ScopedLock<Poco::Mutex> lock {mutex_};
+
+	if (entries_ == nullptr)
+		return;
+
+	Poco::JSON::Object json;
+	json.set("type", std::to_string(static_cast<int>(message.getPriority())));
+	json.set("text", message.getText());
+	json.set("source", message.getSource());
+	json.set("line", message.getSourceLine());
+	json.set("file", message.getSourceFile());
+	json.set("time", Poco::DateTimeFormatter::format(message.getTime(), "%H:%M:%S"));
+
+	entries_->emplace_back(json);
+
+	if (parent_ != nullptr)
+		parent_->blockDataChangedEvent.notifyAsync(this, json);
+}
+
+void Burst::BlockData::clearEntries() const
+{
+	Poco::ScopedLock<Poco::Mutex> lock {mutex_};
+	entries_->clear();
+}
+
 std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pair<const Wallet*, const Accounts*>& args)
 {
 	poco_ndc(Miner::runGetLastWinner);
@@ -274,7 +301,8 @@ std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pa
 				std::string(50, '-'),
 				lastBlockheight, lastWinner, winnerAccount->getAddress(),
 				(winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName()))
-			);
+			)
+;
 
 			setLastWinner(winnerAccount);
 
@@ -297,6 +325,10 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(uint64_t block
 		// if we reached the maximum size of blocks, forget the oldest
 		if (historicalBlocks_.size() + 1 > maxSize)
 			historicalBlocks_.pop_front();
+
+		// we clear all entries, because it is also in the logfile
+		// and we dont need it in the ram anymore
+		blockData_->clearEntries();
 
 		historicalBlocks_.emplace_back(blockData_);
 
@@ -330,6 +362,14 @@ void Burst::MinerData::setBestDeadline(std::shared_ptr<Deadline> deadline)
 void Burst::MinerData::setTargetDeadline(uint64_t deadline)
 {
 	targetDeadline_ = deadline;
+}
+
+void Burst::MinerData::addMessage(const Poco::Message& message)
+{
+	auto blockData = getBlockData();
+
+	if (blockData != nullptr)
+		blockData->addMessage(message);
 }
 
 void Burst::MinerData::addWonBlock()

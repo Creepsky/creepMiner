@@ -33,6 +33,7 @@
 #include "Output.hpp"
 #include <fstream>
 #include <Poco/FileStream.h>
+#include "MinerData.hpp"
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -73,6 +74,16 @@ const std::unordered_map<std::string, Burst::MinerLogger::ColoredPriorityConsole
 
 	for (auto& name : channelNames)
 		channels_.insert({name , new ColoredPriorityConsoleChannel{}});
+
+	return channels_;
+}();
+
+const std::unordered_map<std::string, Burst::MinerLogger::MinerDataChannel*> Burst::MinerLogger::websocketChannels_ = []()
+{
+	std::unordered_map<std::string, MinerDataChannel*> channels_;
+
+	for (auto& name : channelNames)
+		channels_.insert({name , new MinerDataChannel{nullptr}});
 
 	return channels_;
 }();
@@ -169,6 +180,38 @@ void Burst::MinerLogger::ColoredPriorityConsoleChannel::setPriority(Poco::Messag
 Poco::Message::Priority Burst::MinerLogger::ColoredPriorityConsoleChannel::getPriority() const
 {
 	return priority_;
+}
+
+Burst::MinerLogger::MinerDataChannel::MinerDataChannel()
+	: minerData_{nullptr}
+{}
+
+Burst::MinerLogger::MinerDataChannel::MinerDataChannel(MinerData* minerData)
+	: minerData_{minerData}
+{}
+
+void Burst::MinerLogger::MinerDataChannel::log(const Poco::Message& msg)
+{
+	if (minerData_ == nullptr)
+		return;
+
+	// we dont send informations and notices, because for them are build custom JSON objects
+	// so that the webserver can react appropriate
+	if (msg.getPriority() == Poco::Message::PRIO_INFORMATION ||
+		msg.getPriority() == Poco::Message::PRIO_NOTICE)
+		return;
+
+	minerData_->addMessage(msg);
+}
+
+void Burst::MinerLogger::MinerDataChannel::setMinerData(MinerData* minerData)
+{
+	minerData_ = minerData;
+}
+
+Burst::MinerData* Burst::MinerLogger::MinerDataChannel::getMinerData() const
+{
+	return minerData_;
 }
 
 bool Burst::MinerLogger::setChannelPriority(const std::string& channel, Poco::Message::Priority priority)
@@ -305,6 +348,12 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 	{
 		throw;
 	}
+}
+
+void Burst::MinerLogger::setChannelMinerData(MinerData* minerData)
+{
+	for (auto& channel : websocketChannels_)
+		channel.second->setMinerData(minerData);
 }
 
 void Burst::MinerLogger::setOutput(int id, bool set)
@@ -471,9 +520,11 @@ void Burst::MinerLogger::setup()
 		logger.setLevel(Poco::Message::Priority::PRIO_TRACE);
 
 		auto splitter = new Poco::SplitterChannel;
-		auto& channel = channels_.at(name);
+		auto& consoleChannel = channels_.at(name);
+		auto& websocketChannel = websocketChannels_.at(name);
 
-		splitter->addChannel(channel);
+		splitter->addChannel(consoleChannel);
+		splitter->addChannel(websocketChannel);
 		splitter->addChannel(fileFormatter_);
 
 		Poco::Logger::get(name).setChannel(splitter);
