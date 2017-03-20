@@ -19,6 +19,63 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/StringTokenizer.h>
 
+namespace Burst
+{
+	namespace RequestHandlerHelper
+	{
+		bool sendIndexContent(const TemplateVariables& indexVariables, const TemplateVariables& contentVariables,
+			const std::string& contentPage, std::string& output)
+		{
+			Poco::FileInputStream fileIndex, fileContent;
+			output.clear();
+
+			try
+			{
+				fileIndex.open("public/index.html", std::ios::in);
+				output = std::string{ std::istreambuf_iterator<char>{fileIndex}, {} };
+				indexVariables.inject(output);
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_error(MinerLogger::server, "Could not open public/index.html!");
+				log_exception(MinerLogger::server, exc);
+
+				if (fileIndex)
+					fileIndex.close();
+
+				return false;
+			}
+
+			try
+			{
+				fileContent.open(contentPage, std::ios::in);
+				std::string strContent(std::istreambuf_iterator<char>{fileContent}, {});
+
+				TemplateVariables contentFramework;
+				contentFramework.variables.emplace("content", [&strContent]() { return strContent; });
+
+				contentFramework.inject(output);
+				contentVariables.inject(output);
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_error(MinerLogger::server, "Could not open '%s'!", contentPage);
+				log_exception(MinerLogger::server, exc);
+
+				if (fileContent)
+					fileContent.close();
+
+				return false;
+			}
+
+			fileIndex.close();
+			fileContent.close();
+
+			return true;
+		}
+	}
+}
+
 void Burst::TemplateVariables::inject(std::string& source) const
 {
 	for (const auto& var : variables)
@@ -37,55 +94,22 @@ Burst::RootHandler::RootHandler(const TemplateVariables& variables)
 
 void Burst::RootHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-	response.setChunkedTransferEncoding(true);
-	auto& out = response.send();
+	std::string output;
+	TemplateVariables contentVariables;
+	contentVariables.variables.emplace("includes", []() { return "<script src='js/miner.js'></script>"; });
 
-	Poco::FileInputStream fileIndex, fileBlock;
-	std::string indexStr;
-
-	try
+	if (RequestHandlerHelper::sendIndexContent(*variables_, contentVariables, "public/block.html", output))
 	{
-		fileIndex.open("public/index.html", std::ios::in);
-		indexStr = std::string{ std::istreambuf_iterator<char>{fileIndex}, {} };
-		variables_->inject(indexStr);
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
+		out << output;
 	}
-	catch (Poco::Exception& exc)
+	else
 	{
-		log_error(MinerLogger::server, "Could not open public/index.html!");
-		log_exception(MinerLogger::server, exc);
-
-		if (fileIndex)
-			fileIndex.close();
-
-		return;
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+		response.send();
 	}
-
-	try
-	{
-		fileBlock.open("public/block.html", std::ios::in);
-		std::string strBlock(std::istreambuf_iterator<char>{fileBlock}, {});
-
-		TemplateVariables rootVariables;
-		rootVariables.variables.emplace("includes", []() { return "<script src='js/miner.js'></script>"; });
-		rootVariables.variables.emplace("content", [&strBlock]() { return strBlock; });
-		rootVariables.inject(indexStr);
-	}
-	catch (Poco::Exception& exc)
-	{
-		log_error(MinerLogger::server, "Could not open public/block.html!");
-		log_exception(MinerLogger::server, exc);
-		
-		if (fileBlock)
-			fileBlock.close();
-
-		return;
-	}
-	
-	fileIndex.close();
-	fileBlock.close();
-
-	out << indexStr;
 }
 
 Burst::PlotfilesHandler::PlotfilesHandler(const TemplateVariables& variables)
@@ -94,30 +118,47 @@ Burst::PlotfilesHandler::PlotfilesHandler(const TemplateVariables& variables)
 
 void Burst::PlotfilesHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-	response.setChunkedTransferEncoding(true);
-	auto& out = response.send();
+	std::string output;
+	std::string plotFiles;
 
-	try
+
+	auto plotDirs = MinerConfig::getConfig().getPlotDirs();
+
+	Poco::JSON::Array jsonPlotDirs;
+
+	for (const auto& plotDir : plotDirs)
 	{
-		Poco::FileInputStream file{ "public/index.html", std::ios::in };
-		std::string str(std::istreambuf_iterator<char>{file}, {});
-		variables_->inject(str);
+		jsonPlotDirs.add(createJsonPlotDir(*plotDir));
 
-		Poco::FileInputStream filePlotfiles{ "public/plotfiles.html", std::ios::in };
-		std::string strPlotfiles(std::istreambuf_iterator<char>{filePlotfiles}, {});
-
-		TemplateVariables rootVariables;
-		rootVariables.variables.emplace("includes", []() { return "<script src='js/plotfiles.js'></script>"; });
-		rootVariables.variables.emplace("content", [&strPlotfiles]() { return strPlotfiles; });
-		rootVariables.inject(str);
-
-		out << str;
+		for (const auto& relatedPlotDir : plotDir->getRelatedDirs())
+			jsonPlotDirs.add(createJsonPlotDir(*relatedPlotDir));
 	}
-	catch (Poco::Exception& exc)
+
+	std::stringstream sstr;
+	jsonPlotDirs.stringify(sstr);
+
+	TemplateVariables contentVariables;
+
+	contentVariables.variables.emplace("includes", [&sstr]()
 	{
-		log_error(MinerLogger::server, "Could not open public/plotfiles.html!");
-		log_exception(MinerLogger::server, exc);
+		std::stringstream sstrContent;
+		sstrContent << "<script src='js/plotfiles.js'></script>";
+		sstrContent << std::endl;
+		sstrContent << "<script>var plotdirs = " << sstr.str() << ";</script>";
+		return sstrContent.str();
+	});
+
+	if (RequestHandlerHelper::sendIndexContent(*variables_, contentVariables, "public/plotfiles.html", output))
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
+		out << output;
+	}
+	else
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+		response.send();
 	}
 }
 
