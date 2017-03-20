@@ -245,7 +245,7 @@ void Burst::BlockData::addMessage(const Poco::Message& message) const
 	json.set("source", message.getSource());
 	json.set("line", message.getSourceLine());
 	json.set("file", message.getSourceFile());
-	json.set("time", Poco::DateTimeFormatter::format(message.getTime(), "%H:%M:%S"));
+	json.set("time", Poco::DateTimeFormatter::format(Poco::LocalDateTime(message.getTime()), "%H:%M:%S"));
 
 	entries_->emplace_back(json);
 
