@@ -519,6 +519,29 @@ Poco::JSON::Object Burst::createJsonWonBlocks(const MinerData& data)
 	return json;
 }
 
+Poco::JSON::Object Burst::createJsonPlotDir(const PlotDir& plotDir)
+{
+	Poco::JSON::Object json;
+
+	json.set("path", plotDir.getPath());
+
+	Poco::JSON::Array jsonPlotFiles;
+
+	for (const auto& plotFile : plotDir.getPlotfiles())
+	{
+		Poco::JSON::Object jsonPlotFile;
+
+		jsonPlotFile.set("path", plotFile->getPath());
+		jsonPlotFile.set("size", memToString(plotFile->getSize(), 2));
+
+		jsonPlotFiles.add(jsonPlotFile);
+	}
+
+	json.set("plotfiles", jsonPlotFiles);
+
+	return json;
+}
+
 std::string Burst::getTime()
 {
 	std::stringstream ss;

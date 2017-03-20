@@ -27,6 +27,7 @@ namespace Poco
 
 namespace Burst
 {
+	class PlotDir;
 	class PlotReadProgress;
 	class BlockData;
 	class Deadline;
@@ -103,6 +104,7 @@ namespace Burst
 	Poco::JSON::Object createJsonLastWinner(const MinerData& data);
 	Poco::JSON::Object createJsonShutdown();
 	Poco::JSON::Object createJsonWonBlocks(const MinerData& data);
+	Poco::JSON::Object createJsonPlotDir(const PlotDir& plotDir);
 
 	std::string getTime();
 	std::string getFilenameWithtimestamp(const std::string& name, const std::string& ending);
