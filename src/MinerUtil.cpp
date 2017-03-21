@@ -545,17 +545,17 @@ Poco::JSON::Object Burst::createJsonPlotDir(const PlotDir& plotDir)
 
 Poco::JSON::Array Burst::createJsonPlotDirs()
 {
-	auto plotDirs = MinerConfig::getConfig().getPlotDirs();
-
 	Poco::JSON::Array jsonPlotDirs;
 
-	for (const auto& plotDir : plotDirs)
+	MinerConfig::getConfig().forPlotDirs([&jsonPlotDirs](PlotDir& plotDir)
 	{
-		jsonPlotDirs.add(createJsonPlotDir(*plotDir));
+		jsonPlotDirs.add(createJsonPlotDir(plotDir));
 
-		for (const auto& relatedPlotDir : plotDir->getRelatedDirs())
+		for (const auto& relatedPlotDir : plotDir.getRelatedDirs())
 			jsonPlotDirs.add(createJsonPlotDir(*relatedPlotDir));
-	}
+
+		return true;
+	});
 
 	return jsonPlotDirs;
 }

@@ -224,28 +224,30 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		plotReadQueue_.enqueueNotification(plotRead);
 	};
 
-	for (auto& plotDir : MinerConfig::getConfig().getPlotDirs())
+	MinerConfig::getConfig().forPlotDirs([this, &addParallel, &initPlotReadNotification](PlotDir& plotDir)
 	{
-		if (plotDir->getType() == PlotDir::Type::Parallel)
+		if (plotDir.getType() == PlotDir::Type::Parallel)
 		{
-			for (const auto& plotFile : plotDir->getPlotfiles())
-				addParallel(*plotDir, plotFile);
-			
-			for (const auto& relatedPlotDir : plotDir->getRelatedDirs())
+			for (const auto& plotFile : plotDir.getPlotfiles())
+				addParallel(plotDir, plotFile);
+
+			for (const auto& relatedPlotDir : plotDir.getRelatedDirs())
 				for (const auto& plotFile : relatedPlotDir->getPlotfiles())
-					addParallel(*plotDir, plotFile);
+					addParallel(plotDir, plotFile);
 		}
 		else
 		{
-			auto plotRead = initPlotReadNotification(*plotDir);
-			plotRead->plotList = plotDir->getPlotfiles();
+			auto plotRead = initPlotReadNotification(plotDir);
+			plotRead->plotList = plotDir.getPlotfiles();
 
-			for (const auto& relatedPlotDir : plotDir->getRelatedDirs())
+			for (const auto& relatedPlotDir : plotDir.getRelatedDirs())
 				plotRead->relatedPlotLists.emplace_back(relatedPlotDir->getPath(), relatedPlotDir->getPlotfiles());
 
 			plotReadQueue_.enqueueNotification(plotRead);
 		}
-	}
+
+		return true;
+	});
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const

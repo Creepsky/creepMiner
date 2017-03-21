@@ -14,6 +14,7 @@
 #include "Url.hpp"
 #include <Poco/Path.h>
 #include <Poco/JSON/Object.h>
+#include <functional>
 
 namespace Poco
 {
@@ -61,6 +62,7 @@ namespace Burst
 		uint64_t getSize() const;
 		Type getType() const;
 		std::vector<std::shared_ptr<PlotDir>> getRelatedDirs() const;
+		void rescan();
 
 	private:
 		bool addPlotLocation(const std::string& fileOrPath);
@@ -80,6 +82,7 @@ namespace Burst
 	public:
 		bool readConfigFile(const std::string& configPath);
 		void rescan();
+		void rescanPlotfiles();
 
 		size_t maxBufferSizeMB = 128;
 		const std::string& getPath() const;
@@ -103,7 +106,7 @@ namespace Burst
 		const Url& getServerUrl() const;
 		uint64_t getTargetDeadline() const;
 		uint32_t getMiningIntensity() const;
-		const std::vector<std::shared_ptr<PlotDir>>& getPlotDirs() const;
+		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		uint32_t getMaxPlotReaders() const;
@@ -141,5 +144,6 @@ namespace Burst
 		std::string serverUser_, serverPass_;
 		uint32_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
+		mutable Poco::FastMutex mutexPlotfiles_;
 	};
 }

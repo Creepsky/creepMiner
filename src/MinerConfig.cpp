@@ -33,6 +33,14 @@ void Burst::MinerConfig::rescan()
 	readConfigFile(configPath_);
 }
 
+void Burst::MinerConfig::rescanPlotfiles()
+{
+	Poco::FastMutex::ScopedLock lock{ mutexPlotfiles_ };
+
+	for (auto& plotDir : plotDirs_)
+		plotDir->rescan();
+}
+
 Burst::PlotFile::PlotFile(std::string&& path, uint64_t size)
 	: path_(move(path)), size_(size)
 {}
@@ -89,6 +97,16 @@ Burst::PlotDir::Type Burst::PlotDir::getType() const
 std::vector<std::shared_ptr<Burst::PlotDir>> Burst::PlotDir::getRelatedDirs() const
 {
 	return relatedDirs_;
+}
+
+void Burst::PlotDir::rescan()
+{
+	plotfiles_.clear();
+
+	addPlotLocation(path_);
+
+	for (auto& relatedDir : relatedDirs_)
+		relatedDir->rescan();
 }
 
 bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
@@ -936,9 +954,20 @@ uint32_t Burst::MinerConfig::getMiningIntensity() const
 	return miningIntensity_;
 }
 
-const std::vector<std::shared_ptr<Burst::PlotDir>>& Burst::MinerConfig::getPlotDirs() const
+bool Burst::MinerConfig::forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const
 {
-	return plotDirs_;
+	Poco::FastMutex::ScopedLock lock{ mutexPlotfiles_ };
+
+	auto success = true;
+
+	for (auto iter = plotDirs_.begin();
+		iter != plotDirs_.end() && success;
+		++iter)
+	{
+		success = traverseFunction(**iter);
+	}
+
+	return success;
 }
 
 const std::string& Burst::MinerConfig::getPlotsHash() const
