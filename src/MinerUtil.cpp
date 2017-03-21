@@ -543,6 +543,23 @@ Poco::JSON::Object Burst::createJsonPlotDir(const PlotDir& plotDir)
 	return json;
 }
 
+Poco::JSON::Array Burst::createJsonPlotDirs()
+{
+	auto plotDirs = MinerConfig::getConfig().getPlotDirs();
+
+	Poco::JSON::Array jsonPlotDirs;
+
+	for (const auto& plotDir : plotDirs)
+	{
+		jsonPlotDirs.add(createJsonPlotDir(*plotDir));
+
+		for (const auto& relatedPlotDir : plotDir->getRelatedDirs())
+			jsonPlotDirs.add(createJsonPlotDir(*relatedPlotDir));
+	}
+
+	return jsonPlotDirs;
+}
+
 std::string Burst::getTime()
 {
 	std::stringstream ss;

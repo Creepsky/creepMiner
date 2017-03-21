@@ -16,6 +16,7 @@
 #include <memory>
 #include <Poco/Net/SocketAddress.h>
 #include <array>
+#include <Poco/JSON/Array.h>
 
 namespace Poco
 {
@@ -105,6 +106,7 @@ namespace Burst
 	Poco::JSON::Object createJsonShutdown();
 	Poco::JSON::Object createJsonWonBlocks(const MinerData& data);
 	Poco::JSON::Object createJsonPlotDir(const PlotDir& plotDir);
+	Poco::JSON::Array createJsonPlotDirs();
 
 	std::string getTime();
 	std::string getFilenameWithtimestamp(const std::string& name, const std::string& ending);

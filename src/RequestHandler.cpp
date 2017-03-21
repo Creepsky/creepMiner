@@ -121,18 +121,7 @@ void Burst::PlotfilesHandler::handleRequest(Poco::Net::HTTPServerRequest& reques
 	std::string output;
 	std::string plotFiles;
 
-
-	auto plotDirs = MinerConfig::getConfig().getPlotDirs();
-
-	Poco::JSON::Array jsonPlotDirs;
-
-	for (const auto& plotDir : plotDirs)
-	{
-		jsonPlotDirs.add(createJsonPlotDir(*plotDir));
-
-		for (const auto& relatedPlotDir : plotDir->getRelatedDirs())
-			jsonPlotDirs.add(createJsonPlotDir(*relatedPlotDir));
-	}
+	auto jsonPlotDirs = createJsonPlotDirs();
 
 	std::stringstream sstr;
 	jsonPlotDirs.stringify(sstr);
