@@ -113,6 +113,20 @@ void Burst::BlockData::setProgress(float progress)
 		parent_->blockDataChangedEvent.notifyAsync(this, *jsonProgress_);
 }
 
+void Burst::BlockData::setProgress(const std::string& plotDir, float progress)
+{
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
+
+	auto json = new Poco::JSON::Object{createJsonProgress(progress)};
+	json->set("type", "plotdir-progress");
+	json->set("dir", plotDir);
+
+	jsonDirProgress_[plotDir].assign(json);
+
+	if (parent_ != nullptr)
+		parent_->blockDataChangedEvent.notifyAsync(this, *json);
+}
+
 void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
 {
 	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
@@ -179,9 +193,14 @@ bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)>
 	for (auto iter = entries_->begin(); iter != entries_->end() && !error; ++iter)
 		error = !traverseFunction(*iter);
 
-	// send the progress, if any
+	// send the overall progress, if any
 	if (!error && !jsonProgress_.isNull())
 		error = !traverseFunction(*jsonProgress_);
+
+	// send the dir progress
+	if (!error)
+		for (auto iter = jsonDirProgress_.begin(); !error && iter != jsonDirProgress_.end(); ++iter)
+			error = !traverseFunction(*iter->second);
 
 	return error;
 }

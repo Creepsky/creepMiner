@@ -198,6 +198,12 @@ void Burst::PlotReader::runTask()
 					miner_.getData().getBlockData()->setProgress(progress_->getProgress());
 				}
 
+				auto plotListSize = plotReadNotification->plotList.size();
+
+				if (plotListSize > 0)
+					miner_.getData().getBlockData()->setProgress(plotReadNotification->dir,
+						static_cast<float>(std::distance(plotReadNotification->plotList.begin(), plotFileIter) + 1) / plotListSize * 100.f);
+
 				auto fileReadDiff = timeStartFile.elapsed();
 				auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
 				Poco::Timespan span{fileReadDiff};
@@ -230,6 +236,8 @@ void Burst::PlotReader::runTask()
 			continue;
 		}
 		
+		miner_.getData().getBlockData()->setProgress(plotReadNotification->dir, 100.f);
+
 		auto dirReadDiff = timeStartDir.elapsed();
 		auto dirReadDiffSeconds = static_cast<float>(dirReadDiff) / 1000 / 1000;
 		Poco::Timespan span{dirReadDiff};

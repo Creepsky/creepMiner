@@ -41,6 +41,7 @@ namespace Burst
 		
 		void refreshBlockEntry() const;
 		void setProgress(float progress);
+		void setProgress(const std::string& plotDir, float progress);
 
 		uint64_t getBlockheight() const;
 		uint64_t getScoop() const;
@@ -80,6 +81,7 @@ namespace Burst
 			Poco::ActiveStarter<ActiveDispatcher>> activityLastWinner_;
 		MinerData* parent_;
 		Poco::JSON::Object::Ptr jsonProgress_;
+		std::unordered_map<std::string, Poco::JSON::Object::Ptr> jsonDirProgress_;
 		mutable Poco::Mutex mutex_;
 
 		friend class Deadlines;
