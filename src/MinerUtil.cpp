@@ -538,6 +538,7 @@ Poco::JSON::Object Burst::createJsonPlotDir(const PlotDir& plotDir)
 	}
 
 	json.set("plotfiles", jsonPlotFiles);
+	json.set("size", memToString(plotDir.getSize(), 2));
 
 	return json;
 }
