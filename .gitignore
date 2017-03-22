@@ -398,3 +398,4 @@ buildNumber.properties
 mining.conf
 *.graphml
 !/bin/*.dll
+!/bin/public
