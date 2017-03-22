@@ -110,7 +110,7 @@ function newBlock(json) {
 	document.title = name + " (" + json["block"] + ")";
 	checkAddBestOverall(BigInteger(json["bestOverallNum"]), json["bestOverall"]);
 	setConfirmedDeadlines(BigInteger(json["deadlinesConfirmed"]));
-	setProgress(0);
+	setOverallProgress(0);
 	lastWinnerContainer.hide();
 	avgDeadline.html(json["deadlinesAvg"]);
 	wonBlocks.html(json["blocksWon"]);
@@ -374,23 +374,8 @@ function setConfirmedDeadlines(deadlines) {
 	confirmedDeadlinesElement.html(confirmedDeadlines);
 }
 
-function setProgress(value) {
-	var valueFixed = parseFloat(value).toFixed();
-	
-	if (valueFixed >= 100) {
-		valueFixed = 100;
-		progressBar.removeClass("active");
-	}
-	else if (valueFixed <= 100) {
-		if (valueFixed < 0)
-			valueFixed = 0;
-		
-		if (!progressBar.hasClass("active"))
-			progressBar.addClass("active");
-	}
-	
-	progressBar.attr("style", "width:" + valueFixed + "%");
-	progressBar.html(valueFixed + " %");
+function setOverallProgress(value) {
+	setProgress(progressBar, value);
 }
 
 function setLastWinner(winner) {
@@ -557,13 +542,17 @@ function connectBlock() {
 					config(response);
 					break;
 				case "progress":
-					setProgress(response["value"]);
+					setOverallProgress(response["value"]);
 					break;
 				case "lastWinner":
 					setLastWinner(response);
 					break;
 				case "blocksWonUpdate":
 					wonBlocks.html(reponse["blocksWon"]);
+					break;
+				case "plotdir-progress":
+				case "plotfiles-rescan":
+					// do nothing
 					break;
 				default:
 					showMessage(response);
@@ -696,5 +685,6 @@ window.onresize = function(evt) {
 }
 
 window.onload = function(evt) {
+	$("#btnBlock").addClass('active');
 	initBlock();
 }
