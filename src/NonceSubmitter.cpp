@@ -125,31 +125,34 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 			// our calculated deadlines differs from the pools one
 			if (confirmation.deadline != deadline->getDeadline())
 			{
-				log_error(MinerLogger::nonceSubmitter, "The pools deadline for the nonce is different then ours!\n"
+				log_debug(MinerLogger::nonceSubmitter, "The pools deadline for the nonce is different then ours!\n"
 					"\tPools deadline: %s\n\tOur deadline: %s",
 					deadlineFormat(confirmation.deadline), deadlineFormat(deadline->getDeadline()));
 
 				// change the deadline
 				deadline->setDeadline(confirmation.deadline);
 			}
+			else
+			{
+				auto bestConfirmed = miner.getBestConfirmed(deadline->getAccountId(), deadline->getBlock());
+				auto showConfirmation = true;
 
-			auto bestConfirmed = miner.getBestConfirmed(deadline->getAccountId(), deadline->getBlock());
-			auto showConfirmation = true;
+				// it is better to show all confirmations...
+					// only show the confirmation, if the confirmed deadline is better then the best already confirmed
+					//if (bestConfirmed != nullptr)
+					//	showConfirmation = bestConfirmed->getDeadline() > deadline->getDeadline();
 
-			// only show the confirmation, if the confirmed deadline is better then the best already confirmed
-			if (bestConfirmed != nullptr)
-				showConfirmation = bestConfirmed->getDeadline() > deadline->getDeadline();
+				if (showConfirmation)
+					log_success_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceConfirmed), "%s: nonce confirmed (%s)\n"
+						"\tnonce: %Lu\n"
+						"\tin %s",
+						accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
 
-			if (showConfirmation)
-				log_success_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceConfirmed), "%s: nonce confirmed (%s)\n"
-					"\tnonce: %Lu\n"
-					"\tin %s",
-					accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
-
-			// we have to confirm it at the very last position
-			// because we work with the best confirmed deadline so far before
-			// this point
-			deadline->confirm();
+				// we have to confirm it at the very last position
+				// because we work with the best confirmed deadline so far before
+				// this point
+				deadline->confirm();
+			}
 		}
 		else if (betterDeadlineInPipeline)
 			log_debug(MinerLogger::nonceSubmitter, "Better deadline in pipeline, stop submitting! (%s)", deadlineFormat(deadline->getDeadline()));
