@@ -5,7 +5,7 @@
 #include <Poco/NumberParser.h>
 #include "MinerLogger.hpp"
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 5, 2 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0 };
 
 #if defined MINING_CUDA
 const Burst::ProjectData Burst::Settings::Project = { "creepMiner CUDA", ProjectVersion };
