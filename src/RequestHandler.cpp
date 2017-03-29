@@ -73,6 +73,59 @@ namespace Burst
 
 			return true;
 		}
+
+		bool checkCredentials(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+		{
+			auto credentialsOk = false;
+
+			if (MinerConfig::getConfig().getServerUser().empty() &&
+				MinerConfig::getConfig().getServerPass().empty())
+				return true;
+
+			if (request.hasCredentials())
+			{
+				std::string scheme, authInfo;
+				request.getCredentials(scheme, authInfo);
+
+				// credentials are base64 encoded
+				std::stringstream encoded(authInfo);
+				std::stringstream decoded;
+				std::string credentials, user = "", password;
+				//
+				Poco::Base64Decoder base64(encoded);
+				Poco::StreamCopier::copyStream(base64, decoded);
+				//
+				credentials = decoded.str();
+
+				Poco::StringTokenizer tokenizer{credentials, ":"};
+
+				if (tokenizer.count() == 2)
+				{
+					user = tokenizer[0];
+					password = tokenizer[1];
+
+					credentialsOk = 
+						check_HMAC_SHA1(user, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverPassphrase) &&
+						check_HMAC_SHA1(password, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassphrase);
+				}
+
+				log_information(MinerLogger::server, "%s request to shutdown the miner.\n"
+					"\tfrom: %s\n"
+					"\tuser: %s",
+					(credentialsOk ? std::string("Authorized") : std::string("Unauthorized")),
+					request.clientAddress().toString(),
+					user);
+			}
+
+			if (!credentialsOk)
+			{
+				response.requireAuthentication("creepMiner");
+				response.send();
+				return false;
+			}
+
+			return true;
+		}
 	}
 }
 
@@ -151,6 +204,31 @@ void Burst::PlotfilesHandler::handleRequest(Poco::Net::HTTPServerRequest& reques
 	}
 }
 
+Burst::RescanPlotfilesHandler::RescanPlotfilesHandler(MinerServer& server)
+	: server_{&server}
+{}
+
+void Burst::RescanPlotfilesHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	if (!RequestHandlerHelper::checkCredentials(request, response))
+		return;
+
+	log_information(MinerLogger::server, "Got request for rescanning the plotdirs...");
+
+	MinerConfig::getConfig().rescanPlotfiles();
+
+	// we send the new settings (size could be changed)
+	server_->sendToWebsockets(createJsonConfig());
+
+	// then we send all plot dirs and files
+	server_->sendToWebsockets(createJsonPlotDirsRescan());
+
+	// respond
+	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+	response.setContentLength(0);
+	response.send();
+}
+
 Burst::ShutdownHandler::ShutdownHandler(Miner& miner, MinerServer& server)
 	: miner_{&miner}, server_{&server}
 {}
@@ -159,49 +237,8 @@ void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 {
 	poco_ndc("ShutdownHandler::handleRequest");
 
-	auto credentialsOk = false;
-
-	if (request.hasCredentials())
-	{
-		std::string scheme, authInfo;
-		request.getCredentials(scheme, authInfo);
-
-		// credentials are base64 encoded
-		std::stringstream encoded(authInfo);
-		std::stringstream decoded;
-		std::string credentials, user = "", password;
-		//
-		Poco::Base64Decoder base64(encoded);
-		Poco::StreamCopier::copyStream(base64, decoded);
-		//
-		credentials = decoded.str();
-
-		Poco::StringTokenizer tokenizer{credentials, ":"};
-
-		if (tokenizer.count() == 2)
-		{
-			user = tokenizer[0];
-			password = tokenizer[1];
-
-			credentialsOk = 
-				check_HMAC_SHA1(user, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverPassphrase) &&
-				check_HMAC_SHA1(password, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassphrase);
-		}
-
-		log_information(MinerLogger::server, "%s request to shutdown the miner.\n"
-			"\tfrom: %s\n"
-			"\tuser: %s",
-			(credentialsOk ? std::string("Authorized") : std::string("Unauthorized")),
-			request.clientAddress().toString(),
-			user);
-	}
-	
-	if (!credentialsOk)
-	{
-		response.requireAuthentication("creepMiner");
-		response.send();
+	if (!RequestHandlerHelper::checkCredentials(request, response))
 		return;
-	}
 
 	log_system(MinerLogger::server, "Shutting down miner...");
 

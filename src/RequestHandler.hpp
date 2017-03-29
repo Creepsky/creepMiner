@@ -60,6 +60,17 @@ namespace Burst
 		const TemplateVariables* variables_;
 	};
 
+	class RescanPlotfilesHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		RescanPlotfilesHandler(MinerServer& server);
+		~RescanPlotfilesHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		MinerServer* server_;
+	};
+
 	class ShutdownHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:

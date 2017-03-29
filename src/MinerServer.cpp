@@ -213,6 +213,9 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		if (uri.getPath() == "/shutdown")
 			return new ShutdownHandler{*server_->miner_, *server_};
 
+		if (uri.getPath() == "/rescanPlotfiles")
+			return new RescanPlotfilesHandler(*server_);
+
 		// forward function
 		if (uri.getPath() == "/burst")
 		{

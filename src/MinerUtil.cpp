@@ -560,6 +560,14 @@ Poco::JSON::Array Burst::createJsonPlotDirs()
 	return jsonPlotDirs;
 }
 
+Poco::JSON::Object Burst::createJsonPlotDirsRescan()
+{
+	Poco::JSON::Object jsonPlotRescan;
+	jsonPlotRescan.set("type", "plotdirs-rescan");
+	jsonPlotRescan.set("plotdirs", createJsonPlotDirs());
+	return jsonPlotRescan;
+}
+
 std::string Burst::getTime()
 {
 	std::stringstream ss;
