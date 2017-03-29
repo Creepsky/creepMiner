@@ -168,8 +168,11 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	// stop all reading processes if any
 	if (!MinerConfig::getConfig().getPlotFiles().empty())
 	{
+		log_debug(MinerLogger::miner, "Clearing queues, plot-read-queue: %d, verification-queue: %d",
+			plotReadQueue_.size(), verificationQueue_.size());
 		plotReadQueue_.clear();
 		verificationQueue_.clear();
+		log_debug(MinerLogger::miner, "Deallocating memory, used: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
 		PlotReader::globalBufferSize.reset(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, blockHeight);
 		log_debug(MinerLogger::miner, "Verification queue cleared.");
 	}
