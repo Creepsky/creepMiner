@@ -36,6 +36,10 @@ namespace Burst
 		void reset(uint64_t max, uint64_t blockheight);
 		bool add(uint64_t sizeToAdd, uint64_t blockheight);
 		void remove(uint64_t sizeToRemove, uint64_t blockheight);
+		
+		uint64_t getSize() const;
+		uint64_t getMax() const;
+		uint64_t getBlockheight() const;
 
 	private:
 		uint64_t size_ = 0;

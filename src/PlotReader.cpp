@@ -54,6 +54,21 @@ void Burst::GlobalBufferSize::remove(uint64_t sizeToRemove, uint64_t blockheight
 	size_ -= sizeToRemove;
 }
 
+uint64_t Burst::GlobalBufferSize::getSize() const
+{
+	return size_;
+}
+
+uint64_t Burst::GlobalBufferSize::getMax() const
+{
+	return max_;
+}
+
+uint64_t Burst::GlobalBufferSize::getBlockheight() const
+{
+	return blockheight_;
+}
+
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
 	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
 	: Task("PlotReader"), miner_{miner}, progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
