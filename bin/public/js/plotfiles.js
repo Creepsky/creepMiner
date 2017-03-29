@@ -34,7 +34,9 @@ function connectCallback(msg){
             case "nonce confirmed":
                 nonceConfirmed(response["plotfile"]);
                 break;
-            case "plotfiles-rescan":
+            case "plotdirs-rescan":
+                plotdirs = response["plotdirs"];
+                parsePlots();
                 break;
             default:
                 break;

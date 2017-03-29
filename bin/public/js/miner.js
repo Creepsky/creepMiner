@@ -551,7 +551,7 @@ function connectBlock() {
 					wonBlocks.html(reponse["blocksWon"]);
 					break;
 				case "plotdir-progress":
-				case "plotfiles-rescan":
+				case "plotdirs-rescan":
 					// do nothing
 					break;
 				default:
