@@ -35,10 +35,47 @@ void Burst::MinerConfig::rescan()
 
 void Burst::MinerConfig::rescanPlotfiles()
 {
+	log_system(MinerLogger::config, "Rescanning plot-dirs...");
+
 	Poco::FastMutex::ScopedLock lock{ mutexPlotfiles_ };
 
 	for (auto& plotDir : plotDirs_)
 		plotDir->rescan();
+
+	printConsolePlots();
+}
+
+void Burst::MinerConfig::printConsole() const
+{
+	log_system(MinerLogger::config, "Submission Max Retry : %s",
+		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()));
+	log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB);
+
+	if (!getPoolUrl().empty())
+		log_system(MinerLogger::config, "Pool Host : %s:%hu (%s)",
+			getPoolUrl().getCanonical(true), getPoolUrl().getPort(), getPoolUrl().getIp());
+	if (!getMiningInfoUrl().empty())
+		log_system(MinerLogger::config, "Mininginfo URL : %s:%hu (%s)",
+			getMiningInfoUrl().getCanonical(true), getMiningInfoUrl().getPort(), getMiningInfoUrl().getIp());
+	if (!getWalletUrl().empty())
+		log_system(MinerLogger::config, "Wallet URL : %s:%hu (%s)",
+			getWalletUrl().getCanonical(true), getWalletUrl().getPort(), getWalletUrl().getIp());
+	if (getStartServer() && !getServerUrl().empty())
+		log_system(MinerLogger::config, "Server URL : %s:%hu (%s)",
+			getServerUrl().getCanonical(true), getServerUrl().getPort(), getServerUrl().getIp());
+	if (getTargetDeadline() > 0)
+		log_system(MinerLogger::config, "Target deadline : %s", deadlineFormat(getTargetDeadline()));
+
+	log_system(MinerLogger::config, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
+
+	printConsolePlots();
+}
+
+void Burst::MinerConfig::printConsolePlots() const
+{
+	log_system(MinerLogger::config, "Total plots size: %s", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
+	log_system(MinerLogger::config, "Mining intensity : %u", getMiningIntensity());
+	log_system(MinerLogger::config, "Max plot readers : %u", getMaxPlotReaders());
 }
 
 Burst::PlotFile::PlotFile(std::string&& path, uint64_t size)
@@ -102,6 +139,7 @@ std::vector<std::shared_ptr<Burst::PlotDir>> Burst::PlotDir::getRelatedDirs() co
 void Burst::PlotDir::rescan()
 {
 	plotfiles_.clear();
+	size_ = 0;
 
 	addPlotLocation(path_);
 

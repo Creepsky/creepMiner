@@ -23,6 +23,8 @@ namespace Poco
 
 namespace Burst
 {
+	class MinerData;
+
 	enum class HostType
 	{
 		Pool,
@@ -83,6 +85,8 @@ namespace Burst
 		bool readConfigFile(const std::string& configPath);
 		void rescan();
 		void rescanPlotfiles();
+		void printConsole() const;
+		void printConsolePlots() const;
 
 		size_t maxBufferSizeMB = 128;
 		const std::string& getPath() const;

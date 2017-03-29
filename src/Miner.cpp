@@ -48,29 +48,7 @@ void Burst::Miner::run()
 		return;
 	}
 
-	log_system(MinerLogger::miner, "Total plots size: %s", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
-	log_system(MinerLogger::miner, "Submission Max Retry : %s",
-		config.getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(config.getSubmissionMaxRetry()));
-
-	log_system(MinerLogger::miner, "Buffer Size : %z MB", config.maxBufferSizeMB);
-	if (!config.getPoolUrl().empty())
-		log_system(MinerLogger::miner, "Pool Host : %s:%hu (%s)",
-			config.getPoolUrl().getCanonical(true), config.getPoolUrl().getPort(), config.getPoolUrl().getIp());
-	if (!config.getMiningInfoUrl().empty())
-		log_system(MinerLogger::miner, "Mininginfo URL : %s:%hu (%s)",
-			config.getMiningInfoUrl().getCanonical(true), config.getMiningInfoUrl().getPort(), config.getMiningInfoUrl().getIp());
-	if (!config.getWalletUrl().empty())
-		log_system(MinerLogger::miner, "Wallet URL : %s:%hu (%s)",
-			config.getWalletUrl().getCanonical(true), config.getWalletUrl().getPort(), config.getWalletUrl().getIp());
-	if (config.getStartServer() && !config.getServerUrl().empty())
-		log_system(MinerLogger::miner, "Server URL : %s:%hu (%s)",
-			config.getServerUrl().getCanonical(true), config.getServerUrl().getPort(), config.getServerUrl().getIp());
-	if (config.getTargetDeadline() > 0)
-		log_system(MinerLogger::miner, "Target deadline : %s", deadlineFormat(config.getTargetDeadline()));
-	log_system(MinerLogger::miner, "Mining intensity : %u", config.getMiningIntensity());
-	log_system(MinerLogger::miner, "Max plot readers : %u", config.getMaxPlotReaders());
-
-	log_system(MinerLogger::miner, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
+	MinerConfig::getConfig().printConsole();
 
 	// only create the thread pools and manager for mining if there is work to do (plot files)
 	if (!config.getPlotFiles().empty())
