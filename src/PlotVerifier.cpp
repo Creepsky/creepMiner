@@ -36,10 +36,7 @@ void Burst::PlotVerifier::runTask()
 			verifyNotification = notification.cast<VerifyNotification>();
 		else
 			break;
-
-		if (verifyNotification->block != miner_->getBlockheight())
-			continue;
-
+		
 #if defined MINING_CUDA
 #define check(x) if (!x) log_critical(MinerLogger::plotVerifier, "Error on %s", std::string(#x));
 
@@ -99,13 +96,7 @@ void Burst::PlotVerifier::runTask()
 				verifyNotification->baseTarget, verifyNotification->block, *miner_);
 #endif
 		
-		if (verifyNotification->block == miner_->getBlockheight())
-			PlotReader::globalBufferSize.remove(verifyNotification->buffer.size() * sizeof(ScoopData), verifyNotification->block);
-		else
-			log_debug(MinerLogger::plotVerifier, "Plot verifier is done with work, but not for this block!\n"
-				"\tBlock#: %Lu (vs. this block#: %Lu)\n"
-				"\tPlotfile:%s",
-				verifyNotification->block, miner_->getBlockheight(), verifyNotification->inputPath);
+		PlotReader::globalBufferSize.free(verifyNotification->buffer.size() * sizeof(ScoopData));
 	}
 
 #if defined MINING_CUDA
