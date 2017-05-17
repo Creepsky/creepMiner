@@ -77,7 +77,7 @@ void Burst::PlotReader::runTask()
 		else
 			break;
 
-		// skip the 
+		// only process the current block
 		if (miner_.getBlockheight() != plotReadNotification->blockheight)
 			continue;
 
