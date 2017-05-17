@@ -102,12 +102,12 @@ void Burst::PlotVerifier::runTask()
 				verifyNotification->baseTarget);
 
 			if (bestResult.isNull() ||
-				result.second < bestResult)
+				result.second < bestResult.value().second)
 				bestResult = result;
 		}
 
 		if (!bestResult.isNull())
-			verify(bestResult, verifyNotification->accountId, verifyNotification->inputPath, verifyNotification->block, *miner_);
+			verify(bestResult.value(), verifyNotification->accountId, verifyNotification->inputPath, verifyNotification->block, *miner_);
 
 #endif
 		
