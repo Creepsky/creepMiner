@@ -28,12 +28,22 @@ namespace Burst
 	class PlotVerifier : public Poco::Task
 	{
 	public:
+		/**
+		 * \brief 1. element: nonce, 2. element: deadline
+		 */
+		using DeadlineTuple = std::pair<uint64_t, uint64_t>;
+
 		PlotVerifier(Miner &miner, Poco::NotificationQueue& queue);
 		void runTask() override;
 
+		static DeadlineTuple verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset,
+			const GensigData& gensig, uint64_t baseTarget);
+
 		static void verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset,
 		                   const GensigData& gensig, uint64_t accountId, const std::string& inputPath, uint64_t baseTarget,
-		                   uint64_t blockheight, Miner& miner); 
+		                   uint64_t blockheight, Miner& miner);
+
+		static void verify(const DeadlineTuple& deadlineTuple, uint64_t accountId, const std::string& inputPath, uint64_t blockheight, Miner& miner);
 
 	private:
 		Miner* miner_;
