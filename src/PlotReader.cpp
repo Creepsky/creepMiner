@@ -77,6 +77,10 @@ void Burst::PlotReader::runTask()
 		else
 			break;
 
+		// skip the 
+		if (miner_.getBlockheight() == plotReadNotification->blockheight)
+			continue;
+
 		Poco::Timestamp timeStartDir;
 
 		// put in all related plot files
