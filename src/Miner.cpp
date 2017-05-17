@@ -174,7 +174,10 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		
 		PlotReader::globalBufferSize.setMax(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024);
 	}
-			
+	
+	// clear the plot read queue
+	plotReadQueue_.clear();
+
 	// setup new block-data
 	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr);
 
