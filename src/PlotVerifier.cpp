@@ -93,10 +93,22 @@ void Burst::PlotVerifier::runTask()
 		check(free_memory_cuda(cudaDeadlines));
 		calculatedDeadlines.resize(0);
 #else
+		Poco::Nullable<DeadlineTuple> bestResult;
+
 		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i++)
-			verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
-				verifyNotification->gensig, verifyNotification->accountId, verifyNotification->inputPath,
-				verifyNotification->baseTarget, verifyNotification->block, *miner_);
+		{
+			auto result = verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
+				verifyNotification->gensig,
+				verifyNotification->baseTarget);
+
+			if (bestResult.isNull() ||
+				result.second < bestResult)
+				bestResult = result;
+		}
+
+		if (!bestResult.isNull())
+			verify(bestResult, verifyNotification->accountId, verifyNotification->inputPath, verifyNotification->block, *miner_);
+
 #endif
 		
 		if (verifyNotification->block == miner_->getBlockheight())
@@ -117,8 +129,8 @@ void Burst::PlotVerifier::runTask()
 	log_debug(MinerLogger::plotVerifier, "Verifier stopped");
 }
 
-void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset, const GensigData& gensig,
-	uint64_t accountId, const std::string& inputPath, uint64_t baseTarget, uint64_t blockheight, Miner& miner)
+Burst::PlotVerifier::DeadlineTuple Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset, const GensigData& gensig,
+	uint64_t baseTarget)
 {
 	HashData target;
 	Shabal256 hash;
@@ -130,8 +142,18 @@ void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceR
 
 	uint64_t targetResult = 0;
 	memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
-	auto deadline = targetResult / baseTarget;
-	
-	auto nonceNum = nonceStart + nonceRead + offset;
-	miner.submitNonce(nonceNum, accountId, deadline, blockheight, inputPath);
+
+	return std::make_pair(nonceStart + nonceRead + offset, targetResult / baseTarget);
+}
+
+void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset, const GensigData& gensig,
+	uint64_t accountId, const std::string& inputPath, uint64_t baseTarget, uint64_t blockheight, Miner& miner)
+{
+	auto result = verify(buffer, nonceRead, nonceStart, offset, gensig, baseTarget);
+	verify(result, accountId, inputPath, blockheight, miner);
+}
+
+void Burst::PlotVerifier::verify(const DeadlineTuple& deadlineTuple, uint64_t accountId, const std::string& inputPath, uint64_t blockheight, Miner& miner)
+{
+	miner.submitNonce(deadlineTuple.first, accountId, deadlineTuple.second, blockheight, inputPath);
 }
