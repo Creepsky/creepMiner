@@ -78,7 +78,7 @@ void Burst::PlotReader::runTask()
 			break;
 
 		// skip the 
-		if (miner_.getBlockheight() == plotReadNotification->blockheight)
+		if (miner_.getBlockheight() != plotReadNotification->blockheight)
 			continue;
 
 		Poco::Timestamp timeStartDir;
