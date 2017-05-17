@@ -635,14 +635,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 						passphrase->set("salt", salt);
 						passphrase->set("key", key);
 						passphrase->set("iterations", iterations);
-
-						log_debug(MinerLogger::config, "Passphrase encrypted!\n"
-							"encrypted: %s\n"
-							"salt: %s\n"
-							"key: %s\n"
-							"iterations: %u",
-							encrypted, salt, std::string(key.size(), '*'), iterations
-						);
 					}
 				}
 			}
