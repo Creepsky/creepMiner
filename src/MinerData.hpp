@@ -40,7 +40,7 @@ namespace Burst
 		void setLastWinner(std::shared_ptr<Account> account);
 		
 		void refreshBlockEntry() const;
-		void setProgress(float progress);
+		void setProgress(float progress, uint64_t blockheight);
 
 		uint64_t getBlockheight() const;
 		uint64_t getScoop() const;

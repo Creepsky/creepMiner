@@ -103,9 +103,12 @@ void Burst::BlockData::refreshBlockEntry() const
 	addBlockEntry(createJsonNewBlock(*parent_));
 }
 
-void Burst::BlockData::setProgress(float progress)
+void Burst::BlockData::setProgress(float progress, uint64_t blockheight)
 {
 	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
+
+	if (blockheight != getBlockheight())
+		return;
 
 	jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progress)};
 
