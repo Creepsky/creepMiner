@@ -356,16 +356,19 @@ void Burst::MinerLogger::nextLine()
 
 void Burst::MinerLogger::setColor(Color foreground, Color background)
 {
+#ifdef LOG_TERMINAL
 #ifdef _WIN32
 	auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD color = ((static_cast<int32_t>(foreground) & 0x0F) + ((static_cast<int32_t>(background) & 0x0F) << 4));
 	SetConsoleTextAttribute(hConsole, color);
 	currentColor = { foreground, background };
 #endif
+#endif
 }
 
 void Burst::MinerLogger::setColor(TextType type)
 {
+#ifdef LOG_TERMINAL
 #ifdef _WIN32
 	setColor(getTextTypeColor(type));
 #elif __linux__
@@ -385,11 +388,13 @@ void Burst::MinerLogger::setColor(TextType type)
 	default: std::cout << "\033[0;37m"; break;
 	};
 #endif
+#endif
 	currentTextType = type;
 }
 
 void Burst::MinerLogger::clearLine()
 {
+#ifdef LOG_TERMINAL
 	static auto consoleLength = 0u;
 
 	if (consoleLength == 0)
@@ -406,6 +411,7 @@ void Burst::MinerLogger::clearLine()
 	}
 
 	std::cout << '\r' << std::string(consoleLength, ' ') << '\r' << std::flush;
+#endif
 }
 
 void Burst::MinerLogger::printTime()
@@ -415,6 +421,7 @@ void Burst::MinerLogger::printTime()
 
 void Burst::MinerLogger::printProgress(float progress, size_t pipes)
 {
+#ifdef LOG_TERMINAL
 	auto done = static_cast<size_t>(pipes * (progress / 100));
 	auto notDone = pipes - done;
 	lastProgress_ = progress;
@@ -435,6 +442,7 @@ void Burst::MinerLogger::printProgress(float progress, size_t pipes)
 
 	setColor(TextType::Unimportant);
 	std::cout << ']' << ' ' << static_cast<size_t>(progress) << '%' << std::flush;
+#endif
 }
 
 void Burst::MinerLogger::setColor(ColorPair color)
