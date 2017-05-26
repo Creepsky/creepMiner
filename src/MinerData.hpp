@@ -93,6 +93,8 @@ namespace Burst
 	class MinerData
 	{
 	public:
+		MinerData();
+		
 		std::shared_ptr<BlockData> startNewBlock(uint64_t block, uint64_t baseTarget, const std::string& genSig);
 		void setTargetDeadline(uint64_t deadline);
 

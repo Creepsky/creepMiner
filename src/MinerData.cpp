@@ -288,6 +288,11 @@ std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pa
 	return nullptr;
 }
 
+Burst::MinerData::MinerData()
+	: blocksMined_(0), blocksWon_(0), deadlinesConfirmed_(0), targetDeadline_(0),
+	currentBlockheight_(0), currentBasetarget_(0), currentScoopNum_(0)
+{}
+
 std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(uint64_t block, uint64_t baseTarget, const std::string& genSig)
 {
 	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
