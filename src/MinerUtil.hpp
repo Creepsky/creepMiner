@@ -64,6 +64,16 @@ namespace Burst
 		Incomplete
 	};
 
+	enum class DeadlineFragment
+	{
+		Years,
+		Months,
+		Days,
+		Hours,
+		Minutes,
+		Seconds
+	};
+
 	bool isNumberStr(const std::string& str);
 	std::string getFileNameFromPath(const std::string& strPath);
 	std::vector<std::string>& splitStr(const std::string& s, char delim, std::vector<std::string>& elems);
@@ -75,6 +85,7 @@ namespace Burst
 	std::string getNonceCountFromPlotFile(const std::string& path);
 	std::string getStaggerSizeFromPlotFile(const std::string& path);
 	std::string deadlineFormat(uint64_t seconds);
+	uint64_t deadlineFragment(uint64_t seconds, DeadlineFragment fragment);
 	uint64_t formatDeadline(const std::string& format);
 	std::string gbToString(uint64_t size);
 	std::string memToString(uint64_t size, MemoryUnit factor, uint8_t precision);

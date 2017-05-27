@@ -213,6 +213,27 @@ std::string Burst::deadlineFormat(uint64_t seconds)
 	return ss.str();
 }
 
+uint64_t Burst::deadlineFragment(uint64_t seconds, DeadlineFragment fragment)
+{
+	auto secs = seconds;
+	auto mins = secs / 60;
+	auto hours = mins / 60;
+	auto day = hours / 24;
+	auto months = day / 30;
+	auto years = months / 12;
+
+	switch (fragment)
+	{
+	case DeadlineFragment::Years: return years;
+	case DeadlineFragment::Months: return months % 12;
+	case DeadlineFragment::Days: return day % 30;
+	case DeadlineFragment::Hours: return hours % 24;
+	case DeadlineFragment::Minutes: return mins % 60;
+	case DeadlineFragment::Seconds: return secs % 60;
+	default: return 0;
+	}
+}
+
 uint64_t Burst::formatDeadline(const std::string& format)
 {
 	if (format.empty())
@@ -470,19 +491,34 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 Poco::JSON::Object Burst::createJsonConfig()
 {
 	Poco::JSON::Object json;
+	auto targetDeadline = MinerConfig::getConfig().getTargetDeadline();
+
 	json.set("type", "config");
 	json.set("poolUrl", MinerConfig::getConfig().getPoolUrl().getCanonical(true));
+	json.set("poolUrlPort", std::to_string(MinerConfig::getConfig().getPoolUrl().getPort()));
 	json.set("miningInfoUrl", MinerConfig::getConfig().getMiningInfoUrl().getCanonical(true));
+	json.set("miningInfoUrlPort", std::to_string(MinerConfig::getConfig().getMiningInfoUrl().getPort()));
 	json.set("walletUrl", MinerConfig::getConfig().getWalletUrl().getCanonical(true));
+	json.set("walletUrlPort", std::to_string(MinerConfig::getConfig().getWalletUrl().getPort()));
 	json.set("totalPlotSize", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	json.set("bufferSize", memToString(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, 0));
-	json.set("targetDeadline", deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+	json.set("bufferSizeMB", std::to_string(MinerConfig::getConfig().maxBufferSizeMB));
+	json.set("targetDeadline", deadlineFormat(targetDeadline));
 	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
 	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));
-	json.set("submissionMaxRetry", MinerConfig::getConfig().getSubmissionMaxRetry() == 0 ?
-		"unlimited" :
-		std::to_string(MinerConfig::getConfig().getSubmissionMaxRetry()));
+	json.set("submissionMaxRetry", std::to_string(MinerConfig::getConfig().getSubmissionMaxRetry()));
+	
+	Poco::JSON::Object jsonTargerDeadline;
+	jsonTargerDeadline.set("years", deadlineFragment(targetDeadline, DeadlineFragment::Years));
+	jsonTargerDeadline.set("months", deadlineFragment(targetDeadline, DeadlineFragment::Months));
+	jsonTargerDeadline.set("days", deadlineFragment(targetDeadline, DeadlineFragment::Days));
+	jsonTargerDeadline.set("hours", deadlineFragment(targetDeadline, DeadlineFragment::Hours));
+	jsonTargerDeadline.set("minutes", deadlineFragment(targetDeadline, DeadlineFragment::Minutes));
+	jsonTargerDeadline.set("seconds", deadlineFragment(targetDeadline, DeadlineFragment::Seconds));
+
+	json.set("targetDeadlineObject", jsonTargerDeadline);
+
 	return json;
 }
 
