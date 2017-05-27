@@ -133,7 +133,6 @@ function createPlotfileLine(path, size){
     var line = $("<tr></tr>");
     line.append("<td>" + path + "</td>");
     line.append("<td>" + size + "</td>");
-    line.append("<td>" + createProgressBar() + "</td>");
 
     return line;
 }
