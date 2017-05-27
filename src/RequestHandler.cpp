@@ -512,3 +512,28 @@ void Burst::ForwardHandler::handleRequest(Poco::Net::HTTPServerRequest& request,
 		log_current_stackframe(MinerLogger::server);
 	}
 }
+
+Burst::SettingsHandler::SettingsHandler(const TemplateVariables& variables, MinerServer& server)
+	: variables_(&variables), server_(&server)
+{}
+
+void Burst::SettingsHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	TemplateVariables contentVariables;
+	std::string output;
+
+	contentVariables.variables.emplace("includes", []() { return "<script src='js/settings.js'></script>"; });
+
+	if (RequestHandlerHelper::sendIndexContent(*variables_, contentVariables, "public/settings.html", output))
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
+		out << output;
+	}
+	else
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+		response.send();
+	}
+}

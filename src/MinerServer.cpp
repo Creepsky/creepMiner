@@ -216,6 +216,9 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		if (uri.getPath() == "/rescanPlotfiles")
 			return new RescanPlotfilesHandler(*server_);
 
+		if (uri.getPath() == "/settings")
+			return new SettingsHandler(server_->variables_, *server_);
+
 		// forward function
 		if (uri.getPath() == "/burst")
 		{

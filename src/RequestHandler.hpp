@@ -148,4 +148,16 @@ namespace Burst
 	private:
 		std::unique_ptr<Poco::Net::HTTPClientSession> session_;
 	};
+
+	class SettingsHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		SettingsHandler(const TemplateVariables& variables, MinerServer& server);
+		~SettingsHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		const TemplateVariables* variables_;
+		MinerServer* server_;
+	};
 }
