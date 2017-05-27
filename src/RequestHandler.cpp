@@ -135,10 +135,29 @@ void Burst::TemplateVariables::inject(std::string& source) const
 		Poco::replaceInPlace(source, "%" + var.first + "%", var.second());
 }
 
+Burst::NotFoundHandler::NotFoundHandler(const TemplateVariables& variables)
+	: variables_(&variables)
+{}
+
 void Burst::NotFoundHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
-	response.send();
+	TemplateVariables contentVariables;
+	std::string output;
+
+	contentVariables.variables.emplace("includes", []() { return ""; });
+
+	if (RequestHandlerHelper::sendIndexContent(*variables_, contentVariables, "public/404.html", output))
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
+		out << output;
+	}
+	else
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
+		response.send();
+	}
 }
 
 Burst::RootHandler::RootHandler(const TemplateVariables& variables)

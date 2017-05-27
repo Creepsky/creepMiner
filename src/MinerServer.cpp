@@ -241,7 +241,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		if (Poco::File{ path }.exists())
 			return new AssetHandler{server_->variables_};
 
-		return new NotFoundHandler;
+		return new NotFoundHandler{ server_->variables_ };
 	}
 	catch (...)
 	{

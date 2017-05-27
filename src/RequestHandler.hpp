@@ -34,8 +34,12 @@ namespace Burst
 	class NotFoundHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
+		NotFoundHandler(const TemplateVariables& variables);
 		~NotFoundHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		const TemplateVariables* variables_;
 	};
 
 	class RootHandler : public Poco::Net::HTTPRequestHandler
