@@ -125,6 +125,11 @@ namespace Burst
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(uint64_t bufferSize);
 		void setMaxSubmissionRetry(uint64_t value);
+		void setTimeout(float value);
+		void setTargetDeadline(const std::string& target_deadline);
+		void setTargetDeadline(uint64_t target_deadline);
+		void setMininigIntensity(unsigned intensity);
+		void setMaxPlotReaders(unsigned max_reader);
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;

@@ -1122,8 +1122,38 @@ void Burst::MinerConfig::setMaxSubmissionRetry(uint64_t value)
 	submission_max_retry_ = value;
 }
 
+void Burst::MinerConfig::setTimeout(float value)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	timeout_ = value;
+}
+
+void Burst::MinerConfig::setTargetDeadline(const std::string& target_deadline)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	setTargetDeadline(formatDeadline(target_deadline));
+}
+
+void Burst::MinerConfig::setTargetDeadline(uint64_t target_deadline)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	targetDeadline_ = target_deadline;
+}
+
 uint64_t Burst::MinerConfig::getMaxBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return maxBufferSizeMB_;
+}
+
+void Burst::MinerConfig::setMininigIntensity(unsigned intensity)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	miningIntensity_ = intensity;
+}
+
+void Burst::MinerConfig::setMaxPlotReaders(unsigned max_reader)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	maxPlotReaders_ = max_reader;
 }
