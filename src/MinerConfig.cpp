@@ -1118,5 +1118,6 @@ void Burst::MinerConfig::setBufferSize(uint64_t bufferSize)
 
 uint64_t Burst::MinerConfig::getMaxBufferSize() const
 {
+	Poco::Mutex::ScopedLock lock(mutex_);
 	return maxBufferSizeMB_;
 }
