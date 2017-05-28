@@ -200,27 +200,38 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 	try
 	{
 		URI uri{request.getURI()};
+		std::vector<std::string> path_segments;
+
+		uri.getPathSegments(path_segments);
 
 		// root
-		if (uri.getPath() == "/")
+		if (path_segments.empty())
 			return new RootHandler{server_->variables_};
 
 		// plotfiles
-		if (uri.getPath() == "/plotfiles")
+		if (path_segments.front() == "plotfiles")
 			return new PlotfilesHandler{ server_->variables_ };
 
 		// shutdown everything
-		if (uri.getPath() == "/shutdown")
+		if (path_segments.front() == "shutdown")
 			return new ShutdownHandler{*server_->miner_, *server_};
 
-		if (uri.getPath() == "/rescanPlotfiles")
+		if (path_segments.front() == "rescanPlotfiles")
 			return new RescanPlotfilesHandler(*server_);
 
-		if (uri.getPath() == "/settings")
-			return new SettingsHandler(server_->variables_, *server_);
+		if (path_segments.front() == "settings")
+		{
+			if (path_segments.size() == 1)
+				return new SettingsHandler(server_->variables_, *server_);
+
+			if (path_segments.size() > 1)
+			{
+				return new RedirectHandler("/settings");
+			}
+		}
 
 		// forward function
-		if (uri.getPath() == "/burst")
+		if (path_segments.front() == "burst")
 		{
 			static const std::string getMiningInfo = "requestType=getMiningInfo";
 			static const std::string submitNonce = "requestType=submitNonce";
@@ -237,7 +248,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 			// why wallet? because the only requests to a pool are getMiningInfo and submitNonce and we handled them already
 			return new ForwardHandler{MinerConfig::getConfig().createSession(HostType::Wallet)};
 		}
-
+		
 		Path path{"public"};
 		path.append(uri.getPath());
 

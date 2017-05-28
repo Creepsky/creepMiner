@@ -537,3 +537,12 @@ void Burst::SettingsHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 		response.send();
 	}
 }
+
+Burst::RedirectHandler::RedirectHandler(std::string redirect_url)
+	: redirect_url_(std::move(redirect_url))
+{}
+
+void Burst::RedirectHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	response.redirect(redirect_url_);
+}

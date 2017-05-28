@@ -160,4 +160,15 @@ namespace Burst
 		const TemplateVariables* variables_;
 		MinerServer* server_;
 	};
+
+	class RedirectHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		RedirectHandler(std::string redirect_url);
+		~RedirectHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		std::string redirect_url_;
+	};
 }
