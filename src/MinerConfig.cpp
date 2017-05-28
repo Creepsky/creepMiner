@@ -51,7 +51,8 @@ void Burst::MinerConfig::printConsole() const
 
 	log_system(MinerLogger::config, "Submission Max Retry : %s",
 		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()));
-	log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB);
+	
+	printBufferSize();
 
 	printUrl(HostType::Pool);
 	printUrl(HostType::MiningInfo);
@@ -92,6 +93,12 @@ void Burst::MinerConfig::printUrl(const Url& url, const std::string& url_name)
 	if (!url.empty())
 		log_system(MinerLogger::config, "%s : %s:%hu (%s)",
 			url_name ,url.getCanonical(true), url.getPort(), url.getIp());
+}
+
+void Burst::MinerConfig::printBufferSize() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB_);
 }
 
 Burst::PlotFile::PlotFile(std::string&& path, uint64_t size)
@@ -459,10 +466,10 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			miningObj = new Poco::JSON::Object;
 
 		submission_max_retry_ = getOrAddAlt(miningObj, config, "submissionMaxRetry", 3);
-		maxBufferSizeMB = getOrAddAlt(miningObj, config, "maxBufferSizeMB", 128);
+		maxBufferSizeMB_ = getOrAddAlt(miningObj, config, "maxBufferSizeMB", 128);
 
-		if (maxBufferSizeMB == 0)
-			maxBufferSizeMB = 128;
+		if (maxBufferSizeMB_ == 0)
+			maxBufferSizeMB_ = 128;
 
 		auto timeout = getOrAddAlt(miningObj, config, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
@@ -1101,4 +1108,15 @@ void Burst::MinerConfig::setUrl(std::string url, HostType hostType)
 		*uri = Url(url); // change url
 		printUrl(hostType); // print url
 	}
+}
+
+void Burst::MinerConfig::setBufferSize(uint64_t bufferSize)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	maxBufferSizeMB_ = bufferSize;
+}
+
+uint64_t Burst::MinerConfig::getMaxBufferSize() const
+{
+	return maxBufferSizeMB_;
 }

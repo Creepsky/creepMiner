@@ -151,7 +151,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		plotReadQueue_.clear();
 		verificationQueue_.clear();
 		log_debug(MinerLogger::miner, "Deallocating memory, used: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
-		PlotReader::globalBufferSize.reset(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, blockHeight);
+		PlotReader::globalBufferSize.reset(MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024, blockHeight);
 		log_debug(MinerLogger::miner, "Verification queue cleared.");
 	}
 			

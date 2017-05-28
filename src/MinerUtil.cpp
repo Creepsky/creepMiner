@@ -336,7 +336,7 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 		std::string validChars = "abcdefghijklmnopqrstuvwxyz";
 		validChars += Poco::toUpper(validChars);
 		validChars += "0123456789";
-		validChars += "()[]*/+-#'~?´`&$!";
+		validChars += "()[]*/+-#'~?ï¿½`&$!";
 
 		const auto createRandomCharSequence = [&validChars](size_t lenght)
 		{
@@ -502,8 +502,8 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("walletUrlPort", std::to_string(MinerConfig::getConfig().getWalletUrl().getPort()));
 	json.set("totalPlotSize", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
-	json.set("bufferSize", memToString(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, 0));
-	json.set("bufferSizeMB", std::to_string(MinerConfig::getConfig().maxBufferSizeMB));
+	json.set("bufferSize", memToString(MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024, 0));
+	json.set("bufferSizeMB", std::to_string(MinerConfig::getConfig().getMaxBufferSize()));
 	json.set("targetDeadline", deadlineFormat(targetDeadline));
 	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
 	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));

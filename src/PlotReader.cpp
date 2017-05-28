@@ -126,7 +126,7 @@ void Burst::PlotReader::runTask()
 				unsigned long long int templateArg = 0;
 				const auto staggerChunkBytes = [staggerScoopBytes](auto arg)
 				{
-					decltype(arg) a = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
+					decltype(arg) a = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
 					decltype(arg) b = staggerScoopBytes;
 
 					for(;;) 

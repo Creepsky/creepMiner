@@ -90,13 +90,14 @@ namespace Burst
 		void printConsolePlots() const;
 		void printUrl(HostType type) const;
 		static void printUrl(const Url& url, const std::string& url_name);
+		void printBufferSize() const;
 
-		size_t maxBufferSizeMB = 128;
 		const std::string& getPath() const;
 
 		std::vector<std::shared_ptr<PlotFile>> getPlotFiles() const;
 		uintmax_t getTotalPlotsize() const;
 
+		uint64_t getMaxBufferSize() const;
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
 		float getTimeout() const;
@@ -122,6 +123,7 @@ namespace Burst
 		std::string getServerPass() const;
 
 		void setUrl(std::string url, HostType hostType);
+		void setBufferSize(uint64_t bufferSize);
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -153,6 +155,7 @@ namespace Burst
 		std::string serverUser_, serverPass_;
 		uint32_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
+		size_t maxBufferSizeMB_ = 128;
 		mutable Poco::Mutex mutex_;
 	};
 }
