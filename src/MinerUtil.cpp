@@ -314,7 +314,7 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 		std::string validChars = "abcdefghijklmnopqrstuvwxyz";
 		validChars += Poco::toUpper(validChars);
 		validChars += "0123456789";
-		validChars += "()[]*/+-#'~?�`&$!";
+		validChars += "()[]*/+-#'~?&$!";
 
 		const auto createRandomCharSequence = [&validChars](size_t lenght)
 		{
