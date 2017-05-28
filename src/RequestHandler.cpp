@@ -18,6 +18,7 @@
 #include <Poco/Base64Decoder.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/StringTokenizer.h>
+#include <Poco/Net/HTMLForm.h>
 
 namespace Burst
 {
@@ -545,4 +546,22 @@ Burst::RedirectHandler::RedirectHandler(std::string redirect_url)
 void Burst::RedirectHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
 	response.redirect(redirect_url_);
+}
+
+Burst::SettingsChangeHandler::SettingsChangeHandler(MinerServer& server)
+	: server_(&server)
+{}
+
+void Burst::SettingsChangeHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	if (request.getMethod() == "POST")
+	{
+		Poco::Net::HTMLForm post_body(request, request.stream());
+		
+		for (auto& key_val : post_body)
+		{}
+	}
+
+	RedirectHandler redirect("/settings");
+	redirect.handleRequest(request, response);
 }

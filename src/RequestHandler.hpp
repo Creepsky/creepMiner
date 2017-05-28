@@ -171,4 +171,15 @@ namespace Burst
 	private:
 		std::string redirect_url_;
 	};
+
+	class SettingsChangeHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		SettingsChangeHandler(MinerServer& server);
+		~SettingsChangeHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		MinerServer* server_;
+	};
 }

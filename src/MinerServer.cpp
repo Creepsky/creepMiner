@@ -225,9 +225,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 				return new SettingsHandler(server_->variables_, *server_);
 
 			if (path_segments.size() > 1)
-			{
-				return new RedirectHandler("/settings");
-			}
+				return new SettingsChangeHandler(*server_);
 		}
 
 		// forward function
