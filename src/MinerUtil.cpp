@@ -508,16 +508,8 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
 	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));
 	json.set("submissionMaxRetry", std::to_string(MinerConfig::getConfig().getSubmissionMaxRetry()));
-	
-	Poco::JSON::Object jsonTargerDeadline;
-	jsonTargerDeadline.set("years", deadlineFragment(targetDeadline, DeadlineFragment::Years));
-	jsonTargerDeadline.set("months", deadlineFragment(targetDeadline, DeadlineFragment::Months));
-	jsonTargerDeadline.set("days", deadlineFragment(targetDeadline, DeadlineFragment::Days));
-	jsonTargerDeadline.set("hours", deadlineFragment(targetDeadline, DeadlineFragment::Hours));
-	jsonTargerDeadline.set("minutes", deadlineFragment(targetDeadline, DeadlineFragment::Minutes));
-	jsonTargerDeadline.set("seconds", deadlineFragment(targetDeadline, DeadlineFragment::Seconds));
-
-	json.set("targetDeadlineObject", jsonTargerDeadline);
+	json.set("targetDeadline", std::to_string(MinerConfig::getConfig().getTargetDeadline()));
+	json.set("targetDeadlineText", deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
 
 	return json;
 }
