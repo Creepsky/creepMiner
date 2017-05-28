@@ -20,7 +20,6 @@
 #include "NonceSubmitter.hpp"
 #include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
-#include "PlotVerifier.hpp"
 #include "PlotSizes.hpp"
 #include "Output.hpp"
 
@@ -57,40 +56,18 @@ void Burst::Miner::run()
 		nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>();
 
 		// create the plot verifiers
-		verifier_ = std::make_unique<WorkerList<PlotVerifier>>(Poco::Thread::Priority::PRIO_HIGH, MinerConfig::getConfig().getMiningIntensity(),
-			*this, verificationQueue_);
+		verifier_pool_ = std::make_unique<Poco::ThreadPool>(1, MinerConfig::getConfig().getMiningIntensity());
+		verifier_ = std::make_unique<Poco::TaskManager>(*verifier_pool_);
 
-		auto verifiers = verifier_->size();
-
-		if (verifiers != MinerConfig::getConfig().getMiningIntensity())
-		{
-			log_critical(MinerLogger::miner, "Could not create all verifiers (%z/%z)!\n"
-				"Lower the setting \"maxBufferSizeMB\"!", verifiers, MinerConfig::getConfig().getMiningIntensity());
-
-			if (verifiers == 0)
-				return;
-		}
+		for (auto i = 0; i < MinerConfig::getConfig().getMiningIntensity(); ++i)
+			verifier_->start(new PlotReader(*this, progress_, verificationQueue_, plotReadQueue_));
 
 		// create plot reader
-		size_t plotReaderToCreate = MinerConfig::getConfig().getMaxPlotReaders();
+		plot_reader_pool_ = std::make_unique<Poco::ThreadPool>(1, MinerConfig::getConfig().getMaxPlotReaders());
+		plot_reader_ = std::make_unique<Poco::TaskManager>(*plot_reader_pool_);
 
-		plotReader_ = std::make_unique<WorkerList<PlotReader>>(Poco::Thread::Priority::PRIO_HIGHEST,
-			plotReaderToCreate,
-			*this, progress_, verificationQueue_, plotReadQueue_);
-
-		auto plotReader = plotReader_->size();
-
-		//auto plotReader = createWorkers<PlotReader>(plotReaderToCreate, *plotReaderThreadPool_,
-			//Poco::Thread::Priority::PRIO_HIGHEST, *this, progress_, verificationQueue_, plotReadQueue_);
-
-		if (plotReader != plotReaderToCreate)
-		{
-			log_critical(MinerLogger::miner, "Could not create all plot reader (%z/%z)!\n"
-				"Lower the setting \"maxPlotReaders\"!", plotReader, plotReaderToCreate);
-
-			if (plotReader == 0)
-				return;
-		}
+		for (auto i = 0; i < MinerConfig::getConfig().getMaxPlotReaders(); ++i)
+			plot_reader_->start(new PlotVerifier(*this, verificationQueue_));
 	}
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
@@ -131,10 +108,15 @@ void Burst::Miner::run()
 void Burst::Miner::stop()
 {
 	poco_ndc(Miner::stop);
+	// stop plot reader
 	plotReadQueue_.wakeUpAll();
-	plotReader_->stop();
+	plot_reader_pool_->stopAll();
+	plot_reader_pool_->joinAll();
+	// stop verifier
 	verificationQueue_.wakeUpAll();
-	verifier_->stop();
+	verifier_pool_->stopAll();
+	verifier_pool_->joinAll();
+	// also stop all running background-tasks
 	Poco::ThreadPool::defaultPool().stopAll();
 	running_ = false;
 }

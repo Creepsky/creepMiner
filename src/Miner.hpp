@@ -72,10 +72,9 @@ namespace Burst
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
 		Accounts accounts_;
 		Wallet wallet_;
-		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_;
+		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_, plot_reader_, verifier_;
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
-		std::unique_ptr<WorkerList<PlotVerifier>> verifier_;
-		std::unique_ptr<WorkerList<PlotReader>> plotReader_;
+		std::unique_ptr<Poco::ThreadPool> verifier_pool_, plot_reader_pool_;
 	};
 }
