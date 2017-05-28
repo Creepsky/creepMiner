@@ -153,6 +153,6 @@ namespace Burst
 		std::string serverUser_, serverPass_;
 		uint32_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
-		mutable Poco::FastMutex mutex_;
+		mutable Poco::Mutex mutex_;
 	};
 }
