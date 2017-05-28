@@ -1116,6 +1116,12 @@ void Burst::MinerConfig::setBufferSize(uint64_t bufferSize)
 	maxBufferSizeMB_ = bufferSize;
 }
 
+void Burst::MinerConfig::setMaxSubmissionRetry(uint64_t value)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	submission_max_retry_ = value;
+}
+
 uint64_t Burst::MinerConfig::getMaxBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
