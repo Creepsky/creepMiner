@@ -37,7 +37,7 @@ void Burst::MinerConfig::rescanPlotfiles()
 {
 	log_system(MinerLogger::config, "Rescanning plot-dirs...");
 
-	Poco::FastMutex::ScopedLock lock{ mutexPlotfiles_ };
+	Poco::FastMutex::ScopedLock lock(mutex_);
 
 	for (auto& plotDir : plotDirs_)
 		plotDir->rescan();
@@ -47,22 +47,17 @@ void Burst::MinerConfig::rescanPlotfiles()
 
 void Burst::MinerConfig::printConsole() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
+
 	log_system(MinerLogger::config, "Submission Max Retry : %s",
 		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()));
 	log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB);
 
-	if (!getPoolUrl().empty())
-		log_system(MinerLogger::config, "Pool Host : %s:%hu (%s)",
-			getPoolUrl().getCanonical(true), getPoolUrl().getPort(), getPoolUrl().getIp());
-	if (!getMiningInfoUrl().empty())
-		log_system(MinerLogger::config, "Mininginfo URL : %s:%hu (%s)",
-			getMiningInfoUrl().getCanonical(true), getMiningInfoUrl().getPort(), getMiningInfoUrl().getIp());
-	if (!getWalletUrl().empty())
-		log_system(MinerLogger::config, "Wallet URL : %s:%hu (%s)",
-			getWalletUrl().getCanonical(true), getWalletUrl().getPort(), getWalletUrl().getIp());
-	if (getStartServer() && !getServerUrl().empty())
-		log_system(MinerLogger::config, "Server URL : %s:%hu (%s)",
-			getServerUrl().getCanonical(true), getServerUrl().getPort(), getServerUrl().getIp());
+	printUrl(HostType::Pool);
+	printUrl(HostType::MiningInfo);
+	printUrl(HostType::Wallet);
+	printUrl(HostType::Server);
+
 	if (getTargetDeadline() > 0)
 		log_system(MinerLogger::config, "Target deadline : %s", deadlineFormat(getTargetDeadline()));
 
@@ -73,9 +68,30 @@ void Burst::MinerConfig::printConsole() const
 
 void Burst::MinerConfig::printConsolePlots() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	log_system(MinerLogger::config, "Total plots size: %s", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
 	log_system(MinerLogger::config, "Mining intensity : %u", getMiningIntensity());
 	log_system(MinerLogger::config, "Max plot readers : %u", getMaxPlotReaders());
+}
+
+void Burst::MinerConfig::printUrl(HostType type) const
+{
+	Poco::FastMutex::ScopedLock lock(mutex_);
+
+	switch (type)
+	{
+	case HostType::MiningInfo: return printUrl(urlMiningInfo_, "Submission URL");
+	case HostType::Pool: return printUrl(urlPool_, "Mininginfo URL");
+	case HostType::Wallet: return printUrl(urlWallet_, "Wallet URL");
+	case HostType::Server: return printUrl(serverUrl_, "Server URL");
+	}
+}
+
+void Burst::MinerConfig::printUrl(const Url& url, const std::string& url_name)
+{
+	if (!url.empty())
+		log_system(MinerLogger::config, "%s : %s:%hu (%s)",
+			url_name ,url.getCanonical(true), url.getPort(), url.getIp());
 }
 
 Burst::PlotFile::PlotFile(std::string&& path, uint64_t size)
@@ -812,6 +828,8 @@ const std::string& Burst::MinerConfig::getPath() const
 
 std::vector<std::shared_ptr<Burst::PlotFile>> Burst::MinerConfig::getPlotFiles() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
+
 	std::vector<std::shared_ptr<Burst::PlotFile>> plotFiles;
 
 	for (auto& plotDir : plotDirs_)
@@ -854,66 +872,80 @@ float Burst::MinerConfig::getSendTimeout() const
 
 float Burst::MinerConfig::getTimeout() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return timeout_;
 }
 
-const Burst::Url& Burst::MinerConfig::getPoolUrl() const
+Burst::Url Burst::MinerConfig::getPoolUrl() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return urlPool_;
 }
 
-const Burst::Url& Burst::MinerConfig::getMiningInfoUrl() const
+Burst::Url Burst::MinerConfig::getMiningInfoUrl() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return urlMiningInfo_;
 }
 
-const Burst::Url& Burst::MinerConfig::getWalletUrl() const
+Burst::Url Burst::MinerConfig::getWalletUrl() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return urlWallet_;
 }
 
 size_t Burst::MinerConfig::getReceiveMaxRetry() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return receive_max_retry_;
 }
 
 size_t Burst::MinerConfig::getSendMaxRetry() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return send_max_retry_;
 }
 
 size_t Burst::MinerConfig::getSubmissionMaxRetry() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return submission_max_retry_;
 }
 
 size_t Burst::MinerConfig::getHttp() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return http_;
 }
 
 const std::string& Burst::MinerConfig::getConfirmedDeadlinesPath() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return confirmedDeadlinesPath_;
 }
 
 bool Burst::MinerConfig::getStartServer() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return startServer_;
 }
 
 uint64_t Burst::MinerConfig::getTargetDeadline() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return targetDeadline_;
 }
 
-const Burst::Url& Burst::MinerConfig::getServerUrl() const
+Burst::Url Burst::MinerConfig::getServerUrl() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return serverUrl_;
 }
 
 std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostType) const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
+
 	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
 	const Url* url;
 	
@@ -934,6 +966,8 @@ std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostTyp
 
 std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(HostType hostType) const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
+
 	const Url* url;
 
 	if (hostType == HostType::Pool)
@@ -989,12 +1023,13 @@ Poco::JSON::Object::Ptr Burst::MinerConfig::readOutput(Poco::JSON::Object::Ptr j
 
 uint32_t Burst::MinerConfig::getMiningIntensity() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return miningIntensity_;
 }
 
 bool Burst::MinerConfig::forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const
 {
-	Poco::FastMutex::ScopedLock lock{ mutexPlotfiles_ };
+	Poco::FastMutex::ScopedLock lock(mutex_);
 
 	auto success = true;
 
@@ -1010,33 +1045,60 @@ bool Burst::MinerConfig::forPlotDirs(std::function<bool(PlotDir&)> traverseFunct
 
 const std::string& Burst::MinerConfig::getPlotsHash() const
 {
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	return plotsHash_;
 }
 
 const std::string& Burst::MinerConfig::getPassphrase() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return passPhrase_;
 }
 
 uint32_t Burst::MinerConfig::getMaxPlotReaders() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
+
 	if (maxPlotReaders_ == 0)
 		return static_cast<uint32_t>(plotDirs_.size());
 
 	return maxPlotReaders_;
 }
 
-const Poco::Path& Burst::MinerConfig::getPathLogfile() const
+Poco::Path Burst::MinerConfig::getPathLogfile() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return pathLogfile_;
 }
 
-const std::string& Burst::MinerConfig::getServerUser() const
+std::string Burst::MinerConfig::getServerUser() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return serverUser_;
 }
 
-const std::string& Burst::MinerConfig::getServerPass() const
+std::string Burst::MinerConfig::getServerPass() const
 {
+	Poco::FastMutex::ScopedLock lock(mutex_);
 	return serverPass_;
+}
+
+void Burst::MinerConfig::setUrl(std::string url, HostType hostType)
+{
+	Poco::FastMutex::ScopedLock lock(mutex_);
+	Url* uri;
+
+	switch (hostType)
+	{
+	case HostType::MiningInfo: uri = &urlMiningInfo_; break;
+	case HostType::Pool: uri = &urlPool_; break;
+	case HostType::Wallet: uri = &urlWallet_; break;
+	default: uri = nullptr;
+	}
+
+	if (uri != nullptr)
+	{
+		*uri = Url(url); // change url
+		printUrl(hostType); // print url
+	}
 }

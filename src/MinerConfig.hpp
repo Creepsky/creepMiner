@@ -29,7 +29,8 @@ namespace Burst
 	{
 		Pool,
 		Wallet,
-		MiningInfo
+		MiningInfo,
+		Server
 	};
 
 	class PlotFile
@@ -87,6 +88,8 @@ namespace Burst
 		void rescanPlotfiles();
 		void printConsole() const;
 		void printConsolePlots() const;
+		void printUrl(HostType type) const;
+		static void printUrl(const Url& url, const std::string& url_name);
 
 		size_t maxBufferSizeMB = 128;
 		const std::string& getPath() const;
@@ -97,9 +100,9 @@ namespace Burst
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
 		float getTimeout() const;
-		const Url& getPoolUrl() const;
-		const Url& getMiningInfoUrl() const;
-		const Url& getWalletUrl() const;
+		Url getPoolUrl() const;
+		Url getMiningInfoUrl() const;
+		Url getWalletUrl() const;
 
 		size_t getReceiveMaxRetry() const;
 		size_t getSendMaxRetry() const;
@@ -107,16 +110,18 @@ namespace Burst
 		size_t getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
 		bool getStartServer() const;
-		const Url& getServerUrl() const;
+		Url getServerUrl() const;
 		uint64_t getTargetDeadline() const;
 		uint32_t getMiningIntensity() const;
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		uint32_t getMaxPlotReaders() const;
-		const Poco::Path& getPathLogfile() const;
-		const std::string& getServerUser() const;
-		const std::string& getServerPass() const;
+		Poco::Path getPathLogfile() const;
+		std::string getServerUser() const;
+		std::string getServerPass() const;
+
+		void setUrl(std::string url, HostType hostType);
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -148,6 +153,6 @@ namespace Burst
 		std::string serverUser_, serverPass_;
 		uint32_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
-		mutable Poco::FastMutex mutexPlotfiles_;
+		mutable Poco::FastMutex mutex_;
 	};
 }
