@@ -559,7 +559,17 @@ void Burst::SettingsChangeHandler::handleRequest(Poco::Net::HTTPServerRequest& r
 		Poco::Net::HTMLForm post_body(request, request.stream());
 		
 		for (auto& key_val : post_body)
-		{}
+		{
+			const auto& key = key_val.first;
+			const auto& value = key_val.second;
+
+			if (key == "mining-info-url")
+				MinerConfig::getConfig().setUrl(value, HostType::MiningInfo);
+			else if (key == "submission-url")
+				MinerConfig::getConfig().setUrl(value, HostType::Pool);
+			else if (key == "wallet-url")
+				MinerConfig::getConfig().setUrl(value, HostType::Wallet);
+		}
 	}
 
 	RedirectHandler redirect("/settings");
