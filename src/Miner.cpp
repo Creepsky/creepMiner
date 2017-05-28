@@ -23,6 +23,23 @@
 #include "PlotSizes.hpp"
 #include "Output.hpp"
 
+namespace Burst
+{
+	namespace MinerHelper
+	{
+		template <typename T, typename ...Args>
+		void create_worker(std::unique_ptr<Poco::ThreadPool>& thread_pool, std::unique_ptr<Poco::TaskManager>& task_manager,
+			unsigned size, Args&&... args)
+		{
+			thread_pool = std::make_unique<Poco::ThreadPool>(1, size);
+			task_manager = std::make_unique<Poco::TaskManager>(*thread_pool);
+
+			for (auto i = 0; i < size; ++i)
+				task_manager->start(new T(std::forward<Args>(args)...));
+		}
+	}
+}
+
 Burst::Miner::Miner()
 	: submitNonceAsync{this, &Miner::submitNonceAsyncImpl}
 {}
@@ -55,19 +72,13 @@ void Burst::Miner::run()
 		// manager
 		nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>();
 
+		// create the plot readers
+		MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
+			*this, progress_, verificationQueue_, plotReadQueue_);
+
 		// create the plot verifiers
-		verifier_pool_ = std::make_unique<Poco::ThreadPool>(1, MinerConfig::getConfig().getMiningIntensity());
-		verifier_ = std::make_unique<Poco::TaskManager>(*verifier_pool_);
-
-		for (auto i = 0; i < MinerConfig::getConfig().getMiningIntensity(); ++i)
-			verifier_->start(new PlotReader(*this, progress_, verificationQueue_, plotReadQueue_));
-
-		// create plot reader
-		plot_reader_pool_ = std::make_unique<Poco::ThreadPool>(1, MinerConfig::getConfig().getMaxPlotReaders());
-		plot_reader_ = std::make_unique<Poco::TaskManager>(*plot_reader_pool_);
-
-		for (auto i = 0; i < MinerConfig::getConfig().getMaxPlotReaders(); ++i)
-			plot_reader_->start(new PlotVerifier(*this, verificationQueue_));
+		MinerHelper::create_worker<PlotVerifier>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+			*this, verificationQueue_);
 	}
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
@@ -109,15 +120,12 @@ void Burst::Miner::stop()
 {
 	poco_ndc(Miner::stop);
 	// stop plot reader
-	plotReadQueue_.wakeUpAll();
-	plot_reader_pool_->stopAll();
-	plot_reader_pool_->joinAll();
+	shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
 	// stop verifier
-	verificationQueue_.wakeUpAll();
-	verifier_pool_->stopAll();
-	verifier_pool_->joinAll();
+	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
 	// also stop all running background-tasks
 	Poco::ThreadPool::defaultPool().stopAll();
+	Poco::ThreadPool::defaultPool().joinAll();
 	running_ = false;
 }
 
@@ -392,6 +400,15 @@ bool Burst::Miner::getMiningInfo()
 	return false;
 }
 
+void Burst::Miner::shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const
+{
+	Poco::Mutex::ScopedLock lock(worker_mutex_);
+	queue.wakeUpAll();
+	task_manager.cancelAll();
+	thread_pool.stopAll();
+	thread_pool.joinAll();
+}
+
 Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>& data)
 {
 	poco_ndc(Miner::submitNonceImpl);
@@ -461,4 +478,22 @@ std::shared_ptr<Burst::Account> Burst::Miner::getAccount(AccountId id)
 		return nullptr;
 
 	return accounts_.getAccount(id, wallet_, true);
+}
+
+void Burst::Miner::setMiningIntensity(unsigned intensity)
+{
+	Poco::Mutex::ScopedLock lock(worker_mutex_);
+	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
+	MinerConfig::getConfig().setMininigIntensity(intensity);
+	MinerHelper::create_worker<PlotVerifier>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+		*this, verificationQueue_);
+}
+
+void Burst::Miner::setMaxPlotReader(unsigned max_reader)
+{
+	Poco::Mutex::ScopedLock lock(worker_mutex_);
+	shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
+	MinerConfig::getConfig().setMaxPlotReaders(max_reader);
+	MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
+		*this, progress_, verificationQueue_, plotReadQueue_);
 }

@@ -60,11 +60,15 @@ namespace Burst
 		MinerData& getData();
 		std::shared_ptr<Account> getAccount(AccountId id);
 
+		void setMiningIntensity(unsigned intensity);
+		void setMaxPlotReader(unsigned max_reader);
+
 	private:
 		bool getMiningInfo();
 		NonceConfirmation submitNonceAsyncImpl(const std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>& data);
 		SubmitResponse addNewDeadline(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile,
 			 std::shared_ptr<Deadline>& newDeadline);
+		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const;
 
 		bool running_ = false;
 		MinerData data_;
@@ -76,5 +80,6 @@ namespace Burst
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
 		std::unique_ptr<Poco::ThreadPool> verifier_pool_, plot_reader_pool_;
+		mutable Poco::Mutex worker_mutex_;
 	};
 }
