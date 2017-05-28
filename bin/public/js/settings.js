@@ -35,6 +35,7 @@ function connectCallback(msg){
 }
 
 window.onload = function(evt) {
+    $("#btnSettings").addClass('active');
 	logSetting = initSettings($("#settingsDlComboboxes"));
 
     mining_info_url = $("#mining-info-url");
