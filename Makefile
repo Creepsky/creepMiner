@@ -17,7 +17,7 @@ EXECUTABLE_PATH   := bin/$(EXECUTABLE)
 cflags_logging.service  := -DLOG_SERVICE
 cflags_logging.terminal := -DLOG_TERMINAL
 
-CFLAGS    := -O3 -march=native -Wall -D_REENTRANT -DNDEBUG ${cflags_logging.${LOGGING}}
+CFLAGS    := -O3 -march=native -std=c++11 -Wall -D_REENTRANT -DNDEBUG ${cflags_logging.${LOGGING}}
 CC        := $(CXX)
 LDFLAGS   := -L/usr/local/lib -pthread -lPocoFoundation -lPocoNetSSL -lPocoCrypto -lPocoUtil -lPocoNet -lPocoJSON
 

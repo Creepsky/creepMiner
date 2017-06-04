@@ -58,7 +58,7 @@ uint64_t Burst::GlobalBufferSize::getMax() const
 
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
 	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
-	: Task("PlotReader"), miner_{miner}, progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
+	: Task("PlotReader"), miner_(miner), progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
 {
 	//scoopNum_ = miner_.getScoopNum();
 	//gensig_ = miner_.getGensig();
