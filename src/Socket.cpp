@@ -11,6 +11,10 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#if __cplusplus < 201402L
+#include "MinerUtil.hpp"
+#endif
+
 Burst::Socket::Socket(float send_timeout, float receive_timeout)
 {
 	setSendTimeout(send_timeout);

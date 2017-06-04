@@ -4,6 +4,9 @@
 #include <Poco/Task.h>
 #include <Poco/Thread.h>
 #include <memory>
+#if __cplusplus < 201402L
+#include "MinerUtil.hpp"
+#endif
 
 namespace Burst
 {
