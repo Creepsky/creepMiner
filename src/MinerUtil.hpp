@@ -111,7 +111,7 @@ namespace Burst
 	bool check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase);
 }
 
-#if __cplusplus > 0 && __cplusplus < 201402L
+#if !defined POCO_COMPILER_MSVC && __cplusplus < 201402L
 namespace std
 {
 	template<typename T, typename ...Args>
