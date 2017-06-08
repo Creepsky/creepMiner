@@ -7,6 +7,8 @@
 #include "Miner.hpp"
 #include <fstream>
 #include "Output.hpp"
+#include <chrono>
+#include <thread>
 
 Burst::NonceSubmitter::NonceSubmitter(Miner& miner, std::shared_ptr<Deadline> deadline)
 	: Task(serializeDeadline(*deadline)),
@@ -65,6 +67,12 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 		confirmation.errorCode))
 	{
 		log_debug(MinerLogger::nonceSubmitter, "Submit-loop %z (%s)", submitTryCount + 1, deadline->deadlineToReadableString());
+
+        if (submitTryCount) {
+                log_debug(MinerLogger::nonceSubmitter,"WAITING......................");
+                std::this_thread::sleep_for(std::chrono::seconds(5));
+        }
+
 
 		NonceRequest request{MinerConfig::getConfig().createSession(HostType::Pool)};
 
