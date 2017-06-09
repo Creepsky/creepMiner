@@ -551,7 +551,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			{
 				// could be the raw deadline
 				if (targetDeadline.isInteger())
-					targetDeadline_ = targetDeadline.convert<uint64_t>();
+                    targetDeadline_ = targetDeadline.convert<Poco::UInt64>();
 				// or a formated string
 				else if (targetDeadline.isString())
 					targetDeadline_ = formatDeadline(targetDeadline.convert<std::string>());
@@ -635,14 +635,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 						passphrase->set("salt", salt);
 						passphrase->set("key", key);
 						passphrase->set("iterations", iterations);
-
-						log_debug(MinerLogger::config, "Passphrase encrypted!\n"
-							"encrypted: %s\n"
-							"salt: %s\n"
-							"key: %s\n"
-							"iterations: %u",
-							encrypted, salt, std::string(key.size(), '*'), iterations
-						);
 					}
 				}
 			}

@@ -40,7 +40,7 @@ namespace Burst
 		void setLastWinner(std::shared_ptr<Account> account);
 		
 		void refreshBlockEntry() const;
-		void setProgress(float progress);
+		void setProgress(float progress, uint64_t blockheight);
 
 		uint64_t getBlockheight() const;
 		uint64_t getScoop() const;
@@ -93,6 +93,8 @@ namespace Burst
 	class MinerData
 	{
 	public:
+		MinerData();
+		
 		std::shared_ptr<BlockData> startNewBlock(uint64_t block, uint64_t baseTarget, const std::string& genSig);
 		void setTargetDeadline(uint64_t deadline);
 

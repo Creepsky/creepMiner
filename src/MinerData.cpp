@@ -103,9 +103,12 @@ void Burst::BlockData::refreshBlockEntry() const
 	addBlockEntry(createJsonNewBlock(*parent_));
 }
 
-void Burst::BlockData::setProgress(float progress)
+void Burst::BlockData::setProgress(float progress, uint64_t blockheight)
 {
 	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
+
+	if (blockheight != getBlockheight())
+		return;
 
 	jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progress)};
 
@@ -284,6 +287,11 @@ std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pa
 
 	return nullptr;
 }
+
+Burst::MinerData::MinerData()
+	: blocksMined_(0), blocksWon_(0), deadlinesConfirmed_(0), targetDeadline_(0),
+	currentBlockheight_(0), currentBasetarget_(0), currentScoopNum_(0)
+{}
 
 std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(uint64_t block, uint64_t baseTarget, const std::string& genSig)
 {

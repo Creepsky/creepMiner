@@ -100,7 +100,7 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 
 			if (root->has("deadline"))
 			{
-				confirmation.deadline = root->get("deadline");
+                confirmation.deadline = (Poco::UInt64)root->get("deadline");
 				confirmation.errorCode = SubmitResponse::Confirmed;
 			}
 			else if (root->has("errorCode"))

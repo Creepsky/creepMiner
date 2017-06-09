@@ -110,3 +110,14 @@ namespace Burst
 	std::string hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase);
 	bool check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase);
 }
+
+#if !defined POCO_COMPILER_MSVC && __cplusplus < 201402L
+namespace std
+{
+	template<typename T, typename ...Args>
+	std::unique_ptr<T> make_unique(Args&& ...args)
+	{
+		return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+	}
+}
+#endif

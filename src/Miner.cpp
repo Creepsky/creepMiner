@@ -168,12 +168,16 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 	// stop all reading processes if any
 	if (!MinerConfig::getConfig().getPlotFiles().empty())
 	{
-		plotReadQueue_.clear();
-		verificationQueue_.clear();
-		PlotReader::globalBufferSize.reset(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024, blockHeight);
-		log_debug(MinerLogger::miner, "Verification queue cleared.");
+		log_debug(MinerLogger::miner, "Plot-read-queue: %d, verification-queue: %d",
+			plotReadQueue_.size(), verificationQueue_.size());
+		log_debug(MinerLogger::miner, "Allocated memory: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
+		
+		PlotReader::globalBufferSize.setMax(MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024);
 	}
-			
+	
+	// clear the plot read queue
+	plotReadQueue_.clear();
+
 	// setup new block-data
 	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr);
 
@@ -196,8 +200,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		data_.getBlockData()->refreshBlockEntry();
 	}
 
-	progress_->reset();
-	progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
+	progress_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
 
 	PlotSizes::nextRound();
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
@@ -398,7 +401,7 @@ bool Burst::Miner::getMiningInfo()
 
 					if (root->has("targetDeadline"))
 					{
-						data_.setTargetDeadline(root->get("targetDeadline").convert<uint64_t>());
+                        data_.setTargetDeadline(root->get("targetDeadline").convert<Poco::UInt64>());
 					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));

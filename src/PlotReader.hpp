@@ -33,14 +33,16 @@ namespace Burst
 	class GlobalBufferSize
 	{
 	public:
-		void reset(uint64_t max, uint64_t blockheight);
-		bool add(uint64_t sizeToAdd, uint64_t blockheight);
-		void remove(uint64_t sizeToRemove, uint64_t blockheight);
+		void setMax(uint64_t max);
+		bool reserve(uint64_t size);
+		void free(uint64_t size);
+		
+		uint64_t getSize() const;
+		uint64_t getMax() const;
 
 	private:
 		uint64_t size_ = 0;
 		uint64_t max_ = 0;
-		uint64_t blockheight_ = 0;
 		mutable Poco::FastMutex mutex_;
 	};
 
@@ -78,16 +80,15 @@ namespace Burst
 	class PlotReadProgress
 	{
 	public:
-		void reset();
-		void add(uintmax_t value);
-		void set(uintmax_t value);
-		void setMax(uintmax_t value);
+		void reset(uint64_t blockheight, uintmax_t max);
+		void add(uintmax_t value, uint64_t blockheight);
 		bool isReady() const;
 		uintmax_t getValue() const;
 		float getProgress() const;
 
 	private:
 		uintmax_t progress_ = 0, max_ = 0;
+		uint64_t blockheight_ = 0;
 		mutable Poco::Mutex lock_;
 	};
 }
