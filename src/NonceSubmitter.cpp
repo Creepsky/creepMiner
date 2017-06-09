@@ -29,7 +29,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 
 	auto loopConditionHelper = [this, &betterDeadlineInPipeline](size_t tryCount, size_t maxTryCount, SubmitResponse response)
 	{
-		if (maxTryCount > 0 && tryCount >= maxTryCount ||
+        if ((maxTryCount > 0 && tryCount >= maxTryCount) ||
 			response == SubmitResponse::Error ||
 			response == SubmitResponse::Confirmed ||
 			deadline->getBlock() != miner.getBlockheight() ||

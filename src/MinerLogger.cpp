@@ -283,7 +283,7 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 				std::vector<char> bytes(fileSize);
 				oldLogfile.read(&bytes[0], fileSize);
 
-				std::string oldContent{&bytes[0], fileSize};
+                std::string oldContent{&bytes[0], static_cast<size_t>(fileSize)};
 
 				oldLogfile.close();
 
