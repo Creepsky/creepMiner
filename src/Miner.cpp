@@ -401,7 +401,7 @@ bool Burst::Miner::getMiningInfo()
 
 					if (root->has("targetDeadline"))
 					{
-						data_.setTargetDeadline(root->get("targetDeadline").convert<uint64_t>());
+                        data_.setTargetDeadline(root->get("targetDeadline").convert<Poco::UInt64>());
 					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));

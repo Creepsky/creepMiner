@@ -43,7 +43,7 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId) const
 	{
 		if (json->has("generator"))
 		{
-			winnerId = json->get("generator").convert<uint64_t>();
+            winnerId = json->get("generator").convert<Poco::UInt64>();
 			return true;
 		}
 
@@ -101,7 +101,7 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 	{
 		if (json->has("rewardRecipient"))
 		{
-			rewardRecipient = json->get("rewardRecipient");
+            rewardRecipient = (Poco::UInt64)json->get("rewardRecipient");
 			return true;
 		}
 
@@ -129,7 +129,7 @@ bool Burst::Wallet::getLastBlock(uint64_t& block) const
 	{
 		if (json->has("height"))
 		{
-			block = json->get("height");
+            block = (Poco::UInt64)json->get("height");
 			return true;
 		}
 
