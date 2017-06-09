@@ -14,6 +14,7 @@ set(SOURCE_FILES
         src/nxt/nxt_address.cpp
         src/sphlib/sph_shabal.cpp
         src/Deadline.cpp
+        src/Declarations.cpp
         src/main.cpp
         src/Miner.cpp
         src/MinerConfig.cpp
@@ -22,6 +23,8 @@ set(SOURCE_FILES
         src/MinerUtil.cpp
         src/NonceSubmitter.cpp
         src/PlotReader.cpp
+        src/PlotSizes.cpp
+        src/PlotVerifier.cpp
         src/Request.cpp
         src/Response.cpp
         src/Socket.cpp
