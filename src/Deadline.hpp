@@ -15,8 +15,8 @@ namespace Burst
 	class Deadline : public std::enable_shared_from_this<Deadline>
 	{
 	public:
-		//Deadline(uint64_t nonce, uint64_t deadline);
-		Deadline(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile,
+		//Deadline(Poco::UInt64 nonce, Poco::UInt64 deadline);
+		Deadline(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile,
 			Deadlines* parent = nullptr);
 		Deadline(Deadline&& rhs) = default;
 		~Deadline();
@@ -26,25 +26,25 @@ namespace Burst
 		void confirm();
 
 		std::string deadlineToReadableString() const;
-		uint64_t getNonce() const;
-		uint64_t getDeadline() const;
+		Poco::UInt64 getNonce() const;
+		Poco::UInt64 getDeadline() const;
 		AccountId getAccountId() const;
 		std::string getAccountName() const;
-		uint64_t getBlock() const;
+		Poco::UInt64 getBlock() const;
 		bool isOnTheWay() const;
 		bool isSent() const;
 		bool isConfirmed() const;
 		const std::string& getPlotFile() const;
-		void setDeadline(uint64_t deadline);
+		void setDeadline(Poco::UInt64 deadline);
 
 		bool operator<(const Deadline& rhs) const;
 		bool operator()(const Deadline& lhs, const Deadline& rhs) const;
 
 	private:
 		std::shared_ptr<Account> account_;
-		std::atomic<uint64_t> block_;
-		std::atomic<uint64_t> nonce_;
-		std::atomic<uint64_t> deadline_;
+		std::atomic<Poco::UInt64> block_;
+		std::atomic<Poco::UInt64> nonce_;
+		std::atomic<Poco::UInt64> deadline_;
 		std::string plotFile_ = "";
 		std::atomic<bool> onTheWay_;
 		std::atomic<bool> sent_;
@@ -59,10 +59,10 @@ namespace Burst
 		explicit Deadlines(BlockData* parent = nullptr);
 		Deadlines(const Deadlines& rhs);
 
-		std::shared_ptr<Deadline> add(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile);
+		std::shared_ptr<Deadline> add(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile);
 		void clear();
 		bool confirm(Nonce nonce);
-		bool confirm(Nonce nonce, AccountId accountId, uint64_t block);
+		bool confirm(Nonce nonce, AccountId accountId, Poco::UInt64 block);
 
 		std::shared_ptr<Deadline> getBest() const;
 		std::shared_ptr<Deadline> getBestConfirmed() const;

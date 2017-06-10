@@ -33,16 +33,16 @@ namespace Burst
 	class GlobalBufferSize
 	{
 	public:
-		void setMax(uint64_t max);
-		bool reserve(uint64_t size);
-		void free(uint64_t size);
+		void setMax(Poco::UInt64 max);
+		bool reserve(Poco::UInt64 size);
+		void free(Poco::UInt64 size);
 		
-		uint64_t getSize() const;
-		uint64_t getMax() const;
+		Poco::UInt64 getSize() const;
+		Poco::UInt64 getMax() const;
 
 	private:
-		uint64_t size_ = 0;
-		uint64_t max_ = 0;
+		Poco::UInt64 size_ = 0;
+		Poco::UInt64 max_ = 0;
 		mutable Poco::FastMutex mutex_;
 	};
 
@@ -51,10 +51,10 @@ namespace Burst
 		typedef Poco::AutoPtr<PlotReadNotification> Ptr;
 		std::string dir;
 		std::vector<std::shared_ptr<PlotFile>> plotList;
-		uint64_t scoopNum = 0;
+		Poco::UInt64 scoopNum = 0;
 		GensigData gensig;
-		uint64_t blockheight = 0;
-		uint64_t baseTarget = 0;
+		Poco::UInt64 blockheight = 0;
+		Poco::UInt64 baseTarget = 0;
 		std::vector<std::pair<std::string, std::vector<std::shared_ptr<PlotFile>>>> relatedPlotLists;
 		PlotDir::Type type = PlotDir::Type::Sequential;
 	};
@@ -80,15 +80,15 @@ namespace Burst
 	class PlotReadProgress
 	{
 	public:
-		void reset(uint64_t blockheight, uintmax_t max);
-		void add(uintmax_t value, uint64_t blockheight);
+		void reset(Poco::UInt64 blockheight, uintmax_t max);
+		void add(uintmax_t value, Poco::UInt64 blockheight);
 		bool isReady() const;
 		uintmax_t getValue() const;
 		float getProgress() const;
 
 	private:
 		uintmax_t progress_ = 0, max_ = 0;
-		uint64_t blockheight_ = 0;
+		Poco::UInt64 blockheight_ = 0;
 		mutable Poco::Mutex lock_;
 	};
 }

@@ -835,7 +835,7 @@ typedef int_fast32_t sph_s32;
 #endif
 #if !SPH_NO_64
 #ifdef UINT64_MAX
-typedef uint64_t sph_u64;
+typedef Poco::UInt64 sph_u64;
 typedef int64_t sph_s64;
 #else
 typedef uint_fast64_t sph_u64;

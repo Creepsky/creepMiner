@@ -4,6 +4,7 @@
 #include <array>
 #include <string>
 #include <Poco/Platform.h>
+#include <Poco/Types.h>
 
 namespace Burst
 {
@@ -74,6 +75,6 @@ namespace Burst
 	using GensigData = BytesArray<Settings::HashSize>;
 	using HashData = BytesArray<Settings::HashSize>;
 
-	using AccountId = uint64_t;
-	using Nonce = uint64_t;
+	using AccountId = Poco::UInt64;
+	using Nonce = Poco::UInt64;
 }

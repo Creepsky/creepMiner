@@ -120,8 +120,8 @@ void Burst::PlotVerifier::runTask()
 	log_debug(MinerLogger::plotVerifier, "Verifier stopped");
 }
 
-Burst::PlotVerifier::DeadlineTuple Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset, const GensigData& gensig,
-	uint64_t baseTarget)
+Burst::PlotVerifier::DeadlineTuple Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset, const GensigData& gensig,
+	Poco::UInt64 baseTarget)
 {
 	HashData target;
 	Shabal256 hash;
@@ -131,20 +131,20 @@ Burst::PlotVerifier::DeadlineTuple Burst::PlotVerifier::verify(std::vector<Scoop
 	hash.update(test, Settings::ScoopSize);
 	hash.close(&target[0]);
 
-	uint64_t targetResult = 0;
+	Poco::UInt64 targetResult = 0;
 	memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
 
 	return std::make_pair(nonceStart + nonceRead + offset, targetResult / baseTarget);
 }
 
-void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset, const GensigData& gensig,
-	uint64_t accountId, const std::string& inputPath, uint64_t baseTarget, uint64_t blockheight, Miner& miner)
+void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset, const GensigData& gensig,
+	Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 baseTarget, Poco::UInt64 blockheight, Miner& miner)
 {
 	auto result = verify(buffer, nonceRead, nonceStart, offset, gensig, baseTarget);
 	verify(result, accountId, inputPath, blockheight, miner);
 }
 
-void Burst::PlotVerifier::verify(const DeadlineTuple& deadlineTuple, uint64_t accountId, const std::string& inputPath, uint64_t blockheight, Miner& miner)
+void Burst::PlotVerifier::verify(const DeadlineTuple& deadlineTuple, Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 blockheight, Miner& miner)
 {
 	miner.submitNonce(deadlineTuple.first, accountId, deadlineTuple.second, blockheight, inputPath);
 }

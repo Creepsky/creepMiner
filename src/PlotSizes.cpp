@@ -6,7 +6,7 @@
 std::unordered_map<std::string, Burst::PlotSizes::HistoricalPlotSize> Burst::PlotSizes::sizes_;
 Poco::Mutex Burst::PlotSizes::mutex_;
 
-void Burst::PlotSizes::set(const std::string& plotsHash, uint64_t size)
+void Burst::PlotSizes::set(const std::string& plotsHash, Poco::UInt64 size)
 {
 	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 	
@@ -17,7 +17,7 @@ void Burst::PlotSizes::set(const std::string& plotsHash, uint64_t size)
 	sizes_[plotsHash] = historicalSize;
 }
 
-uint64_t Burst::PlotSizes::get(const std::string& plotsHash)
+Poco::UInt64 Burst::PlotSizes::get(const std::string& plotsHash)
 {
 	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
@@ -29,11 +29,11 @@ uint64_t Burst::PlotSizes::get(const std::string& plotsHash)
 	return 0;
 }
 
-uint64_t Burst::PlotSizes::getTotal(uint64_t lastUpdate)
+Poco::UInt64 Burst::PlotSizes::getTotal(Poco::UInt64 lastUpdate)
 {
 	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
-	uint64_t sum = 0;
+	Poco::UInt64 sum = 0;
 	
 	for (auto& size : sizes_)
 		if (lastUpdate == 0 || size.second.age <= lastUpdate)

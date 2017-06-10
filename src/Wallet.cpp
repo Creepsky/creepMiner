@@ -24,7 +24,7 @@ Burst::Wallet::Wallet(const Url& url)
 Burst::Wallet::~Wallet()
 {}
 
-bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId) const
+bool Burst::Wallet::getWinnerOfBlock(Poco::UInt64 block, AccountId& winnerId) const
 {
 	poco_ndc(Wallet::getWinnerOfBlock);
 	winnerId = 0;
@@ -112,7 +112,7 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 	return false;
 }
 
-bool Burst::Wallet::getLastBlock(uint64_t& block) const
+bool Burst::Wallet::getLastBlock(Poco::UInt64& block) const
 {
 	poco_ndc(Wallet::getLastBlock);
 	Poco::JSON::Object::Ptr json;

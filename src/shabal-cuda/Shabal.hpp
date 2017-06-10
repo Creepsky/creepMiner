@@ -4,8 +4,8 @@
 
 struct CalculatedDeadline
 {
-	uint64_t deadline;
-	uint64_t nonce;
+	Poco::UInt64 deadline;
+	Poco::UInt64 nonce;
 };
 
 enum class MemoryType
@@ -22,16 +22,16 @@ enum class MemoryCopyDirection
 };
 
 extern "C" void calc_occupancy_cuda(int bufferSize, int& gridSize, int& blockSize);
-extern "C" bool alloc_memory_cuda(MemoryType memType, uint64_t size,  void** mem);
-extern "C" bool realloc_memory_cuda(MemoryType memType, uint64_t size,  void** mem);
-extern "C" bool copy_memory_cuda(MemoryType memType, uint64_t size, const void* from, void* to, MemoryCopyDirection copyDirection);
+extern "C" bool alloc_memory_cuda(MemoryType memType, Poco::UInt64 size,  void** mem);
+extern "C" bool realloc_memory_cuda(MemoryType memType, Poco::UInt64 size,  void** mem);
+extern "C" bool copy_memory_cuda(MemoryType memType, Poco::UInt64 size, const void* from, void* to, MemoryCopyDirection copyDirection);
 extern "C" bool free_memory_cuda(void* mem);
-extern "C" uint64_t calc_memory_size(MemoryType memType, uint64_t size);
+extern "C" Poco::UInt64 calc_memory_size(MemoryType memType, Poco::UInt64 size);
 
-extern "C" void calculate_shabal_cuda(Burst::ScoopData* buffer, uint64_t len,
+extern "C" void calculate_shabal_cuda(Burst::ScoopData* buffer, Poco::UInt64 len,
 	const Burst::GensigData* gensig, CalculatedDeadline* calculatedDeadlines,
-	uint64_t nonceStart, uint64_t nonceRead, uint64_t baseTarget);
+	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget);
 
-extern "C" void calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, uint64_t bufferSize,
+extern "C" void calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, Poco::UInt64 bufferSize,
 	const Burst::GensigData* gensig, CalculatedDeadline* calculatedDeadlines,
-	uint64_t nonceStart, uint64_t nonceRead, uint64_t baseTarget, int gridSize, int blockSize);
+	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget, int gridSize, int blockSize);

@@ -29,10 +29,10 @@ namespace Burst
 		Wallet(Wallet&& rhs) = default;
 		~Wallet();
 
-		bool getWinnerOfBlock(uint64_t block, AccountId& winnerId) const;
+		bool getWinnerOfBlock(Poco::UInt64 block, AccountId& winnerId) const;
 		bool getNameOfAccount(AccountId account, std::string& name) const;
 		bool getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient) const;
-		bool getLastBlock(uint64_t& block) const;
+		bool getLastBlock(Poco::UInt64& block) const;
 		void getAccount(AccountId id, Account& account) const;
 
 		bool isActive() const;

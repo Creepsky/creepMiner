@@ -10,34 +10,34 @@ namespace Burst
 	class PlotGenerator : public Poco::Runnable
 	{
 	public:
-		PlotGenerator(uint64_t account, uint64_t staggerSize, uint64_t startNonce, uint64_t nonces, void* output = nullptr);
+		PlotGenerator(Poco::UInt64 account, Poco::UInt64 staggerSize, Poco::UInt64 startNonce, Poco::UInt64 nonces, void* output = nullptr);
 		~PlotGenerator() override = default;
 
 		void run() override;
 		void* getOutput() const;
 
-		static void* generate(uint64_t account, uint64_t staggerSize, uint64_t startNonce, uint64_t cachePos, void* output);
+		static void* generate(Poco::UInt64 account, Poco::UInt64 staggerSize, Poco::UInt64 startNonce, Poco::UInt64 cachePos, void* output);
 
 	private:
-		uint64_t account_;
-		uint64_t staggerSize_;
-		uint64_t startNonce_;
-		uint64_t nonces_;
+		Poco::UInt64 account_;
+		Poco::UInt64 staggerSize_;
+		Poco::UInt64 startNonce_;
+		Poco::UInt64 nonces_;
 		void* output_;
 	};
 
 	class RandomNonceGenerator : public Poco::Task
 	{
 	public:
-		RandomNonceGenerator(Miner& miner, uint64_t account, uint64_t staggerSize, uint64_t randomNonces);
+		RandomNonceGenerator(Miner& miner, Poco::UInt64 account, Poco::UInt64 staggerSize, Poco::UInt64 randomNonces);
 		~RandomNonceGenerator() override = default;
 
 		void runTask() override;
 
 	private:
 		Miner* miner_;
-		uint64_t account_;
-		uint64_t staggerSize_;
-		uint64_t randomNonces_;
+		Poco::UInt64 account_;
+		Poco::UInt64 staggerSize_;
+		Poco::UInt64 randomNonces_;
 	};
 }

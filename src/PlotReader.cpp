@@ -19,13 +19,13 @@
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
-void Burst::GlobalBufferSize::setMax(uint64_t max)
+void Burst::GlobalBufferSize::setMax(Poco::UInt64 max)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	max_ = max;
 }
 
-bool Burst::GlobalBufferSize::reserve(uint64_t size)
+bool Burst::GlobalBufferSize::reserve(Poco::UInt64 size)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	
@@ -36,7 +36,7 @@ bool Burst::GlobalBufferSize::reserve(uint64_t size)
 	return true;
 }
 
-void Burst::GlobalBufferSize::free(uint64_t size)
+void Burst::GlobalBufferSize::free(Poco::UInt64 size)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	
@@ -46,12 +46,12 @@ void Burst::GlobalBufferSize::free(uint64_t size)
 	size_ -= size;
 }
 
-uint64_t Burst::GlobalBufferSize::getSize() const
+Poco::UInt64 Burst::GlobalBufferSize::getSize() const
 {
 	return size_;
 }
 
-uint64_t Burst::GlobalBufferSize::getMax() const
+Poco::UInt64 Burst::GlobalBufferSize::getMax() const
 {
 	return max_;
 }
@@ -110,10 +110,10 @@ void Burst::PlotReader::runTask()
 				const auto staggerBlocks = nonceCount / staggerSize;
 				const auto staggerBlockSize = staggerSize * Settings::PlotSize;
 				const auto staggerScoopBytes = staggerSize * Settings::ScoopSize;
-				const uint64_t staggerChunkBytes = [staggerScoopBytes]()
+				const Poco::UInt64 staggerChunkBytes = [staggerScoopBytes]()
 				{
-					uint64_t a = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
-					uint64_t b = staggerScoopBytes;
+					Poco::UInt64 a = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
+					Poco::UInt64 b = staggerScoopBytes;
 
 					for(;;) 
 					{ 
@@ -128,7 +128,7 @@ void Burst::PlotReader::runTask()
 						a %= b; // otherwise here would be an error 
 					}
 
-					return uint64_t();
+					return Poco::UInt64();
 				}();
 				const auto staggerChunks = staggerScoopBytes / staggerChunkBytes;
 				const auto staggerChunkSize = staggerSize / staggerChunks;
@@ -189,7 +189,7 @@ void Burst::PlotReader::runTask()
 						plotFile.getPath(),
 						memToString(plotFile.getSize(), 2),
 						Poco::DateTimeFormatter::format(span, "%s.%i"),
-						memToString(static_cast<uint64_t>(bytesPerSeconds), 2));
+						memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
 				}
 			}
 		}
@@ -198,7 +198,7 @@ void Burst::PlotReader::runTask()
 		auto dirReadDiffSeconds = static_cast<float>(dirReadDiff) / 1000 / 1000;
 		Poco::Timespan span{dirReadDiff};
 
-		uint64_t totalSizeBytes = 0u;
+		Poco::UInt64 totalSizeBytes = 0u;
 
 		for (const auto& plot : plotReadNotification->plotList)
 			totalSizeBytes += plot->getSize();
@@ -221,12 +221,12 @@ void Burst::PlotReader::runTask()
 				plotReadNotification->plotList.size(),
 				memToString(totalSizeBytes, 2),
 				Poco::DateTimeFormatter::format(span, "%s.%i"),
-				memToString(static_cast<uint64_t>(bytesPerSecond), 2));
+				memToString(static_cast<Poco::UInt64>(bytesPerSecond), 2));
 		}
 	}
 }
 
-void Burst::PlotReadProgress::reset(uint64_t blockheight, uintmax_t max)
+void Burst::PlotReadProgress::reset(Poco::UInt64 blockheight, uintmax_t max)
 {
 	Poco::Mutex::ScopedLock guard(lock_);
 	progress_ = 0;
@@ -234,7 +234,7 @@ void Burst::PlotReadProgress::reset(uint64_t blockheight, uintmax_t max)
 	max_ = max;
 }
 
-void Burst::PlotReadProgress::add(uintmax_t value, uint64_t blockheight)
+void Burst::PlotReadProgress::add(uintmax_t value, Poco::UInt64 blockheight)
 {
 	Poco::Mutex::ScopedLock guard(lock_);
 
