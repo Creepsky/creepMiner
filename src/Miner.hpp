@@ -43,27 +43,27 @@ namespace Burst
 		void run();
 		void stop();
 
-		uint64_t getScoopNum() const;
-		uint64_t getBaseTarget() const;
-		uint64_t getBlockheight() const;
-		uint64_t getTargetDeadline() const;
+		Poco::UInt64 getScoopNum() const;
+		Poco::UInt64 getBaseTarget() const;
+		Poco::UInt64 getBlockheight() const;
+		Poco::UInt64 getTargetDeadline() const;
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
-		void updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget);
+		void updateGensig(const std::string gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
 
-		void submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile);
-		Poco::ActiveMethod<NonceConfirmation, std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>, Miner> submitNonceAsync;
+		void submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile);
+		Poco::ActiveMethod<NonceConfirmation, std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>, Miner> submitNonceAsync;
 
-		std::shared_ptr<Deadline> getBestSent(uint64_t accountId, uint64_t blockHeight);
-		std::shared_ptr<Deadline> getBestConfirmed(uint64_t accountId, uint64_t blockHeight);
+		std::shared_ptr<Deadline> getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
+		std::shared_ptr<Deadline> getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
 		//std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
 		std::shared_ptr<Account> getAccount(AccountId id);
 
 	private:
 		bool getMiningInfo();
-		NonceConfirmation submitNonceAsyncImpl(const std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>& data);
-		SubmitResponse addNewDeadline(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile,
+		NonceConfirmation submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data);
+		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile,
 			 std::shared_ptr<Deadline>& newDeadline);
 
 		bool running_ = false;

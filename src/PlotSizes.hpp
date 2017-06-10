@@ -17,14 +17,14 @@ namespace Burst
 		 * \param plotsHash The id of the miner.
 		 * \param size The size of all plot files.
 		 */
-		static void set(const std::string& plotsHash, uint64_t size);
+		static void set(const std::string& plotsHash, Poco::UInt64 size);
 
 		/**
 		 * \brief Gets the sum size of all plot files of one miner in the cluster.
 		 * \param plotsHash The id of the miner.
 		 * \return The amount of plot size in GB (0 if the miner is not in the cluster).
 		 */
-		static uint64_t get(const std::string& plotsHash);
+		static Poco::UInt64 get(const std::string& plotsHash);
 
 		/**
 		 * \brief Gets the sum size of all plot files from all miners in the cluster.
@@ -32,7 +32,7 @@ namespace Burst
 		 * If 0, all sizes are summed up.
 		 * \return The total amount of plot size in GB.
 		 */
-		static uint64_t getTotal(uint64_t maxAge = 10);
+		static Poco::UInt64 getTotal(Poco::UInt64 maxAge = 10);
 
 		/**
 		 * \brief Adds one round to all plots sizes.
@@ -49,8 +49,8 @@ namespace Burst
 	private:
 		struct HistoricalPlotSize
 		{
-			uint64_t size = 0;
-			uint64_t age = 0;
+			Poco::UInt64 size = 0;
+			Poco::UInt64 age = 0;
 		};
 
 		static Poco::Mutex mutex_;

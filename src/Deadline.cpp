@@ -5,7 +5,7 @@
 #include "Account.hpp"
 #include "MinerData.hpp"
 
-Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile,
+Burst::Deadline::Deadline(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile,
                           Deadlines* parent)
 	: account_(account),
 	  block_(block),
@@ -18,12 +18,12 @@ Burst::Deadline::Deadline(uint64_t nonce, uint64_t deadline, std::shared_ptr<Acc
 	  parent_{parent}
 {}
 
-uint64_t Burst::Deadline::getNonce() const
+Poco::UInt64 Burst::Deadline::getNonce() const
 {
 	return nonce_.load();
 }
 
-uint64_t Burst::Deadline::getDeadline() const
+Poco::UInt64 Burst::Deadline::getDeadline() const
 {
 	return deadline_.load();
 }
@@ -43,7 +43,7 @@ std::string Burst::Deadline::getAccountName() const
 	return name;
 }
 
-uint64_t Burst::Deadline::getBlock() const
+Poco::UInt64 Burst::Deadline::getBlock() const
 {
 	return block_.load();
 }
@@ -69,7 +69,7 @@ const std::string& Burst::Deadline::getPlotFile() const
 	return plotFile_;
 }
 
-void Burst::Deadline::setDeadline(uint64_t deadline)
+void Burst::Deadline::setDeadline(Poco::UInt64 deadline)
 {
 	deadline_ = deadline;
 
@@ -130,7 +130,7 @@ Burst::Deadlines::Deadlines(const Deadlines& rhs)
 	parent_ = rhs.parent_;
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(uint64_t nonce, uint64_t deadline, std::shared_ptr<Account> account, uint64_t block, std::string plotFile)
+std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 	
@@ -164,7 +164,7 @@ bool Burst::Deadlines::confirm(Nonce nonce)
 	return true;
 }
 
-bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, uint64_t block)
+bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, Poco::UInt64 block)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 

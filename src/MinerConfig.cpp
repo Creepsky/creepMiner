@@ -33,7 +33,7 @@ void Burst::MinerConfig::rescan()
 	readConfigFile(configPath_);
 }
 
-Burst::PlotFile::PlotFile(std::string&& path, uint64_t size)
+Burst::PlotFile::PlotFile(std::string&& path, Poco::UInt64 size)
 	: path_(move(path)), size_(size)
 {}
 
@@ -42,7 +42,7 @@ const std::string& Burst::PlotFile::getPath() const
 	return path_;
 }
 
-uint64_t Burst::PlotFile::getSize() const
+Poco::UInt64 Burst::PlotFile::getSize() const
 {
 	return size_;
 }
@@ -76,7 +76,7 @@ const std::string& Burst::PlotDir::getPath() const
 	return path_;
 }
 
-uint64_t Burst::PlotDir::getSize() const
+Poco::UInt64 Burst::PlotDir::getSize() const
 {
 	return size_;
 }
@@ -765,7 +765,7 @@ std::vector<std::shared_ptr<Burst::PlotFile>> Burst::MinerConfig::getPlotFiles()
 
 uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 {
-	uint64_t sum = 0;
+	Poco::UInt64 sum = 0;
 
 	for (auto plotDir : plotDirs_)
 	{
@@ -838,7 +838,7 @@ bool Burst::MinerConfig::getStartServer() const
 	return startServer_;
 }
 
-uint64_t Burst::MinerConfig::getTargetDeadline() const
+Poco::UInt64 Burst::MinerConfig::getTargetDeadline() const
 {
 	return targetDeadline_;
 }

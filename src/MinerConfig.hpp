@@ -32,14 +32,14 @@ namespace Burst
 	class PlotFile
 	{
 	public:
-		PlotFile(std::string&& path, uint64_t size);
+		PlotFile(std::string&& path, Poco::UInt64 size);
 
 		const std::string& getPath() const;
-		uint64_t getSize() const;
+		Poco::UInt64 getSize() const;
 		
 	private:
 		std::string path_;
-		uint64_t size_;
+		Poco::UInt64 size_;
 	};
 
 	class PlotDir
@@ -58,7 +58,7 @@ namespace Burst
 
 		const PlotList& getPlotfiles() const;
 		const std::string& getPath() const;
-		uint64_t getSize() const;
+		Poco::UInt64 getSize() const;
 		Type getType() const;
 		std::vector<std::shared_ptr<PlotDir>> getRelatedDirs() const;
 
@@ -68,7 +68,7 @@ namespace Burst
 
 		std::string path_;
 		Type type_;
-		uint64_t size_;
+		Poco::UInt64 size_;
 		PlotList plotfiles_;
 		std::vector<std::shared_ptr<PlotDir>> relatedDirs_;
 	};
@@ -101,7 +101,7 @@ namespace Burst
 		const std::string& getConfirmedDeadlinesPath() const;
 		bool getStartServer() const;
 		const Url& getServerUrl() const;
-		uint64_t getTargetDeadline() const;
+		Poco::UInt64 getTargetDeadline() const;
 		uint32_t getMiningIntensity() const;
 		const std::vector<std::shared_ptr<PlotDir>>& getPlotDirs() const;
 		const std::string& getPlotsHash() const;
@@ -134,7 +134,7 @@ namespace Burst
 		Url urlWallet_;
 		bool startServer_ = false;
 		Url serverUrl_;
-		uint64_t targetDeadline_ = 0;
+		Poco::UInt64 targetDeadline_ = 0;
 		uint32_t miningIntensity_ = 1;
 		std::string plotsHash_;
 		std::string passPhrase_;
