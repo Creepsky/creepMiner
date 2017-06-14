@@ -19,6 +19,7 @@
 #include <Poco/FormattingChannel.h>
 #include <sstream>
 #include <Poco/NestedDiagnosticContext.h>
+#include <functional>
 
 namespace Poco
 {
