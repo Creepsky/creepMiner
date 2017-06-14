@@ -247,42 +247,34 @@ std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pa
 	if (!wallet.isActive())
 		return nullptr;
 
-	// TODO: would be good to have a setting for this 
-	const auto maxLoops = 5;
-
-	for (auto loop = 0; loop < maxLoops; ++loop)
+	if (wallet.getWinnerOfBlock(lastBlockheight, lastWinner))
 	{
-		log_debug(MinerLogger::wallet, "get last winner loop %i/%i", loop + 1, maxLoops);
-
-		if (wallet.getWinnerOfBlock(lastBlockheight, lastWinner))
+		// we are the winner :)
+		if (accounts.isLoaded(lastWinner))
 		{
-			// we are the winner :)
-			if (accounts.isLoaded(lastWinner))
-			{
-				parent_->addWonBlock();
-				// we (re)send the good news to the local html server
-				addBlockEntry(createJsonNewBlock(*parent_));
-			}
-
-			auto winnerAccount = std::make_shared<Account>(wallet, lastWinner);
-			auto futureName = winnerAccount->getNameAsync();
-			futureName.wait();
-
-			log_ok_if(MinerLogger::miner, MinerLogger::hasOutput(LastWinner), std::string(50, '-') + "\n"
-				"last block winner: \n"
-				"block#             %Lu\n"
-				"winner-numeric     %Lu\n"
-				"winner-address     %s\n"
-				"%s" +
-				std::string(50, '-'),
-				lastBlockheight, lastWinner, winnerAccount->getAddress(),
-				(winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName()))
-			);
-
-			setLastWinner(winnerAccount);
-
-			return winnerAccount;
+			parent_->addWonBlock();
+			// we (re)send the good news to the local html server
+			addBlockEntry(createJsonNewBlock(*parent_));
 		}
+
+		auto winnerAccount = std::make_shared<Account>(wallet, lastWinner);
+		auto futureName = winnerAccount->getNameAsync();
+		futureName.wait();
+
+		log_ok_if(MinerLogger::miner, MinerLogger::hasOutput(LastWinner), std::string(50, '-') + "\n"
+			"last block winner: \n"
+			"block#             %Lu\n"
+			"winner-numeric     %Lu\n"
+			"winner-address     %s\n"
+			"%s" +
+			std::string(50, '-'),
+			lastBlockheight, lastWinner, winnerAccount->getAddress(),
+			(winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName()))
+		);
+
+		setLastWinner(winnerAccount);
+
+		return winnerAccount;
 	}
 
 	return nullptr;

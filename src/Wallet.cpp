@@ -9,6 +9,7 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "MinerLogger.hpp"
 #include "Account.hpp"
+#include <thread>
 
 using namespace Poco::Net;
 
@@ -162,34 +163,39 @@ bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::
 	log_debug(MinerLogger::wallet, "Sending wallet request '%s'", uri.toString());
 
 	HTTPRequest request{ HTTPRequest::HTTP_GET, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
-	request.setKeepAlive(true);
+	request.setKeepAlive(false);
 		
 	Request req{ url_.createSession() };
 	auto resp = req.send(request);
 	std::string data;
 
-	if (resp.receive(data))
+	for (auto i = 0u; i < MinerConfig::getConfig().getWalletRequestTries(); ++i)
 	{
-		log_debug(MinerLogger::wallet, "Got response for wallet request '%s'\n%s", uri.toString(), data);
-
-		try
+		if (resp.receive(data))
 		{
-			Poco::JSON::Parser parser;
-			json = parser.parse(data).extract<Poco::JSON::Object::Ptr>();
-			return true;
-		}
-		catch (Poco::Exception& exc)
-		{
-			log_error(MinerLogger::wallet, "Got invalid json response from server\n"
-				"\tURI: %s\n"
-				"\tResponse: %s\n"
-				"\t%s",
-				uri.getPathAndQuery(), data, exc.displayText()
-			);
+			log_debug(MinerLogger::wallet, "Got response for wallet request '%s'\n%s", uri.toString(), data);
 
-			log_current_stackframe(MinerLogger::wallet);
-			return false;
+			try
+			{
+				Poco::JSON::Parser parser;
+				json = parser.parse(data).extract<Poco::JSON::Object::Ptr>();
+				return true;
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_error(MinerLogger::wallet, "Got invalid json response from server\n"
+					"\tURI: %s\n"
+					"\tResponse: %s\n"
+					"\t%s",
+					uri.getPathAndQuery(), data, exc.displayText()
+				);
+
+				log_current_stackframe(MinerLogger::wallet);
+				return false;
+			}
 		}
+
+		std::this_thread::sleep_for(std::chrono::seconds(MinerConfig::getConfig().getWalletRequestRetryWaitTime()));
 	}
 
 	log_error(MinerLogger::wallet, "Got no response for wallet request '%s'", uri.toString());

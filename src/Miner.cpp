@@ -69,6 +69,8 @@ void Burst::Miner::run()
 		log_system(MinerLogger::miner, "Target deadline : %s", deadlineFormat(config.getTargetDeadline()));
 	log_system(MinerLogger::miner, "Mining intensity : %u", config.getMiningIntensity());
 	log_system(MinerLogger::miner, "Max plot readers : %u", config.getMaxPlotReaders());
+	log_system(MinerLogger::miner, "Wallet-Request max retries : %z", config.getWalletRequestTries());
+	log_system(MinerLogger::miner, "Wallet-Request retry wait time : %z", config.getWalletRequestRetryWaitTime());
 
 	log_system(MinerLogger::miner, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
 

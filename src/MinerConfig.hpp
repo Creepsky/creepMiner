@@ -110,6 +110,8 @@ namespace Burst
 		const Poco::Path& getPathLogfile() const;
 		const std::string& getServerUser() const;
 		const std::string& getServerPass() const;
+		size_t getWalletRequestTries() const;
+		size_t getWalletRequestRetryWaitTime() const;
 
 		std::unique_ptr<Socket> createSocket(HostType hostType) const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
@@ -141,5 +143,7 @@ namespace Burst
 		std::string serverUser_, serverPass_;
 		uint32_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
+		size_t walletRequestTries_ = 5;
+		size_t walletRequestRetryWaitTime_ = 3;
 	};
 }
