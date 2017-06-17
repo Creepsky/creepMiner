@@ -366,7 +366,24 @@ bool Burst::Miner::getMiningInfo()
 						gensig = root->get("generationSignature").convert<std::string>();
 
 					if (root->has("targetDeadline"))
+					{
+						// remember the current pool target deadline
+						auto target_deadline_pool_before = data_.getTargetDeadline(TargetDeadlineType::Pool);
+
+						// update the new pool target deadline
 						data_.setTargetDeadline(root->get("targetDeadline").convert<Poco::UInt64>());
+
+						// if its changed, print it
+						if (target_deadline_pool_before != data_.getTargetDeadline(TargetDeadlineType::Pool))
+							log_system(MinerLogger::config,
+								"got new target deadline\n"
+								"\told target deadline: %s\n"
+								"\tnew target deadline: %s\n"
+								"\tlowest target deadline: %s",
+								deadlineFormat(target_deadline_pool_before),
+								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Pool)),
+								deadlineFormat(data_.getTargetDeadline()));
+					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));
 				}
@@ -421,10 +438,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poc
 	if (result == SubmitResponse::Found)
 	{
 		newDeadline->onTheWay();
-
-#ifdef NDEBUG
 		return NonceSubmitter{ *this, newDeadline }.submit();
-#endif
 	}
 
 	NonceConfirmation nonceConfirmation;

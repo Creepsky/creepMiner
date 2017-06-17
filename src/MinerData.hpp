@@ -21,6 +21,13 @@ namespace Burst
 	class Wallet;
 	class Account;
 
+	enum class TargetDeadlineType
+	{
+		Pool,
+		Local,
+		Combined
+	};
+
 	class BlockData : public Poco::ActiveDispatcher
 	{
 	public:
@@ -106,7 +113,7 @@ namespace Burst
 		std::shared_ptr<const BlockData> getHistoricalBlockData(Poco::UInt32 roundsBefore) const;
 		std::vector<std::shared_ptr<const BlockData>> getAllHistoricalBlockData() const;
 		Poco::UInt64 getConfirmedDeadlines() const;
-		Poco::UInt64 getTargetDeadline() const;
+		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		bool compareToTargetDeadline(Poco::UInt64 deadline) const;
 		Poco::UInt64 getAverageDeadline() const;
 

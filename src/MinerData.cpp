@@ -490,18 +490,30 @@ Poco::UInt64 Burst::MinerData::getConfirmedDeadlines() const
 	return deadlinesConfirmed_;
 }
 
-Poco::UInt64 Burst::MinerData::getTargetDeadline() const
+Poco::UInt64 Burst::MinerData::getTargetDeadline(TargetDeadlineType type) const
 {
-	auto targetDeadline = targetDeadline_.load();
-	auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
+	switch (type)
+	{
+	case TargetDeadlineType::Pool:
+		return targetDeadline_.load();
+	case TargetDeadlineType::Local:
+		return MinerConfig::getConfig().getTargetDeadline();
+	case TargetDeadlineType::Combined:
+		{
+			auto targetDeadline = targetDeadline_.load();
+			auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
 
-	if (targetDeadline == 0)
-		targetDeadline = manualTargetDeadline;
-	else if (targetDeadline > manualTargetDeadline &&
-		manualTargetDeadline > 0)
-		targetDeadline = manualTargetDeadline;
+			if (targetDeadline == 0)
+				targetDeadline = manualTargetDeadline;
+			else if (targetDeadline > manualTargetDeadline &&
+				manualTargetDeadline > 0)
+				targetDeadline = manualTargetDeadline;
 
-	return targetDeadline;
+			return targetDeadline;
+		}
+	default:
+		return 0;
+	}
 }
 
 bool Burst::MinerData::compareToTargetDeadline(Poco::UInt64 deadline) const
