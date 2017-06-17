@@ -106,7 +106,7 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 			return PlotCheckResult::EmptyParameter;
 
 		volatile auto accountId = std::stoull(accountIdStr);
-		volatile auto nonceStart = std::stoull(nonceStartStr);
+		std::stoull(nonceStartStr);
 		volatile auto nonceCount = std::stoull(nonceCountStr);
 		volatile auto staggerSize = std::stoull(staggerStr);
 
@@ -320,7 +320,7 @@ std::string Burst::getInformationFromPlotFile(const std::string& path, Poco::UIn
 	return fileNamePart[index];
 }
 
-std::string Burst::encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, Poco::UInt32& iterations)
+std::string Burst::encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, Poco::UInt32 iterations)
 {
 	poco_ndc(encryptAES256);
 	
@@ -328,7 +328,7 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 		return "";
 	
 	if (iterations == 0)
-		iterations = 1000;
+		return "";
 
 	try
 	{
@@ -374,12 +374,12 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 	}
 }
 
-std::string Burst::decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, Poco::UInt32& iterations)
+std::string Burst::decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, Poco::UInt32 iterations)
 {
 	poco_ndc(decryptAES256);
 
 	if (iterations == 0)
-		iterations = 1000;
+		return "";
 
 	try
 	{

@@ -91,8 +91,8 @@ namespace Burst
 	std::string memToString(Poco::UInt64 size, MemoryUnit factor, Poco::UInt8 precision);
 	std::string memToString(Poco::UInt64 size, Poco::UInt8 precision);
 	std::string getInformationFromPlotFile(const std::string& path, Poco::UInt8 index);
-	std::string encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, Poco::UInt32& iterations);
-	std::string decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, Poco::UInt32& iterations);
+	std::string encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, Poco::UInt32 iterations);
+	std::string decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, Poco::UInt32 iterations);
 
 	template <typename T, typename U>
 	void transferSession(T& from, U& to)
