@@ -16,24 +16,34 @@ namespace Burst
 		typedef Poco::AutoPtr<VerifyNotification> Ptr;
 
 		std::vector<ScoopData> buffer;
-		uint64_t accountId = 0;
-		uint64_t nonceRead = 0;
-		uint64_t nonceStart = 0;
+		Poco::UInt64 accountId = 0;
+		Poco::UInt64 nonceRead = 0;
+		Poco::UInt64 nonceStart = 0;
 		std::string inputPath = "";
-		uint64_t block = 0;
+		Poco::UInt64 block = 0;
 		GensigData gensig;
-		uint64_t baseTarget = 0;
+		Poco::UInt64 baseTarget = 0;
 	};
 
 	class PlotVerifier : public Poco::Task
 	{
 	public:
+		/**
+		 * \brief 1. element: nonce, 2. element: deadline
+		 */
+		using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
+
 		PlotVerifier(Miner &miner, Poco::NotificationQueue& queue);
 		void runTask() override;
 
-		static void verify(std::vector<ScoopData>& buffer, uint64_t nonceRead, uint64_t nonceStart, size_t offset,
-		                   const GensigData& gensig, uint64_t accountId, const std::string& inputPath, uint64_t baseTarget,
-		                   uint64_t blockheight, Miner& miner); 
+		static DeadlineTuple verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
+		                            const GensigData& gensig, Poco::UInt64 baseTarget);
+
+		static void verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
+		                   const GensigData& gensig, Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 baseTarget,
+		                   Poco::UInt64 blockheight, Miner& miner);
+
+		static void verify(const DeadlineTuple& deadlineTuple, Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 blockheight, Miner& miner);
 
 	private:
 		Miner* miner_;

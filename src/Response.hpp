@@ -43,7 +43,7 @@ namespace Burst
 
 	struct NonceConfirmation
 	{
-		uint64_t deadline;
+		Poco::UInt64 deadline;
 		SubmitResponse errorCode;
 		std::string json;
 	};

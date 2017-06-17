@@ -71,8 +71,8 @@ void Burst::MinerConfig::printConsolePlots() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	log_system(MinerLogger::config, "Total plots size: %s", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
-	log_system(MinerLogger::config, "Mining intensity : %u", getMiningIntensity());
-	log_system(MinerLogger::config, "Max plot readers : %u", getMaxPlotReaders());
+	log_system(MinerLogger::config, "Mining intensity : %z", getMiningIntensity());
+	log_system(MinerLogger::config, "Max plot readers : %z", getMaxPlotReaders());
 }
 
 void Burst::MinerConfig::printUrl(HostType type) const
@@ -101,7 +101,7 @@ void Burst::MinerConfig::printBufferSize() const
 	log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB_);
 }
 
-Burst::PlotFile::PlotFile(std::string&& path, uint64_t size)
+Burst::PlotFile::PlotFile(std::string&& path, Poco::UInt64 size)
 	: path_(move(path)), size_(size)
 {}
 
@@ -110,7 +110,7 @@ const std::string& Burst::PlotFile::getPath() const
 	return path_;
 }
 
-uint64_t Burst::PlotFile::getSize() const
+Poco::UInt64 Burst::PlotFile::getSize() const
 {
 	return size_;
 }
@@ -144,7 +144,7 @@ const std::string& Burst::PlotDir::getPath() const
 	return path_;
 }
 
-uint64_t Burst::PlotDir::getSize() const
+Poco::UInt64 Burst::PlotDir::getSize() const
 {
 	return size_;
 }
@@ -630,7 +630,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			{
 				// could be the raw deadline
 				if (targetDeadline.isInteger())
-					targetDeadline_ = targetDeadline.convert<uint64_t>();
+                    targetDeadline_ = targetDeadline.convert<Poco::UInt64>();
 				// or a formated string
 				else if (targetDeadline.isString())
 					targetDeadline_ = formatDeadline(targetDeadline.convert<std::string>());
@@ -714,14 +714,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 						passphrase->set("salt", salt);
 						passphrase->set("key", key);
 						passphrase->set("iterations", iterations);
-
-						log_debug(MinerLogger::config, "Passphrase encrypted!\n"
-							"encrypted: %s\n"
-							"salt: %s\n"
-							"key: %s\n"
-							"iterations: %u",
-							encrypted, salt, std::string(key.size(), '*'), iterations
-						);
 					}
 				}
 			}
@@ -854,7 +846,7 @@ std::vector<std::shared_ptr<Burst::PlotFile>> Burst::MinerConfig::getPlotFiles()
 
 uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 {
-	uint64_t sum = 0;
+	Poco::UInt64 sum = 0;
 
 	for (auto plotDir : plotDirs_)
 	{
@@ -937,7 +929,7 @@ bool Burst::MinerConfig::getStartServer() const
 	return startServer_;
 }
 
-uint64_t Burst::MinerConfig::getTargetDeadline() const
+Poco::UInt64 Burst::MinerConfig::getTargetDeadline() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return targetDeadline_;
@@ -1028,7 +1020,7 @@ Poco::JSON::Object::Ptr Burst::MinerConfig::readOutput(Poco::JSON::Object::Ptr j
 	return json;
 }
 
-uint32_t Burst::MinerConfig::getMiningIntensity() const
+size_t Burst::MinerConfig::getMiningIntensity() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return miningIntensity_;
@@ -1062,12 +1054,12 @@ const std::string& Burst::MinerConfig::getPassphrase() const
 	return passPhrase_;
 }
 
-uint32_t Burst::MinerConfig::getMaxPlotReaders() const
+size_t Burst::MinerConfig::getMaxPlotReaders() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
 	if (maxPlotReaders_ == 0)
-		return static_cast<uint32_t>(plotDirs_.size());
+		return static_cast<size_t>(plotDirs_.size());
 
 	return maxPlotReaders_;
 }
@@ -1140,7 +1132,7 @@ void Burst::MinerConfig::setTargetDeadline(uint64_t target_deadline)
 	targetDeadline_ = target_deadline;
 }
 
-uint64_t Burst::MinerConfig::getMaxBufferSize() const
+Poco::UInt64 Burst::MinerConfig::getMaxBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return maxBufferSizeMB_;

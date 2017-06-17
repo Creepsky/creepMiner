@@ -36,14 +36,14 @@ namespace Burst
 	class PlotFile
 	{
 	public:
-		PlotFile(std::string&& path, uint64_t size);
+		PlotFile(std::string&& path, Poco::UInt64 size);
 
 		const std::string& getPath() const;
-		uint64_t getSize() const;
+		Poco::UInt64 getSize() const;
 		
 	private:
 		std::string path_;
-		uint64_t size_;
+		Poco::UInt64 size_;
 	};
 
 	class PlotDir
@@ -62,7 +62,7 @@ namespace Burst
 
 		const PlotList& getPlotfiles() const;
 		const std::string& getPath() const;
-		uint64_t getSize() const;
+		Poco::UInt64 getSize() const;
 		Type getType() const;
 		std::vector<std::shared_ptr<PlotDir>> getRelatedDirs() const;
 		void rescan();
@@ -73,7 +73,7 @@ namespace Burst
 
 		std::string path_;
 		Type type_;
-		uint64_t size_;
+		Poco::UInt64 size_;
 		PlotList plotfiles_;
 		std::vector<std::shared_ptr<PlotDir>> relatedDirs_;
 	};
@@ -97,7 +97,7 @@ namespace Burst
 		std::vector<std::shared_ptr<PlotFile>> getPlotFiles() const;
 		uintmax_t getTotalPlotsize() const;
 
-		uint64_t getMaxBufferSize() const;
+		Poco::UInt64 getMaxBufferSize() const;
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
 		float getTimeout() const;
@@ -112,15 +112,17 @@ namespace Burst
 		const std::string& getConfirmedDeadlinesPath() const;
 		bool getStartServer() const;
 		Url getServerUrl() const;
-		uint64_t getTargetDeadline() const;
-		uint32_t getMiningIntensity() const;
+		Poco::UInt64 getTargetDeadline() const;
+		size_t getMiningIntensity() const;
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
-		uint32_t getMaxPlotReaders() const;
+		size_t getMaxPlotReaders() const;
 		Poco::Path getPathLogfile() const;
 		std::string getServerUser() const;
 		std::string getServerPass() const;
+		size_t getWalletRequestTries() const;
+		size_t getWalletRequestRetryWaitTime() const;
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(uint64_t bufferSize);
@@ -154,14 +156,14 @@ namespace Burst
 		Url urlWallet_;
 		bool startServer_ = false;
 		Url serverUrl_;
-		uint64_t targetDeadline_ = 0;
-		uint32_t miningIntensity_ = 1;
+		Poco::UInt64 targetDeadline_ = 0;
+		size_t miningIntensity_ = 1;
 		std::string plotsHash_;
 		std::string passPhrase_;
 		std::string serverUser_, serverPass_;
-		uint32_t maxPlotReaders_ = 0;
+		size_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
-		size_t maxBufferSizeMB_ = 128;
+		size_t maxBufferSizeMB_ = 256;
 		mutable Poco::Mutex mutex_;
 	};
 }

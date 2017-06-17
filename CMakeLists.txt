@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -D_REENTRANT -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -D_REENTRANT -march=native -DNDEBUG")
 
 link_directories(/usr/local/lib/)
 
@@ -14,6 +14,7 @@ set(SOURCE_FILES
         src/nxt/nxt_address.cpp
         src/sphlib/sph_shabal.cpp
         src/Deadline.cpp
+        src/Declarations.cpp
         src/main.cpp
         src/Miner.cpp
         src/MinerConfig.cpp
@@ -22,6 +23,8 @@ set(SOURCE_FILES
         src/MinerUtil.cpp
         src/NonceSubmitter.cpp
         src/PlotReader.cpp
+        src/PlotSizes.cpp
+        src/PlotVerifier.cpp
         src/Request.cpp
         src/Response.cpp
         src/Socket.cpp

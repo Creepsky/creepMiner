@@ -1,3 +1,5 @@
+LOGGING   := terminal
+
 MODULES   := sphlib nxt
 SRC_DIR   := $(addprefix src/,$(MODULES)) src
 BUILD_DIR := $(addprefix bin/obj/,$(MODULES)) bin/obj
@@ -12,7 +14,10 @@ INCLUDES  := $(addprefix -I,$(SRC_DIR)) $(addprefix -I,$(POCO_DIR))
 EXECUTABLE        := creepMiner
 EXECUTABLE_PATH   := bin/$(EXECUTABLE)
 
-CFLAGS    := -O3 -march=native -std=c++14 -Wall -D_REENTRANT -DNDEBUG
+cflags_logging.service  := -DLOG_SERVICE
+cflags_logging.terminal := -DLOG_TERMINAL
+
+CFLAGS    := -O3 -march=native -std=c++11 -Wall -D_REENTRANT -DNDEBUG ${cflags_logging.${LOGGING}}
 CC        := $(CXX)
 LDFLAGS   := -L/usr/local/lib -pthread -lPocoFoundation -lPocoNetSSL -lPocoCrypto -lPocoUtil -lPocoNet -lPocoJSON
 

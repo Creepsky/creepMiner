@@ -133,7 +133,7 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 			std::string content(std::istreambuf_iterator<char>(alternativeFileData), {});
 			alternativeFileData.close();
 
-			auto noncesWrote = reinterpret_cast<const uint64_t*>(content.data());
+			auto noncesWrote = reinterpret_cast<const Poco::UInt64*>(content.data());
 
 			if (*noncesWrote != nonceCount)
 				return PlotCheckResult::Incomplete;
@@ -182,7 +182,7 @@ std::string Burst::getStartNonceFromPlotFile(const std::string& path)
 	return "";
 }
 
-std::string Burst::deadlineFormat(uint64_t seconds)
+std::string Burst::deadlineFormat(Poco::UInt64 seconds)
 {
 	auto secs = seconds;
 	auto mins = secs / 60;
@@ -213,7 +213,7 @@ std::string Burst::deadlineFormat(uint64_t seconds)
 	return ss.str();
 }
 
-uint64_t Burst::deadlineFragment(uint64_t seconds, DeadlineFragment fragment)
+Poco::UInt64 Burst::deadlineFragment(Poco::UInt64 seconds, Burst::DeadlineFragment fragment)
 {
 	auto secs = seconds;
 	auto mins = secs / 60;
@@ -234,7 +234,7 @@ uint64_t Burst::deadlineFragment(uint64_t seconds, DeadlineFragment fragment)
 	}
 }
 
-uint64_t Burst::formatDeadline(const std::string& format)
+Poco::UInt64 Burst::formatDeadline(const std::string& format)
 {
 	if (format.empty())
 		return 0;
@@ -278,34 +278,34 @@ uint64_t Burst::formatDeadline(const std::string& format)
 	return deadline;
 }
 
-std::string Burst::gbToString(uint64_t size)
+std::string Burst::gbToString(Poco::UInt64 size)
 {
 	return memToString(size, MemoryUnit::Gigabyte, 2);
 }
 
-std::string Burst::memToString(uint64_t size, MemoryUnit factor, uint8_t precision)
+std::string Burst::memToString(Poco::UInt64 size, MemoryUnit factor, Poco::UInt8 precision)
 {	
 	std::stringstream ss;
 	ss << std::fixed << std::setprecision(precision);
-	ss << static_cast<double>(size) / static_cast<uint64_t>(factor);
+	ss << static_cast<double>(size) / static_cast<Poco::UInt64>(factor);
 	return ss.str();
 }
 
-std::string Burst::memToString(uint64_t size, uint8_t precision)
+std::string Burst::memToString(Poco::UInt64 size, Poco::UInt8 precision)
 {
-	if (size >= static_cast<uint64_t>(MemoryUnit::Exabyte))
+	if (size >= static_cast<Poco::UInt64>(MemoryUnit::Exabyte))
 		return memToString(size, MemoryUnit::Exabyte, precision) + " EB";
-	else if (size >= static_cast<uint64_t>(MemoryUnit::Petabyte))
+	else if (size >= static_cast<Poco::UInt64>(MemoryUnit::Petabyte))
 		return memToString(size, MemoryUnit::Petabyte, precision) + " PB";
-	else if (size >= static_cast<uint64_t>(MemoryUnit::Terabyte))
+	else if (size >= static_cast<Poco::UInt64>(MemoryUnit::Terabyte))
 		return memToString(size, MemoryUnit::Terabyte, precision) + " TB";
-	else if (size >= static_cast<uint64_t>(MemoryUnit::Gigabyte))
+	else if (size >= static_cast<Poco::UInt64>(MemoryUnit::Gigabyte))
 		return memToString(size, MemoryUnit::Gigabyte, precision) + " GB";
 	else
 		return memToString(size, MemoryUnit::Megabyte, precision) + " MB";
 }
 
-std::string Burst::getInformationFromPlotFile(const std::string& path, uint8_t index)
+std::string Burst::getInformationFromPlotFile(const std::string& path, Poco::UInt8 index)
 {
 	auto filenamePos = path.find_last_of("/\\");
 
@@ -320,7 +320,7 @@ std::string Burst::getInformationFromPlotFile(const std::string& path, uint8_t i
 	return fileNamePart[index];
 }
 
-std::string Burst::encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, uint32_t& iterations)
+std::string Burst::encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, Poco::UInt32& iterations)
 {
 	poco_ndc(encryptAES256);
 	
@@ -374,7 +374,7 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 	}
 }
 
-std::string Burst::decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, uint32_t& iterations)
+std::string Burst::decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, Poco::UInt32& iterations)
 {
 	poco_ndc(decryptAES256);
 

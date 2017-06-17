@@ -406,9 +406,9 @@ void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& requ
 
 		Poco::URI uri{ request.getURI() };
 
-		uint64_t accountId = 0;
-		uint64_t nonce = 0;
-		uint64_t deadline = 0;
+		Poco::UInt64 accountId = 0;
+		Poco::UInt64 nonce = 0;
+		Poco::UInt64 deadline = 0;
 		std::string plotfile = "";
 
 		for (const auto& param : uri.getQueryParameters())

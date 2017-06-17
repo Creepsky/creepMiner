@@ -19,59 +19,46 @@
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
-void Burst::GlobalBufferSize::reset(uint64_t max, uint64_t blockheight)
+void Burst::GlobalBufferSize::setMax(Poco::UInt64 max)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
-	size_ = 0;
 	max_ = max;
-	blockheight_ = blockheight;
 }
 
-bool Burst::GlobalBufferSize::add(uint64_t sizeToAdd, uint64_t blockheight)
+bool Burst::GlobalBufferSize::reserve(Poco::UInt64 size)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
-
-	if (blockheight != blockheight_)
+	
+	if (size_ + size > max_)
 		return false;
 
-	if (size_ + sizeToAdd > max_)
-		return false;
-
-	size_ += sizeToAdd;
+	size_ += size;
 	return true;
 }
 
-void Burst::GlobalBufferSize::remove(uint64_t sizeToRemove, uint64_t blockheight)
+void Burst::GlobalBufferSize::free(Poco::UInt64 size)
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
+	
+	if (size > size_)
+		size = size_;
 
-	if (blockheight != blockheight_)
-		return;
-
-	if (sizeToRemove > size_)
-		sizeToRemove = size_;
-
-	size_ -= sizeToRemove;
+	size_ -= size;
 }
 
-uint64_t Burst::GlobalBufferSize::getSize() const
+Poco::UInt64 Burst::GlobalBufferSize::getSize() const
 {
 	return size_;
 }
 
-uint64_t Burst::GlobalBufferSize::getMax() const
+Poco::UInt64 Burst::GlobalBufferSize::getMax() const
 {
 	return max_;
 }
 
-uint64_t Burst::GlobalBufferSize::getBlockheight() const
-{
-	return blockheight_;
-}
-
 Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
 	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
-	: Task("PlotReader"), miner_{miner}, progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
+	: Task("PlotReader"), miner_(miner), progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
 {
 	//scoopNum_ = miner_.getScoopNum();
 	//gensig_ = miner_.getGensig();
@@ -90,8 +77,11 @@ void Burst::PlotReader::runTask()
 		else
 			break;
 
+		// only process the current block
+		if (miner_.getBlockheight() != plotReadNotification->blockheight)
+			continue;
+
 		Poco::Timestamp timeStartDir;
-		auto rightBlock = miner_.getBlockheight() == plotReadNotification->blockheight;
 
 		// put in all related plot files
 		for (const auto& relatedPlotList : plotReadNotification->relatedPlotLists)
@@ -100,18 +90,15 @@ void Burst::PlotReader::runTask()
 
 		for (auto plotFileIter = plotReadNotification->plotList.begin();
 			plotFileIter != plotReadNotification->plotList.end() &&
-			!isCancelled() &&
-			rightBlock;
+			!isCancelled();
 			++plotFileIter)
 		{
-			auto& plotFile = *(*plotFileIter);
+			auto& plotFile = **plotFileIter;
 			std::ifstream inputStream(plotFile.getPath(), std::ifstream::in | std::ifstream::binary);
 			
 			Poco::Timestamp timeStartFile;
-			
-			rightBlock = miner_.getBlockheight() == plotReadNotification->blockheight;
 
-			if (rightBlock && inputStream.is_open())
+			if (!isCancelled() && inputStream.is_open())
 			{
 				auto accountId = stoull(getAccountIdFromPlotFile(plotFile.getPath()));
 				auto nonceStart = stoull(getStartNonceFromPlotFile(plotFile.getPath()));
@@ -123,11 +110,10 @@ void Burst::PlotReader::runTask()
 				const auto staggerBlocks = nonceCount / staggerSize;
 				const auto staggerBlockSize = staggerSize * Settings::PlotSize;
 				const auto staggerScoopBytes = staggerSize * Settings::ScoopSize;
-				unsigned long long int templateArg = 0;
-				const auto staggerChunkBytes = [staggerScoopBytes](auto arg)
+				const Poco::UInt64 staggerChunkBytes = [staggerScoopBytes]()
 				{
-					decltype(arg) a = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
-					decltype(arg) b = staggerScoopBytes;
+					Poco::UInt64 a = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
+					Poco::UInt64 b = staggerScoopBytes;
 
 					for(;;) 
 					{ 
@@ -142,107 +128,88 @@ void Burst::PlotReader::runTask()
 						a %= b; // otherwise here would be an error 
 					}
 
-					return decltype(arg)();
-				}(templateArg);
+					return Poco::UInt64();
+				}();
 				const auto staggerChunks = staggerScoopBytes / staggerChunkBytes;
 				const auto staggerChunkSize = staggerSize / staggerChunks;
 
-				for (auto staggerBlock = 0ul; !isCancelled() && rightBlock && staggerBlock < staggerBlocks; ++staggerBlock)
+				for (auto staggerBlock = 0ul; !isCancelled() && staggerBlock < staggerBlocks; ++staggerBlock)
 				{
 					const auto staggerBlockOffset = staggerBlock * staggerBlockSize;
 					const auto staggerScoopOffset = plotReadNotification->scoopNum * staggerSize * Settings::ScoopSize;
 
-					for (auto staggerChunk = 0u; staggerChunk < staggerChunks && !isCancelled() && rightBlock; ++staggerChunk)
+					for (auto staggerChunk = 0u; staggerChunk < staggerChunks && !isCancelled(); ++staggerChunk)
 					{
 						auto memoryAcquired = false;
 
-						while (!isCancelled() && !memoryAcquired && rightBlock)
+						while (!isCancelled() && !memoryAcquired)
+							memoryAcquired = globalBufferSize.reserve(staggerChunkBytes);
+
+						if (!isCancelled() && memoryAcquired)
 						{
-							if (miner_.getBlockheight() == plotReadNotification->blockheight)
-								memoryAcquired = globalBufferSize.add(staggerChunkBytes, plotReadNotification->blockheight);
-							else
-								rightBlock = false;
+							const auto chunkOffset = staggerChunk * staggerChunkBytes;
+
+							VerifyNotification::Ptr verification(new VerifyNotification{});
+							verification->accountId = accountId;
+							verification->nonceStart = nonceStart;
+							verification->block = plotReadNotification->blockheight;
+							verification->inputPath = plotFile.getPath();
+							verification->gensig = plotReadNotification->gensig;
+							verification->buffer.resize(static_cast<size_t>(staggerChunkSize));
+							verification->nonceRead = staggerBlock * staggerSize + staggerChunkSize * staggerChunk;
+							verification->baseTarget = plotReadNotification->baseTarget;
+
+							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
+							//inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
+							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerChunkBytes);
+
+							verificationQueue_->enqueueNotification(verification);
 						}
-
-						if (!memoryAcquired)
-							break;
-
-						const auto chunkOffset = staggerChunk * staggerChunkBytes;
-
-						VerifyNotification::Ptr verification = new VerifyNotification{};
-						verification->accountId = accountId;
-						verification->nonceStart = nonceStart;
-						verification->block = plotReadNotification->blockheight;
-						verification->inputPath = plotFile.getPath();
-						verification->gensig = plotReadNotification->gensig;
-						verification->buffer.resize(static_cast<size_t>(staggerChunkSize));
-						verification->nonceRead = staggerBlock * staggerSize + staggerChunkSize * staggerChunk;
-						verification->baseTarget = plotReadNotification->baseTarget;
-
-						inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-						//inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
-						inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerChunkBytes);
-
-						verificationQueue_->enqueueNotification(verification);
 					}
 				}
 
 				inputStream.close();
 
-				if (!rightBlock)
-					break;
-
-				if (progress_ != nullptr && !isCancelled())
+				if (!isCancelled())
 				{
-					progress_->add(plotFile.getSize());
-					miner_.getData().getBlockData()->setProgress(progress_->getProgress());
+					if (progress_ != nullptr)
+					{
+						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
+						miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
+					}
+
+					auto fileReadDiff = timeStartFile.elapsed();
+					auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
+					Poco::Timespan span{fileReadDiff};
+				
+    				auto plotListSize = plotReadNotification->plotList.size();
+    
+    				if (plotListSize > 0)
+    					miner_.getData().getBlockData()->setProgress(
+							plotReadNotification->dir,
+    						static_cast<float>(std::distance(plotReadNotification->plotList.begin(), plotFileIter) + 1) / plotListSize * 100.f,
+							plotReadNotification->blockheight
+						);
+
+					const auto nonceBytes = static_cast<float>(nonceCount * Settings::ScoopSize);
+					const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
+
+					log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",
+						plotFile.getPath(),
+						memToString(plotFile.getSize(), 2),
+						Poco::DateTimeFormatter::format(span, "%s.%i"),
+						memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
 				}
-
-				auto plotListSize = plotReadNotification->plotList.size();
-
-				if (plotListSize > 0)
-					miner_.getData().getBlockData()->setProgress(plotReadNotification->dir,
-						static_cast<float>(std::distance(plotReadNotification->plotList.begin(), plotFileIter) + 1) / plotListSize * 100.f);
-
-				auto fileReadDiff = timeStartFile.elapsed();
-				auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
-				Poco::Timespan span{fileReadDiff};
-
-				const auto nonceBytes = static_cast<float>(nonceCount * Settings::ScoopSize);
-				const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
-
-				log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",
-					plotFile.getPath(),
-					memToString(plotFile.getSize(), 2),
-					Poco::DateTimeFormatter::format(span, "%s.%i"),
-					memToString(static_cast<uint64_t>(bytesPerSeconds), 2));
-
-				//MinerLogger::write("finished reading plot file " + inputPath_);
-				//MinerLogger::write("plot read done. "+Burst::getFileNameFromPath(this->inputPath)+" = "+std::to_string(this->nonceRead)+" nonces ");
 			}
-
-			//if (MinerConfig::getConfig().output.debug)
-				//MinerLogger::write("finished reading plot file " + plotFile.getPath(), TextType::Debug);
-		}
-
-		if (!rightBlock)
-		{
-			log_debug(MinerLogger::plotReader, "Plot reader stopped work\n"
-				"\tdir: %s\n"
-				"\tblockheight: %Lu",
-				plotReadNotification->dir, plotReadNotification->blockheight
-			);
-
-			continue;
 		}
 		
-		miner_.getData().getBlockData()->setProgress(plotReadNotification->dir, 100.f);
+		miner_.getData().getBlockData()->setProgress(plotReadNotification->dir, 100.f, plotReadNotification->blockheight);
 
 		auto dirReadDiff = timeStartDir.elapsed();
 		auto dirReadDiffSeconds = static_cast<float>(dirReadDiff) / 1000 / 1000;
 		Poco::Timespan span{dirReadDiff};
 
-		std::uint64_t totalSizeBytes = 0u;
+		Poco::UInt64 totalSizeBytes = 0u;
 
 		for (const auto& plot : plotReadNotification->plotList)
 			totalSizeBytes += plot->getSize();
@@ -265,36 +232,30 @@ void Burst::PlotReader::runTask()
 				plotReadNotification->plotList.size(),
 				memToString(totalSizeBytes, 2),
 				Poco::DateTimeFormatter::format(span, "%s.%i"),
-				memToString(static_cast<uint64_t>(bytesPerSecond), 2));
+				memToString(static_cast<Poco::UInt64>(bytesPerSecond), 2));
 		}
 	}
 }
 
-void Burst::PlotReadProgress::reset()
+void Burst::PlotReadProgress::reset(Poco::UInt64 blockheight, uintmax_t max)
 {
 	Poco::Mutex::ScopedLock guard(lock_);
 	progress_ = 0;
+	blockheight_ = blockheight;
+	max_ = max;
 }
 
-void Burst::PlotReadProgress::add(uintmax_t value)
+void Burst::PlotReadProgress::add(uintmax_t value, Poco::UInt64 blockheight)
 {
 	Poco::Mutex::ScopedLock guard(lock_);
+
+	if (blockheight != blockheight_)
+		return;
+
 	progress_ += value;
 
 	if (max_ > 0)
 		MinerLogger::writeProgress(getProgress(), 48);
-}
-
-void Burst::PlotReadProgress::set(uintmax_t value)
-{
-	Poco::Mutex::ScopedLock guard(lock_);
-	progress_ = value;
-}
-
-void Burst::PlotReadProgress::setMax(uintmax_t value)
-{
-	Poco::Mutex::ScopedLock guard(lock_);
-	max_ = value;
 }
 
 bool Burst::PlotReadProgress::isReady() const

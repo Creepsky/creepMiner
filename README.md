@@ -1,4 +1,4 @@
-creepMiner
+creepMiner [![Join the chat at https://gitter.im/creepminer/lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/creepminer/lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ===========
 
 ## What is the creepMiner
@@ -11,6 +11,15 @@ It is designed multi-threaded to reach the best performance.
 
 This is a (standalone) fork of the burst-miner found on [this github repository](https://github.com/uraymeiviar/burst-miner).
 
+## Features
+
+- Mine with your **CPU** or your Nvidia **GPU**
+- Mine **solo** or in a **pool**
+- Filter bad deadlines with the auto target deadline feature
+- Build a network of several miners
+- Watch the status of the miner in your web browser
+- Manage your memory
+
 ## Build
 
 | Platform | Master | Development |
@@ -20,10 +29,13 @@ This is a (standalone) fork of the burst-miner found on [this github repository]
 
 ## Instructions
 
+### [Quickstart](https://github.com/Creepsky/creepMiner/wiki/Quickstart)
+
 - [Compilation & Installation](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation)
 - [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Forwarding](https://github.com/Creepsky/creepMiner/wiki/Forwarding)
 - [Solo mining](https://github.com/Creepsky/creepMiner/wiki/Solo-mining)
+- [The mining process and otimizations](https://github.com/Creepsky/creepMiner/wiki/The-mining-process-and-otimizations)
 
 ## Dependencies
 

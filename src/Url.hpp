@@ -4,6 +4,7 @@
 #include <Poco/URI.h>
 #include <Poco/Net/IPAddress.h>
 #include <memory>
+#include <functional>
 
 namespace Poco { namespace Net
 {

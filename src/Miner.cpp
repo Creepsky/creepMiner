@@ -129,22 +129,23 @@ void Burst::Miner::stop()
 	running_ = false;
 }
 
-void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeight, uint64_t baseTarget)
+void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget)
 {
 	poco_ndc(Miner::updateGensig);
 
 	// stop all reading processes if any
 	if (!MinerConfig::getConfig().getPlotFiles().empty())
 	{
-		log_debug(MinerLogger::miner, "Clearing queues, plot-read-queue: %d, verification-queue: %d",
+		log_debug(MinerLogger::miner, "Plot-read-queue: %d, verification-queue: %d",
 			plotReadQueue_.size(), verificationQueue_.size());
-		plotReadQueue_.clear();
-		verificationQueue_.clear();
-		log_debug(MinerLogger::miner, "Deallocating memory, used: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
-		PlotReader::globalBufferSize.reset(MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024, blockHeight);
-		log_debug(MinerLogger::miner, "Verification queue cleared.");
+		log_debug(MinerLogger::miner, "Allocated memory: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
+		
+		PlotReader::globalBufferSize.setMax(MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024);
 	}
-			
+	
+	// clear the plot read queue
+	plotReadQueue_.clear();
+
 	// setup new block-data
 	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr);
 
@@ -167,8 +168,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, uint64_t blockHeigh
 		data_.getBlockData()->refreshBlockEntry();
 	}
 
-	progress_->reset();
-	progress_->setMax(MinerConfig::getConfig().getTotalPlotsize());
+	progress_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
 
 	PlotSizes::nextRound();
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
@@ -244,27 +244,27 @@ const std::string& Burst::Miner::getGensigStr() const
 	return blockData->getGensigStr();
 }
 
-uint64_t Burst::Miner::getBaseTarget() const
+Poco::UInt64 Burst::Miner::getBaseTarget() const
 {
 	return data_.getCurrentBasetarget();
 }
 
-uint64_t Burst::Miner::getBlockheight() const
+Poco::UInt64 Burst::Miner::getBlockheight() const
 {
 	return data_.getCurrentBlockheight();
 }
 
-uint64_t Burst::Miner::getTargetDeadline() const
+Poco::UInt64 Burst::Miner::getTargetDeadline() const
 {
 	return data_.getTargetDeadline();
 }
 
-uint64_t Burst::Miner::getScoopNum() const
+Poco::UInt64 Burst::Miner::getScoopNum() const
 {
 	return data_.getCurrentScoopNum();
 }
 
-Burst::SubmitResponse Burst::Miner::addNewDeadline(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight,
+Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight,
 	std::string plotFile, std::shared_ptr<Burst::Deadline>& newDeadline)
 {
 	newDeadline = nullptr;
@@ -305,7 +305,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(uint64_t nonce, uint64_t acco
 	return SubmitResponse::Error;
 }
 
-void Burst::Miner::submitNonce(uint64_t nonce, uint64_t accountId, uint64_t deadline, uint64_t blockheight, std::string plotFile)
+void Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile)
 {
 	poco_ndc(Miner::submitNonce);
 	
@@ -360,19 +360,13 @@ bool Burst::Miner::getMiningInfo()
 					std::string baseTargetStr;
 
 					if (root->has("baseTarget"))
-					{
 						baseTargetStr = root->get("baseTarget").convert<std::string>();
-					}
 
 					if (root->has("generationSignature"))
-					{
 						gensig = root->get("generationSignature").convert<std::string>();
-					}
 
 					if (root->has("targetDeadline"))
-					{
-						data_.setTargetDeadline(root->get("targetDeadline").convert<uint64_t>());
-					}
+						data_.setTargetDeadline(root->get("targetDeadline").convert<Poco::UInt64>());
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));
 				}
@@ -409,7 +403,7 @@ void Burst::Miner::shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskMan
 	thread_pool.joinAll();
 }
 
-Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<uint64_t, uint64_t, uint64_t, uint64_t, std::string>& data)
+Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data)
 {
 	poco_ndc(Miner::submitNonceImpl);
 
@@ -441,7 +435,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<uin
 	return nonceConfirmation;
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, uint64_t blockHeight)
+std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight)
 {
 	poco_ndc(Miner::getBestSent);
 
@@ -454,7 +448,7 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(uint64_t accountId, u
 	return block->getBestDeadline(accountId, BlockData::DeadlineSearchType::Sent);
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(uint64_t accountId, uint64_t blockHeight)
+std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight)
 {
 	poco_ndc(Miner::getBestConfirmed);
 

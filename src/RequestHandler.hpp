@@ -175,11 +175,12 @@ namespace Burst
 	class SettingsChangeHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
-		SettingsChangeHandler(MinerServer& server);
+		SettingsChangeHandler(MinerServer& server, Miner& miner);
 		~SettingsChangeHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:
 		MinerServer* server_;
+		Miner* miner_;
 	};
 }

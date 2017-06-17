@@ -34,7 +34,7 @@ namespace Burst
 	class Deadline;
 	class MinerData;
 	
-	enum class MemoryUnit : uint64_t
+	enum class MemoryUnit : Poco::UInt64
 	{
 		Megabyte = 1048576,
 		Gigabyte = 1073741824,
@@ -84,15 +84,15 @@ namespace Burst
 	std::string getStartNonceFromPlotFile(const std::string& path);
 	std::string getNonceCountFromPlotFile(const std::string& path);
 	std::string getStaggerSizeFromPlotFile(const std::string& path);
-	std::string deadlineFormat(uint64_t seconds);
-	uint64_t deadlineFragment(uint64_t seconds, DeadlineFragment fragment);
-	uint64_t formatDeadline(const std::string& format);
-	std::string gbToString(uint64_t size);
-	std::string memToString(uint64_t size, MemoryUnit factor, uint8_t precision);
-	std::string memToString(uint64_t size, uint8_t precision);
-	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);
-	std::string encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, uint32_t& iterations);
-	std::string decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, uint32_t& iterations);
+	std::string deadlineFormat(Poco::UInt64 seconds);
+	Poco::UInt64 deadlineFragment(Poco::UInt64 seconds, DeadlineFragment fragment);
+	Poco::UInt64 formatDeadline(const std::string& format);
+	std::string gbToString(Poco::UInt64 size);
+	std::string memToString(Poco::UInt64 size, MemoryUnit factor, Poco::UInt8 precision);
+	std::string memToString(Poco::UInt64 size, Poco::UInt8 precision);
+	std::string getInformationFromPlotFile(const std::string& path, Poco::UInt8 index);
+	std::string encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, Poco::UInt32& iterations);
+	std::string decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, Poco::UInt32& iterations);
 
 	template <typename T, typename U>
 	void transferSession(T& from, U& to)
@@ -126,3 +126,14 @@ namespace Burst
 	std::string hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase);
 	bool check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase);
 }
+
+#if !defined POCO_COMPILER_MSVC && __cplusplus < 201402L
+namespace std
+{
+	template<typename T, typename ...Args>
+	std::unique_ptr<T> make_unique(Args&& ...args)
+	{
+		return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+	}
+}
+#endif

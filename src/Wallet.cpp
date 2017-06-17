@@ -9,6 +9,7 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "MinerLogger.hpp"
 #include "Account.hpp"
+#include <thread>
 
 using namespace Poco::Net;
 
@@ -24,7 +25,7 @@ Burst::Wallet::Wallet(const Url& url)
 Burst::Wallet::~Wallet()
 {}
 
-bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId) const
+bool Burst::Wallet::getWinnerOfBlock(Poco::UInt64 block, AccountId& winnerId) const
 {
 	poco_ndc(Wallet::getWinnerOfBlock);
 	winnerId = 0;
@@ -43,7 +44,7 @@ bool Burst::Wallet::getWinnerOfBlock(uint64_t block, AccountId& winnerId) const
 	{
 		if (json->has("generator"))
 		{
-			winnerId = json->get("generator").convert<uint64_t>();
+            winnerId = json->get("generator").convert<Poco::UInt64>();
 			return true;
 		}
 
@@ -101,7 +102,7 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 	{
 		if (json->has("rewardRecipient"))
 		{
-			rewardRecipient = json->get("rewardRecipient");
+            rewardRecipient = (Poco::UInt64)json->get("rewardRecipient");
 			return true;
 		}
 
@@ -112,7 +113,7 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 	return false;
 }
 
-bool Burst::Wallet::getLastBlock(uint64_t& block) const
+bool Burst::Wallet::getLastBlock(Poco::UInt64& block) const
 {
 	poco_ndc(Wallet::getLastBlock);
 	Poco::JSON::Object::Ptr json;
@@ -129,7 +130,7 @@ bool Burst::Wallet::getLastBlock(uint64_t& block) const
 	{
 		if (json->has("height"))
 		{
-			block = json->get("height");
+            block = (Poco::UInt64)json->get("height");
 			return true;
 		}
 
@@ -162,34 +163,39 @@ bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::
 	log_debug(MinerLogger::wallet, "Sending wallet request '%s'", uri.toString());
 
 	HTTPRequest request{ HTTPRequest::HTTP_GET, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
-	request.setKeepAlive(true);
+	request.setKeepAlive(false);
 		
 	Request req{ url_.createSession() };
 	auto resp = req.send(request);
 	std::string data;
 
-	if (resp.receive(data))
+	for (auto i = 0u; i < MinerConfig::getConfig().getWalletRequestTries(); ++i)
 	{
-		log_debug(MinerLogger::wallet, "Got response for wallet request '%s'\n%s", uri.toString(), data);
-
-		try
+		if (resp.receive(data))
 		{
-			Poco::JSON::Parser parser;
-			json = parser.parse(data).extract<Poco::JSON::Object::Ptr>();
-			return true;
-		}
-		catch (Poco::Exception& exc)
-		{
-			log_error(MinerLogger::wallet, "Got invalid json response from server\n"
-				"\tURI: %s\n"
-				"\tResponse: %s\n"
-				"\t%s",
-				uri.getPathAndQuery(), data, exc.displayText()
-			);
+			log_debug(MinerLogger::wallet, "Got response for wallet request '%s'\n%s", uri.toString(), data);
 
-			log_current_stackframe(MinerLogger::wallet);
-			return false;
+			try
+			{
+				Poco::JSON::Parser parser;
+				json = parser.parse(data).extract<Poco::JSON::Object::Ptr>();
+				return true;
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_error(MinerLogger::wallet, "Got invalid json response from server\n"
+					"\tURI: %s\n"
+					"\tResponse: %s\n"
+					"\t%s",
+					uri.getPathAndQuery(), data, exc.displayText()
+				);
+
+				log_current_stackframe(MinerLogger::wallet);
+				return false;
+			}
 		}
+
+		std::this_thread::sleep_for(std::chrono::seconds(MinerConfig::getConfig().getWalletRequestRetryWaitTime()));
 	}
 
 	log_error(MinerLogger::wallet, "Got no response for wallet request '%s'", uri.toString());
