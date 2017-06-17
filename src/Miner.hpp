@@ -60,8 +60,9 @@ namespace Burst
 		MinerData& getData();
 		std::shared_ptr<Account> getAccount(AccountId id);
 
-		void setMiningIntensity(unsigned intensity);
-		void setMaxPlotReader(unsigned max_reader);
+		void setMiningIntensity(Poco::UInt32 intensity);
+		void setMaxPlotReader(Poco::UInt32 max_reader);
+		static void setMaxBufferSize(Poco::UInt64 size);
 
 	private:
 		bool getMiningInfo();

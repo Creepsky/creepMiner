@@ -563,13 +563,53 @@ void Burst::SettingsChangeHandler::handleRequest(Poco::Net::HTTPServerRequest& r
 			const auto& key = key_val.first;
 			const auto& value = key_val.second;
 
-			if (key == "mining-info-url")
-				MinerConfig::getConfig().setUrl(value, HostType::MiningInfo);
-			else if (key == "submission-url")
-				MinerConfig::getConfig().setUrl(value, HostType::Pool);
-			else if (key == "wallet-url")
-				MinerConfig::getConfig().setUrl(value, HostType::Wallet);
+			using np = Poco::NumberParser;
+
+			try
+			{
+				if (key == "mining-info-url")
+					MinerConfig::getConfig().setUrl(value, HostType::MiningInfo);
+				else if (key == "submission-url")
+					MinerConfig::getConfig().setUrl(value, HostType::Pool);
+				else if (key == "wallet-url")
+					MinerConfig::getConfig().setUrl(value, HostType::Wallet);
+				else if (key == "intensity")
+					miner_->setMiningIntensity(np::parseUnsigned(value));
+				else if (key == "buffer-size")
+					Miner::setMaxBufferSize(np::parseUnsigned64(value));
+				else if (key == "plot-readers")
+					miner_->setMaxPlotReader(np::parseUnsigned(value));
+				else if (key == "submission-max-retry")
+					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned64(value));
+				else if (key == "target-deadline")
+					MinerConfig::getConfig().setTargetDeadline(value);
+				else if (key == "timeout")
+					MinerConfig::getConfig().setTimeout(np::parseFloat(value));
+				else if (key == "log-dir")
+					MinerConfig::getConfig().setLogDir(value);
+				else if (Poco::icompare(key, 4, std::string("cmb_")) == 0)
+				{
+					auto logger_name = Poco::replace(key, "cmb_", "");
+					auto logger_priority = static_cast<Poco::Message::Priority>(np::parse(value));
+					MinerLogger::setChannelPriority(logger_name, logger_priority);
+				}
+				else
+					log_warning(MinerLogger::server, "unknown settings-key: %s", key);
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_exception(MinerLogger::server, exc);
+				log_current_stackframe(MinerLogger::server);
+			}
 		}
+
+		log_system(MinerLogger::config, "Settings changed...");
+		MinerConfig::getConfig().printConsole();
+		
+		if (MinerConfig::getConfig().save())
+			log_success(MinerLogger::config, "Saved new settings!");
+		else
+			log_error(MinerLogger::config, "Could not save new settings!");
 	}
 
 	RedirectHandler redirect("/settings");

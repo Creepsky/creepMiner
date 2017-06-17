@@ -488,20 +488,38 @@ std::shared_ptr<Burst::Account> Burst::Miner::getAccount(AccountId id)
 	return accounts_.getAccount(id, wallet_, true);
 }
 
-void Burst::Miner::setMiningIntensity(unsigned intensity)
+void Burst::Miner::setMiningIntensity(Poco::UInt32 intensity)
 {
 	Poco::Mutex::ScopedLock lock(worker_mutex_);
+
+	// dont change it if its the same intensity
+	// changing it is a heavy task
+	if (MinerConfig::getConfig().getMiningIntensity() == intensity)
+		return;
+
 	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
 	MinerConfig::getConfig().setMininigIntensity(intensity);
 	MinerHelper::create_worker<PlotVerifier>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 		*this, verificationQueue_);
 }
 
-void Burst::Miner::setMaxPlotReader(unsigned max_reader)
+void Burst::Miner::setMaxPlotReader(Poco::UInt32 max_reader)
 {
 	Poco::Mutex::ScopedLock lock(worker_mutex_);
+
+	// dont change it if its the same reader count
+	// changing it is a heavy task
+	if (MinerConfig::getConfig().getMaxPlotReaders() == max_reader)
+		return;
+
 	shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
 	MinerConfig::getConfig().setMaxPlotReaders(max_reader);
 	MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
 		*this, progress_, verificationQueue_, plotReadQueue_);
+}
+
+void Burst::Miner::setMaxBufferSize(Poco::UInt64 size)
+{
+	MinerConfig::getConfig().setBufferSize(size);
+	PlotReader::globalBufferSize.setMax(size);
 }

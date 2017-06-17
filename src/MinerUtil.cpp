@@ -505,11 +505,25 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("bufferSize", memToString(MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024, 0));
 	json.set("bufferSizeMB", std::to_string(MinerConfig::getConfig().getMaxBufferSize()));
 	json.set("targetDeadline", deadlineFormat(targetDeadline));
-	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
+	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders(false)));
 	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));
 	json.set("submissionMaxRetry", std::to_string(MinerConfig::getConfig().getSubmissionMaxRetry()));
 	json.set("targetDeadline", std::to_string(MinerConfig::getConfig().getTargetDeadline()));
 	json.set("targetDeadlineText", deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+	json.set("logDir", MinerConfig::getConfig().getLogDir());
+
+	Poco::JSON::Object json_channel_priorities;
+
+	for (auto& channel_priority : MinerLogger::getChannelPriorities())
+	{
+		Poco::JSON::Object json_channel_priority;
+		json_channel_priority.set("numeric",
+			static_cast<int>(MinerLogger::getStringToPriority(channel_priority.second)));
+		json_channel_priority.set("alphaNumeric", channel_priority.second);
+		json_channel_priorities.set(channel_priority.first, json_channel_priority);
+	}
+
+	json.set("channelPriorities", json_channel_priorities);
 
 	return json;
 }
