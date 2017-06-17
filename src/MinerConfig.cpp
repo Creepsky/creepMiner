@@ -1357,7 +1357,7 @@ void Burst::MinerConfig::addPlotDir(const std::string& dir)
 	Poco::Mutex::ScopedLock lock(mutex_);
 
 	// check if not exists already
-	auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](auto element)
+	auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
 	{
 		return element->getPath() == dir;
 	});
@@ -1372,7 +1372,7 @@ void Burst::MinerConfig::removePlotDir(const std::string& dir)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
-	auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](auto element)
+	auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
 	{
 		return element->getPath() == dir;
 	});

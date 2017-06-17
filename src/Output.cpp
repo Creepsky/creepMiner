@@ -14,9 +14,11 @@ const std::map<Burst::Output, std::string> Burst::Output_Helper::Output_Names = 
 	};
 }();
 
+using Output_Map_Pair_t = decltype(Burst::Output_Helper::Output_Names)::value_type;
+
 std::string Burst::Output_Helper::output_to_string(Output output)
 {
-	auto iter = std::find_if(Output_Names.begin(), Output_Names.end(), [&](const auto& output_pair)
+	auto iter = std::find_if(Output_Names.begin(), Output_Names.end(), [&](const Output_Map_Pair_t& output_pair)
 	{
 		return output_pair.first == output;
 	});
@@ -26,7 +28,7 @@ std::string Burst::Output_Helper::output_to_string(Output output)
 
 Burst::Output Burst::Output_Helper::string_to_output(const std::string& output)
 {
-	auto iter = std::find_if(Output_Names.begin(), Output_Names.end(), [&](const auto& output_pair)
+	auto iter = std::find_if(Output_Names.begin(), Output_Names.end(), [&](const Output_Map_Pair_t& output_pair)
 	{
 		return output_pair.second == output;
 	});
