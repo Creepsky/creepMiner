@@ -30,6 +30,7 @@
     <ClCompile Include="src\Declarations.cpp" />
     <ClCompile Include="src\PlotVerifier.cpp" />
     <ClCompile Include="src\PlotSizes.cpp" />
+    <ClCompile Include="src\Output.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rapidjson\document.h">

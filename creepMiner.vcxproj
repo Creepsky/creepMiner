@@ -180,6 +180,7 @@
     <ClCompile Include="src\Declarations.cpp" />
     <ClCompile Include="src\MinerData.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
+    <ClCompile Include="src\Output.cpp" />
     <ClCompile Include="src\PlotGenerator.cpp" />
     <ClCompile Include="src\PlotSizes.cpp" />
     <ClCompile Include="src\PlotVerifier.cpp" />
