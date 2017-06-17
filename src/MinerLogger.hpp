@@ -21,6 +21,7 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include <functional>
 #include "MinerServer.hpp"
+#include "Output.hpp"
 
 namespace Poco
 {
@@ -106,7 +107,14 @@ namespace Burst
 			MinerData* minerData_;
 		};
 
-		static const std::vector<std::string> channelNames;
+		struct ChannelDefinition
+		{
+			ChannelDefinition(std::string name, Poco::Message::Priority default_priority);
+			std::string name;
+			Poco::Message::Priority default_priority;
+		};
+
+		static const std::vector<ChannelDefinition> channelDefinitions;
 		
 		static ColorPair getTextTypeColor(TextType type);
 
@@ -119,6 +127,9 @@ namespace Burst
 		static bool setChannelPriority(const std::string& channel, Poco::Message::Priority priority);
 		static bool setChannelPriority(const std::string& channel, const std::string& priority);
 		static std::string getChannelPriority(const std::string& channel);
+		static Poco::Message::Priority getStringToPriority(const std::string& priority);
+		static std::string getPriorityToString(Poco::Message::Priority priority);
+		static std::map<std::string, std::string> getChannelPriorities();
 		static std::string setLogDir(const std::string& dir);
 		static void setChannelMinerData(MinerData* minerData);
 		
@@ -133,8 +144,9 @@ namespace Burst
 		static Poco::Logger& wallet;
 		static Poco::Logger& general;
 		
-		static void setOutput(int id, bool set);
-		static bool hasOutput(int id);
+		static void setOutput(Output id, bool set);
+		static bool hasOutput(Output id);
+		static const Output_Flags& getOutput();
 
 	private:
 		static void write(const std::string& text, TextType type = TextType::Normal);
@@ -144,7 +156,7 @@ namespace Burst
 
 		static MinerLogger& getInstance();
 		static void print(const std::string& text);
-		static void writeAndFunc(Burst::MinerLogger::TextType type, std::function<void()> func);
+		static void writeAndFunc(TextType type, std::function<void()> func);
 		static void setColor(Color foreground, Color background = Color::Black);
 		static void setColor(ColorPair color);
 		static void setColor(TextType type);
@@ -162,7 +174,7 @@ namespace Burst
 
 		static const std::unordered_map<std::string, ColoredPriorityConsoleChannel*> channels_;
 		static const std::unordered_map<std::string, MinerDataChannel*> websocketChannels_;
-		static std::unordered_map<uint32_t, bool> output_;
+		static Output_Flags output_;
 		static Poco::Channel* fileChannel_;
 		static Poco::FormattingChannel* fileFormatter_;
 		static std::string logFileName_;
@@ -209,7 +221,8 @@ namespace Burst
 		 */
 		Message(Poco::Logger& logger, Poco::Exception& exception, const char* file, int line)
 		{
-			logger.log(exception, file, line);
+			log(logger, Poco::format("Exception occured: %s\n\terror-code: %d\n\tclass: %s",
+				exception.displayText(), exception.code(), std::string(exception.className())), file, line);
 		}
 
 		/**
