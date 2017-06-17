@@ -1,113 +1,65 @@
 <div class="container">
     <div class="row">
-        <div class="page-header"><h1>Urls</h1></div>
-        <div class="form-group input-group">
-            <span class="input-group-addon">Mining-Info-URL</span>
-            <input class="form-control" type="url" id="mining-info-url">
+        <div class="page-header">
+            <h1>Urls</h1>
         </div>
-        <div class="form-group input-group">
-            <span class="input-group-addon">Submission-URL</span>
-            <input class="form-control" type="url" id="submission-url">
-        </div>
-        <div class="form-group input-group">
-            <span class="input-group-addon">Wallet-URL</span>
-            <input class="form-control" type="url" id="wallet-url">
-        </div>
-        <button type="submit" class="btn btn-primary pull-right">Submit</button>
+        <form method="POST" action="/settings/urls">
+            <div class="form-group input-group">
+                <span class="input-group-addon">Mining-Info-URL</span>
+                <input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
+            </div>
+            <div class="form-group input-group">
+                <span class="input-group-addon">Submission-URL</span>
+                <input class="form-control" type="url" id="submission-url" name="submission-url">
+            </div>
+            <div class="form-group input-group">
+                <span class="input-group-addon">Wallet-URL</span>
+                <input class="form-control" type="url" id="wallet-url" name="wallet-url">
+            </div>
+            <button type="submit" class="btn btn-primary pull-right">Submit</button>
+        </form>
     </div>
     <div class="row">
         <div class="page-header"><h1>Mining</h1></div>
         <form method="POST" action="/settings/mining">
             <div class="form-group input-group">
                 <span class="input-group-addon">Intensity</span>
-                <input class="form-control" type="number" id="intensity">
+                <input class="form-control" type="number" id="intensity" name="intensity">
             </div>
             <div class="form-group input-group">
                 <span class="input-group-addon">Buffer size</span>
-                <input class="form-control" type="number" id="buffer-size">
+                <input class="form-control" type="number" id="buffer-size" name="buffer-size">
                 <span class="input-group-addon">MB</span>
             </div>
             <div class="form-group input-group">
                 <span class="input-group-addon">Plot reader</span>
-                <input class="form-control" type="number" id="plot-readers">
+                <input class="form-control" type="number" id="plot-readers" name="plot-readers">
             </div>
             <div class="form-group input-group">
                 <span class="input-group-addon">Submission max retry</span>
-                <input class="form-control" type="number" id="submission-max-retry">
+                <input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
             </div>
             <div class="form-group input-group">
                 <span class="input-group-addon">Target deadline</span>
-                <input class="form-control" type="number" id="target-deadline-years">
-                <span class="input-group-addon">years</span>
-                <input class="form-control" type="number" id="target-deadline-months">
-                <span class="input-group-addon">months</span>
-                <input class="form-control" type="number" id="target-deadline-days">
-                <span class="input-group-addon">days</span>
-                <input class="form-control" type="number" id="target-deadline-hours">
-                <span class="input-group-addon">hours</span>
-                <input class="form-control" type="number" id="target-deadline-minutes">
-                <span class="input-group-addon">minutes</span>
-                <input class="form-control" type="number" id="target-deadline-seconds">
-                <span class="input-group-addon">seconds</span>
+                <input class="form-control" type="text" id="target-deadline"  name="target-deadline">
             </div>
             <div class="form-group input-group">
                 <span class="input-group-addon">Timeout</span>
-                <input class="form-control" type="number" id="timeout">
+                <input class="form-control" type="number" id="timeout" name="timeout">
                 <span class="input-group-addon">seconds</span>
             </div>
             <button type="submit" class="btn btn-primary pull-right">Submit</button>
         </form>
     </div>
     <div class="row">
-        <div class="page-header"><h1>Passphrase (solo-mining)</h1></div>
-        <div class="form-group input-group">
-            <span class="input-group-addon">Encryption-algorithm</span>
-            <input class="form-control" type="text" id="encryption-algorithm">
-        </div>
-        <div class="form-group input-group">
-            <span class="input-group-addon">Plaintext</span>
-            <input class="form-control" type="password" id="decrypted-passphrase">
-        </div>
-        <div class="form-group input-group">
-            <span class="input-group-addon">Ciphertext</span>
-            <input class="form-control" type="password" id="encrypted-passphrase">
-        </div>
-        <div class="form-group input-group">
-            <span class="input-group-addon">Delete key</span>
-            <select class="selectpicker form-control" id="delete-key">
-                <option>no</option>
-                <option>yes</option>
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary pull-right">Submit</button>
-    </div>
-    <div class="row">
-        <div class="page-header"><h1>Logging</h1></div>
+        <div class="page-header"><h1>Logging (miner, not webinterface)</h1></div>
         <form method="POST" action="/settings/logging">
+            <div class="form-group input-group">
+                <span class="input-group-addon">Logfile directory</span>
+                <input class="form-control" type="text" id="log-dir" name="log-dir">
+            </div>
             <div id="settingsDlComboboxes"></div>
             <button type="submit" class="btn btn-primary pull-right">Submit</button>
-        </form>
-    </div>
-    <div class="row">
-        <div class="page-header"><h1>Webserver</h1></div>
-        <form method="POST" action="/settings/logging">
-            <div class="form-group input-group">
-                <span class="input-group-addon">Start</span>
-                <select class="selectpicker form-control" id="start">
-                    <option>no</option>
-                    <option>yes</option>
-                </select>
-            </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Username</span>
-                <input class="form-control" type="text" id="webserver-username">
-            </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Password</span>
-                <input class="form-control" type="password" id="webserver-password">
-            </div>
-            <button type="submit" class="btn btn-primary pull-right">Submit</button>
-        </div>
         </form>
     </div>
 </div>

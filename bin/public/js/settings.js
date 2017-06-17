@@ -12,6 +12,12 @@ function update_settings(config){
     target_deadline.val(config['targetDeadlineText']);
 
     timeout.val(config['timeout']);
+
+    log_dir.val(config['logDir']);
+
+    for (var key in config['channelPriorities']){
+        window['cmb_' + key].val(config['channelPriorities'][key].numeric);
+    }
 }
 
 function connectCallback(msg){
@@ -48,6 +54,13 @@ window.onload = function(evt) {
     submission_max_retry = $("#submission-max-retry");
     target_deadline = $("#target-deadline");
     timeout = $("#timeout");
+
+    log_dir = $("#log-dir");
+
+    loggers.forEach(function(element){
+        var id = "cmb_" + element[0];
+        window[id] = $("#" + id);
+    });
 
     connect(connectCallback);
 }

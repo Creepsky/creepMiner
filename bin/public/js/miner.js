@@ -304,18 +304,18 @@ function addSystemEntry(key, value) {
 	system.append(html);
 }
 
-function addLinkWithLabel(link) {
-	return "<a href='" + link + "' target='_blank'>" + link + "</a>";
+function addLinkWithLabel(label, link) {
+	return "<a href='" + link + "' target='_blank'>" + label + "</a>";
 }
 
 function config(cfg) {
 	system.html("");
-	addSystemEntry("Pool-URL", addLinkWithLabel(cfg["poolUrl"]));
-	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"]));
-	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"]));
+	addSystemEntry("Pool-URL", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
+	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
+	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"]));
 	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
 	addSystemEntry("Buffersize", cfg["bufferSize"]);
-	addSystemEntry("Target deadline", cfg["targetDeadline"]);
+	addSystemEntry("Target deadline", cfg["targetDeadlineText"]);
 	addSystemEntry("Plot readers", cfg["maxPlotReaders"]);
 	addSystemEntry("Mining intensity", cfg["miningIntensity"]);
 	addSystemEntry("Submission retry", cfg["submissionMaxRetry"]);

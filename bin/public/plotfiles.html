@@ -10,11 +10,31 @@
 				<div class="btn-group" role="group">
 					<button type="button" class="btn btn-default" onclick="$.get('/rescanPlotfiles');">
 						<span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+						rescan
+					</button>
+				</div>
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-default" onclick="$.get('/rescanPlotfiles');">
+						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+						remove selected
 					</button>
 				</div>
 			</div>
-		</div>
-		<div id="plotDirList" class="list-group">
+			<br />
+			<div id="plotDirList" class="list-group">
+			</div>
+			<div class="list-group">
+				<form method="POST" action="/plotfile">
+					<div class="form-group input-group">
+						<input class="form-control" type="path" id="new-plot-dir" name="new-plot-dir" placeholder="new directory" required>
+						<span class="input-group-btn">
+							<button class="btn btn-default btn-small" type="submit">
+								<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+							</button>
+						</span>
+					</div>
+				</form>
+			</div>
 		</div>
 	</div>
 </div>
@@ -25,7 +45,10 @@
 		<table class="table table-hover">
 			<thead>
 				<tr>
-					<th>Path</th>
+					<th>Account</th>
+					<th>Start nonce</th>
+					<th>Nonces</th>
+					<th>Staggersize</th>
 					<th>Size</th>
 				</tr>
 			</thead>

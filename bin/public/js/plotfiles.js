@@ -4,6 +4,7 @@ var plotDirElements = [];
 
 var activePlotDir = null;
 var confirmedPlotfiles = [];
+var current_selected = null;
 
 window.onload = function(evt){
     $("#btnPlotfiles").addClass('active');
@@ -63,6 +64,7 @@ function createDirLine(dirElement){
         showPlotfiles(dirElement["plotfiles"]);
         activePlotDir = dirElement;
         colorConfirmedPlotfiles();
+        current_selected = dirElement;
     });
 
     return line;
@@ -86,8 +88,13 @@ function parsePlots(){
 
         plotDir["plotfiles"].forEach(function(plotFile, index, array){
             var path = plotFile["path"];
+            var path_tokens = path.split("_");
+            var account = (path_tokens[0].split('\\').pop().split('/').pop().split('.'))[0];
+            var start_nonce = path_tokens[1];
+            var nonces = path_tokens[2];
+            var staggersize = path_tokens[3];
             var size = plotFile["size"];
-            var lineFile = createPlotfileLine(path, size);
+            var lineFile = createPlotfileLine(account, start_nonce, nonces, staggersize, size);
 
             var fileElement = {
                 "path" : path,
@@ -129,9 +136,12 @@ function parsePlots(){
     });
 }
 
-function createPlotfileLine(path, size){
+function createPlotfileLine(account, start_nonce, nonces, staggersize, size){
     var line = $("<tr></tr>");
-    line.append("<td>" + path + "</td>");
+    line.append("<td>" + account + "</td>");
+    line.append("<td>" + start_nonce + "</td>");
+    line.append("<td>" + nonces + "</td>");
+    line.append("<td>" + staggersize + "</td>");
     line.append("<td>" + size + "</td>");
 
     return line;
@@ -203,4 +213,10 @@ function nonceConfirmed(plotfile){
 
     confirmedPlotfiles.push(plotfile);
     colorConfirmedPlotfiles();
+}
+
+function remove_selected_plot_dir(){
+    if (current_selected){
+        $.get("/");
+    }
 }

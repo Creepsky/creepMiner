@@ -9,7 +9,7 @@ var loggers = [
 	[ "nonceSubmitter", "Nonce submitter", 6 ],
 	[ "plotReader", "Plot reader", 6 ],
 	[ "plotVerifier", "Plot verifier", 6 ],
-	[ "wallet", "Wallet", 6 ],
+	[ "wallet", "Wallet", 1 ],
 	[ "general", "General", 6 ]
 ];
 
@@ -57,7 +57,7 @@ function initSettings(container, onChange) {
 	output = [];
 	loggers.forEach(function(element, index, array) {
 		element[1][0].toUpperCase();
-		var cmb = $("<select id='cmb" + element[0] + "' class='selectpicker form-control'></select>");
+		var cmb = $("<select id='cmb_" + element[0] + "' name='cmb_" + element[0] + "' class='selectpicker form-control'></select>");
 		createLoggerCombobox(cmb);
 		if (onChange)
 			cmb.change(function(){
