@@ -221,11 +221,13 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		if (path_segments.front() == "settings")
 		{
+			// no body -> show
 			if (path_segments.size() == 1)
 				return new SettingsHandler(server_->variables_, *server_);
 
+			// with body -> change
 			if (path_segments.size() > 1)
-				return new SettingsChangeHandler(*server_);
+				return new SettingsChangeHandler(*server_, *server_->miner_);
 		}
 
 		// forward function

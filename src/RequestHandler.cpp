@@ -548,8 +548,8 @@ void Burst::RedirectHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 	response.redirect(redirect_url_);
 }
 
-Burst::SettingsChangeHandler::SettingsChangeHandler(MinerServer& server)
-	: server_(&server)
+Burst::SettingsChangeHandler::SettingsChangeHandler(MinerServer& server, Miner& miner)
+	: server_(&server), miner_(&miner)
 {}
 
 void Burst::SettingsChangeHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
