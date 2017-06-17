@@ -164,6 +164,8 @@ namespace Burst
 		size_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
 		size_t maxBufferSizeMB_ = 256;
+		size_t walletRequestTries_ = 5;
+		size_t walletRequestRetryWaitTime_ = 3;
 		mutable Poco::Mutex mutex_;
 	};
 }

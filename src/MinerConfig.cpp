@@ -479,6 +479,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		auto maxPlotReaders = getOrAddAlt(miningObj, config, "maxPlotReaders", 0);
 		maxPlotReaders_ = maxPlotReaders;
 
+		walletRequestTries_ = getOrAddAlt(miningObj, config, "walletRequestTries", 5);
+		walletRequestRetryWaitTime_ = getOrAddAlt(miningObj, config, "walletRequestRetryWaitTime", 3);
+
 		// urls
 		{
 			Poco::JSON::Object::Ptr urlsObj;
@@ -1148,4 +1151,14 @@ void Burst::MinerConfig::setMaxPlotReaders(unsigned max_reader)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	maxPlotReaders_ = max_reader;
+}
+
+size_t Burst::MinerConfig::getWalletRequestTries() const
+{
+	return walletRequestTries_;
+}
+
+size_t Burst::MinerConfig::getWalletRequestRetryWaitTime() const
+{
+	return walletRequestRetryWaitTime_;
 }
