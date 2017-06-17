@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(burst-miner)
+project(creepMiner)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -35,9 +35,9 @@ set(SOURCE_FILES
         src/MinerData.cpp
         src/RequestHandler.cpp)
 
-add_executable(burst-miner ${SOURCE_FILES})
+add_executable(creepMiner ${SOURCE_FILES})
 
-target_link_libraries (burst-miner
+target_link_libraries (creepMiner
         pthread
         PocoFoundation
         PocoNet
