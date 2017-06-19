@@ -42,16 +42,16 @@ bool Burst::MinerLogger::progressFlag_ = false;
 float Burst::MinerLogger::lastProgress_ = 0.f;
 size_t Burst::MinerLogger::lastPipeCount_ = 0u;
 
-Poco::Logger& Burst::MinerLogger::miner = Poco::Logger::get("miner");
-Poco::Logger& Burst::MinerLogger::config = Poco::Logger::get("config");
-Poco::Logger& Burst::MinerLogger::server = Poco::Logger::get("server");
-Poco::Logger& Burst::MinerLogger::socket = Poco::Logger::get("socket");
-Poco::Logger& Burst::MinerLogger::session = Poco::Logger::get("session");
-Poco::Logger& Burst::MinerLogger::nonceSubmitter = Poco::Logger::get("nonceSubmitter");
-Poco::Logger& Burst::MinerLogger::plotReader = Poco::Logger::get("plotReader");
-Poco::Logger& Burst::MinerLogger::plotVerifier = Poco::Logger::get("plotVerifier");
-Poco::Logger& Burst::MinerLogger::wallet = Poco::Logger::get("wallet");
-Poco::Logger& Burst::MinerLogger::general = Poco::Logger::get("general");
+Poco::Logger* Burst::MinerLogger::miner;
+Poco::Logger* Burst::MinerLogger::config;
+Poco::Logger* Burst::MinerLogger::server;
+Poco::Logger* Burst::MinerLogger::socket;
+Poco::Logger* Burst::MinerLogger::session;
+Poco::Logger* Burst::MinerLogger::nonceSubmitter;
+Poco::Logger* Burst::MinerLogger::plotReader;
+Poco::Logger* Burst::MinerLogger::plotVerifier;
+Poco::Logger* Burst::MinerLogger::wallet;
+Poco::Logger* Burst::MinerLogger::general;
 
 Burst::Output_Flags Burst::MinerLogger::output_ = []()
 {
@@ -543,6 +543,17 @@ void Burst::MinerLogger::setTextTypeColor(TextType type, ColorPair color)
 
 void Burst::MinerLogger::setup()
 {
+	miner = &Poco::Logger::get("miner");
+	config = &Poco::Logger::get("config");
+	server = &Poco::Logger::get("server");
+	socket = &Poco::Logger::get("socket");
+	session = &Poco::Logger::get("session");
+	nonceSubmitter = &Poco::Logger::get("nonceSubmitter");
+	plotReader = &Poco::Logger::get("plotReader");
+	plotVerifier = &Poco::Logger::get("plotVerifier");
+	wallet = &Poco::Logger::get("wallet");
+	general = &Poco::Logger::get("general");
+
 	// create (not open yet) FileChannel
 	{
 		fileChannel_ = new Poco::FileChannel;

@@ -42,7 +42,7 @@ int main(int argc, const char* argv[])
 
 	Burst::MinerLogger::setup();
 	
-	auto& general = Poco::Logger::get("general");
+	auto general = &Poco::Logger::get("general");
 	
 	log_information(general, Burst::Settings::Project.nameAndVersionAndOs);
 	log_information(general, "----------------------------------------------");
