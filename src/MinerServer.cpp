@@ -227,6 +227,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		if (path_segments.front() == "rescanPlotfiles")
 			return new RescanPlotfilesHandler(*server_);
 
+		// show/change settings
 		if (path_segments.front() == "settings")
 		{
 			// no body -> show
@@ -237,6 +238,11 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 			if (path_segments.size() > 1)
 				return new SettingsChangeHandler(*server_, *server_->miner_);
 		}
+
+		// show/change plot files
+		if (path_segments.front() == "plotdir")
+			if (path_segments.size() > 1)
+				return new PlotDirHandler(path_segments[1] == "remove" ? true:  false, *server_->miner_, *server_);
 
 		// forward function
 		if (path_segments.front() == "burst")

@@ -75,6 +75,19 @@ namespace Burst
 		MinerServer* server_;
 	};
 
+	class PlotDirHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		PlotDirHandler(bool remove, Miner& miner, MinerServer& server);
+		~PlotDirHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		Miner& miner_;
+		MinerServer& server_;
+		bool remove_;
+	};
+
 	class ShutdownHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:

@@ -60,24 +60,31 @@ namespace Burst
 		PlotDir(std::string path, Type type);
 		PlotDir(std::string path, const std::vector<std::string>& relatedPaths, Type type);
 
-		const PlotList& getPlotfiles() const;
+		/**
+		 * \brief Returns all plot files inside the directory.
+		 * \param recursive If true, also all plot files in all related plot directories are count.
+		 * \return A list of all plot files.
+		 */
+		PlotList getPlotfiles(bool recursive = false) const;
 		const std::string& getPath() const;
 		Poco::UInt64 getSize() const;
 		Type getType() const;
 		std::vector<std::shared_ptr<PlotDir>> getRelatedDirs() const;
-		Poco::UInt64 getHash() const;
+		const std::string& getHash() const;
 		void rescan();
 
 	private:
 		bool addPlotLocation(const std::string& fileOrPath);
 		std::shared_ptr<PlotFile> addPlotFile(const Poco::File& file);
 
+		void recalculateHash();
+
 		std::string path_;
 		Type type_;
 		Poco::UInt64 size_;
 		PlotList plotfiles_;
 		std::vector<std::shared_ptr<PlotDir>> relatedDirs_;
-		Poco::UInt64 hash_;
+		std::string hash_;
 	};
 
 	/**
@@ -150,7 +157,7 @@ namespace Burst
 		 */
 		static bool save(const std::string& path, const Poco::JSON::Object& json);
 
-		bool addPlotdir(std::shared_ptr<PlotDir> plot_dir);
+		bool addPlotDir(std::shared_ptr<PlotDir> plotDir);
 
 		const std::string& getPath() const;
 
@@ -202,15 +209,8 @@ namespace Burst
 		void setMaxPlotReaders(unsigned max_reader);
 		void setLogDir(const std::string& log_dir);
 
-		void addPlotDir(const std::string& dir);
-		void removePlotDir(const std::string& dir);
-
-		/**
-		 * \brief Creates a low-level socket for network communication.
-		 * \param hostType The type of the far-end peer.
-		 * \return The low-level socket, if the connection was successful, nullptr otherwise.
-		 */
-		std::unique_ptr<Socket> createSocket(HostType hostType) const;
+		bool addPlotDir(const std::string& dir);
+		bool removePlotDir(const std::string& dir);
 
 		/**
 		 * \brief Creates a session for network communication over http.

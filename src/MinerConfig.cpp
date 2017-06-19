@@ -121,6 +121,7 @@ Burst::PlotDir::PlotDir(std::string plotPath, Type type)
 	  size_{0}
 {
 	addPlotLocation(path_);
+	recalculateHash();
 }
 
 Burst::PlotDir::PlotDir(std::string path, const std::vector<std::string>& relatedPaths, Type type)
@@ -132,11 +133,28 @@ Burst::PlotDir::PlotDir(std::string path, const std::vector<std::string>& relate
 
 	for (const auto& relatedPath : relatedPaths)
 		relatedDirs_.emplace_back(new PlotDir{ relatedPath, type_ });
+
+	recalculateHash();
 }
 
-const std::vector<std::shared_ptr<Burst::PlotFile>>& Burst::PlotDir::getPlotfiles() const
+Burst::PlotDir::PlotList Burst::PlotDir::getPlotfiles(bool recursive) const
 {
-	return plotfiles_;
+	// copy all plot files inside this plot directory
+	PlotList plotFiles;
+
+	plotFiles.insert(plotFiles.end(), plotfiles_.begin(), plotfiles_.end());
+
+	if (recursive)
+	{
+		// copy also all plot files inside all related plot directories
+		for (auto relatedPlotDir : getRelatedDirs())
+		{
+			auto relatedPlotFiles = relatedPlotDir->getPlotfiles(true);
+			plotFiles.insert(std::end(plotFiles), std::begin(relatedPlotFiles), std::end(relatedPlotFiles));
+		}
+	}
+
+	return plotFiles;
 }
 
 const std::string& Burst::PlotDir::getPath() const
@@ -159,7 +177,7 @@ std::vector<std::shared_ptr<Burst::PlotDir>> Burst::PlotDir::getRelatedDirs() co
 	return relatedDirs_;
 }
 
-Poco::UInt64 Burst::PlotDir::getHash() const
+const std::string& Burst::PlotDir::getHash() const
 {
 	return hash_;
 }
@@ -173,6 +191,8 @@ void Burst::PlotDir::rescan()
 
 	for (auto& relatedDir : relatedDirs_)
 		relatedDir->rescan();
+
+	recalculateHash();
 }
 
 bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
@@ -259,6 +279,20 @@ std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& f
 
 	log_warning(MinerLogger::config, "Found an invalid plotfile, skipping it!\n\tPath: %s\n\tReason: %s", file.path(), errorString);
 	return nullptr;
+}
+
+void Burst::PlotDir::recalculateHash()
+{
+	Poco::SHA1Engine sha;
+	Poco::DigestOutputStream shaStream{sha};
+
+	hash_ = "";
+
+	for (const auto plotFile : getPlotfiles(true))
+		shaStream << plotFile->getPath();
+
+	shaStream << std::flush;
+	hash_ = Poco::SHA1Engine::digestToHex(sha.digest());
 }
 
 template <typename T>
@@ -694,11 +728,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				{
 					log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
 
-					passphrase_.decrypted = decrypt(passphrase_.encrypted,
-					                                passphrase_.algorithm,
-					                                passphrase_.key,
-					                                passphrase_.salt,
-					                                passphrase_.iterations);
+					passphrase_.decrypt();
 
 					if (!passphrase_.decrypted.empty())
 						log_debug(MinerLogger::config, "Passphrase decrypted!");
@@ -715,11 +745,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				{
 					log_debug(MinerLogger::config, "Decrypted passphrase found, trying to encrypt...");
 
-					passphrase_.encrypted = encrypt(passphrase_.decrypted,
-					                                passphrase_.algorithm,
-					                                passphrase_.key,
-					                                passphrase_.salt,
-					                                passphrase_.iterations);
+					passphrase_.encrypt();
 
 					if (!passphrase_.encrypted.empty())
 					{
@@ -843,12 +869,15 @@ std::vector<std::shared_ptr<Burst::PlotFile>> Burst::MinerConfig::getPlotFiles()
 
 	for (auto& plotDir : plotDirs_)
 	{
-		plotFiles.insert(plotFiles.end(),
-			plotDir->getPlotfiles().begin(), plotDir->getPlotfiles().end());
+		auto plotDirFiles = plotDir->getPlotfiles();
+
+		plotFiles.insert(plotFiles.end(), plotDirFiles.begin(), plotDirFiles.end());
 		
 		for (const auto& relatedDir : plotDir->getRelatedDirs())
-			plotFiles.insert(plotFiles.end(),
-				relatedDir->getPlotfiles().begin(), relatedDir->getPlotfiles().end());
+		{
+			auto relatedPlotDirFiles = relatedDir->getPlotfiles();
+			plotFiles.insert(plotFiles.end(), relatedPlotDirFiles.begin(), relatedPlotDirFiles.end());
+		}
 	}
 
 	return plotFiles;
@@ -856,6 +885,8 @@ std::vector<std::shared_ptr<Burst::PlotFile>> Burst::MinerConfig::getPlotFiles()
 
 uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 {
+	Poco::Mutex::ScopedLock lock(mutex_);
+
 	Poco::UInt64 sum = 0;
 
 	for (auto plotDir : plotDirs_)
@@ -1336,9 +1367,29 @@ bool Burst::MinerConfig::save(const std::string& path, const Poco::JSON::Object&
 	}
 }
 
-bool Burst::MinerConfig::addPlotdir(std::shared_ptr<PlotDir> plot_dir)
+bool Burst::MinerConfig::addPlotDir(std::shared_ptr<PlotDir> plotDir)
 {
-	return false;
+	Poco::Mutex::ScopedLock lock(mutex_);
+
+	// TODO: implement an existence-check before adding it
+	{
+		//auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
+		//{
+		//	/* TODO: it would be wiser to check the hash of both dirs
+		//	 * then we would assure, that they are the same.
+		//	 * BUT: the user could use very weird constellations, where
+		//	 * the dir is for example inside the related dirs of another dir
+		//	 */
+		//	return element->getPath() == plotDir->getPath();
+		//});
+
+		//// same plotdir already in collection
+		//if (iter != plotDirs_.end())
+		//	return false;
+	}
+
+	plotDirs_.emplace_back(plotDir);
+	return true;
 }
 
 void Burst::MinerConfig::setLogDir(const std::string& log_dir)
@@ -1352,35 +1403,26 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 		log_system(MinerLogger::config, "Changing path for log file to\n\t%s", logDirAndFile);
 }
 
-void Burst::MinerConfig::addPlotDir(const std::string& dir)
+bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
-	Poco::Mutex::ScopedLock lock(mutex_);
-
-	// check if not exists already
-	auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
-	{
-		return element->getPath() == dir;
-	});
-
-	if (iter != plotDirs_.end())
-		return;
-
-	// add it
+	return addPlotDir(std::make_shared<PlotDir>(dir, PlotDir::Type::Sequential));
 }
 
-void Burst::MinerConfig::removePlotDir(const std::string& dir)
+bool Burst::MinerConfig::removePlotDir(const std::string& dir)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
 	auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
 	{
+		// TODO: look in Burst::MinerConfig::addPlotDir
 		return element->getPath() == dir;
 	});
 
 	if (iter == plotDirs_.end())
-		return;
+		return false;
 
 	plotDirs_.erase(iter);
+	return true;
 }
 
 const std::string& Burst::Passphrase::decrypt()
