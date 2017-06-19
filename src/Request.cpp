@@ -1,5 +1,4 @@
 ﻿#include "Request.hpp"
-#include "Socket.hpp"
 #include "Response.hpp"
 #include "nxt/nxt_address.h"
 #include "MinerLogger.hpp"

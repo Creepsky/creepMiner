@@ -317,10 +317,7 @@ void Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco:
 	if (result == SubmitResponse::Found)
 	{
 		newDeadline->onTheWay();
-
-#ifdef NDEBUG
 		nonceSubmitterManager_->start(new NonceSubmitter{ *this, newDeadline });
-#endif
 	}
 }
 

@@ -188,7 +188,6 @@
     <ClCompile Include="src\RequestHandler.cpp" />
     <ClCompile Include="src\Response.cpp" />
     <ClCompile Include="src\MinerServer.cpp" />
-    <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\Deadline.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Miner.cpp" />
@@ -215,7 +214,6 @@
     <ClInclude Include="src\RequestHandler.hpp" />
     <ClInclude Include="src\Response.hpp" />
     <ClInclude Include="src\MinerServer.hpp" />
-    <ClInclude Include="src\Socket.hpp" />
     <ClInclude Include="src\Deadline.hpp" />
     <ClInclude Include="src\Declarations.hpp" />
     <ClInclude Include="src\Miner.hpp" />

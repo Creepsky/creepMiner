@@ -18,7 +18,6 @@
     <ClCompile Include="src\Url.cpp" />
     <ClCompile Include="src\Request.cpp" />
     <ClCompile Include="src\Response.cpp" />
-    <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
     <ClCompile Include="src\Wallet.cpp" />
     <ClCompile Include="src\AccountNames.cpp" />
@@ -69,7 +68,6 @@
     <ClInclude Include="src\Url.hpp" />
     <ClInclude Include="src\Request.hpp" />
     <ClInclude Include="src\Response.hpp" />
-    <ClInclude Include="src\Socket.hpp" />
     <ClInclude Include="src\NonceSubmitter.hpp" />
     <ClInclude Include="src\Miner.hpp" />
     <ClInclude Include="src\MinerConfig.hpp" />

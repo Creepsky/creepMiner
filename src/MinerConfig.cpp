@@ -10,8 +10,6 @@
 #include "MinerLogger.hpp"
 #include "MinerUtil.hpp"
 #include <fstream>
-#include "SocketDefinitions.hpp"
-#include "Socket.hpp"
 #include <memory>
 #include <Poco/File.h>
 #include <Poco/Path.h>
@@ -980,28 +978,6 @@ Burst::Url Burst::MinerConfig::getServerUrl() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return serverUrl_;
-}
-
-std::unique_ptr<Burst::Socket> Burst::MinerConfig::createSocket(HostType hostType) const
-{
-	Poco::Mutex::ScopedLock lock(mutex_);
-
-	auto socket = std::make_unique<Socket>(getSendTimeout(), getReceiveTimeout());
-	const Url* url;
-	
-	if (hostType == HostType::Pool)
-		url = &urlPool_;
-	else if (hostType == HostType::MiningInfo)
-		url = &urlMiningInfo_;
-	else if (hostType == HostType::Wallet)
-		url = &urlWallet_;
-	else
-		url = nullptr;
-
-	if (url != nullptr)
-		socket->connect(url->getIp(), url->getPort());
-
-	return socket;
 }
 
 std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(HostType hostType) const
