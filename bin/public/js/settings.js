@@ -1,6 +1,6 @@
 var logSetting = [];
 
-function update_settings(config){
+function update_settings(config) {
     mining_info_url.val(config['miningInfoUrl'] + ':' + config['miningInfoUrlPort']);
     submission_url.val(config['poolUrl'] + ':' + config['poolUrlPort']);
     wallet_url.val(config['walletUrl'] + ':' + config['walletUrlPort']);
@@ -15,12 +15,12 @@ function update_settings(config){
 
     log_dir.val(config['logDir']);
 
-    for (var key in config['channelPriorities']){
+    for (var key in config['channelPriorities']) {
         window['cmb_' + key].val(config['channelPriorities'][key].numeric);
     }
 }
 
-function connectCallback(msg){
+function connectCallback(msg) {
     data = msg["data"];
 
     if (data) {
@@ -40,9 +40,9 @@ function connectCallback(msg){
     }
 }
 
-window.onload = function(evt) {
+window.onload = function (evt) {
     $("#btnSettings").addClass('active');
-	logSetting = initSettings($("#settingsDlComboboxes"));
+    logSetting = initSettings($("#settingsDlComboboxes"));
 
     mining_info_url = $("#mining-info-url");
     submission_url = $("#submission-url");
@@ -57,7 +57,7 @@ window.onload = function(evt) {
 
     log_dir = $("#log-dir");
 
-    loggers.forEach(function(element){
+    loggers.forEach(function (element) {
         var id = "cmb_" + element[0];
         window[id] = $("#" + id);
     });
