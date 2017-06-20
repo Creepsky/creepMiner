@@ -89,8 +89,8 @@ void Burst::MinerConfig::printUrl(HostType type) const
 void Burst::MinerConfig::printUrl(const Url& url, const std::string& url_name)
 {
 	if (!url.empty())
-		log_system(MinerLogger::config, "%s : %s:%hu (%s)",
-			url_name ,url.getCanonical(true), url.getPort(), url.getIp());
+		log_system(MinerLogger::config, "%s : %s:%hu",
+			url_name ,url.getCanonical(true), url.getPort());
 }
 
 void Burst::MinerConfig::printBufferSize() const
