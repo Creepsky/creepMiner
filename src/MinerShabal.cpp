@@ -7,7 +7,7 @@
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
 #include "MinerShabal.hpp"
-#include <memory>
+#include <Poco/ByteOrder.h>
 
 Burst::Shabal256::Shabal256()
 {
@@ -21,7 +21,7 @@ void Burst::Shabal256::update(const void* data, size_t length)
 
 void Burst::Shabal256::update(const uint64_t data)
 {
-	auto result = std::move(data);
+	auto result = Poco::ByteOrder::flipBytes(data);
 	this->update(&result, sizeof(uint64_t));
 }
 
