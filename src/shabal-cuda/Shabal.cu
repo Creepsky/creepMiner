@@ -1,10 +1,7 @@
-//#include <stddef.h>
-
 #include "sphlib/sph_shabal.h"
 #include "Shabal.hpp"
 #include <iostream>
-#include <Poco/Timestamp.h>
-#include "MinerLogger.hpp"
+#include <string>
 
 #define SPH_C32(x)    ((sph_u32)(x ## U))
 #define C32   SPH_C32
@@ -408,14 +405,6 @@ sph_u32 sph_dec32le_aligned_cuda(const void *src)
 #endif
 }
 
-//template <typename T, typename P>
-//__device__
-//void cpyArr(const T* src, P* dst, size_t len)
-//{
-//	for (auto i = 0u; i < len; ++i)
-//		dst[i] = src[i];
-//}
-
 __device__
 void shabal_init_cuda(void *cc, unsigned size)
 {
@@ -492,7 +481,8 @@ void shabal_core_cuda(void *cc, const unsigned char *data, size_t len)
 	sc->ptr = ptr;
 }
 
-__device__ void sph_enc32le_aligned_cuda(void *dst, sph_u32 val)
+__device__
+void sph_enc32le_aligned_cuda(void *dst, sph_u32 val)
 {
 #if SPH_LITTLE_ENDIAN
 	*(sph_u32 *)dst = val;
@@ -560,8 +550,8 @@ void shabal_close_cuda(void *cc, unsigned ub, unsigned n, void *dst)
 }
 
 __global__
-void calculate_shabal_cuda_device(Burst::ScoopData* buffer, uint64_t len, const Burst::GensigData* gensig, CalculatedDeadline* bestDeadline,
-	uint64_t nonceStart, uint64_t nonceRead, uint64_t baseTarget)
+void calculate_shabal_cuda_device(Burst::ScoopData* buffer, Poco::UInt64 len, const Burst::GensigData* gensig, CalculatedDeadline* bestDeadline,
+	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget)
 {
 	sph_shabal256_context context;
 	shabal_init_cuda(&context, 256);
@@ -577,15 +567,15 @@ void calculate_shabal_cuda_device(Burst::ScoopData* buffer, uint64_t len, const 
 		return;
 	}
 
-	uint8_t target[Burst::Settings::HashSize];
+	Poco::UInt8 target[Burst::Settings::HashSize];
 	auto test = buffer[i];
 
 	shabal_core_cuda(&context, (const unsigned char *)gensig, Burst::Settings::HashSize);
 	shabal_core_cuda(&context, (const unsigned char *)&test, Burst::Settings::ScoopSize);
 	shabal_close_cuda(&context, 0, 0, &target[0]);
 
-	uint64_t targetResult = 0;
-	memcpy(&targetResult, &target[0], sizeof(uint64_t));
+	Poco::UInt64 targetResult = 0;
+	memcpy(&targetResult, &target[0], sizeof(Poco::UInt64));
 	auto deadline = targetResult / baseTarget;
 	
 	bestDeadline[i].deadline = deadline;
@@ -601,7 +591,7 @@ void calc_occupancy_cuda(int bufferSize, int& gridSize, int& blockSize)
 	gridSize = (bufferSize + blockSize - 1) / blockSize;
 }
 
-bool alloc_memory_cuda(MemoryType memType, uint64_t size, void** mem)
+bool alloc_memory_cuda(MemoryType memType, Poco::UInt64 size, void** mem)
 {
 	size = calc_memory_size(memType, size);
 
@@ -611,7 +601,7 @@ bool alloc_memory_cuda(MemoryType memType, uint64_t size, void** mem)
 	return cudaMalloc((void**)&*mem, size) == cudaSuccess;
 }
 
-bool realloc_memory_cuda(MemoryType memType, uint64_t size,  void** mem)
+bool realloc_memory_cuda(MemoryType memType, Poco::UInt64 size,  void** mem)
 {
 	size = calc_memory_size(memType, size);
 
@@ -624,7 +614,7 @@ bool realloc_memory_cuda(MemoryType memType, uint64_t size,  void** mem)
 	return cudaMalloc((void**)&*mem, size) == cudaSuccess;
 }
 
-bool copy_memory_cuda(MemoryType memType, uint64_t size, const void* from, void* to, MemoryCopyDirection copyDirection)
+bool copy_memory_cuda(MemoryType memType, Poco::UInt64 size, const void* from, void* to, MemoryCopyDirection copyDirection)
 {
 	size = calc_memory_size(memType, size);
 
@@ -642,27 +632,27 @@ bool free_memory_cuda(void* mem)
 	return cudaFree(mem) == cudaSuccess;
 }
 
-uint64_t calc_memory_size(MemoryType memType, uint64_t size)
+Poco::UInt64 calc_memory_size(MemoryType memType, Poco::UInt64 size)
 {
 	if (memType == MemoryType::Buffer)
-		size *= sizeof(uint8_t) * Burst::Settings::ScoopSize;
+		size *= sizeof(Poco::UInt8) * Burst::Settings::ScoopSize;
 	else if (memType == MemoryType::Gensig)
-		size = sizeof(uint8_t) * Burst::Settings::HashSize;
+		size = sizeof(Poco::UInt8) * Burst::Settings::HashSize;
 	else if (memType == MemoryType::Deadlines)
 		size *= sizeof(CalculatedDeadline);
 
 	return size;
 }
 
-void calculate_shabal_cuda(Burst::ScoopData* buffer, uint64_t len, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
-	uint64_t nonceStart, uint64_t nonceRead, uint64_t baseTarget)
+void calculate_shabal_cuda(Burst::ScoopData* buffer, Poco::UInt64 len, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
+	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget)
 {
 	Burst::ScoopData* cudaBuffer;
 	Burst::GensigData* cudaGensig;
 	CalculatedDeadline* cudaDeadlines;
 
-	auto sizeBuffer = sizeof(uint8_t) * Burst::Settings::ScoopSize * len;
-	auto sizeGensig = sizeof(uint8_t) * Burst::Settings::HashSize;
+	auto sizeBuffer = sizeof(Poco::UInt8) * Burst::Settings::ScoopSize * len;
+	auto sizeGensig = sizeof(Poco::UInt8) * Burst::Settings::HashSize;
 	auto sizeDeadlines = sizeof(CalculatedDeadline) * len;
 	
 	auto err = cudaMalloc((void**)&cudaBuffer, sizeBuffer);
@@ -692,13 +682,18 @@ void calculate_shabal_cuda(Burst::ScoopData* buffer, uint64_t len, const Burst::
 	err = err;
 }
 
-void calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, uint64_t bufferSize, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
-	uint64_t nonceStart, uint64_t nonceRead, uint64_t baseTarget, int gridSize, int blockSize)
+bool calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, Poco::UInt64 bufferSize, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
+	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget, int gridSize, int blockSize, std::string& errorString)
 {
 	calculate_shabal_cuda_device<<<gridSize, blockSize>>>(buffer, bufferSize, gensig, deadlines, nonceStart, nonceRead, baseTarget);
 
 	auto err = cudaPeekAtLastError();
 
 	if (err != cudaSuccess)
-		log_error(Burst::MinerLogger::plotVerifier, "CUDA error: %s", std::string(cudaGetErrorString(err)));
+	{
+		errorString = cudaGetErrorString(err);
+		return false;
+	}
+
+	return true;
 }
