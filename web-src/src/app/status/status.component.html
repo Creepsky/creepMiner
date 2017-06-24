@@ -146,9 +146,9 @@
           <p class="pull-right"><span class="label label-default">20:33:03</span></p>Request: /<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
       </li>
       <li *ngFor="let n of b.nonces" id="53352705" class="list-group-item clearfix nonce-found list-group-item-success">
-        <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-        <b>Boris</b>: nonce confirmed (9d 04:59:12)
-        <p class="pull-right">20:34:54</p>
+        <span class="glyphicon glyphicon-ok" aria-hidden="true" *ngIf="n.type === 'nonce confirmed'"></span>
+        <b>{{n.account}}</b>: {{n.type}} ({{n.deadline}})
+        <p class="pull-right">{{n.time}}</p>
       </li>
     </ul>
   </div>
