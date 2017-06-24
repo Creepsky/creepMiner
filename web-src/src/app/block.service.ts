@@ -3,7 +3,8 @@ import { Injectable } from '@angular/core';
 @Injectable()
 export class BlockService {
   websocket;
-  config;
+  config: JSONS.ConfigObject;
+  lastBlock;
 
   constructor() { }
 
@@ -20,10 +21,11 @@ export class BlockService {
         }
 
         const response = JSON.parse(data);
-        console.log('ws', response);
+
         switch (response['type']) {
           case 'new block':
-            //    newBlock(response);
+            console.log('new block', response);
+            this.lastBlock = response;
             break;
           case 'nonce found':
             //     nonceFound(response);
