@@ -1,3 +1,69 @@
-<p>
-  settings works!
-</p>
+<div class="container">
+  <div class="row">
+    <div class="page-header">
+      <h1>Urls</h1>
+    </div>
+    <form method="POST" action="/settings/urls">
+      <div class="form-group input-group">
+        <span class="input-group-addon">Mining-Info-URL</span>
+        <input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
+      </div>
+      <div class="form-group input-group">
+        <span class="input-group-addon">Submission-URL</span>
+        <input class="form-control" type="url" id="submission-url" name="submission-url">
+      </div>
+      <div class="form-group input-group">
+        <span class="input-group-addon">Wallet-URL</span>
+        <input class="form-control" type="url" id="wallet-url" name="wallet-url">
+      </div>
+      <button type="submit" class="btn btn-primary pull-right">Submit</button>
+    </form>
+  </div>
+  <div class="row">
+    <div class="page-header">
+      <h1>Mining</h1>
+    </div>
+    <form method="POST" action="/settings/mining">
+      <div class="form-group input-group">
+        <span class="input-group-addon">Intensity</span>
+        <input class="form-control" type="number" id="intensity" name="intensity">
+      </div>
+      <div class="form-group input-group">
+        <span class="input-group-addon">Buffer size</span>
+        <input class="form-control" type="number" id="buffer-size" name="buffer-size">
+        <span class="input-group-addon">MB</span>
+      </div>
+      <div class="form-group input-group">
+        <span class="input-group-addon">Plot reader</span>
+        <input class="form-control" type="number" id="plot-readers" name="plot-readers">
+      </div>
+      <div class="form-group input-group">
+        <span class="input-group-addon">Submission max retry</span>
+        <input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
+      </div>
+      <div class="form-group input-group">
+        <span class="input-group-addon">Target deadline</span>
+        <input class="form-control" type="text" id="target-deadline" name="target-deadline">
+      </div>
+      <div class="form-group input-group">
+        <span class="input-group-addon">Timeout</span>
+        <input class="form-control" type="number" id="timeout" name="timeout">
+        <span class="input-group-addon">seconds</span>
+      </div>
+      <button type="submit" class="btn btn-primary pull-right">Submit</button>
+    </form>
+  </div>
+  <div class="row">
+    <div class="page-header">
+      <h1>Logging (miner, not webinterface)</h1>
+    </div>
+    <form method="POST" action="/settings/logging">
+      <div class="form-group input-group">
+        <span class="input-group-addon">Logfile directory</span>
+        <input class="form-control" type="text" id="log-dir" name="log-dir">
+      </div>
+      <div id="settingsDlComboboxes"></div>
+      <button type="submit" class="btn btn-primary pull-right">Submit</button>
+    </form>
+  </div>
+</div>
