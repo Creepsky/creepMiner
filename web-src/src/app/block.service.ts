@@ -88,7 +88,7 @@ export class BlockService {
         this.websocket.close();
       }
 
-      this.websocket = new WebSocket('ws://78.47.240.68:8080/');
+      this.websocket = new WebSocket('ws://localhost:8080/');
       this.websocket.onmessage = onMessage;
     } else {
       this.websocket = null;
