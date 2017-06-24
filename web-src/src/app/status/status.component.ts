@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { BlockService } from '../block.service';
 
 @Component({
   selector: 'app-status',
@@ -7,9 +8,18 @@ import { Component, OnInit } from '@angular/core';
 })
 export class StatusComponent implements OnInit {
 
-  constructor() { }
+
+
+  constructor(
+    public b: BlockService
+  ) { }
+
 
   ngOnInit() {
+    this.b.connectBlock();
   }
+
+
+
 
 }
