@@ -72,7 +72,7 @@ export class BlockService {
 
 
   private addOrUpdateNonce(nonce: JSONS.NonceObject) {
-    const ns = this.nonces.filter(x => x.nonce = nonce.nonce);
+    const ns = this.nonces.filter(x => x.nonce === nonce.nonce);
     if (ns.length > 0) {
       ns[0].type = nonce.type;
     } else {
