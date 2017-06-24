@@ -31,10 +31,22 @@ declare module JSONS {
     }
 
 
-        export interface LastWinnerObject {
+    export interface LastWinnerObject {
         address: string;
         name: string;
         numeric: number;
+        type: string;
+    }
+
+
+    export interface NonceObject {
+        account: string;
+        accountId: number;
+        deadline: string;
+        deadlineNum: number;
+        nonce: number;
+        plotfile: string;
+        time: string;
         type: string;
     }
 }

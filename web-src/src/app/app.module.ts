@@ -1,5 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 import { AppComponent } from './app.component';
@@ -18,6 +19,7 @@ import { BlockService } from './block.service';
   ],
   imports: [
     BrowserModule,
+    CommonModule,
     RouterModule.forRoot([
       {
         path: 'status',

@@ -7,6 +7,7 @@ export class BlockService {
   newBlock: JSONS.NewBlockObject;
   lastWinner: JSONS.LastWinnerObject;
   progress = 0;
+  nonces: Array<JSONS.NonceObject> = [];
 
   constructor() { }
 
@@ -22,21 +23,27 @@ export class BlockService {
           return;
         }
         const response = JSON.parse(data);
-        console.log('new block', response);
+        console.log(response.type, response);
 
         switch (response['type']) {
           case 'new block':
             this.newBlock = response;
+            this.nonces = [];
             break;
           case 'nonce found':
             //     nonceFound(response);
+            this.addOrUpdateNonce(response);
             break;
           case 'nonce confirmed':
+            this.addOrUpdateNonce(response);
+
             //     addOrConfirm(response);
             ////     checkAddBestRound(BigInteger(response['deadlineNum']), response['deadline']);
             //    checkAddBestOverall(BigInteger(response['deadlineNum']), response['deadline']);
             break;
           case 'nonce submitted':
+            this.addOrUpdateNonce(response);
+
             //    addOrSubmit(response);
             break;
           case 'config':
@@ -46,7 +53,7 @@ export class BlockService {
             this.progress = response.value;
             break;
           case 'lastWinner':
-           this.lastWinner = response;
+            this.lastWinner = response;
             break;
           case 'blocksWonUpdate':
             //      wonBlocks.html(reponse['blocksWon']);
@@ -64,6 +71,16 @@ export class BlockService {
   }
 
 
+  private addOrUpdateNonce(nonce: JSONS.NonceObject) {
+    const ns = this.nonces.filter(x => x.nonce = nonce.nonce);
+    if (ns.length > 0) {
+      ns[0].type = nonce.type;
+    } else {
+      this.nonces.push(nonce);
+    }
+  }
+
+
 
   connect(onMessage) {
     if ('WebSocket' in window) {
@@ -71,7 +88,7 @@ export class BlockService {
         this.websocket.close();
       }
 
-      this.websocket = new WebSocket('ws://localhost:8080/');
+      this.websocket = new WebSocket('ws://78.47.240.68:8080/');
       this.websocket.onmessage = onMessage;
     } else {
       this.websocket = null;

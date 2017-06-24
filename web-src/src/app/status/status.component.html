@@ -85,7 +85,7 @@
 </div>
 <!-- Block data -->
 <div id="container" class="col-md-6">
-  {{b.lastWinner | json}}
+  {{b.nonces | json}}
   <div class="panel panel-primary" *ngIf="b.newBlock">
     <div class="panel-heading">Block {{b.newBlock.block}}</div>
     <div class="panel-body">
@@ -145,7 +145,9 @@
         <div>
           <p class="pull-right"><span class="label label-default">20:33:03</span></p>Request: /<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
       </li>
-      <li id="53352705" class="list-group-item clearfix nonce-found list-group-item-success"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> <b>Boris</b>: nonce confirmed (9d 04:59:12)
+      <li *ngFor="let n of b.nonces" id="53352705" class="list-group-item clearfix nonce-found list-group-item-success">
+        <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+        <b>Boris</b>: nonce confirmed (9d 04:59:12)
         <p class="pull-right">20:34:54</p>
       </li>
     </ul>
@@ -215,7 +217,7 @@
     </div>
   </div>
   <!-- Settings -->
-  <div class="panel panel-info">
+  <div class="panel panel-info" hidden>
     <div class="panel-heading">Settings</div>
     <div class="panel-body">
       <div class="checkbox">
