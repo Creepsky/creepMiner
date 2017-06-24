@@ -1,5 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 import { AppComponent } from './app.component';
 import { PlotFilesComponent } from './plot-files/plot-files.component';
@@ -14,7 +15,25 @@ import { StatusComponent } from './status/status.component';
     StatusComponent
   ],
   imports: [
-    BrowserModule
+    BrowserModule,
+    RouterModule.forRoot([
+      {
+        path: 'status',
+        component: StatusComponent
+      },
+      {
+        path: 'plotfiles',
+        component: PlotFilesComponent
+      }, {
+        path: 'settings',
+        component: SettingsComponent
+      },
+      {
+        path: '',
+        redirectTo: '/status',
+        pathMatch: 'full'
+      },
+    ])
   ],
   providers: [],
   bootstrap: [AppComponent]
