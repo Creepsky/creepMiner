@@ -84,6 +84,7 @@
 </div>
 <!-- Block data -->
 <div id="container" class="col-md-6">
+  {{b.config | json}}
 </div>
 <div class="col-md-3">
   <!-- Chart -->
@@ -96,6 +97,56 @@
   <div class="panel panel-warning">
     <div class="panel-heading">System</div>
     <div id="system" class="panel-body">
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Pool-URL</div>
+        <div class="col-md-7 col-xs-7">{{b.config.poolUrl}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Mining-URL</div>
+        <div class="col-md-7 col-xs-7">{{b.config.miningInfoUrl}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Wallet-URL</div>
+        <div class="col-md-7 col-xs-7">{{b.config.walletUrl}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Plotsize</div>
+        <div class="col-md-7 col-xs-7">{{b.config.totalPlotSize}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Buffersize</div>
+        <div class="col-md-7 col-xs-7">{{b.config.bufferSize}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Target deadline</div>
+        <div class="col-md-7 col-xs-7">{{b.config.targetDeadline}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Plot readers</div>
+        <div class="col-md-7 col-xs-7">{{b.config.maxPlotReaders}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Mining intensity</div>
+        <div class="col-md-7 col-xs-7">{{b.config.miningIntensity}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Submission retry</div>
+        <div class="col-md-7 col-xs-7">{{b.config.submissionMaxRetry}}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-5 col-xs-5">Timeout</div>
+        <div class="col-md-7 col-xs-7">{{b.config.timeout}}
+        </div>
+      </div>
     </div>
   </div>
   <!-- Settings -->
