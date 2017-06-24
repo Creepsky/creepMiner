@@ -12,4 +12,29 @@ declare module JSONS {
         type: string;
         walletUrl: string;
     }
+
+
+    export interface NewBlockObject {
+        baseTarget: number;
+        bestDeadlines: number[][];
+        bestOverall: string;
+        bestOverallNum: number;
+        block: number;
+        blocksMined: number;
+        blocksWon: number;
+        deadlinesAvg: string;
+        deadlinesConfirmed: number;
+        gensigStr: string;
+        scoop: number;
+        time: string;
+        type: string;
+    }
+
+
+        export interface LastWinnerObject {
+        address: string;
+        name: string;
+        numeric: number;
+        type: string;
+    }
 }

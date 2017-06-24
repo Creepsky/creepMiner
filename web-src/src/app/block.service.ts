@@ -4,7 +4,9 @@ import { Injectable } from '@angular/core';
 export class BlockService {
   websocket;
   config: JSONS.ConfigObject;
-  lastBlock;
+  newBlock: JSONS.NewBlockObject;
+  lastWinner: JSONS.LastWinnerObject;
+  progress = 0;
 
   constructor() { }
 
@@ -19,13 +21,12 @@ export class BlockService {
         if (data === 'ping') {
           return;
         }
-
         const response = JSON.parse(data);
+        console.log('new block', response);
 
         switch (response['type']) {
           case 'new block':
-            console.log('new block', response);
-            this.lastBlock = response;
+            this.newBlock = response;
             break;
           case 'nonce found':
             //     nonceFound(response);
@@ -42,10 +43,10 @@ export class BlockService {
             this.config = response;
             break;
           case 'progress':
-            //    setOverallProgress(response['value']);
+            this.progress = response.value;
             break;
           case 'lastWinner':
-            //    setLastWinner(response);
+           this.lastWinner = response;
             break;
           case 'blocksWonUpdate':
             //      wonBlocks.html(reponse['blocksWon']);
