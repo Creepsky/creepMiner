@@ -72,7 +72,7 @@ export class BlockService {
 
 
   private addOrUpdateNonce(nonce: JSONS.NonceObject) {
-    const ns = this.nonces.filter(x => x.nonce = nonce.nonce);
+    const ns = this.nonces.filter(x => x.nonce === nonce.nonce);
     if (ns.length > 0) {
       ns[0].type = nonce.type;
     } else {
@@ -88,7 +88,7 @@ export class BlockService {
         this.websocket.close();
       }
 
-      this.websocket = new WebSocket('ws://localhost:8080/');
+      this.websocket = new WebSocket('ws://' + window.location.host + ':' + window.location.port + '/');
       this.websocket.onmessage = onMessage;
     } else {
       this.websocket = null;
