@@ -33,7 +33,8 @@ set(SOURCE_FILES
         src/MinerServer.cpp
         src/Wallet.cpp
         src/MinerData.cpp
-        src/RequestHandler.cpp)
+        src/RequestHandler.cpp
+        src/Output.cpp)
 
 add_executable(creepMiner ${SOURCE_FILES})
 

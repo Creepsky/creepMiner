@@ -37,7 +37,7 @@ namespace Burst
 		void runTask() override;
 
 		static DeadlineTuple verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
-			const GensigData& gensig, Poco::UInt64 baseTarget);
+		                            const GensigData& gensig, Poco::UInt64 baseTarget);
 
 		static void verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
 		                   const GensigData& gensig, Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 baseTarget,

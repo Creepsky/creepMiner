@@ -22,15 +22,15 @@
     <ProjectGuid>{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>creepMiner</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
     <ProjectName>creepMiner</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -41,7 +41,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -91,24 +91,14 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <CompileAsManaged>false</CompileAsManaged>
-      <CompileAsWinRT>false</CompileAsWinRT>
-      <SDLCheck>false</SDLCheck>
-      <StringPooling>true</StringPooling>
-      <FloatingPointModel>Fast</FloatingPointModel>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;_LIB;POCO_STATIC;LOG_TERMINAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
-      <AssemblerOutput>NoListing</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <LargeAddressAware>true</LargeAddressAware>
-      <AdditionalDependencies>Ws2_32.lib;%(AdditionalDependencies);PocoNetd.lib;PocoFoundationd.lib;PocoNetSSLd.lib;PocoCryptod.lib;PocoJSONd.lib;PocoUtild.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmdd.lib;PocoFoundationmdd.lib;PocoNetSSLmdd.lib;PocoCryptomdd.lib;PocoJSONmdd.lib;PocoUtilmdd.lib;libcrypto.lib;libssl.lib;Advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -143,15 +133,15 @@
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;LOG_TERMINAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -180,6 +170,7 @@
     <ClCompile Include="src\Declarations.cpp" />
     <ClCompile Include="src\MinerData.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
+    <ClCompile Include="src\Output.cpp" />
     <ClCompile Include="src\PlotGenerator.cpp" />
     <ClCompile Include="src\PlotSizes.cpp" />
     <ClCompile Include="src\PlotVerifier.cpp" />
@@ -187,7 +178,6 @@
     <ClCompile Include="src\RequestHandler.cpp" />
     <ClCompile Include="src\Response.cpp" />
     <ClCompile Include="src\MinerServer.cpp" />
-    <ClCompile Include="src\Socket.cpp" />
     <ClCompile Include="src\Deadline.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Miner.cpp" />
@@ -214,7 +204,6 @@
     <ClInclude Include="src\RequestHandler.hpp" />
     <ClInclude Include="src\Response.hpp" />
     <ClInclude Include="src\MinerServer.hpp" />
-    <ClInclude Include="src\Socket.hpp" />
     <ClInclude Include="src\Deadline.hpp" />
     <ClInclude Include="src\Declarations.hpp" />
     <ClInclude Include="src\Miner.hpp" />

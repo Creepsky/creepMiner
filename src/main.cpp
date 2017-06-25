@@ -42,7 +42,7 @@ int main(int argc, const char* argv[])
 
 	Burst::MinerLogger::setup();
 	
-	auto& general = Poco::Logger::get("general");
+	auto general = &Poco::Logger::get("general");
 	
 	log_information(general, Burst::Settings::Project.nameAndVersionAndOs);
 	log_information(general, "----------------------------------------------");
@@ -131,6 +131,8 @@ int main(int argc, const char* argv[])
 				server.connectToMinerData(miner.getData());
 				server.run(Burst::MinerConfig::getConfig().getServerUrl().getPort());
 			}
+
+			Burst::MinerLogger::setChannelMinerData(&miner.getData());
 
 			miner.run();
 			server.stop();

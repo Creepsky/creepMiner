@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Deadline.hpp"
 #include <Poco/Timestamp.h>
@@ -6,13 +6,13 @@
 #include <Poco/JSON/Object.h>
 #include <Poco/Mutex.h>
 #include <deque>
-#include <Poco/NotificationCenter.h>
-#include <Poco/Observer.h>
 #include <Poco/ActiveDispatcher.h>
 #include <Poco/ActiveMethod.h>
 #include <unordered_map>
 #include <atomic>
 #include <functional>
+#include <Poco/BasicEvent.h>
+#include <Poco/Message.h>
 
 namespace Burst
 {
@@ -20,6 +20,13 @@ namespace Burst
 	class Accounts;
 	class Wallet;
 	class Account;
+
+	enum class TargetDeadlineType
+	{
+		Pool,
+		Local,
+		Combined
+	};
 
 	class BlockData : public Poco::ActiveDispatcher
 	{
@@ -41,6 +48,7 @@ namespace Burst
 		
 		void refreshBlockEntry() const;
 		void setProgress(float progress, Poco::UInt64 blockheight);
+		void setProgress(const std::string& plotDir, float progress, Poco::UInt64 blockheight);
 
 		Poco::UInt64 getBlockheight() const;
 		Poco::UInt64 getScoop() const;
@@ -57,6 +65,9 @@ namespace Burst
 		
 		std::shared_ptr<Deadline> addDeadlineIfBest(Poco::UInt64 nonce, Poco::UInt64 deadline,
 			std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile);
+
+		void addMessage(const Poco::Message& message) const;
+		void clearEntries() const;
 
 	protected:
 		std::shared_ptr<Account> runGetLastWinner(const std::pair<const Wallet*, const Accounts*>& args);
@@ -77,17 +88,10 @@ namespace Burst
 			Poco::ActiveStarter<ActiveDispatcher>> activityLastWinner_;
 		MinerData* parent_;
 		Poco::JSON::Object::Ptr jsonProgress_;
+		std::unordered_map<std::string, Poco::JSON::Object::Ptr> jsonDirProgress_;
 		mutable Poco::Mutex mutex_;
 
 		friend class Deadlines;
-	};
-
-	struct BlockDataChangedNotification : Poco::Notification
-	{
-		BlockDataChangedNotification(Poco::JSON::Object* blockData)
-			: blockData{blockData} {}
-		~BlockDataChangedNotification() override = default;
-		Poco::JSON::Object* blockData;
 	};
 
 	class MinerData
@@ -97,6 +101,7 @@ namespace Burst
 		
 		std::shared_ptr<BlockData> startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig);
 		void setTargetDeadline(Poco::UInt64 deadline);
+		void addMessage(const Poco::Message& message);
 
 		std::shared_ptr<Deadline> getBestDeadlineOverall() const;
 		const Poco::Timestamp& getStartTime() const;
@@ -105,10 +110,10 @@ namespace Burst
 		Poco::UInt64 getBlocksWon() const;
 		std::shared_ptr<BlockData> getBlockData();
 		std::shared_ptr<const BlockData> getBlockData() const;
-		std::shared_ptr<const BlockData> getHistoricalBlockData(uint32_t roundsBefore) const;
+		std::shared_ptr<const BlockData> getHistoricalBlockData(Poco::UInt32 roundsBefore) const;
 		std::vector<std::shared_ptr<const BlockData>> getAllHistoricalBlockData() const;
 		Poco::UInt64 getConfirmedDeadlines() const;
-		Poco::UInt64 getTargetDeadline() const;
+		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		bool compareToTargetDeadline(Poco::UInt64 deadline) const;
 		Poco::UInt64 getAverageDeadline() const;
 
@@ -116,14 +121,7 @@ namespace Burst
 		Poco::UInt64 getCurrentBasetarget() const;
 		Poco::UInt64 getCurrentScoopNum() const;
 
-		template <typename Observer>
-		void addObserverBlockDataChanged(Observer& observer,
-			typename Poco::Observer<Observer, BlockDataChangedNotification>::Callback function)
-		{
-			notifiyBlockDataChanged_.addObserver(Poco::Observer<Observer, BlockDataChangedNotification>{
-				observer, function
-			});
-		}
+		Poco::BasicEvent<const Poco::JSON::Object> blockDataChangedEvent;
 
 	private:
 		void addWonBlock();
@@ -139,7 +137,6 @@ namespace Burst
 		std::shared_ptr<BlockData> blockData_ = nullptr;
 		std::deque<std::shared_ptr<BlockData>> historicalBlocks_;
 		mutable Poco::Mutex mutex_;
-		Poco::NotificationCenter notifiyBlockDataChanged_;
 
 		std::atomic<Poco::UInt64> currentBlockheight_;
 		std::atomic<Poco::UInt64> currentBasetarget_;

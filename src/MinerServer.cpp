@@ -14,12 +14,16 @@
 #include <Poco/Path.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include <Poco/String.h>
+#include <Poco/Delegate.h>
+#include <Poco/Net/NetException.h>
 
 using namespace Poco;
 using namespace Net;
 
 Burst::MinerServer::MinerServer(Miner& miner)
-	: miner_{&miner}, minerData_(nullptr), port_{0}
+	: miner_{&miner},
+	  minerData_(nullptr),
+	  port_{0}
 {
 	auto ip = MinerConfig::getConfig().getServerUrl().getCanonical();
 	auto port = std::to_string(MinerConfig::getConfig().getServerUrl().getPort());
@@ -31,7 +35,10 @@ Burst::MinerServer::MinerServer(Miner& miner)
 }
 
 Burst::MinerServer::~MinerServer()
-{}
+{
+	if (minerData_ != nullptr)
+		minerData_->blockDataChangedEvent -= Poco::delegate(this, &MinerServer::onMinerDataChangeEvent);
+}
 
 void Burst::MinerServer::run(uint16_t port)
 {
@@ -95,7 +102,7 @@ void Burst::MinerServer::stop()
 void Burst::MinerServer::connectToMinerData(MinerData& minerData)
 {
 	minerData_ = &minerData;
-	minerData.addObserverBlockDataChanged(*this, &MinerServer::blockDataChanged);
+	minerData_->blockDataChangedEvent += Poco::delegate(this, &MinerServer::onMinerDataChangeEvent);
 }
 
 void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> websocket)
@@ -125,7 +132,11 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 	if (error)
 		websocket.release();
 	else
-		websockets_.emplace_back(move(websocket));		
+		websockets_.emplace_back(move(websocket));
+	
+	// check the status of all connected websockets by sending a "ping" message
+	// if the message can't be delivered, the websocket gets dropped
+	sendToWebsockets("ping");
 }
 
 void Burst::MinerServer::sendToWebsockets(const std::string& data)
@@ -151,14 +162,12 @@ void Burst::MinerServer::sendToWebsockets(const JSON::Object& json)
 	sendToWebsockets(ss.str());
 }
 
-void Burst::MinerServer::blockDataChanged(BlockDataChangedNotification* notification)
+void Burst::MinerServer::onMinerDataChangeEvent(const void* sender, const Poco::JSON::Object& data)
 {
-	poco_ndc(MinerServer::blockDataChanged);
-	sendToWebsockets(*notification->blockData);
-	notification->release();
+	sendToWebsockets(data);
 }
 
-bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string& data) const
+bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string& data)
 {
 	poco_ndc(MinerServer::sendToWebsocket(WebSocket&, const std::string&));
 	
@@ -168,6 +177,10 @@ bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string
 		if (n != static_cast<int>(data.size()))
 			log_warning(MinerLogger::server, "Could not fully send: %s", data);
 		return true;
+	}
+	catch (Poco::Net::ConnectionAbortedException& exc)
+	{
+		return false;
 	}
 	catch (Poco::Exception& exc)
 	{
@@ -184,7 +197,7 @@ Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
 Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& request)
 {
 	poco_ndc(MinerServer::RequestFactory::createRequestHandler);
-	
+
 	if (request.find("Upgrade") != request.end() &&
 		icompare(request["Upgrade"], "websocket") == 0)
 		return new WebSocketHandler{server_};
@@ -193,18 +206,46 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 	try
 	{
-		URI uri{request.getURI()};
+		URI uri {request.getURI()};
+		std::vector<std::string> path_segments;
+
+		uri.getPathSegments(path_segments);
 
 		// root
-		if (uri.getPath() == "/")
+		if (path_segments.empty())
 			return new RootHandler{server_->variables_};
 
+		// plotfiles
+		if (path_segments.front() == "plotfiles")
+			return new PlotfilesHandler{server_->variables_};
+
 		// shutdown everything
-		if (uri.getPath() == "/shutdown")
+		if (path_segments.front() == "shutdown")
 			return new ShutdownHandler{*server_->miner_, *server_};
 
+		// rescan plot files
+		if (path_segments.front() == "rescanPlotfiles")
+			return new RescanPlotfilesHandler(*server_);
+
+		// show/change settings
+		if (path_segments.front() == "settings")
+		{
+			// no body -> show
+			if (path_segments.size() == 1)
+				return new SettingsHandler(server_->variables_, *server_);
+
+			// with body -> change
+			if (path_segments.size() > 1)
+				return new SettingsChangeHandler(*server_, *server_->miner_);
+		}
+
+		// show/change plot files
+		if (path_segments.front() == "plotdir")
+			if (path_segments.size() > 1)
+				return new PlotDirHandler(path_segments[1] == "remove" ? true:  false, *server_->miner_, *server_);
+
 		// forward function
-		if (uri.getPath() == "/burst")
+		if (path_segments.front() == "burst")
 		{
 			static const std::string getMiningInfo = "requestType=getMiningInfo";
 			static const std::string submitNonce = "requestType=submitNonce";
@@ -216,19 +257,19 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 			// forward nonce with combined capacity
 			if (uri.getQuery().compare(0, submitNonce.size(), submitNonce) == 0)
 				return new SubmitNonceHandler{*server_->miner_};
-			
+
 			// just forward whatever the request is to the wallet
 			// why wallet? because the only requests to a pool are getMiningInfo and submitNonce and we handled them already
 			return new ForwardHandler{MinerConfig::getConfig().createSession(HostType::Wallet)};
 		}
 
-		Path path{"public"};
+		Path path {"public"};
 		path.append(uri.getPath());
 
-		if (Poco::File{ path }.exists())
+		if (Poco::File {path}.exists())
 			return new AssetHandler{server_->variables_};
 
-		return new NotFoundHandler;
+		return new NotFoundHandler{server_->variables_};
 	}
 	catch (...)
 	{

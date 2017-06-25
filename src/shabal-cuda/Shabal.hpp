@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Declarations.hpp"
+#include <Poco/Types.h>
 
 struct CalculatedDeadline
 {
@@ -32,6 +33,6 @@ extern "C" void calculate_shabal_cuda(Burst::ScoopData* buffer, Poco::UInt64 len
 	const Burst::GensigData* gensig, CalculatedDeadline* calculatedDeadlines,
 	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget);
 
-extern "C" void calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, Poco::UInt64 bufferSize,
+extern "C" bool calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, Poco::UInt64 bufferSize,
 	const Burst::GensigData* gensig, CalculatedDeadline* calculatedDeadlines,
-	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget, int gridSize, int blockSize);
+	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget, int gridSize, int blockSize, std::string& errorString);

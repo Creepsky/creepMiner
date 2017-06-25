@@ -18,6 +18,117 @@
 #include <Poco/Base64Decoder.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/StringTokenizer.h>
+#include <Poco/Net/HTMLForm.h>
+
+namespace Burst
+{
+	namespace RequestHandlerHelper
+	{
+		bool sendIndexContent(const TemplateVariables& indexVariables, const TemplateVariables& contentVariables,
+			const std::string& contentPage, std::string& output)
+		{
+			Poco::FileInputStream fileIndex, fileContent;
+			output.clear();
+
+			try
+			{
+				fileIndex.open("public/index.html", std::ios::in);
+				output = std::string{ std::istreambuf_iterator<char>{fileIndex}, {} };
+				indexVariables.inject(output);
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_error(MinerLogger::server, "Could not open public/index.html!");
+				log_exception(MinerLogger::server, exc);
+
+				if (fileIndex)
+					fileIndex.close();
+
+				return false;
+			}
+
+			try
+			{
+				fileContent.open(contentPage, std::ios::in);
+				std::string strContent(std::istreambuf_iterator<char>{fileContent}, {});
+
+				TemplateVariables contentFramework;
+				contentFramework.variables.emplace("content", [&strContent]() { return strContent; });
+
+				contentFramework.inject(output);
+				contentVariables.inject(output);
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_error(MinerLogger::server, "Could not open '%s'!", contentPage);
+				log_exception(MinerLogger::server, exc);
+
+				if (fileContent)
+					fileContent.close();
+
+				return false;
+			}
+
+			fileIndex.close();
+			fileContent.close();
+
+			return true;
+		}
+
+		bool checkCredentials(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+		{
+			auto credentialsOk = false;
+
+			if (MinerConfig::getConfig().getServerUser().empty() &&
+				MinerConfig::getConfig().getServerPass().empty())
+				return true;
+
+			if (request.hasCredentials())
+			{
+				std::string scheme, authInfo;
+				request.getCredentials(scheme, authInfo);
+
+				// credentials are base64 encoded
+				std::stringstream encoded(authInfo);
+				std::stringstream decoded;
+				std::string credentials, user = "", password;
+				//
+				Poco::Base64Decoder base64(encoded);
+				Poco::StreamCopier::copyStream(base64, decoded);
+				//
+				credentials = decoded.str();
+
+				Poco::StringTokenizer tokenizer{credentials, ":"};
+
+				if (tokenizer.count() == 2)
+				{
+					user = tokenizer[0];
+					password = tokenizer[1];
+
+					credentialsOk = 
+						check_HMAC_SHA1(user, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverPassphrase) &&
+						check_HMAC_SHA1(password, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassphrase);
+				}
+
+				log_information(MinerLogger::server, "%s request to shutdown the miner.\n"
+					"\tfrom: %s\n"
+					"\tuser: %s",
+					(credentialsOk ? std::string("Authorized") : std::string("Unauthorized")),
+					request.clientAddress().toString(),
+					user);
+			}
+
+			if (!credentialsOk)
+			{
+				response.requireAuthentication("creepMiner");
+				response.send();
+				return false;
+			}
+
+			return true;
+		}
+	}
+}
 
 void Burst::TemplateVariables::inject(std::string& source) const
 {
@@ -25,10 +136,29 @@ void Burst::TemplateVariables::inject(std::string& source) const
 		Poco::replaceInPlace(source, "%" + var.first + "%", var.second());
 }
 
+Burst::NotFoundHandler::NotFoundHandler(const TemplateVariables& variables)
+	: variables_(&variables)
+{}
+
 void Burst::NotFoundHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
-	response.send();
+	TemplateVariables contentVariables;
+	std::string output;
+
+	contentVariables.variables.emplace("includes", []() { return ""; });
+
+	if (RequestHandlerHelper::sendIndexContent(*variables_, contentVariables, "public/404.html", output))
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
+		out << output;
+	}
+	else
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
+		response.send();
+	}
 }
 
 Burst::RootHandler::RootHandler(const TemplateVariables& variables)
@@ -37,23 +167,119 @@ Burst::RootHandler::RootHandler(const TemplateVariables& variables)
 
 void Burst::RootHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
+	std::string output;
+	TemplateVariables contentVariables;
+	contentVariables.variables.emplace("includes", []() { return "<script src='js/miner.js'></script>"; });
+
+	if (RequestHandlerHelper::sendIndexContent(*variables_, contentVariables, "public/block.html", output))
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
+		out << output;
+	}
+	else
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+		response.send();
+	}
+}
+
+Burst::PlotfilesHandler::PlotfilesHandler(const TemplateVariables& variables)
+	: variables_{ &variables }
+{}
+
+void Burst::PlotfilesHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	std::string output;
+	std::string plotFiles;
+
+	auto jsonPlotDirs = createJsonPlotDirs();
+
+	std::stringstream sstr;
+	jsonPlotDirs.stringify(sstr);
+
+	TemplateVariables contentVariables;
+
+	contentVariables.variables.emplace("includes", [&sstr]()
+	{
+		std::stringstream sstrContent;
+		sstrContent << "<script src='js/plotfiles.js'></script>";
+		sstrContent << std::endl;
+		sstrContent << "<script>var plotdirs = " << sstr.str() << ";</script>";
+		return sstrContent.str();
+	});
+
+	if (RequestHandlerHelper::sendIndexContent(*variables_, contentVariables, "public/plotfiles.html", output))
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
+		out << output;
+	}
+	else
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+		response.send();
+	}
+}
+
+Burst::RescanPlotfilesHandler::RescanPlotfilesHandler(MinerServer& server)
+	: server_{&server}
+{}
+
+void Burst::RescanPlotfilesHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	if (!RequestHandlerHelper::checkCredentials(request, response))
+		return;
+
+	log_information(MinerLogger::server, "Got request for rescanning the plotdirs...");
+
+	MinerConfig::getConfig().rescanPlotfiles();
+
+	// we send the new settings (size could be changed)
+	server_->sendToWebsockets(createJsonConfig());
+
+	// then we send all plot dirs and files
+	server_->sendToWebsockets(createJsonPlotDirsRescan());
+
+	// respond
 	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-	response.setChunkedTransferEncoding(true);
-	auto& out = response.send();
+	response.setContentLength(0);
+	response.send();
+}
 
-	try
-	{
-		Poco::FileInputStream file{ "public/index.html", std::ios::in };
-		std::string str(std::istreambuf_iterator<char>{file}, {});
-		variables_->inject(str);
+Burst::PlotDirHandler::PlotDirHandler(bool remove, Miner& miner, MinerServer& server)
+	: miner_(miner), server_(server), remove_(remove)
+{}
 
-		out << str;
-	}
-	catch (Poco::Exception& exc)
-	{
-		log_error(MinerLogger::server, "Could not open public/index.html!");
-		log_exception(MinerLogger::server, exc);
-	}
+void Burst::PlotDirHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	poco_ndc("PlotDirHandler::handleRequest");
+
+	std::stringstream sstream;
+	Poco::StreamCopier::copyStream(request.stream(), sstream);
+	auto path = sstream.str();
+
+	if (path.empty())
+		return;
+
+	log_information(MinerLogger::server, "Got request for changing the plotdirs...");
+
+	auto success = false;
+
+	if (remove_)
+		success = MinerConfig::getConfig().removePlotDir(path);
+	else
+		success = MinerConfig::getConfig().addPlotDir(path);
+
+	using hs = Poco::Net::HTTPResponse::HTTPStatus;
+	
+	server_.sendToWebsockets(createJsonPlotDirsRescan());
+
+	response.setStatus(success ? hs::HTTP_OK : hs::HTTP_BAD_REQUEST);
+	response.setContentLength(0);
+	response.send();
 }
 
 Burst::ShutdownHandler::ShutdownHandler(Miner& miner, MinerServer& server)
@@ -64,49 +290,8 @@ void Burst::ShutdownHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 {
 	poco_ndc("ShutdownHandler::handleRequest");
 
-	auto credentialsOk = false;
-
-	if (request.hasCredentials())
-	{
-		std::string scheme, authInfo;
-		request.getCredentials(scheme, authInfo);
-
-		// credentials are base64 encoded
-		std::stringstream encoded(authInfo);
-		std::stringstream decoded;
-		std::string credentials, user = "", password;
-		//
-		Poco::Base64Decoder base64(encoded);
-		Poco::StreamCopier::copyStream(base64, decoded);
-		//
-		credentials = decoded.str();
-
-		Poco::StringTokenizer tokenizer{credentials, ":"};
-
-		if (tokenizer.count() == 2)
-		{
-			user = tokenizer[0];
-			password = tokenizer[1];
-
-			credentialsOk = 
-				check_HMAC_SHA1(user, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverPassphrase) &&
-				check_HMAC_SHA1(password, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassphrase);
-		}
-
-		log_information(MinerLogger::server, "%s request to shutdown the miner.\n"
-			"\tfrom: %s\n"
-			"\tuser: %s",
-			(credentialsOk ? std::string("Authorized") : std::string("Unauthorized")),
-			request.clientAddress().toString(),
-			user);
-	}
-	
-	if (!credentialsOk)
-	{
-		response.requireAuthentication("creepMiner");
-		response.send();
+	if (!RequestHandlerHelper::checkCredentials(request, response))
 		return;
-	}
 
 	log_system(MinerLogger::server, "Shutting down miner...");
 
@@ -360,4 +545,106 @@ void Burst::ForwardHandler::handleRequest(Poco::Net::HTTPServerRequest& request,
 		log_error(MinerLogger::server, "Could not forward request to wallet!\n%s\n%s", exc.displayText(), request.getURI());
 		log_current_stackframe(MinerLogger::server);
 	}
+}
+
+Burst::SettingsHandler::SettingsHandler(const TemplateVariables& variables, MinerServer& server)
+	: variables_(&variables), server_(&server)
+{}
+
+void Burst::SettingsHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	TemplateVariables contentVariables;
+	std::string output;
+
+	contentVariables.variables.emplace("includes", []() { return "<script src='js/settings.js'></script>"; });
+
+	if (RequestHandlerHelper::sendIndexContent(*variables_, contentVariables, "public/settings.html", output))
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setChunkedTransferEncoding(true);
+		auto& out = response.send();
+		out << output;
+	}
+	else
+	{
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+		response.send();
+	}
+}
+
+Burst::RedirectHandler::RedirectHandler(std::string redirect_url)
+	: redirect_url_(std::move(redirect_url))
+{}
+
+void Burst::RedirectHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	response.redirect(redirect_url_);
+}
+
+Burst::SettingsChangeHandler::SettingsChangeHandler(MinerServer& server, Miner& miner)
+	: server_(&server), miner_(&miner)
+{}
+
+void Burst::SettingsChangeHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	if (request.getMethod() == "POST")
+	{
+		Poco::Net::HTMLForm post_body(request, request.stream());
+		
+		for (auto& key_val : post_body)
+		{
+			const auto& key = key_val.first;
+			const auto& value = key_val.second;
+
+			using np = Poco::NumberParser;
+
+			try
+			{
+				if (key == "mining-info-url")
+					MinerConfig::getConfig().setUrl(value, HostType::MiningInfo);
+				else if (key == "submission-url")
+					MinerConfig::getConfig().setUrl(value, HostType::Pool);
+				else if (key == "wallet-url")
+					MinerConfig::getConfig().setUrl(value, HostType::Wallet);
+				else if (key == "intensity")
+					miner_->setMiningIntensity(np::parseUnsigned(value));
+				else if (key == "buffer-size")
+					Miner::setMaxBufferSize(np::parseUnsigned64(value));
+				else if (key == "plot-readers")
+					miner_->setMaxPlotReader(np::parseUnsigned(value));
+				else if (key == "submission-max-retry")
+					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned64(value));
+				else if (key == "target-deadline")
+					MinerConfig::getConfig().setTargetDeadline(value);
+				else if (key == "timeout")
+					MinerConfig::getConfig().setTimeout(np::parseFloat(value));
+				else if (key == "log-dir")
+					MinerConfig::getConfig().setLogDir(value);
+				else if (Poco::icompare(key, 4, std::string("cmb_")) == 0)
+				{
+					auto logger_name = Poco::replace(key, "cmb_", "");
+					auto logger_priority = static_cast<Poco::Message::Priority>(np::parse(value));
+					MinerLogger::setChannelPriority(logger_name, logger_priority);
+				}
+				else
+					log_warning(MinerLogger::server, "unknown settings-key: %s", key);
+			}
+			catch (Poco::Exception& exc)
+			{
+				log_exception(MinerLogger::server, exc);
+				log_current_stackframe(MinerLogger::server);
+			}
+		}
+
+		log_system(MinerLogger::config, "Settings changed...");
+		MinerConfig::getConfig().printConsole();
+		
+		if (MinerConfig::getConfig().save())
+			log_success(MinerLogger::config, "Saved new settings!");
+		else
+			log_error(MinerLogger::config, "Could not save new settings!");
+	}
+
+	RedirectHandler redirect("/settings");
+	redirect.handleRequest(request, response);
 }

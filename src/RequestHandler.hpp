@@ -34,8 +34,12 @@ namespace Burst
 	class NotFoundHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
+		NotFoundHandler(const TemplateVariables& variables);
 		~NotFoundHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		const TemplateVariables* variables_;
 	};
 
 	class RootHandler : public Poco::Net::HTTPRequestHandler
@@ -47,6 +51,41 @@ namespace Burst
 
 	private:
 		const TemplateVariables* variables_;
+	};
+
+	class PlotfilesHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		PlotfilesHandler(const TemplateVariables& variables);
+		~PlotfilesHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		const TemplateVariables* variables_;
+	};
+
+	class RescanPlotfilesHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		RescanPlotfilesHandler(MinerServer& server);
+		~RescanPlotfilesHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		MinerServer* server_;
+	};
+
+	class PlotDirHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		PlotDirHandler(bool remove, Miner& miner, MinerServer& server);
+		~PlotDirHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		Miner& miner_;
+		MinerServer& server_;
+		bool remove_;
 	};
 
 	class ShutdownHandler : public Poco::Net::HTTPRequestHandler
@@ -121,5 +160,40 @@ namespace Burst
 
 	private:
 		std::unique_ptr<Poco::Net::HTTPClientSession> session_;
+	};
+
+	class SettingsHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		SettingsHandler(const TemplateVariables& variables, MinerServer& server);
+		~SettingsHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		const TemplateVariables* variables_;
+		MinerServer* server_;
+	};
+
+	class RedirectHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		RedirectHandler(std::string redirect_url);
+		~RedirectHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		std::string redirect_url_;
+	};
+
+	class SettingsChangeHandler : public Poco::Net::HTTPRequestHandler
+	{
+	public:
+		SettingsChangeHandler(MinerServer& server, Miner& miner);
+		~SettingsChangeHandler() override = default;
+		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+	private:
+		MinerServer* server_;
+		Miner* miner_;
 	};
 }

@@ -42,8 +42,8 @@ namespace Burst
 		void sendToWebsockets(const Poco::JSON::Object& json);
 
 	private:
-		void blockDataChanged(BlockDataChangedNotification* notification);
-		bool sendToWebsocket(Poco::Net::WebSocket& websocket, const std::string& data) const;
+		void onMinerDataChangeEvent(const void* sender, const Poco::JSON::Object& data);
+		static bool sendToWebsocket(Poco::Net::WebSocket& websocket, const std::string& data);
 
 		Miner* miner_;
 		MinerData* minerData_;

@@ -112,7 +112,7 @@ void Burst::PlotReader::runTask()
 				const auto staggerScoopBytes = staggerSize * Settings::ScoopSize;
 				const Poco::UInt64 staggerChunkBytes = [staggerScoopBytes]()
 				{
-					Poco::UInt64 a = MinerConfig::getConfig().maxBufferSizeMB * 1024 * 1024;
+					Poco::UInt64 a = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
 					Poco::UInt64 b = staggerScoopBytes;
 
 					for(;;) 
@@ -149,7 +149,7 @@ void Burst::PlotReader::runTask()
 						{
 							const auto chunkOffset = staggerChunk * staggerChunkBytes;
 
-							VerifyNotification::Ptr verification = new VerifyNotification{};
+							VerifyNotification::Ptr verification(new VerifyNotification{});
 							verification->accountId = accountId;
 							verification->nonceStart = nonceStart;
 							verification->block = plotReadNotification->blockheight;
@@ -181,6 +181,15 @@ void Burst::PlotReader::runTask()
 					auto fileReadDiff = timeStartFile.elapsed();
 					auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
 					Poco::Timespan span{fileReadDiff};
+				
+    				auto plotListSize = plotReadNotification->plotList.size();
+    
+    				if (plotListSize > 0)
+    					miner_.getData().getBlockData()->setProgress(
+							plotReadNotification->dir,
+    						static_cast<float>(std::distance(plotReadNotification->plotList.begin(), plotFileIter) + 1) / plotListSize * 100.f,
+							plotReadNotification->blockheight
+						);
 
 					const auto nonceBytes = static_cast<float>(nonceCount * Settings::ScoopSize);
 					const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
@@ -194,6 +203,8 @@ void Burst::PlotReader::runTask()
 			}
 		}
 		
+		miner_.getData().getBlockData()->setProgress(plotReadNotification->dir, 100.f, plotReadNotification->blockheight);
+
 		auto dirReadDiff = timeStartDir.elapsed();
 		auto dirReadDiffSeconds = static_cast<float>(dirReadDiff) / 1000 / 1000;
 		Poco::Timespan span{dirReadDiff};

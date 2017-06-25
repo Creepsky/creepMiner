@@ -33,6 +33,7 @@
 #include "Output.hpp"
 #include <fstream>
 #include <Poco/FileStream.h>
+#include "MinerData.hpp"
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -41,38 +42,54 @@ bool Burst::MinerLogger::progressFlag_ = false;
 float Burst::MinerLogger::lastProgress_ = 0.f;
 size_t Burst::MinerLogger::lastPipeCount_ = 0u;
 
-Poco::Logger& Burst::MinerLogger::miner = Poco::Logger::get("miner");
-Poco::Logger& Burst::MinerLogger::config = Poco::Logger::get("config");
-Poco::Logger& Burst::MinerLogger::server = Poco::Logger::get("server");
-Poco::Logger& Burst::MinerLogger::socket = Poco::Logger::get("socket");
-Poco::Logger& Burst::MinerLogger::session = Poco::Logger::get("session");
-Poco::Logger& Burst::MinerLogger::nonceSubmitter = Poco::Logger::get("nonceSubmitter");
-Poco::Logger& Burst::MinerLogger::plotReader = Poco::Logger::get("plotReader");
-Poco::Logger& Burst::MinerLogger::plotVerifier = Poco::Logger::get("plotVerifier");
-Poco::Logger& Burst::MinerLogger::wallet = Poco::Logger::get("wallet");
-Poco::Logger& Burst::MinerLogger::general = Poco::Logger::get("general");
+Poco::Logger* Burst::MinerLogger::miner;
+Poco::Logger* Burst::MinerLogger::config;
+Poco::Logger* Burst::MinerLogger::server;
+Poco::Logger* Burst::MinerLogger::socket;
+Poco::Logger* Burst::MinerLogger::session;
+Poco::Logger* Burst::MinerLogger::nonceSubmitter;
+Poco::Logger* Burst::MinerLogger::plotReader;
+Poco::Logger* Burst::MinerLogger::plotVerifier;
+Poco::Logger* Burst::MinerLogger::wallet;
+Poco::Logger* Burst::MinerLogger::general;
 
-std::unordered_map<uint32_t, bool> Burst::MinerLogger::output_ = {
-	{ LastWinner, true },
-	{ NonceFound, true },
-	{ NonceOnTheWay, true },
-	{ NonceSent, true },
-	{ NonceConfirmed, true },
-	{ PlotDone, false },
-	{ DirDone, true },
-};
-
-const std::vector<std::string> Burst::MinerLogger::channelNames
+Burst::Output_Flags Burst::MinerLogger::output_ = []()
 {
-	"miner", "config", "server", "socket", "session", "nonceSubmitter", "plotReader", "plotVerifier", "wallet", "general"
+	auto output_flags = Output_Helper::create_flags(true);
+	output_flags[PlotDone] = false;
+	return output_flags;
+}();
+
+const std::vector<Burst::MinerLogger::ChannelDefinition> Burst::MinerLogger::channelDefinitions =
+{
+	{ "miner", Poco::Message::Priority::PRIO_INFORMATION },
+	{ "config", Poco::Message::Priority::PRIO_INFORMATION },
+	{ "server", Poco::Message::Priority::PRIO_FATAL },
+	{ "socket", static_cast<Poco::Message::Priority>(0) },
+	{ "session", Poco::Message::Priority::PRIO_ERROR },
+	{ "nonceSubmitter", Poco::Message::Priority::PRIO_INFORMATION },
+	{ "plotReader", Poco::Message::Priority::PRIO_INFORMATION },
+	{ "plotVerifier", Poco::Message::Priority::PRIO_INFORMATION },
+	{ "wallet", Poco::Message::Priority::PRIO_FATAL },
+	{ "general", Poco::Message::Priority::PRIO_INFORMATION },
 };
 
 const std::unordered_map<std::string, Burst::MinerLogger::ColoredPriorityConsoleChannel*> Burst::MinerLogger::channels_ = []()
 {
 	std::unordered_map<std::string, ColoredPriorityConsoleChannel*> channels_;
 
-	for (auto& name : channelNames)
-		channels_.insert({name , new ColoredPriorityConsoleChannel{}});
+	for (auto& channel : channelDefinitions)
+		channels_.insert({channel.name , new ColoredPriorityConsoleChannel{channel.default_priority}});
+
+	return channels_;
+}();
+
+const std::unordered_map<std::string, Burst::MinerLogger::MinerDataChannel*> Burst::MinerLogger::websocketChannels_ = []()
+{
+	std::unordered_map<std::string, MinerDataChannel*> channels_;
+
+	for (auto& channel : channelDefinitions)
+		channels_.insert({channel.name , new MinerDataChannel{nullptr}});
 
 	return channels_;
 }();
@@ -171,6 +188,47 @@ Poco::Message::Priority Burst::MinerLogger::ColoredPriorityConsoleChannel::getPr
 	return priority_;
 }
 
+Burst::MinerLogger::MinerDataChannel::MinerDataChannel()
+	: minerData_{nullptr}
+{}
+
+Burst::MinerLogger::MinerDataChannel::MinerDataChannel(MinerData* minerData)
+	: minerData_{minerData}
+{}
+
+void Burst::MinerLogger::MinerDataChannel::log(const Poco::Message& msg)
+{
+	if (minerData_ == nullptr)
+		return;
+
+	// we dont send informations and notices, because for them are build custom JSON objects
+	// so that the webserver can react appropriate
+	if (msg.getPriority() == Poco::Message::PRIO_INFORMATION ||
+		msg.getPriority() == Poco::Message::PRIO_NOTICE)
+		return;
+
+	minerData_->addMessage(msg);
+}
+
+void Burst::MinerLogger::MinerDataChannel::setMinerData(MinerData* minerData)
+{
+	minerData_ = minerData;
+}
+
+Burst::MinerData* Burst::MinerLogger::MinerDataChannel::getMinerData() const
+{
+	return minerData_;
+}
+
+Burst::MinerLogger::ChannelDefinition::ChannelDefinition(std::string name, Poco::Message::Priority default_priority)
+	: name{std::move(name)},
+	  default_priority{default_priority} {}
+
+const Burst::Output_Flags& Burst::MinerLogger::getOutput()
+{
+	return output_;
+}
+
 bool Burst::MinerLogger::setChannelPriority(const std::string& channel, Poco::Message::Priority priority)
 {
 	auto iter = channels_.find(channel);
@@ -190,29 +248,7 @@ bool Burst::MinerLogger::setChannelPriority(const std::string& channel, const st
 
 	if (iter != channels_.end())
 	{
-		if (priority == "fatal")
-			iter->second->setPriority(Poco::Message::PRIO_FATAL);
-		else if (priority == "critical")
-			iter->second->setPriority(Poco::Message::PRIO_CRITICAL);
-		else if (priority == "error")
-			iter->second->setPriority(Poco::Message::PRIO_ERROR);
-		else if (priority == "warning")
-			iter->second->setPriority(Poco::Message::PRIO_WARNING);
-		else if (priority == "notice")
-			iter->second->setPriority(Poco::Message::PRIO_NOTICE);
-		else if (priority == "information")
-			iter->second->setPriority(Poco::Message::PRIO_INFORMATION);
-		else if (priority == "debug")
-			iter->second->setPriority(Poco::Message::PRIO_DEBUG);
-		else if (priority == "trace")
-			iter->second->setPriority(Poco::Message::PRIO_TRACE);
-		else if (priority == "off")
-			iter->second->setPriority(static_cast<Poco::Message::Priority>(0));
-		else if (priority == "all")
-			iter->second->setPriority(Poco::Message::PRIO_TRACE);
-		else
-			return false;
-
+		iter->second->setPriority(getStringToPriority(priority));
 		return true;
 	}
 
@@ -224,29 +260,72 @@ std::string Burst::MinerLogger::getChannelPriority(const std::string& channel)
 	auto iter = channels_.find(channel);
 
 	if (iter != channels_.end())
-	{
-		switch (iter->second->getPriority())
-		{
-		case Poco::Message::PRIO_FATAL:
-			return "fatal";
-		case Poco::Message::PRIO_CRITICAL:
-			return "critical";
-		case Poco::Message::PRIO_ERROR:
-			return "error";
-		case Poco::Message::PRIO_WARNING:
-			return "warning";
-		case Poco::Message::PRIO_NOTICE:
-			return "notice";
-		case Poco::Message::PRIO_INFORMATION:
-			return "information";
-		case Poco::Message::PRIO_DEBUG:
-			return "debug";
-		case Poco::Message::PRIO_TRACE:
-			return "trace";
-		}
-	}
+		return getPriorityToString(iter->second->getPriority());
 
 	return "";
+}
+
+Poco::Message::Priority Burst::MinerLogger::getStringToPriority(const std::string& priority)
+{
+	if (priority == "fatal")
+		return Poco::Message::PRIO_FATAL;
+	if (priority == "critical")
+		return Poco::Message::PRIO_CRITICAL;
+	if (priority == "error")
+		return Poco::Message::PRIO_ERROR;
+	if (priority == "warning")
+		return Poco::Message::PRIO_WARNING;
+	if (priority == "notice")
+		return Poco::Message::PRIO_NOTICE;
+	if (priority == "information")
+		return Poco::Message::PRIO_INFORMATION;
+	if (priority == "debug")
+		return Poco::Message::PRIO_DEBUG;
+	if (priority == "trace")
+		return Poco::Message::PRIO_TRACE;
+	if (priority == "off")
+		return static_cast<Poco::Message::Priority>(0);
+	if (priority == "all")
+		return Poco::Message::PRIO_TRACE;
+	
+	return static_cast<Poco::Message::Priority>(0);
+}
+
+std::string Burst::MinerLogger::getPriorityToString(Poco::Message::Priority priority)
+{
+	switch (priority)
+	{
+	case static_cast<Poco::Message::Priority>(0):
+		return "off";
+	case Poco::Message::PRIO_FATAL:
+		return "fatal";
+	case Poco::Message::PRIO_CRITICAL:
+		return "critical";
+	case Poco::Message::PRIO_ERROR:
+		return "error";
+	case Poco::Message::PRIO_WARNING:
+		return "warning";
+	case Poco::Message::PRIO_NOTICE:
+		return "notice";
+	case Poco::Message::PRIO_INFORMATION:
+		return "information";
+	case Poco::Message::PRIO_DEBUG:
+		return "debug";
+	case Poco::Message::PRIO_TRACE:
+		return "trace";
+	default:
+		return "";
+	}
+}
+
+std::map<std::string, std::string> Burst::MinerLogger::getChannelPriorities()
+{
+	std::map<std::string, std::string> channel_priorities;
+
+	for (auto& channel : channels_)
+		channel_priorities.emplace(channel.first, getChannelPriority(channel.first));
+
+	return channel_priorities;
 }
 
 std::string Burst::MinerLogger::setLogDir(const std::string& dir)
@@ -307,12 +386,18 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 	}
 }
 
-void Burst::MinerLogger::setOutput(int id, bool set)
+void Burst::MinerLogger::setChannelMinerData(MinerData* minerData)
+{
+	for (auto& channel : websocketChannels_)
+		channel.second->setMinerData(minerData);
+}
+
+void Burst::MinerLogger::setOutput(Burst::Output id, bool set)
 {
 	output_[id] = set;
 }
 
-bool Burst::MinerLogger::hasOutput(int id)
+bool Burst::MinerLogger::hasOutput(Burst::Output id)
 {
 	auto iter = output_.find(id);
 
@@ -458,6 +543,17 @@ void Burst::MinerLogger::setTextTypeColor(TextType type, ColorPair color)
 
 void Burst::MinerLogger::setup()
 {
+	miner = &Poco::Logger::get("miner");
+	config = &Poco::Logger::get("config");
+	server = &Poco::Logger::get("server");
+	socket = &Poco::Logger::get("socket");
+	session = &Poco::Logger::get("session");
+	nonceSubmitter = &Poco::Logger::get("nonceSubmitter");
+	plotReader = &Poco::Logger::get("plotReader");
+	plotVerifier = &Poco::Logger::get("plotVerifier");
+	wallet = &Poco::Logger::get("wallet");
+	general = &Poco::Logger::get("general");
+
 	// create (not open yet) FileChannel
 	{
 		fileChannel_ = new Poco::FileChannel;
@@ -472,19 +568,21 @@ void Burst::MinerLogger::setup()
 	}
 
 	// create all logger channels
-	for (auto& name : channelNames)
+	for (auto& channel : channelDefinitions)
 	{
-		auto& logger = Poco::Logger::get(name);
+		auto& logger = Poco::Logger::get(channel.name);
 		// set the logger to fetch all messages
 		logger.setLevel(Poco::Message::Priority::PRIO_TRACE);
 
 		auto splitter = new Poco::SplitterChannel;
-		auto& channel = channels_.at(name);
+		auto& consoleChannel = channels_.at(channel.name);
+		auto& websocketChannel = websocketChannels_.at(channel.name);
 
-		splitter->addChannel(channel);
+		splitter->addChannel(consoleChannel);
+		splitter->addChannel(websocketChannel);
 		splitter->addChannel(fileFormatter_);
 
-		Poco::Logger::get(name).setChannel(splitter);
+		Poco::Logger::get(channel.name).setChannel(splitter);
 	}
 	
 	setLogDir("");
