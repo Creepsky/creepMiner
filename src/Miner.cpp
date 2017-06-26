@@ -29,9 +29,9 @@ namespace Burst
 	{
 		template <typename T, typename ...Args>
 		void create_worker(std::unique_ptr<Poco::ThreadPool>& thread_pool, std::unique_ptr<Poco::TaskManager>& task_manager,
-			unsigned size, Args&&... args)
+			size_t size, Args&&... args)
 		{
-			thread_pool = std::make_unique<Poco::ThreadPool>(1, size);
+			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
 			task_manager = std::make_unique<Poco::TaskManager>(*thread_pool);
 
 			for (auto i = 0; i < size; ++i)

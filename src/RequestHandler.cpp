@@ -617,7 +617,7 @@ void Burst::SettingsChangeHandler::handleRequest(Poco::Net::HTTPServerRequest& r
 				else if (key == "target-deadline")
 					MinerConfig::getConfig().setTargetDeadline(value);
 				else if (key == "timeout")
-					MinerConfig::getConfig().setTimeout(np::parseFloat(value));
+					MinerConfig::getConfig().setTimeout(static_cast<float>(np::parseFloat(value)));
 				else if (key == "log-dir")
 					MinerConfig::getConfig().setLogDir(value);
 				else if (Poco::icompare(key, 4, std::string("cmb_")) == 0)

@@ -178,7 +178,7 @@ bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string
 			log_warning(MinerLogger::server, "Could not fully send: %s", data);
 		return true;
 	}
-	catch (Poco::Net::ConnectionAbortedException& exc)
+	catch (Poco::Net::ConnectionAbortedException&)
 	{
 		return false;
 	}
