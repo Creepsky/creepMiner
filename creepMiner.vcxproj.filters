@@ -11,9 +11,6 @@
     <ClCompile Include="src\nxt\nxt_address.cpp">
       <Filter>nxt</Filter>
     </ClCompile>
-    <ClCompile Include="src\sphlib\sph_shabal.cpp">
-      <Filter>sphlib</Filter>
-    </ClCompile>
     <ClCompile Include="src\Deadline.cpp" />
     <ClCompile Include="src\Url.cpp" />
     <ClCompile Include="src\Request.cpp" />
@@ -30,6 +27,11 @@
     <ClCompile Include="src\PlotVerifier.cpp" />
     <ClCompile Include="src\PlotSizes.cpp" />
     <ClCompile Include="src\Output.cpp" />
+    <ClCompile Include="src\shabal\sphlib\sph_shabal.cpp">
+      <Filter>sphlib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shabal\mshabal\mshabal_avx1.cpp" />
+    <ClCompile Include="src\shabal\mshabal\mshabal_avx2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\rapidjson\document.h">
@@ -56,12 +58,6 @@
     <ClInclude Include="src\nxt\nxt_address.h">
       <Filter>nxt</Filter>
     </ClInclude>
-    <ClInclude Include="src\sphlib\sph_shabal.h">
-      <Filter>sphlib</Filter>
-    </ClInclude>
-    <ClInclude Include="src\sphlib\sph_types.h">
-      <Filter>sphlib</Filter>
-    </ClInclude>
     <ClInclude Include="src\Declarations.hpp" />
     <ClInclude Include="src\SocketDefinitions.hpp" />
     <ClInclude Include="src\Deadline.hpp" />
@@ -86,6 +82,16 @@
     <ClInclude Include="src\PlotSizes.hpp" />
     <ClInclude Include="src\WorkerList.hpp" />
     <ClInclude Include="src\Output.hpp" />
+    <ClInclude Include="src\shabal\impl\mshabal_avx_impl.hpp" />
+    <ClInclude Include="src\shabal\impl\mshabal_avx2_impl.hpp" />
+    <ClInclude Include="src\shabal\impl\sphlib_impl.hpp" />
+    <ClInclude Include="src\shabal\sphlib\sph_shabal.h">
+      <Filter>sphlib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shabal\sphlib\sph_types.h">
+      <Filter>sphlib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shabal\mshabal\mshabal.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="sphlib">
@@ -96,6 +102,9 @@
     </Filter>
     <Filter Include="rapidjson">
       <UniqueIdentifier>{242f4f66-14f5-4d5c-8fad-1da976a482d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mshabal">
+      <UniqueIdentifier>{4661f1eb-d4fd-4f63-8510-ada82e7f6077}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

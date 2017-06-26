@@ -6,7 +6,7 @@
 #include <atomic>
 
 #ifdef MINING_CUDA 
-#include "shabal-cuda/Shabal.hpp"
+#include "shabal/cuda/Shabal.hpp"
 #endif
 
 Burst::PlotVerifier::PlotVerifier(Miner &miner, Poco::NotificationQueue& queue)
@@ -40,7 +40,7 @@ void Burst::PlotVerifier::runTask()
 		
 #if defined MINING_CUDA
 #define check(x) if (!x) log_critical(MinerLogger::plotVerifier, "Error on %s", std::string(#x));
-
+		
 		check(alloc_memory_cuda(MemoryType::Gensig, 0, reinterpret_cast<void**>(&cudaGensig)));
 		check(alloc_memory_cuda(MemoryType::Buffer, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaBuffer)));
 		check(alloc_memory_cuda(MemoryType::Deadlines, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaDeadlines)));
@@ -94,19 +94,32 @@ void Burst::PlotVerifier::runTask()
 #else
 		Poco::Nullable<DeadlineTuple> bestResult;
 
-		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i++)
+#ifdef __AVX__
+		auto offsetStep = 4u;
+#elif __AVX2__
+		auto offsetStep = 8u;
+#else
+		auto offsetStep = 1u;
+#endif
+
+		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i += offsetStep)
 		{
 			auto result = verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
 				verifyNotification->gensig,
 				verifyNotification->baseTarget);
 
-			if (bestResult.isNull() ||
-				result.second < bestResult.value().second)
-				bestResult = result;
+			for (auto& pair : result)
+				if (bestResult.isNull() ||
+					pair.second < bestResult.value().second)
+					bestResult = pair;
 		}
 
 		if (!bestResult.isNull())
-			verify(bestResult.value(), verifyNotification->accountId, verifyNotification->inputPath, verifyNotification->block, *miner_);
+			miner_->submitNonce(bestResult.value().first,
+			                    verifyNotification->accountId,
+			                    bestResult.value().second,
+			                    verifyNotification->block,
+			                    verifyNotification->inputPath);
 
 #endif
 		
@@ -122,31 +135,59 @@ void Burst::PlotVerifier::runTask()
 	log_debug(MinerLogger::plotVerifier, "Verifier stopped");
 }
 
-Burst::PlotVerifier::DeadlineTuple Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset, const GensigData& gensig,
-	Poco::UInt64 baseTarget)
+template <size_t size, typename ...T>
+void close(Burst::Shabal256& hash, T... args)
 {
-	HashData target;
+	hash.close(std::forward<T>(args)...);
+}
+
+std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst::PlotVerifier::verify(
+	std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
+	Poco::UInt64 nonceStart, size_t offset,
+	const GensigData& gensig, Poco::UInt64 baseTarget)
+{
+	HashData targets[Shabal256::HashSize];
 	Shabal256 hash;
-
-	auto test = buffer.data() + offset;
+	
 	hash.update(gensig.data(), Settings::HashSize);
-	hash.update(test, Settings::ScoopSize);
-	hash.close(&target[0]);
 
-	Poco::UInt64 targetResult = 0;
-	memcpy(&targetResult, &target[0], sizeof(decltype(targetResult)));
+	hash.update(buffer.data() + offset + 0,
+#if __AVX__ || __AVX2__
+	            buffer.data() + offset + 1,
+	            buffer.data() + offset + 2,
+	            buffer.data() + offset + 3,
+#endif
+#if __AVX2__
+	            buffer.data() + offset + 4,
+	            buffer.data() + offset + 5,
+	            buffer.data() + offset + 6,
+	            buffer.data() + offset + 7,
+#endif
+	            Settings::ScoopSize);
 
-	return std::make_pair(nonceStart + nonceRead + offset, targetResult / baseTarget);
-}
+	hash.close(targets[0].data()
+#if __AVX__ || __AVX2__
+	           ,targets[1].data(),
+	           targets[2].data(),
+	           targets[3].data()
+#endif
+#if __AVX2__
+	           ,targets[4].data(),
+	           targets[5].data(),
+	           targets[6].data(),
+	           targets[7].data()
+#endif
+	);
 
-void Burst::PlotVerifier::verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset, const GensigData& gensig,
-	Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 baseTarget, Poco::UInt64 blockheight, Miner& miner)
-{
-	auto result = verify(buffer, nonceRead, nonceStart, offset, gensig, baseTarget);
-	verify(result, accountId, inputPath, blockheight, miner);
-}
+	Poco::UInt64 results[Shabal256::HashSize];
 
-void Burst::PlotVerifier::verify(const DeadlineTuple& deadlineTuple, Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 blockheight, Miner& miner)
-{
-	miner.submitNonce(deadlineTuple.first, accountId, deadlineTuple.second, blockheight, inputPath);
+	for (auto i = 0u; i < Shabal256::HashSize; ++i)
+		memcpy(&results[i], targets[i].data(), sizeof(Poco::UInt64));
+	
+	std::array<DeadlineTuple, Shabal256::HashSize> pairs;
+
+	for (auto i = 0u; i < Shabal256::HashSize; ++i)
+		pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
+
+	return pairs;
 }

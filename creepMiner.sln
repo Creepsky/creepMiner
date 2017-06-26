@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.13
+VisualStudioVersion = 15.0.26430.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "creepMiner", "creepMiner.vcxproj", "{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}"
 EndProject
@@ -11,6 +11,10 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
+		Release_AVX|Win32 = Release_AVX|Win32
+		Release_AVX|x64 = Release_AVX|x64
+		Release_AVX2|Win32 = Release_AVX2|Win32
+		Release_AVX2|x64 = Release_AVX2|x64
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
 	EndGlobalSection
@@ -19,6 +23,14 @@ Global
 		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Debug|Win32.Build.0 = Debug|Win32
 		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Debug|x64.ActiveCfg = Debug|x64
 		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Debug|x64.Build.0 = Debug|x64
+		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release_AVX|Win32.ActiveCfg = Release_AVX|Win32
+		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release_AVX|Win32.Build.0 = Release_AVX|Win32
+		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release_AVX|x64.ActiveCfg = Release_AVX|x64
+		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release_AVX|x64.Build.0 = Release_AVX|x64
+		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release_AVX2|Win32.ActiveCfg = Release_AVX2|Win32
+		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release_AVX2|Win32.Build.0 = Release_AVX2|Win32
+		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release_AVX2|x64.ActiveCfg = Release_AVX2|x64
+		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release_AVX2|x64.Build.0 = Release_AVX2|x64
 		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release|Win32.ActiveCfg = Release|Win32
 		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release|Win32.Build.0 = Release|Win32
 		{3EF82A10-A29E-4ACF-9B9C-0E252B60C488}.Release|x64.ActiveCfg = Release|x64
@@ -27,6 +39,14 @@ Global
 		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Debug|Win32.Build.0 = Debug|Win32
 		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Debug|x64.ActiveCfg = Debug|x64
 		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Debug|x64.Build.0 = Debug|x64
+		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release_AVX|Win32.ActiveCfg = Release_AVX|Win32
+		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release_AVX|Win32.Build.0 = Release_AVX|Win32
+		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release_AVX|x64.ActiveCfg = Release_AVX|x64
+		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release_AVX|x64.Build.0 = Release_AVX|x64
+		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release_AVX2|Win32.ActiveCfg = Release_AVX2|Win32
+		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release_AVX2|Win32.Build.0 = Release_AVX2|Win32
+		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release_AVX2|x64.ActiveCfg = Release_AVX2|x64
+		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release_AVX2|x64.Build.0 = Release_AVX2|x64
 		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release|Win32.ActiveCfg = Release|Win32
 		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release|Win32.Build.0 = Release|Win32
 		{34D82486-272F-44E5-8DDB-8F517FE346A1}.Release|x64.ActiveCfg = Release|x64

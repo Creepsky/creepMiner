@@ -44,7 +44,7 @@ int main(int argc, const char* argv[])
 	
 	auto general = &Poco::Logger::get("general");
 	
-	log_information(general, Burst::Settings::Project.nameAndVersionAndOs);
+	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
