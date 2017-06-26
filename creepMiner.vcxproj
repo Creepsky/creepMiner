@@ -9,6 +9,22 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_AVX2|Win32">
+      <Configuration>Release_AVX2</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_AVX2|x64">
+      <Configuration>Release_AVX2</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_AVX|Win32">
+      <Configuration>Release_AVX</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_AVX|x64">
+      <Configuration>Release_AVX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -45,10 +61,38 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -64,7 +108,19 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -80,7 +136,27 @@
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'">
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)-avx</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|x64'">
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)-avx2</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetName>$(ProjectName)-win32</TargetName>
+    <OutDir>$(SolutionDir)bin\$(Configuration)-win32\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)-win32\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'">
+    <TargetName>$(ProjectName)-win32</TargetName>
+    <OutDir>$(SolutionDir)bin\$(Configuration)-win32\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)-win32\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|Win32'">
     <TargetName>$(ProjectName)-win32</TargetName>
     <OutDir>$(SolutionDir)bin\$(Configuration)-win32\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)-win32\$(ProjectName)\</IntDir>
@@ -91,9 +167,10 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;_LIB;POCO_STATIC;LOG_TERMINAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;_DEBUG;_CONSOLE;_LIB;POCO_STATIC;LOG_TERMINAL;__AVX__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,10 +213,59 @@
       <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <CompileAs>CompileAsCpp</CompileAs>
+      <MSCompilerVersion>
+      </MSCompilerVersion>
+      <Verbose>true</Verbose>
+      <EnableNeonCodegen>true</EnableNeonCodegen>
+      <EnableEnhancedInstructionSet>
+      </EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;LOG_TERMINAL;__AVX__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <MSCompilerVersion>
+      </MSCompilerVersion>
+      <Verbose>true</Verbose>
+      <EnableNeonCodegen>true</EnableNeonCodegen>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;LOG_TERMINAL;__AVX2__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <MSCompilerVersion>
+      </MSCompilerVersion>
+      <Verbose>true</Verbose>
+      <EnableNeonCodegen>true</EnableNeonCodegen>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
       <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -152,7 +278,7 @@
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;LOG_TERMINAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
@@ -160,7 +286,45 @@
       <SubSystem>Console</SubSystem>
       <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;LOG_TERMINAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;LOG_TERMINAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -169,6 +333,7 @@
     <ClCompile Include="src\AccountNames.cpp" />
     <ClCompile Include="src\Declarations.cpp" />
     <ClCompile Include="src\MinerData.cpp" />
+    <ClCompile Include="src\shabal\mshabal\mshabal_avx1.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
     <ClCompile Include="src\Output.cpp" />
     <ClCompile Include="src\PlotGenerator.cpp" />
@@ -187,11 +352,13 @@
     <ClCompile Include="src\MinerUtil.cpp" />
     <ClCompile Include="src\nxt\nxt_address.cpp" />
     <ClCompile Include="src\PlotReader.cpp" />
-    <ClCompile Include="src\sphlib\sph_shabal.cpp" />
+    <ClCompile Include="src\shabal\mshabal\mshabal_avx2.cpp" />
+    <ClCompile Include="src\shabal\sphlib\sph_shabal.cpp" />
     <ClCompile Include="src\Url.cpp" />
     <ClCompile Include="src\Wallet.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\shabal\mshabal\mshabal.h" />
     <ClInclude Include="src\Output.hpp" />
     <ClInclude Include="src\Account.hpp" />
     <ClInclude Include="src\AccountNames.hpp" />
@@ -220,9 +387,12 @@
     <ClInclude Include="src\rapidjson\reader.h" />
     <ClInclude Include="src\rapidjson\stringbuffer.h" />
     <ClInclude Include="src\rapidjson\writer.h" />
+    <ClInclude Include="src\shabal\impl\mshabal_avx2_impl.hpp" />
+    <ClInclude Include="src\shabal\impl\mshabal_avx_impl.hpp" />
+    <ClInclude Include="src\shabal\impl\sphlib_impl.hpp" />
     <ClInclude Include="src\SocketDefinitions.hpp" />
-    <ClInclude Include="src\sphlib\sph_shabal.h" />
-    <ClInclude Include="src\sphlib\sph_types.h" />
+    <ClInclude Include="src\shabal\sphlib\sph_shabal.h" />
+    <ClInclude Include="src\shabal\sphlib\sph_types.h" />
     <ClInclude Include="src\Url.hpp" />
     <ClInclude Include="src\Wallet.hpp" />
     <ClInclude Include="src\WorkerList.hpp" />

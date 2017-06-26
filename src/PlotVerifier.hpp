@@ -6,6 +6,7 @@
 #include <Poco/AutoPtr.h>
 #include <Poco/Notification.h>
 #include <Poco/NotificationQueue.h>
+#include "MinerShabal.hpp"
 
 namespace Burst
 {
@@ -35,15 +36,9 @@ namespace Burst
 
 		PlotVerifier(Miner &miner, Poco::NotificationQueue& queue);
 		void runTask() override;
-
-		static DeadlineTuple verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
-		                            const GensigData& gensig, Poco::UInt64 baseTarget);
-
-		static void verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
-		                   const GensigData& gensig, Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 baseTarget,
-		                   Poco::UInt64 blockheight, Miner& miner);
-
-		static void verify(const DeadlineTuple& deadlineTuple, Poco::UInt64 accountId, const std::string& inputPath, Poco::UInt64 blockheight, Miner& miner);
+		
+		static std::array<DeadlineTuple, Shabal256::HashSize> verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
+		                       const GensigData& gensig, Poco::UInt64 baseTarget);
 
 	private:
 		Miner* miner_;

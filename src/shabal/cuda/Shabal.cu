@@ -1,4 +1,4 @@
-#include "sphlib/sph_shabal.h"
+#include "shabal/sphlib/sph_shabal.h"
 #include "Shabal.hpp"
 #include <iostream>
 #include <string>

@@ -9,12 +9,20 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release-CUDA|Win32">
-      <Configuration>Release-CUDA</Configuration>
+    <ProjectConfiguration Include="Release_AVX2|Win32">
+      <Configuration>Release_AVX2</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release-CUDA|x64">
-      <Configuration>Release-CUDA</Configuration>
+    <ProjectConfiguration Include="Release_AVX2|x64">
+      <Configuration>Release_AVX2</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_AVX|Win32">
+      <Configuration>Release_AVX</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_AVX|x64">
+      <Configuration>Release_AVX</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
@@ -52,7 +60,13 @@
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-CUDA|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
@@ -65,7 +79,14 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-CUDA|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
@@ -85,13 +106,19 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-CUDA|x64'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-CUDA|Win32'" Label="PropertySheets">
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -108,22 +135,29 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)\cuda\</IntDir>
-    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-CUDA|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'">
     <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)\cuda\</IntDir>
-    <TargetName>$(ProjectName)</TargetName>
+    <TargetName>$(ProjectName)-avx</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|x64'">
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)\cuda\</IntDir>
+    <TargetName>$(ProjectName)-avx2</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>$(ProjectName)-win32</TargetName>
-    <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)bin\$(Configuration)-win32\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)-win32\$(ProjectName)\</IntDir>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-CUDA|Win32'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'">
     <TargetName>$(ProjectName)-win32</TargetName>
-    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Configuration)-win32\</OutDir>
+    <IntDir>$(SolutionDir)obj\$(Configuration)-win32\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|Win32'">
+    <TargetName>$(ProjectName)-win32</TargetName>
     <OutDir>$(SolutionDir)bin\$(Configuration)-win32\</OutDir>
     <IntDir>$(SolutionDir)obj\$(Configuration)-win32\$(ProjectName)\</IntDir>
   </PropertyGroup>
@@ -209,16 +243,42 @@
       <TargetMachinePlatform>64</TargetMachinePlatform>
     </CudaCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-CUDA|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;MINING_CUDA;LOG_TERMINAL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;MINING_CUDA;LOG_TERMINAL;__AVX__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(CUDA_PATH)\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <CompileAs>CompileAsCpp</CompileAs>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;cudart_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;$(CUDA_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_30,sm_30;compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61</CodeGeneration>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;MINING_CUDA;LOG_TERMINAL;__AVX2__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(CUDA_PATH)\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -238,144 +298,125 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;MINING_CUDA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(CUDA_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <CompileAsManaged>false</CompileAsManaged>
-      <CompileAsWinRT>false</CompileAsWinRT>
-      <SDLCheck>true</SDLCheck>
-      <StringPooling>true</StringPooling>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
-      <FloatingPointModel>Fast</FloatingPointModel>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-      <MinimalRebuild>true</MinimalRebuild>
+      <CompileAs>CompileAsCpp</CompileAs>
+      <InlineFunctionExpansion />
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;cudart_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;$(CUDA_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <CodeGeneration>compute_30,sm_30;compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61</CodeGeneration>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Runtime>InheritFromHost</Runtime>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;MINING_CUDA;__AVX__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(CUDA_PATH)\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>Debug</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;cudart_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;cudart_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;$(CUDA_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
-      <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61</CodeGeneration>
+      <CodeGeneration>compute_30,sm_30;compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61</CodeGeneration>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <FastMath>false</FastMath>
       <Runtime>InheritFromHost</Runtime>
     </CudaCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-CUDA|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX2|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;MINING_CUDA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(CUDA_PATH)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>false</MultiProcessorCompilation>
-      <CompileAsManaged>false</CompileAsManaged>
-      <CompileAsWinRT>false</CompileAsWinRT>
-      <SDLCheck>true</SDLCheck>
-      <StringPooling>true</StringPooling>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <OmitFramePointers>true</OmitFramePointers>
-      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <PreprocessorDefinitions>WIN32;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;NDEBUG;_CONSOLE;_LIB;_CRT_SECURE_NO_WARNINGS;POCO_STATIC;MINING_CUDA;__AVX2__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)src;$(POCO_ROOT)\Net\include;$(POCO_ROOT)\Foundation\include;$(POCO_ROOT)\NetSSL_OpenSSL\include;$(POCO_ROOT)\openssl\include;$(POCO_ROOT)\Crypto\include;$(POCO_ROOT)\Util\include;$(POCO_ROOT)\JSON\include;$(CUDA_PATH)\include;$(OPENSSL_ROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <StructMemberAlignment>Default</StructMemberAlignment>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
-      <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
-      <FloatingPointModel>Fast</FloatingPointModel>
-      <WholeProgramOptimization>true</WholeProgramOptimization>
-      <MinimalRebuild>true</MinimalRebuild>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>Debug</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <ProgramDatabaseFile>$(IntDir)$(TargetName).pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;cudart_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <FullProgramDatabaseFile>true</FullProgramDatabaseFile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;PocoNetmd.lib;PocoFoundationmd.lib;PocoNetSSLmd.lib;PocoCryptomd.lib;PocoUtilmd.lib;PocoJSONmd.lib;iphlpapi.lib;libcrypto.lib;libssl.lib;cudart_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(POCO_ROOT)\lib64;$(OPENSSL_ROOT)\lib;$(CUDA_PATH)\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CudaCompile>
-      <CodeGeneration>compute_20,sm_20;compute_30,sm_30;compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61</CodeGeneration>
+      <CodeGeneration>compute_30,sm_30;compute_35,sm_35;compute_37,sm_37;compute_50,sm_50;compute_52,sm_52;compute_60,sm_60;compute_61,sm_61</CodeGeneration>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <FastMath>false</FastMath>
       <Runtime>InheritFromHost</Runtime>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Account.cpp" />
-    <ClCompile Include="src\AccountNames.cpp" />
+    <ClCompile Include="src\Deadline.cpp" />
     <ClCompile Include="src\Declarations.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Miner.cpp" />
+    <ClCompile Include="src\MinerConfig.cpp" />
     <ClCompile Include="src\MinerData.cpp" />
+    <ClCompile Include="src\MinerLogger.cpp" />
+    <ClCompile Include="src\MinerServer.cpp" />
+    <ClCompile Include="src\MinerShabal.cpp" />
+    <ClCompile Include="src\MinerUtil.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
+    <ClCompile Include="src\nxt\nxt_address.cpp" />
     <ClCompile Include="src\Output.cpp" />
     <ClCompile Include="src\PlotGenerator.cpp" />
+    <ClCompile Include="src\PlotReader.cpp" />
     <ClCompile Include="src\PlotSizes.cpp" />
     <ClCompile Include="src\PlotVerifier.cpp" />
     <ClCompile Include="src\Request.cpp" />
     <ClCompile Include="src\RequestHandler.cpp" />
     <ClCompile Include="src\Response.cpp" />
-    <ClCompile Include="src\MinerServer.cpp" />
-    <ClCompile Include="src\Deadline.cpp" />
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Miner.cpp" />
-    <ClCompile Include="src\MinerConfig.cpp" />
-    <ClCompile Include="src\MinerLogger.cpp" />
-    <ClCompile Include="src\MinerShabal.cpp" />
-    <ClCompile Include="src\MinerUtil.cpp" />
-    <ClCompile Include="src\nxt\nxt_address.cpp" />
-    <ClCompile Include="src\PlotReader.cpp" />
-    <ClCompile Include="src\sphlib\sph_shabal.cpp" />
+    <ClCompile Include="src\shabal\mshabal\mshabal_avx1.cpp" />
+    <ClCompile Include="src\shabal\mshabal\mshabal_avx2.cpp" />
+    <ClCompile Include="src\shabal\sphlib\sph_shabal.cpp" />
     <ClCompile Include="src\Url.cpp" />
     <ClCompile Include="src\Wallet.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Account.hpp" />
-    <ClInclude Include="src\AccountNames.hpp" />
+    <ClInclude Include="src\Deadline.hpp" />
+    <ClInclude Include="src\Declarations.hpp" />
+    <ClInclude Include="src\Miner.hpp" />
+    <ClInclude Include="src\MinerConfig.hpp" />
     <ClInclude Include="src\MinerData.hpp" />
+    <ClInclude Include="src\MinerLogger.hpp" />
+    <ClInclude Include="src\MinerServer.hpp" />
+    <ClInclude Include="src\MinerShabal.hpp" />
+    <ClInclude Include="src\MinerUtil.hpp" />
     <ClInclude Include="src\NonceSubmitter.hpp" />
+    <ClInclude Include="src\nxt\nxt_address.h" />
     <ClInclude Include="src\Output.hpp" />
     <ClInclude Include="src\PlotGenerator.hpp" />
+    <ClInclude Include="src\PlotReader.hpp" />
     <ClInclude Include="src\PlotSizes.hpp" />
     <ClInclude Include="src\PlotVerifier.hpp" />
     <ClInclude Include="src\Request.hpp" />
     <ClInclude Include="src\RequestHandler.hpp" />
     <ClInclude Include="src\Response.hpp" />
-    <ClInclude Include="src\MinerServer.hpp" />
-    <ClInclude Include="src\shabal-cuda\Shabal.hpp" />
-    <ClInclude Include="src\Deadline.hpp" />
-    <ClInclude Include="src\Declarations.hpp" />
-    <ClInclude Include="src\Miner.hpp" />
-    <ClInclude Include="src\MinerConfig.hpp" />
-    <ClInclude Include="src\MinerLogger.hpp" />
-    <ClInclude Include="src\MinerShabal.hpp" />
-    <ClInclude Include="src\MinerUtil.hpp" />
-    <ClInclude Include="src\nxt\nxt_address.h" />
-    <ClInclude Include="src\PlotReader.hpp" />
-    <ClInclude Include="src\SocketDefinitions.hpp" />
-    <ClInclude Include="src\sphlib\sph_shabal.h" />
-    <ClInclude Include="src\sphlib\sph_types.h" />
+    <ClInclude Include="src\shabal\cuda\Shabal.hpp" />
+    <ClInclude Include="src\shabal\impl\mshabal_avx2_impl.hpp" />
+    <ClInclude Include="src\shabal\impl\mshabal_avx_impl.hpp" />
+    <ClInclude Include="src\shabal\impl\sphlib_impl.hpp" />
+    <ClInclude Include="src\shabal\mshabal\mshabal.h" />
+    <ClInclude Include="src\shabal\sphlib\sph_shabal.h" />
+    <ClInclude Include="src\shabal\sphlib\sph_types.h" />
     <ClInclude Include="src\Url.hpp" />
     <ClInclude Include="src\Wallet.hpp" />
     <ClInclude Include="src\WorkerList.hpp" />
@@ -387,12 +428,10 @@
     <ResourceCompile Include="src\resources.rc" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\shabal-cuda\Shabal.cu">
-      <FileType>CppCode</FileType>
-    </CudaCompile>
+    <CudaCompile Include="src\shabal\cuda\Shabal.cu" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 8.0.targets" />
+    <Import Project="$(VCTargetsPath14)\BuildCustomizations\CUDA 8.0.targets" />
   </ImportGroup>
 </Project>
