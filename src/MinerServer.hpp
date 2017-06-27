@@ -50,7 +50,7 @@ namespace Burst
 		uint16_t port_;
 		std::unique_ptr<Poco::Net::HTTPServer> server_;
 		std::vector<std::unique_ptr<Poco::Net::WebSocket>> websockets_;
-		Poco::FastMutex mutex_;
+		Poco::Mutex mutex_;
 		TemplateVariables variables_;
 		Poco::ThreadPool threadPool_;
 

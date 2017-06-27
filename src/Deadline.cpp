@@ -79,7 +79,6 @@ void Burst::Deadline::setDeadline(Poco::UInt64 deadline)
 
 bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 	return getDeadline() < rhs.getDeadline();
 }
 

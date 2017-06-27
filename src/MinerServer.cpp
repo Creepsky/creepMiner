@@ -109,7 +109,7 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 {
 	poco_ndc(MinerServer::addWebsocket);
 	
-	ScopedLock<FastMutex> lock{mutex_};
+	ScopedLock<Mutex> lock{mutex_};
 	auto blockData = minerData_->getBlockData();
 	bool error;
 
@@ -142,7 +142,7 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 void Burst::MinerServer::sendToWebsockets(const std::string& data)
 {
 	poco_ndc(MinerServer::sendToWebsockets);
-	ScopedLock<FastMutex> lock{mutex_};
+	ScopedLock<Mutex> lock{mutex_};
 	
 	auto ws = websockets_.begin();
 
