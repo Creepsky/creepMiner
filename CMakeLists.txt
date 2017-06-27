@@ -1,7 +1,7 @@
 ##################################################################
 # Project and CMake settings
 ##################################################################
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.2.2)
 project(creepMiner VERSION 1.6.0)
 set(CMAKE_CXX_STANDARD 14)
 
