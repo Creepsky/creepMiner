@@ -65,9 +65,9 @@ namespace Burst
 		static constexpr auto Arch = "x32";
 #endif
 
-#if __AVX__
+#if USE_AVX
 		static constexpr auto Cpu_Instruction_Set = "AVX";
-#elif __AVX2__
+#elif USE_AVX2
 		static constexpr auto Cpu_Instruction_Set = "AVX2";
 #else
 		static constexpr auto Cpu_Instruction_Set = "";
