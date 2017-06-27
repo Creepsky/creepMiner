@@ -16,6 +16,7 @@
 #include <Poco/String.h>
 #include <Poco/Delegate.h>
 #include <Poco/Net/NetException.h>
+#include <Poco/Exception.h>
 
 using namespace Poco;
 using namespace Net;
@@ -179,6 +180,10 @@ bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string
 		return true;
 	}
 	catch (Poco::Net::ConnectionAbortedException&)
+	{
+		return false;
+	}
+	catch (Poco::IOException&)
 	{
 		return false;
 	}
