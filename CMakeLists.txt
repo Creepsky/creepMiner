@@ -233,7 +233,7 @@ endif ()
 ##################################################################
 if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/mining.conf ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.conf COPYONLY)
-		file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin/public DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin/public)
+		file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin/public DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 endif ()
 
 ##################################################################
