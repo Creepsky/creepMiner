@@ -4,6 +4,7 @@
 #include "MinerLogger.hpp"
 #include "PlotReader.hpp"
 #include <atomic>
+#include "Declarations.hpp"
 
 #ifdef MINING_CUDA 
 #include "shabal/cuda/Shabal.hpp"
@@ -94,15 +95,7 @@ void Burst::PlotVerifier::runTask()
 #else
 		Poco::Nullable<DeadlineTuple> bestResult;
 
-#ifdef __AVX__
-		auto offsetStep = 4u;
-#elif __AVX2__
-		auto offsetStep = 8u;
-#else
-		auto offsetStep = 1u;
-#endif
-
-		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i += offsetStep)
+		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i += Shabal256::HashSize)
 		{
 			auto result = verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
 				verifyNotification->gensig,
@@ -148,8 +141,11 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 {
 	HashData targets[Shabal256::HashSize];
 	Shabal256 hash;
-	
-	hash.update(gensig.data(), Settings::HashSize);
+
+	constexpr auto hashSize = Settings::HashSize;
+	constexpr auto scoopSize = Settings::ScoopSize;
+
+	hash.update(gensig.data(), hashSize);
 
 	hash.update(buffer.data() + offset + 0,
 #if __AVX__ || __AVX2__
@@ -163,7 +159,7 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 	            buffer.data() + offset + 6,
 	            buffer.data() + offset + 7,
 #endif
-	            Settings::ScoopSize);
+	            scoopSize);
 
 	hash.close(targets[0].data()
 #if __AVX__ || __AVX2__

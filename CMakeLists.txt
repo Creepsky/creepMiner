@@ -1,7 +1,7 @@
 ##################################################################
 # Project and CMake settings
 ##################################################################
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.5.1)
 project(creepMiner VERSION 1.6.0)
 set(CMAKE_CXX_STANDARD 14)
 
@@ -30,6 +30,22 @@ else ()
 endif ()
 
 ##################################################################
+# CPU instruction set
+##################################################################
+set(CPU_INSTRUCTION_SET "SSE4" CACHE STRING "Logging output location")
+set_property(CACHE CPU_INSTRUCTION_SET PROPERTY STRINGS None SSE2 SSE4 AVX AVX2) 
+
+if (CPU_INSTRUCTION_SET STREQUAL "AVX2")
+        add_definitions(-mavx2)
+elseif (CPU_INSTRUCTION_SET STREQUAL "AVX")
+        add_definitions(-mavx)
+elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
+        add_definitions(-msse2)
+elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
+        add_definitions(-msse4)
+endif ()
+
+##################################################################
 # GPU acceleration
 ##################################################################
 SET(GPU_ACCELERATION "None" CACHE STRING "GPU acceleration")
@@ -43,13 +59,19 @@ endif ()
 # UNIX / BSD specific
 ##################################################################
 if (UNIX OR APPLE)
-        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -march=native ${LOG_OUTPUT_FLAG}")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -D_REENTRANT -march=native ${LOG_OUTPUT_FLAG}")
-        set(CMAKE_CXX_FLAGS_RELEASE_AVX "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -D_REENTRANT -march=native ${LOG_OUTPUT_FLAG}")
-        set(CMAKE_CXX_FLAGS_RELEASE_AVX2 "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -D_REENTRANT -march=native ${LOG_OUTPUT_FLAG}")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -march=native ")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native")
+        set(CMAKE_CXX_FLAGS_RELEASE_AVX "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native")
+        set(CMAKE_CXX_FLAGS_RELEASE_AVX2 "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native")
+
+		add_definitions(
+				${LOG_OUTPUT_FLAG}
+				-D_REENTRANT)
 
         link_directories(/usr/local/lib)
-        include_directories(/usr/local/include)
+        include_directories(
+				/usr/local/include
+				${CMAKE_CURRENT_SOURCE_DIR}/src)
 ##################################################################
 # MSVC specific
 ##################################################################
@@ -129,8 +151,6 @@ set(HEADER_FILES
 ##################################################################
 set(SOURCE_FILES
         src/nxt/nxt_address.cpp
-        src/shabal/mshabal/mshabal_avx1.cpp
-        src/shabal/mshabal/mshabal_avx2.cpp
         src/shabal/sphlib/sph_shabal.cpp
         src/Account.cpp
         src/Deadline.cpp
@@ -154,6 +174,16 @@ set(SOURCE_FILES
         src/Url.cpp
         src/Wallet.cpp)
 
+if (CPU_INSTRUCTION_SET STREQUAL "AVX")
+		set(SOURCE_FILES
+				${SOURCE_FILES}
+				src/shabal/mshabal/mshabal_avx1.cpp)
+elseif (CPU_INSTRUCTION_SET STREQUAL "AVX2")
+		set(SOURCE_FILES
+				${SOURCE_FILES}
+				src/shabal/mshabal/mshabal_avx2.cpp)
+endif ()
+
 ##################################################################
 # Executable
 ##################################################################
@@ -162,7 +192,7 @@ add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
 ##################################################################
 # Libraries
 ##################################################################
-if (UNIX)
+if (UNIX OR APPLE)
         target_link_libraries(creepMiner
                 pthread
                 optimized PocoFoundation debug PocoFoundationd
@@ -170,8 +200,7 @@ if (UNIX)
                 optimized PocoNetSSL debug PocoNetSSLd
                 optimized PocoUtil debug PocoUtild
                 optimized PocoCrypto debug PocoCryptod
-                optimized PocoJSON debug PocoJSONd
-                libssl)
+                optimized PocoJSON debug PocoJSONd)
 elseif (MSVC)
         target_link_libraries (creepMiner
                 Ws2_32
@@ -202,7 +231,10 @@ endif ()
 ##################################################################
 # Additional files
 ##################################################################
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/mining.conf ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.conf COPYONLY)
+if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
+		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bin/mining.conf ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.conf COPYONLY)
+		file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin/public DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin/public)
+endif ()
 
 ##################################################################
 # Naming

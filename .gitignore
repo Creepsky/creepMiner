@@ -395,6 +395,7 @@ buildNumber.properties
 /cmake-build*
 
 # Custom files and dirs
+makefile
 mining.conf
 *.graphml
 !/bin/*.dll
