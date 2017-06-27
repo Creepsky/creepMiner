@@ -21,4 +21,5 @@ addons:
     - g++-5
 script: 
 - cd $TRAVIS_BUILD_DIR/
+- cmake
 - make
