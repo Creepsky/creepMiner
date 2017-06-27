@@ -148,12 +148,12 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 	hash.update(gensig.data(), hashSize);
 
 	hash.update(buffer.data() + offset + 0,
-#if __AVX__ || __AVX2__
+#if USE_AVX || USE_AVX2
 	            buffer.data() + offset + 1,
 	            buffer.data() + offset + 2,
 	            buffer.data() + offset + 3,
 #endif
-#if __AVX2__
+#if USE_AVX2
 	            buffer.data() + offset + 4,
 	            buffer.data() + offset + 5,
 	            buffer.data() + offset + 6,
@@ -162,12 +162,12 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 	            scoopSize);
 
 	hash.close(targets[0].data()
-#if __AVX__ || __AVX2__
+#if USE_AVX || USE_AVX2
 	           ,targets[1].data(),
 	           targets[2].data(),
 	           targets[3].data()
 #endif
-#if __AVX2__
+#if USE_AVX2
 	           ,targets[4].data(),
 	           targets[5].data(),
 	           targets[6].data(),

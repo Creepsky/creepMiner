@@ -12,9 +12,9 @@
 #include <memory>
 #include <Poco/ByteOrder.h>
 
-#if __AVX2__
+#if USE_AVX2
 #include "shabal/impl/mshabal_avx2_impl.hpp"
-#elif __AVX__
+#elif USE_AVX
 #include "shabal/impl/mshabal_avx_impl.hpp"
 #else
 #include "shabal/impl/sphlib_impl.hpp"
@@ -56,9 +56,9 @@ namespace Burst
 		typename TAlgorithm::context_t context_;
 	};
 
-#if __AVX2__
+#if USE_AVX2
 	using Shabal256 = Shabal256_Shell<Mshabal_avx2_Impl>;
-#elif __AVX__
+#elif USE_AVX
 	using Shabal256 = Shabal256_Shell<Mshabal_avx_Impl>;
 #else
 	using Shabal256 = Shabal256_Shell<Sphlib_Impl>;
