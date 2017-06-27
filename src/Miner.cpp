@@ -34,7 +34,7 @@ namespace Burst
 			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
 			task_manager = std::make_unique<Poco::TaskManager>(*thread_pool);
 
-			for (auto i = 0; i < size; ++i)
+			for (auto i = 0u; i < size; ++i)
 				task_manager->start(new T(std::forward<Args>(args)...));
 		}
 	}

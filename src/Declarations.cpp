@@ -7,6 +7,14 @@
 
 const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0 };
 
+#if USE_AVX
+const std::string Burst::Settings::Cpu_Instruction_Set = "AVX";
+#elif USE_AVX2
+const std::string Burst::Settings::Cpu_Instruction_Set = "AVX2";
+#else
+const std::string Burst::Settings::Cpu_Instruction_Set = "";
+#endif
+
 #if defined MINING_CUDA
 const Burst::ProjectData Burst::Settings::Project = { "creepMiner CUDA", ProjectVersion };
 #else

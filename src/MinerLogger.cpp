@@ -293,10 +293,14 @@ Poco::Message::Priority Burst::MinerLogger::getStringToPriority(const std::strin
 
 std::string Burst::MinerLogger::getPriorityToString(Poco::Message::Priority priority)
 {
+	if (static_cast<int>(priority) == 0)
+		return "off";
+
+	if (static_cast<int>(priority) > static_cast<int>(Poco::Message::Priority::PRIO_TRACE))
+		return "all";
+
 	switch (priority)
 	{
-	case static_cast<Poco::Message::Priority>(0):
-		return "off";
 	case Poco::Message::PRIO_FATAL:
 		return "fatal";
 	case Poco::Message::PRIO_CRITICAL:

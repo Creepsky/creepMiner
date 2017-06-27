@@ -65,14 +65,7 @@ namespace Burst
 		static constexpr auto Arch = "x32";
 #endif
 
-#if USE_AVX
-		static constexpr auto Cpu_Instruction_Set = "AVX";
-#elif USE_AVX2
-		static constexpr auto Cpu_Instruction_Set = "AVX2";
-#else
-		static constexpr auto Cpu_Instruction_Set = "";
-#endif
-
+		static const std::string Cpu_Instruction_Set;
 		static const Version ProjectVersion;
 		static const ProjectData Project;
 	};
