@@ -399,3 +399,11 @@ mining.conf
 *.graphml
 !/bin/*.dll
 !/bin/public
+
+# Visual Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
