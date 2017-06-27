@@ -161,7 +161,6 @@ set(SOURCE_FILES
         src/MinerData.cpp
         src/MinerLogger.cpp
         src/MinerServer.cpp
-        src/MinerShabal.cpp
         src/MinerUtil.cpp
         src/NonceSubmitter.cpp
         src/Output.cpp

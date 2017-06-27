@@ -371,7 +371,6 @@
     <ClCompile Include="src\MinerData.cpp" />
     <ClCompile Include="src\MinerLogger.cpp" />
     <ClCompile Include="src\MinerServer.cpp" />
-    <ClCompile Include="src\MinerShabal.cpp" />
     <ClCompile Include="src\MinerUtil.cpp" />
     <ClCompile Include="src\NonceSubmitter.cpp" />
     <ClCompile Include="src\nxt\nxt_address.cpp" />

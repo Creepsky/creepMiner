@@ -348,7 +348,6 @@
     <ClCompile Include="src\Miner.cpp" />
     <ClCompile Include="src\MinerConfig.cpp" />
     <ClCompile Include="src\MinerLogger.cpp" />
-    <ClCompile Include="src\MinerShabal.cpp" />
     <ClCompile Include="src\MinerUtil.cpp" />
     <ClCompile Include="src\nxt\nxt_address.cpp" />
     <ClCompile Include="src\PlotReader.cpp" />
