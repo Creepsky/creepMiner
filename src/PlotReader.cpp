@@ -217,7 +217,7 @@ void Burst::PlotReader::runTask()
 		for (const auto& plot : plotReadNotification->plotList)
 			totalSizeBytes += plot->getSize();
 		
-		if (plotReadNotification->type == PlotDir::Type::Sequential)
+		if (plotReadNotification->type == PlotDir::Type::Sequential && totalSizeBytes > 0)
 		{
 			const auto sumNonces = totalSizeBytes / Settings::PlotSize;
 			const auto sumNoncesBytes = static_cast<float>(sumNonces * Settings::ScoopSize);
