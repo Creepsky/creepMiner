@@ -160,7 +160,7 @@ namespace Burst
 		static void setColor(Color foreground, Color background = Color::Black);
 		static void setColor(ColorPair color);
 		static void setColor(TextType type);
-		static void clearLine();
+		static void clearLine(bool wipe = true);
 		static void printTime();
 		static void printProgress(float progress, size_t pipes);
 

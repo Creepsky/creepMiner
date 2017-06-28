@@ -433,7 +433,7 @@ void Burst::MinerLogger::writeProgress(float progress, size_t pipes)
 	std::lock_guard<std::mutex> lock(consoleMutex);
 
 	if (progressFlag_)
-		clearLine();
+		clearLine(false);
 
 	printProgress(progress, pipes);
 }
@@ -481,7 +481,7 @@ void Burst::MinerLogger::setColor(TextType type)
 	currentTextType = type;
 }
 
-void Burst::MinerLogger::clearLine()
+void Burst::MinerLogger::clearLine(bool wipe)
 {
 #ifdef LOG_TERMINAL
 	static auto consoleLength = 0u;
@@ -499,7 +499,12 @@ void Burst::MinerLogger::clearLine()
 #endif
 	}
 
-	std::cout << '\r' << std::string(consoleLength, ' ') << '\r' << std::flush;
+	std::cout << '\r';
+
+	if (wipe)
+		 std::cout << std::string(consoleLength, ' ') << '\r';
+
+	std::cout << std::flush;
 #endif
 }
 
