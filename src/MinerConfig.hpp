@@ -184,6 +184,7 @@ namespace Burst
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
+		bool useInsecurePlotfiles() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -256,6 +257,7 @@ namespace Burst
 		size_t walletRequestTries_ = 5;
 		size_t walletRequestRetryWaitTime_ = 3;
 		Passphrase passphrase_;
+		bool useInsecurePlotfiles_ = false;
 		mutable Poco::Mutex mutex_;
 	};
 }

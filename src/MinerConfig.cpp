@@ -772,6 +772,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 				log_current_stackframe(MinerLogger::config);
 			}
+
+			// use insecure plotfiles
+			useInsecurePlotfiles_ = getOrAddAlt(miningObj, config, "useInsecurePlotfiles", false);
 		}
 
 		config->set("mining", miningObj);
@@ -1411,4 +1414,9 @@ const std::string& Burst::Passphrase::encrypt()
 {
 	encrypted = Burst::encrypt(decrypted, algorithm, key, salt, iterations);
 	return encrypted;
+}
+
+bool Burst::MinerConfig::useInsecurePlotfiles() const
+{
+	return useInsecurePlotfiles_;
 }
