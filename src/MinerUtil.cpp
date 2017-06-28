@@ -116,27 +116,31 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 			staggerSize == 0)
 			return PlotCheckResult::InvalidParameter;
 
-		// stagger not multiplier of nonce count
-		if (nonceCount % staggerSize != 0)
-			return PlotCheckResult::WrongStaggersize;
-
-		Poco::File file{ filePath };
-		
-		// file is incomplete
-		if (nonceCount * Settings::PlotSize != file.getSize())
-			return PlotCheckResult::Incomplete;
-
-		std::ifstream alternativeFileData{ filePath + ":stream" };
-
-		if (alternativeFileData)
+		// only do these checks if the user dont want to use insecure plotfiles (should be default)
+		if (!MinerConfig::getConfig().useInsecurePlotfiles())
 		{
-			std::string content(std::istreambuf_iterator<char>(alternativeFileData), {});
-			alternativeFileData.close();
+			// stagger not multiplier of nonce count
+			if (nonceCount % staggerSize != 0)
+				return PlotCheckResult::WrongStaggersize;
 
-			auto noncesWrote = reinterpret_cast<const Poco::UInt64*>(content.data());
-
-			if (*noncesWrote != nonceCount)
+			Poco::File file{ filePath };
+		
+			// file is incomplete
+			if (nonceCount * Settings::PlotSize != file.getSize())
 				return PlotCheckResult::Incomplete;
+
+			std::ifstream alternativeFileData{ filePath + ":stream" };
+
+			if (alternativeFileData)
+			{
+				std::string content(std::istreambuf_iterator<char>(alternativeFileData), {});
+				alternativeFileData.close();
+
+				auto noncesWrote = reinterpret_cast<const Poco::UInt64*>(content.data());
+
+				if (*noncesWrote != nonceCount)
+					return PlotCheckResult::Incomplete;
+			}
 		}
 
 		return PlotCheckResult::Ok;
