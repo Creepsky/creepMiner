@@ -164,6 +164,12 @@ void Burst::PlotReader::runTask()
 							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerChunkBytes);
 
 							verificationQueue_->enqueueNotification(verification);
+
+							if (progress_ != nullptr)
+							{
+								progress_->add(staggerChunkBytes * Settings::ScoopPerPlot, plotReadNotification->blockheight);
+								miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
+							}
 						}
 					}
 				}
@@ -172,12 +178,6 @@ void Burst::PlotReader::runTask()
 
 				if (!isCancelled())
 				{
-					if (progress_ != nullptr)
-					{
-						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
-						miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
-					}
-
 					auto fileReadDiff = timeStartFile.elapsed();
 					auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
 					Poco::Timespan span{fileReadDiff};
