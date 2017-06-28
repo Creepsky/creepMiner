@@ -102,9 +102,11 @@ void Burst::PlotVerifier::runTask()
 				verifyNotification->baseTarget);
 
 			for (auto& pair : result)
-				if (bestResult.isNull() ||
-					pair.second < bestResult.value().second)
-					bestResult = pair;
+				// make sure the nonce->deadline pair is valid...
+				if (pair.first > 0 && pair.second > 0)
+					// ..and better than the others
+					if (bestResult.isNull() || pair.second < bestResult.value().second)
+						bestResult = pair;
 		}
 
 		if (!bestResult.isNull())
@@ -140,50 +142,87 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 	const GensigData& gensig, Poco::UInt64 baseTarget)
 {
 	HashData targets[Shabal256::HashSize];
+	Poco::UInt64 results[Shabal256::HashSize];
 	Shabal256 hash;
 
+	// these are the buffer overflow prove arrays
+	// instead of directly working with the raw arrays 
+	// we create an additional level of indirection
+	const unsigned char* gensigPtr[Shabal256::HashSize];
+	const ScoopData* scoopPtr[Shabal256::HashSize];
+	unsigned char* targetPtr[Shabal256::HashSize];
+
+	// we init the buffer overflow guardians
+	for (auto i = 0; i < Shabal256::HashSize; ++i)
+	{
+		auto overflow = i + offset >= buffer.size();
+
+		// if the index would cause a buffer overflow, we init it
+		// with a nullptr, otherwise with the value
+		gensigPtr[i] = overflow ? nullptr : gensig.data();
+		scoopPtr[i] = overflow ? nullptr : buffer.data() + offset + i;
+		targetPtr[i] = overflow ? nullptr : targets[i].data();
+	}
+
+	// these constants are workarounds for some gcc versions
 	constexpr auto hashSize = Settings::HashSize;
 	constexpr auto scoopSize = Settings::ScoopSize;
 
-	hash.update(gensig.data(), hashSize);
-
-	hash.update(buffer.data() + offset + 0,
+	// hash the gensig according to the cpu instruction level
+	hash.update(gensigPtr[0],
 #if USE_AVX || USE_AVX2
-	            buffer.data() + offset + 1,
-	            buffer.data() + offset + 2,
-	            buffer.data() + offset + 3,
+				gensigPtr[1],
+				gensigPtr[2],
+				gensigPtr[3],
 #endif
 #if USE_AVX2
-	            buffer.data() + offset + 4,
-	            buffer.data() + offset + 5,
-	            buffer.data() + offset + 6,
-	            buffer.data() + offset + 7,
+				gensigPtr[4],
+				gensigPtr[5],
+				gensigPtr[6],
+				gensigPtr[7],
+#endif
+		hashSize);
+
+	// hash the scoop according to the cpu instruction level
+	hash.update(scoopPtr[0],
+#if USE_AVX || USE_AVX2
+				scoopPtr[1],
+				scoopPtr[2],
+				scoopPtr[3],
+#endif
+#if USE_AVX2
+				scoopPtr[4],
+				scoopPtr[5],
+				scoopPtr[6],
+				scoopPtr[7],
 #endif
 	            scoopSize);
 
-	hash.close(targets[0].data()
+	// digest the hash
+	hash.close(targetPtr[0]
 #if USE_AVX || USE_AVX2
-	           ,targets[1].data(),
-	           targets[2].data(),
-	           targets[3].data()
+			   ,targetPtr[1],
+				targetPtr[2],
+				targetPtr[3]
 #endif
 #if USE_AVX2
-	           ,targets[4].data(),
-	           targets[5].data(),
-	           targets[6].data(),
-	           targets[7].data()
+	           ,targetPtr[4],
+				targetPtr[5],
+				targetPtr[6],
+				targetPtr[7]
 #endif
 	);
-
-	Poco::UInt64 results[Shabal256::HashSize];
 
 	for (auto i = 0u; i < Shabal256::HashSize; ++i)
 		memcpy(&results[i], targets[i].data(), sizeof(Poco::UInt64));
 	
+	// for every calculated deadline we create a pair of {nonce->deadline}
 	std::array<DeadlineTuple, Shabal256::HashSize> pairs;
 
 	for (auto i = 0u; i < Shabal256::HashSize; ++i)
-		pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
+		// only set the pair if it was calculated
+		if (i + offset < buffer.size())
+			pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
 
 	return pairs;
 }
