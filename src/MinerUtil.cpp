@@ -33,6 +33,7 @@
 #include <Poco/SHA1Engine.h>
 #include <Poco/File.h>
 #include <fstream>
+#include "PlotSizes.hpp"
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -504,7 +505,7 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("miningInfoUrlPort", std::to_string(MinerConfig::getConfig().getMiningInfoUrl().getPort()));
 	json.set("walletUrl", MinerConfig::getConfig().getWalletUrl().getCanonical(true));
 	json.set("walletUrlPort", std::to_string(MinerConfig::getConfig().getWalletUrl().getPort()));
-	json.set("totalPlotSize", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
+	json.set("totalPlotSize", memToString(PlotSizes::getTotal() * 1024 * 1024, 2));
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	json.set("bufferSize", memToString(MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024, 0));
 	json.set("bufferSizeMB", std::to_string(MinerConfig::getConfig().getMaxBufferSize()));

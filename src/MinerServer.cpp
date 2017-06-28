@@ -261,7 +261,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 			// forward nonce with combined capacity
 			if (uri.getQuery().compare(0, submitNonce.size(), submitNonce) == 0)
-				return new SubmitNonceHandler{*server_->miner_};
+				return new SubmitNonceHandler{*server_, *server_->miner_};
 
 			// just forward whatever the request is to the wallet
 			// why wallet? because the only requests to a pool are getMiningInfo and submitNonce and we handled them already

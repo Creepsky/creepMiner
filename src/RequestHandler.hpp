@@ -143,11 +143,12 @@ namespace Burst
 	class SubmitNonceHandler : public Poco::Net::HTTPRequestHandler
 	{
 	public:
-		explicit SubmitNonceHandler(Miner& miner);
+		SubmitNonceHandler(MinerServer& server, Miner& miner);
 		~SubmitNonceHandler() override = default;
 		void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
 
 	private:
+		MinerServer* server_;
 		Miner* miner_;
 	};
 

@@ -411,8 +411,8 @@ void Burst::MiningInfoHandler::handleRequest(Poco::Net::HTTPServerRequest& reque
 	}
 }
 
-Burst::SubmitNonceHandler::SubmitNonceHandler(Miner& miner)
-	: miner_{&miner}
+Burst::SubmitNonceHandler::SubmitNonceHandler(MinerServer& server, Miner& miner)
+	: server_{&server}, miner_ {&miner}
 { }
 
 void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
@@ -430,6 +430,9 @@ void Burst::SubmitNonceHandler::handleRequest(Poco::Net::HTTPServerRequest& requ
 				auto plotsHashEncoded = request.get(X_PlotsHash);
 				Poco::URI::decode(plotsHashEncoded, plotsHash);
 				PlotSizes::set(plotsHash, Poco::NumberParser::parseUnsigned64(request.get(X_Capacity)));
+
+				// send new settings to websockets
+				server_->sendToWebsockets(createJsonConfig());
 			}
 		}
 		catch (Poco::Exception&)
