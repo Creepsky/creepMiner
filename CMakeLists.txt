@@ -139,8 +139,6 @@ set(HEADER_FILES
 ##################################################################
 set(SOURCE_FILES
 	src/nxt/nxt_address.cpp
-	src/shabal/mshabal/mshabal_avx1.cpp
-	src/shabal/mshabal/mshabal_avx2.cpp
 	src/shabal/sphlib/sph_shabal.cpp
 	src/Account.cpp
 	src/Deadline.cpp
@@ -162,6 +160,23 @@ set(SOURCE_FILES
 	src/Response.cpp
 	src/Url.cpp
 	src/Wallet.cpp)
+
+##################################################################
+# CPU instruction set source files
+##################################################################
+if (MSVC)
+	set(SOURCE_FILES
+		src/shabal/mshabal/mshabal_avx1.cpp
+		src/shabal/mshabal/mshabal_avx2.cpp)
+else ()
+	if (CMAKE_BUILD_TYPE STREQUAL "Release_AVX")
+		set(SOURCE_FILES
+			src/shabal/mshabal/mshabal_avx1.cpp)
+	elseif (CMAKE_BUILD_TYPE STREQUAL "Release_AVX2")
+		set(SOURCE_FILES
+			src/shabal/mshabal/mshabal_avx2.cpp)
+	endif ()
+endif ()
 
 ##################################################################
 # Executable
