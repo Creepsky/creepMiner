@@ -9,7 +9,10 @@ set(CMAKE_CXX_STANDARD 14)
 # Configuration types
 ##################################################################
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Release_AVX;Release_AVX2" CACHE STRING "" FORCE)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE_AVX ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE_AVX2 ${CMAKE_BINARY_DIR}/bin)
 
 ##################################################################
 # Environment variables
@@ -208,7 +211,7 @@ endif ()
 # Additional files
 ##################################################################
 if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
-	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin/mining.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.conf)
+	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin/mining.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin/public DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
 endif ()
 
