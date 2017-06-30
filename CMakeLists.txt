@@ -3,22 +3,20 @@
 ##################################################################
 cmake_minimum_required(VERSION 3.2.2)
 project(creepMiner VERSION 1.6.0)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
 ##################################################################
 # Configuration types
 ##################################################################
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Release_AVX;Release_AVX2" CACHE STRING "" FORCE)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE_AVX ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE_AVX2 ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 ##################################################################
 # Environment variables
 ##################################################################
-set(POCO_ROOT "$ENV{POCO_ROOT}" CACHE PATH "POCO root folder")
-set(OPENSSL_ROOT "$ENV{OPENSSL_ROOT}" CACHE PATH "OpenSSL root folder")
+if (MSVC)
+	set(POCO_ROOT "$ENV{POCO_ROOT}" CACHE PATH "POCO root folder")
+	set(OPENSSL_ROOT "$ENV{OPENSSL_ROOT}" CACHE PATH "OpenSSL root folder")
+endif ()
 
 ##################################################################
 # LOG_TERMINAL / LOG_SERVICE
@@ -33,24 +31,73 @@ else ()
 endif ()
 
 ##################################################################
+# CPU instruction set
+##################################################################
+set(CPU_INSTRUCTION_SET "SSE2" CACHE STRING "Additional CPU instruction set")
+set_property(CACHE CPU_INSTRUCTION_SET PROPERTY STRINGS None SSE2 SSE4 AVX AVX2)
+
+if (CPU_INSTRUCTION_SET STREQUAL "AVX2")
+	add_definitions(-DUSE_AVX2)
+	if (MSVC)
+		add_definitions(/arch:AVX2)
+	else ()
+		add_definitions(-mavx2)
+	endif ()
+elseif (CPU_INSTRUCTION_SET STREQUAL "AVX")
+	add_definitions(-DUSE_AVX)
+	if (MSVC)
+		add_definitions(/arch:AVX)
+	else ()
+		add_definitions(-mavx)
+	endif ()
+elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
+	if (MSVC)
+		add_definitions(/arch:SSE2)
+	else ()
+		add_definitions(-msse2)
+	endif ()
+elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
+	if (MSVC)
+	else ()
+		add_definitions(-msse4)
+	endif ()
+endif ()
+
+##################################################################
 # GPU acceleration
 ##################################################################
-SET(GPU_ACCELERATION "None" CACHE STRING "GPU acceleration")
-SET_PROPERTY(CACHE GPU_ACCELERATION PROPERTY STRINGS None CUDA) 
+set(GPU_ACCELERATION "None" CACHE STRING "GPU acceleration")
+set_property(CACHE GPU_ACCELERATION PROPERTY STRINGS None CUDA) 
 
 if (GPU_ACCELERATION STREQUAL "CUDA")
 	find_package(CUDA)
+	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-cuda)
+	set(CUDA_NVCC_FLAGS
+		${CUDA_NVCC_FLAGS}
+		-O3 -std=c++11 -gencode arch=compute_52,code=sm_52
+		-arch=sm_61
+		-gencode=arch=compute_20,code=sm_20
+		-gencode=arch=compute_30,code=sm_30
+		-gencode=arch=compute_50,code=sm_50
+		-gencode=arch=compute_52,code=sm_52
+		-gencode=arch=compute_52,code=compute_52
+		-gencode=arch=compute_60,code=sm_60
+		-gencode=arch=compute_61,code=sm_61
+		-gencode=arch=compute_62,code=sm_62)
+	add_definitions(-DMINING_CUDA)
 endif ()
+
+##################################################################
+# Additional options
+##################################################################
+option(OVERWRITE_MINING_CONF "If yes, on install the mining.conf will be overwritten" OFF)
 
 ##################################################################
 # UNIX / BSD specific
 ##################################################################
 if (UNIX OR APPLE)
-	# setup the different configurations
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -march=native ")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native")
-	set(CMAKE_CXX_FLAGS_RELEASE_AVX "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native -mavx -DUSE_AVX")
-	set(CMAKE_CXX_FLAGS_RELEASE_AVX2 "${CMAKE_CXX_FLAGS_RELEASE} -Wall -O3 -march=native -mavx2 -DUSE_AVX2")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${LOG_OUTPUT_FLAG} -Wall -march=native")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} -Wall -O3 -march=native")
 
 	add_definitions(
 		${LOG_OUTPUT_FLAG}
@@ -64,14 +111,8 @@ if (UNIX OR APPLE)
 # MSVC specific
 ##################################################################
 elseif (MSVC)
-	# setup the different configurations
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${LOG_OUTPUT_FLAG} -DPOCO_STATIC")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} -DPOCO_STATIC")
-	set(CMAKE_CXX_FLAGS_RELEASE_AVX "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} /arch:AVX -DPOCO_STATIC -DUSE_AVX")
-	set(CMAKE_CXX_FLAGS_RELEASE_AVX2 "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} /arch:AVX2 -DPOCO_STATIC -DUSE_AVX2")
-
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE_AVX "${CMAKE_EXE_LINKER_FLAGS}")
-	set(CMAKE_EXE_LINKER_FLAGS_RELEASE_AVX2 "${CMAKE_EXE_LINKER_FLAGS}")
 
 	# 64 bit
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -162,26 +203,35 @@ set(SOURCE_FILES
 	src/Wallet.cpp)
 
 ##################################################################
+# GPU acceleration source files
+##################################################################
+if (GPU_ACCELERATION STREQUAL "CUDA")
+	set(SOURCE_FILES
+		${SOURCE_FILES}
+		src/shabal/cuda/Shabal.cu)
+endif ()
+
+##################################################################
 # CPU instruction set source files
 ##################################################################
-if (MSVC)
+if (CPU_INSTRUCTION_SET STREQUAL "AVX")
 	set(SOURCE_FILES
-		src/shabal/mshabal/mshabal_avx1.cpp
+		${SOURCE_FILES}
+		src/shabal/mshabal/mshabal_avx1.cpp)
+elseif (CPU_INSTRUCTION_SET STREQUAL "AVX2")
+	set(SOURCE_FILES
+		${SOURCE_FILES}
 		src/shabal/mshabal/mshabal_avx2.cpp)
-else ()
-	if (CMAKE_BUILD_TYPE STREQUAL "Release_AVX")
-		set(SOURCE_FILES
-			src/shabal/mshabal/mshabal_avx1.cpp)
-	elseif (CMAKE_BUILD_TYPE STREQUAL "Release_AVX2")
-		set(SOURCE_FILES
-			src/shabal/mshabal/mshabal_avx2.cpp)
-	endif ()
 endif ()
 
 ##################################################################
 # Executable
 ##################################################################
-add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
+if (GPU_ACCELERATION STREQUAL "CUDA")
+	cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
+else ()
+	add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
+endif ()
 
 ##################################################################
 # Libraries
@@ -197,16 +247,16 @@ if (UNIX OR APPLE)
 		optimized PocoJSON debug PocoJSONd)
 elseif (MSVC)
 	target_link_libraries (creepMiner
-			Ws2_32
-			optimized PocoFoundationmd debug PocoFoundationmdd
-			optimized PocoNetmd debug PocoNetmdd
-			optimized PocoNetSSLmd debug PocoNetSSLmdd
-			optimized PocoUtilmd debug PocoUtilmdd
-			optimized PocoCryptomd debug PocoCryptomdd
-			optimized PocoJSONmd debug PocoJSONmdd
-			iphlpapi
-			libcrypto
-			libssl)
+		Ws2_32
+		optimized PocoFoundationmd debug PocoFoundationmdd
+		optimized PocoNetmd debug PocoNetmdd
+		optimized PocoNetSSLmd debug PocoNetSSLmdd
+		optimized PocoUtilmd debug PocoUtilmdd
+		optimized PocoCryptomd debug PocoCryptomdd
+		optimized PocoJSONmd debug PocoJSONmdd
+		iphlpapi
+		libcrypto
+		libssl)
 
 	# 64 bit
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -223,15 +273,32 @@ elseif (MSVC)
 endif ()
 
 ##################################################################
-# Additional files
-##################################################################
-if (NOT ${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
-	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin/mining.conf DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
-	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/bin/public DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/bin)
-endif ()
-
-##################################################################
 # Naming
 ##################################################################
-set_target_properties(creepMiner PROPERTIES RELEASE_AVX_POSTFIX -avx)
-set_target_properties(creepMiner PROPERTIES RELEASE_AVX2_POSTFIX -avx2)
+if (CPU_INSTRUCTION_SET STREQUAL "AVX2")
+	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-avx2)
+elseif (CPU_INSTRUCTION_SET STREQUAL "AVX")
+	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-avx)
+elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
+	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse2)
+elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
+	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse4)
+else ()
+	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}"")
+endif ()
+
+set_target_properties(creepMiner PROPERTIES
+		DEBUG_POSTFIX ${CREEPMINER_POSTFIX}-d
+		RELEASE_POSTFIX ${CREEPMINER_POSTFIX}
+		MINSIZEREL_POSTFIX ${CREEPMINER_POSTFIX}
+		RELWITHDEBINFO_POSTFIX ${CREEPMINER_POSTFIX})
+
+##################################################################
+# Installing
+##################################################################
+install(TARGETS creepMiner RUNTIME DESTINATION .)
+install(DIRECTORY bin/public DESTINATION .)
+
+if (OVERWRITE_MINING_CONF)
+	install(FILES bin/mining.conf DESTINATION .)
+endif  ()
