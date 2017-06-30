@@ -153,7 +153,7 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 	unsigned char* targetPtr[Shabal256::HashSize];
 
 	// we init the buffer overflow guardians
-	for (auto i = 0; i < Shabal256::HashSize; ++i)
+	for (auto i = 0u; i < Shabal256::HashSize; ++i)
 	{
 		auto overflow = i + offset >= buffer.size();
 
