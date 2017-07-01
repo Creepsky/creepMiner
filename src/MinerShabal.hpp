@@ -16,6 +16,8 @@
 #include "shabal/impl/mshabal_avx2_impl.hpp"
 #elif USE_AVX
 #include "shabal/impl/mshabal_avx_impl.hpp"
+#elif USE_SSE4
+#include "shabal/impl/mshabal_sse4_impl.h"
 #else
 #include "shabal/impl/sphlib_impl.hpp"
 #endif
@@ -60,6 +62,8 @@ namespace Burst
 	using Shabal256 = Shabal256_Shell<Mshabal_avx2_Impl>;
 #elif USE_AVX
 	using Shabal256 = Shabal256_Shell<Mshabal_avx_Impl>;
+#elif USE_SSE4
+	using Shabal256 = Shabal256_Shell<Mshabal_sse4_Impl>;
 #else
 	using Shabal256 = Shabal256_Shell<Sphlib_Impl>;
 #endif
