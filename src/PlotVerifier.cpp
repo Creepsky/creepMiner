@@ -170,7 +170,7 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 
 	// hash the gensig according to the cpu instruction level
 	hash.update(gensigPtr[0],
-#if USE_AVX || USE_AVX2
+#if USE_AVX || USE_AVX2 || USE_SSE4
 				gensigPtr[1],
 				gensigPtr[2],
 				gensigPtr[3],
@@ -185,7 +185,7 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 
 	// hash the scoop according to the cpu instruction level
 	hash.update(scoopPtr[0],
-#if USE_AVX || USE_AVX2
+#if USE_AVX || USE_AVX2 || USE_SSE4
 				scoopPtr[1],
 				scoopPtr[2],
 				scoopPtr[3],
@@ -200,7 +200,7 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 
 	// digest the hash
 	hash.close(targetPtr[0]
-#if USE_AVX || USE_AVX2
+#if USE_AVX || USE_AVX2 || USE_SSE4
 			   ,targetPtr[1],
 				targetPtr[2],
 				targetPtr[3]
