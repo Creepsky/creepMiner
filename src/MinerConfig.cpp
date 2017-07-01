@@ -516,6 +516,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		walletRequestTries_ = getOrAddAlt(miningObj, config, "walletRequestTries", 5);
 		walletRequestRetryWaitTime_ = getOrAddAlt(miningObj, config, "walletRequestRetryWaitTime", 3);
 
+		// use insecure plotfiles
+		useInsecurePlotfiles_ = getOrAddAlt(miningObj, config, "useInsecurePlotfiles", false);
+
 		// urls
 		{
 			Poco::JSON::Object::Ptr urlsObj;
@@ -771,10 +774,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				);
 
 				log_current_stackframe(MinerLogger::config);
-			}
-
-			// use insecure plotfiles
-			useInsecurePlotfiles_ = getOrAddAlt(miningObj, config, "useInsecurePlotfiles", false);
+			}			
 		}
 
 		config->set("mining", miningObj);
