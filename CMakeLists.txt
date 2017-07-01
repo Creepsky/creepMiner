@@ -57,6 +57,7 @@ elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
 		add_definitions(-msse2)
 	endif ()
 elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
+	add_definitions(-DUSE_SSE4)
 	if (MSVC)
 	else ()
 		add_definitions(-msse4)
@@ -222,6 +223,10 @@ elseif (CPU_INSTRUCTION_SET STREQUAL "AVX2")
 	set(SOURCE_FILES
 		${SOURCE_FILES}
 		src/shabal/mshabal/mshabal_avx2.cpp)
+elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
+	set(SOURCE_FILES
+		${SOURCE_FILES}
+		src/shabal/mshabal/mshabal_sse4.cpp)
 endif ()
 
 ##################################################################
