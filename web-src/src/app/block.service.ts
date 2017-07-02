@@ -8,8 +8,11 @@ export class BlockService {
   lastWinner: JSONS.LastWinnerObject;
   progress = 0;
   nonces: Array<JSONS.NonceObject> = [];
+  confirmedSound = new Audio('assets/sms-alert-1-daniel_simon.mp3');
 
-  constructor() { }
+  constructor() {
+    this.confirmedSound.volume = 0.5;
+  }
 
 
 
@@ -36,7 +39,7 @@ export class BlockService {
             break;
           case 'nonce confirmed':
             this.addOrUpdateNonce(response);
-
+            this.confirmedSound.play();
             //     addOrConfirm(response);
             ////     checkAddBestRound(BigInteger(response['deadlineNum']), response['deadline']);
             //    checkAddBestOverall(BigInteger(response['deadlineNum']), response['deadline']);
