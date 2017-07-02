@@ -7,6 +7,7 @@ declare module JSONS {
         poolUrl: string;
         submissionMaxRetry: string;
         targetDeadline: string;
+        targetDeadlineText: string;
         timeout: number;
         totalPlotSize: string;
         type: string;
