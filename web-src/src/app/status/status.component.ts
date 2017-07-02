@@ -20,6 +20,11 @@ export class StatusComponent implements OnInit {
   }
 
 
+  progressRound(): number {
+    return Math.round(+this.b.progress);
+  }
+
+
 
 
 }
