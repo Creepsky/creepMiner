@@ -26,32 +26,32 @@
   </div>
   <br />
   <!-- Highscores -->
-  <div class="panel panel-success">
+  <div class="panel panel-success" *ngIf="b.newBlock">
     <div class="panel-heading">Highscores</div>
     <div class="panel-body">
       <div class="row">
         <div class="col-md-6 col-xs-6">This block</div>
-        <div id="thisBlockBest" class="col-md-6 col-xs-6"></div>
+        <div id="thisBlockBest" class="col-md-6 col-xs-6">{{bestDeadline()}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Overall</div>
-        <div id="bestOverall" class="col-md-6 col-xs-6"></div>
+        <div id="bestOverall" class="col-md-6 col-xs-6">{{b.newBlock.bestOverall}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Confirmed deadlines</div>
-        <div id="confirmedDeadlines" class="col-md-6 col-xs-6"></div>
+        <div id="confirmedDeadlines" class="col-md-6 col-xs-6">{{ b.newBlock.deadlinesConfirmed - 0 + b.nonces.length }}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Won blocks</div>
-        <div id="wonBlocks" class="col-md-6 col-xs-6"></div>
+        <div id="wonBlocks" class="col-md-6 col-xs-6">{{b.newBlock.blocksWon}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Mined blocks</div>
-        <div id="minedBlocks" class="col-md-6 col-xs-6"></div>
+        <div id="minedBlocks" class="col-md-6 col-xs-6">{{b.newBlock.blocksMined}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Average deadline</div>
-        <div id="avgDeadline" class="col-md-6 col-xs-6"></div>
+        <div id="avgDeadline" class="col-md-6 col-xs-6">{{b.newBlock.deadlinesAvg}}</div>
       </div>
     </div>
   </div>
