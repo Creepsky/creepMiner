@@ -34,6 +34,7 @@
 #include <fstream>
 #include <Poco/FileStream.h>
 #include "MinerData.hpp"
+#include <Poco/FileChannel.h>
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -571,6 +572,10 @@ void Burst::MinerLogger::setup()
 		fileChannel_->setProperty("rotation", "1 M");
 		// purge old logs
 		fileChannel_->setProperty("purgeAge", "1 days");
+		// use local times
+		fileChannel_->setProperty("times", "local");
+		// archive old logfiles
+		fileChannel_->setProperty("compress", "true");
 
 		auto filePattern = new Poco::PatternFormatter{ "%d.%m.%Y %H:%M:%S (%I, %U, %u, %p): %t" };
 		filePattern->setProperty("times", "local");
