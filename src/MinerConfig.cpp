@@ -1402,12 +1402,12 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 	auto logDirAndFile = MinerLogger::setLogDir(log_dir);
 	pathLogfile_ = logDirAndFile;
 
-	if (log_dir.empty())
-		log_warning(MinerLogger::config, "Could not create logfile");
-	else if (logfile_)
-		log_system(MinerLogger::config, "Changed logfile path to\n\t%s", logDirAndFile);
-	else
+	if (!logfile_)
 		log_system(MinerLogger::config, "Logfile deactivated");
+	else if (log_dir.empty())
+		log_warning(MinerLogger::config, "Could not create logfile");
+	else
+		log_system(MinerLogger::config, "Changed logfile path to\n\t%s", logDirAndFile);
 }
 
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
