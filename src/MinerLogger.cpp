@@ -572,10 +572,15 @@ void Burst::MinerLogger::setup()
 		// purge old logs
 		fileChannel_->setProperty("purgeAge", "1 days");
 
-		auto filePattern = new Poco::PatternFormatter{"%d.%m.%Y %H:%M:%S (%I, %U, %u, %p): %t"};
-		fileFormatter_ = new Poco::FormattingChannel{filePattern, fileChannel_};
+		auto filePattern = new Poco::PatternFormatter{ "%d.%m.%Y %H:%M:%S (%I, %U, %u, %p): %t" };
+		fileFormatter_ = new Poco::FormattingChannel{ filePattern, fileChannel_ };
 	}
 
+	refreshChannels();
+}
+
+void Burst::MinerLogger::refreshChannels()
+{
 	// create all logger channels
 	for (auto& channel : channelDefinitions)
 	{
@@ -588,12 +593,16 @@ void Burst::MinerLogger::setup()
 		auto& websocketChannel = websocketChannels_.at(channel.name);
 
 		splitter->addChannel(consoleChannel);
-		splitter->addChannel(websocketChannel);
-		splitter->addChannel(fileFormatter_);
+
+		if (MinerConfig::getConfig().getStartServer())
+			splitter->addChannel(websocketChannel);
+
+		if (MinerConfig::getConfig().isLogfileUsed())
+			splitter->addChannel(fileFormatter_);
 
 		Poco::Logger::get(channel.name).setChannel(splitter);
 	}
-	
+
 	setLogDir("");
 }
 

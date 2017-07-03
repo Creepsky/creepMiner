@@ -60,7 +60,8 @@ void Burst::MinerConfig::printConsole() const
 
 	printTargetDeadline();
 
-	log_system(MinerLogger::config, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
+	if (isLogfileUsed())
+		log_system(MinerLogger::config, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
 
 	printConsolePlots();
 }
@@ -414,6 +415,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		if (!loggingObj.isNull())
 		{
+			// do we need to create a logfile
+			logfile_ = getOrAdd(loggingObj, "logfile", false);
+
 			try
 			{
 				auto logPathObj = loggingObj->get("path");
@@ -445,6 +449,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		{
 			loggingObj = new Poco::JSON::Object;
 			loggingObj->set("path", "");
+			loggingObj->set("logfile", false);
 
 			for (auto& channel : MinerLogger::channelDefinitions)
 				loggingObj->set(channel.name, MinerLogger::getChannelPriority(channel.name));
@@ -1378,7 +1383,7 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 	auto logDirAndFile = MinerLogger::setLogDir(log_dir);
 	pathLogfile_ = logDirAndFile;
 
-	if (!log_dir.empty())
+	if (!log_dir.empty() && logfile_)
 		log_system(MinerLogger::config, "Changing path for log file to\n\t%s", logDirAndFile);
 }
 
@@ -1419,4 +1424,24 @@ const std::string& Burst::Passphrase::encrypt()
 bool Burst::MinerConfig::useInsecurePlotfiles() const
 {
 	return useInsecurePlotfiles_;
+}
+
+bool Burst::MinerConfig::isLogfileUsed() const
+{
+	return logfile_;
+}
+
+void Burst::MinerConfig::useLogfile(bool use)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+
+	if (logfile_ == use)
+		return;
+
+	// do we use a logfile?
+	logfile_ = use;
+
+	// refresh the log channels
+	// because we need to open or close the filechannel
+	MinerLogger::refreshChannels();
 }

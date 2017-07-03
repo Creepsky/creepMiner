@@ -185,6 +185,7 @@ namespace Burst
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		bool useInsecurePlotfiles() const;
+		bool isLogfileUsed() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -209,6 +210,14 @@ namespace Burst
 		void setMininigIntensity(unsigned intensity);
 		void setMaxPlotReaders(unsigned max_reader);
 		void setLogDir(const std::string& log_dir);
+
+		/**
+		 * \brief Instructs the miner wether he should use a logfile.
+		 * \note If true and so far no logfile was used, a new logfile will be created.
+		 * If false and so far a logfile has been used, the logfile will be closed.
+		 * \param use Indicates, if the miner uses a logfile.
+		 */
+		void useLogfile(bool use);
 
 		bool addPlotDir(const std::string& dir);
 		bool removePlotDir(const std::string& dir);
@@ -258,6 +267,7 @@ namespace Burst
 		size_t walletRequestRetryWaitTime_ = 3;
 		Passphrase passphrase_;
 		bool useInsecurePlotfiles_ = false;
+		bool logfile_ = false;
 		mutable Poco::Mutex mutex_;
 	};
 }

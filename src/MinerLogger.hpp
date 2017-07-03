@@ -124,6 +124,13 @@ namespace Burst
 		static void setTextTypeColor(TextType type, ColorPair color);
 
 		static void setup();
+
+		/**
+		 * \brief Refreshes all logging channels.
+		 * Not used channels will be removed.
+		 */
+		static void refreshChannels();
+
 		static bool setChannelPriority(const std::string& channel, Poco::Message::Priority priority);
 		static bool setChannelPriority(const std::string& channel, const std::string& priority);
 		static std::string getChannelPriority(const std::string& channel);
