@@ -1078,8 +1078,19 @@ size_t Burst::MinerConfig::getMaxPlotReaders(bool real) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
+	// if maxPlotReaders is zero it means we have to set it to 
+	// the amount of active plot dirs
 	if (maxPlotReaders_ == 0 && real)
-		return static_cast<size_t>(plotDirs_.size());
+	{
+		size_t notEmptyPlotdirs = 0;
+
+		// count only the plotdirs that are not empty
+		for (const auto& plotDir : plotDirs_)
+			if (!plotDir->getPlotfiles().empty())
+				++notEmptyPlotdirs;
+
+		return notEmptyPlotdirs;
+	}
 
 	return maxPlotReaders_;
 }
