@@ -97,12 +97,11 @@ option(OVERWRITE_MINING_CONF "If yes, on install the mining.conf will be overwri
 # UNIX / BSD specific
 ##################################################################
 if (UNIX OR APPLE)
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${LOG_OUTPUT_FLAG} -Wall -march=native")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} -Wall -O3 -march=native")
-
 	add_definitions(
 		${LOG_OUTPUT_FLAG}
-		-D_REENTRANT)
+		-D_REENTRANT
+		-Wall
+		-march=native)
 
 	link_directories(/usr/local/lib)
 	include_directories(
@@ -112,8 +111,11 @@ if (UNIX OR APPLE)
 # MSVC specific
 ##################################################################
 elseif (MSVC)
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${LOG_OUTPUT_FLAG} -DPOCO_STATIC")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} -DPOCO_STATIC")
+	add_definitions(
+		-DPOCO_STATIC
+		${LOG_OUTPUT_FLAG}
+		-DUNICODE
+		-D_UNICODE)
 
 	# 64 bit
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -139,7 +141,6 @@ elseif (MSVC)
 	)
 
 	set_source_files_properties(icon.ico src/resources.rc PROPERTIES LANGUAGE RC)
-	add_definitions(-DUNICODE -D_UNICODE)
 endif ()
 
 ##################################################################
