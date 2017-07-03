@@ -595,6 +595,11 @@ void Burst::MinerLogger::setup()
 
 void Burst::MinerLogger::refreshChannels()
 {
+	// close the filechannel if not used
+	if (!MinerConfig::getConfig().isLogfileUsed() &&
+		fileChannel_ != nullptr)
+		fileChannel_->close();
+
 	// create all logger channels
 	for (auto& channel : channelDefinitions)
 	{
