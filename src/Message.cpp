@@ -2,6 +2,8 @@
 #include <Poco/Format.h>
 #include <sstream>
 #include <memory>
+#include "MinerLogger.hpp"
+#include "MinerConfig.hpp"
 
 Poco::NotificationQueue Burst::Message::messageQueue_;
 
@@ -28,6 +30,24 @@ void Burst::Message::log(Poco::Message::Priority priority, TextType type, Poco::
 void Burst::Message::log(Poco::Message::Priority priority, TextType type, Poco::Logger& logger, const std::string& text, const void* memory, size_t size, const char* file, int line)
 {
 	logger.dump(text, memory, size);
+}
+
+void Burst::Message::logIntoFile(Poco::Message::Priority priority, TextType type, Poco::Logger& logger, const std::string& text, const char* file, int line)
+{
+	// if the logfile is not used, we cant log into it
+	if (!MinerConfig::getConfig().isLogfileUsed())
+		return;
+
+	auto fileChannel = MinerLogger::getFileFormattingChannel();
+
+	// check if the filechannel is open and active
+	if (fileChannel != nullptr )
+	{
+		// create the message..
+		auto message = create(priority, type, logger, text, file, line);
+		// ..and log it
+		fileChannel->log(message);
+	}
 }
 
 void Burst::Message::wakeUpAllDispatcher()

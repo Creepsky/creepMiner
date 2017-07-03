@@ -399,6 +399,11 @@ void Burst::MinerLogger::setChannelMinerData(MinerData* minerData)
 		channel.second->setMinerData(minerData);
 }
 
+Poco::FormattingChannel* Burst::MinerLogger::getFileFormattingChannel()
+{
+	return fileFormatter_;
+}
+
 void Burst::MinerLogger::setOutput(Burst::Output id, bool set)
 {
 	output_[id] = set;

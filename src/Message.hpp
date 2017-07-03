@@ -121,7 +121,37 @@ namespace Burst
 		*/
 		static void log(Poco::Message::Priority priority, TextType type,
 		                Poco::Logger& logger, const std::string& text, const void* memory, size_t size, const char* file, int line);
-		
+
+		/**
+		 * \brief Logging a message into the logfile (if active).
+		 * \param priority The priority of the message.
+		 * \param type The type of the message.
+		 * \param logger The logger, that logs the message.
+		 * \param text The logged message.
+		 * \param file The file, in which the log was created.
+		*  \param line The line in the file, in which the log was created.
+		 */
+		static void logIntoFile(Poco::Message::Priority priority, TextType type,
+		                        Poco::Logger& logger, const std::string& text, const char* file, int line);
+
+		/**
+		* \brief Logging a message into the logfile (if active) with placeholders.
+		* \tparam Args Variadic types of the values for the placeholders.
+		* \param priority The priority of the message.
+		* \param type The type of the message.
+		* \param logger The logger, that logs the message.
+		* \param format The logged message including spaceholders.
+		* \param file The file, in which the log was created.
+		* \param line The line in the file, in which the log was created.
+		* \param args The values for the placeholders in format.
+		*/
+		template <typename ...Args>
+		static void logIntoFile(Poco::Message::Priority priority, TextType type,
+		                        Poco::Logger& logger, const std::string& format, const char* file, int line, Args&&... args)
+		{
+			logIntoFile(priority, type, logger, Poco::format(format, args...), file, line);
+		}
+
 		/**
 		 * \brief Wakes up all active dispatcher and forces them to terminate.
 		 */
@@ -236,3 +266,5 @@ namespace Burst
 
 #define log_system(logger, text, ...) Burst::Message::log(Poco::Message::Priority::PRIO_INFORMATION, Burst::TextType::System, *logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
 #define log_system_if(logger, cond, text, ...) Burst::Message::log(Poco::Message::Priority::PRIO_INFORMATION, Burst::TextType::System, *logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
+
+#define log_file_only(logger, priority, type, text, ...) Burst::Message::logIntoFile(priority, type, *logger, text, __FILE__, __LINE__, ##__VA_ARGS__)

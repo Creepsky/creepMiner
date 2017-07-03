@@ -119,7 +119,8 @@ namespace Burst
 		static std::map<std::string, std::string> getChannelPriorities();
 		static std::string setLogDir(const std::string& dir);
 		static void setChannelMinerData(MinerData* minerData);
-		
+		static Poco::FormattingChannel* getFileFormattingChannel();
+
 		static Poco::Logger* miner;
 		static Poco::Logger* config;
 		static Poco::Logger* server;
