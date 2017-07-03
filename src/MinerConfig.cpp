@@ -350,6 +350,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
+	if (!inputFileStream.is_open())
+	{
+		log_critical(MinerLogger::config, "Config file %s does not exist", configPath);
+		return false;
+	}
+
 	configPath_ = configPath;
 	plotDirs_.clear();
 
