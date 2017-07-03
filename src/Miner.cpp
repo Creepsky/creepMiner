@@ -123,9 +123,7 @@ void Burst::Miner::stop()
 	shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
 	// stop verifier
 	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
-	// also stop all running background-tasks
-	Poco::ThreadPool::defaultPool().stopAll();
-	Poco::ThreadPool::defaultPool().joinAll();
+	
 	running_ = false;
 }
 

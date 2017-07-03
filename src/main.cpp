@@ -152,5 +152,9 @@ int main(int argc, const char* argv[])
 		log_fatal(general, "Aborting program due to exceptional state: %s", std::string(exc.what()));
 	}
 
+	// stop all running background-tasks
+	Poco::ThreadPool::defaultPool().stopAll();
+	Poco::ThreadPool::defaultPool().joinAll();
+
 	return 0;
 }
