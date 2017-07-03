@@ -4,6 +4,8 @@
 #include <memory>
 #include "MinerLogger.hpp"
 #include "MinerConfig.hpp"
+#include <memory>
+#include "MinerUtil.hpp"
 
 Poco::NotificationQueue Burst::Message::messageQueue_;
 
