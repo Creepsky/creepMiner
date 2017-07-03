@@ -50,4 +50,12 @@ declare module JSONS {
         time: string;
         type: string;
     }
+
+    export interface PlotDirObject {
+        dir: string;
+        type: string;
+        value: number;
+        closed: boolean;
+    }
+
 }

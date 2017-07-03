@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ViewEncapsulation } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
 
 import { ProgressDirective } from './progress.directive';
@@ -12,8 +12,10 @@ import { BarComponent } from './bar.component';
           <ng-content></ng-content>
       </app-bar>
     </div>
-  `
-})
+  `,
+  encapsulation: ViewEncapsulation.None
+}
+)
 export class ProgressbarComponent {
   @Input() public animate: boolean;
   @Input() public max: number;

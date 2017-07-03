@@ -141,6 +141,10 @@
         <div>
           <p class="pull-right"><span class="label label-default">20:33:03</span></p>Request: /<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
       </li>
+      <li *ngFor="let p of b.plots" id="53352705" class="list-group-item clearfix plots list-group-item-info" [style.display]="p.closed ? 'none' : 'block'">
+        <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{p.dir }}
+        <progressbar class="progress-striped plot-progress" [value]="p.value" type="warning" max="100" animate="true">{{p.value}}%</progressbar>
+      </li>
       <li *ngFor="let n of b.nonces" id="53352705" class="list-group-item clearfix nonce-found list-group-item-success">
         <span class="glyphicon glyphicon-ok" aria-hidden="true" *ngIf="n.type === 'nonce confirmed'"></span>
         <span class="glyphicon glyphicon-share-alt" style="color: #c09853;" aria-hidden="true" *ngIf="n.type === 'nonce submitted'"></span>

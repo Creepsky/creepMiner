@@ -8,6 +8,7 @@ export class BlockService {
   lastWinner: JSONS.LastWinnerObject;
   progress = 0;
   nonces: Array<JSONS.NonceObject> = [];
+  plots: Array<JSONS.PlotDirObject> = [];
   confirmedSound = new Audio('assets/sms-alert-1-daniel_simon.mp3');
 
   constructor() {
@@ -26,28 +27,23 @@ export class BlockService {
           return;
         }
         const response = JSON.parse(data);
-        console.log(response.type, response);
+
 
         switch (response['type']) {
           case 'new block':
             this.newBlock = response;
             this.nonces = [];
+            this.plots = [];
             break;
           case 'nonce found':
-            //     nonceFound(response);
             this.addOrUpdateNonce(response);
             break;
           case 'nonce confirmed':
             this.addOrUpdateNonce(response);
             this.confirmedSound.play();
-            //     addOrConfirm(response);
-            ////     checkAddBestRound(BigInteger(response['deadlineNum']), response['deadline']);
-            //    checkAddBestOverall(BigInteger(response['deadlineNum']), response['deadline']);
             break;
           case 'nonce submitted':
             this.addOrUpdateNonce(response);
-
-            //    addOrSubmit(response);
             break;
           case 'config':
             this.config = response;
@@ -60,13 +56,18 @@ export class BlockService {
             break;
           case 'blocksWonUpdate':
             //      wonBlocks.html(reponse['blocksWon']);
+            console.log(response.type, response);
             break;
           case 'plotdir-progress':
+            this.addOrUpdatePlot(response);
+            break;
           case 'plotdirs-rescan':
-            // do nothing
+            console.log(response.type, response);
             break;
           default:
             //        showMessage(response);
+            if (response.type != '7')
+              console.log(response.type, response);
             break;
         };
       }
@@ -80,6 +81,23 @@ export class BlockService {
       ns[0].type = nonce.type;
     } else {
       this.nonces.push(nonce);
+    }
+  }
+
+
+  private addOrUpdatePlot(plot: JSONS.PlotDirObject) {
+    const p = this.plots.filter(x => x.dir === plot.dir);
+    if (p.length > 0) {
+      p[0].value = plot.value;
+      plot = p[0];
+    } else {
+      this.plots.push(plot);
+    }
+    console.log(plot.value);
+    if (plot.value.toString() === '100') {
+      setTimeout(() => {
+        plot.closed = true;
+      }, 2000 + (Math.random() * 1000));
     }
   }
 

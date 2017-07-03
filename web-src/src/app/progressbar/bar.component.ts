@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Input, Host } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, Host, ViewEncapsulation } from '@angular/core';
 import { NgClass, NgStyle } from '@angular/common';
 
 import { ProgressDirective } from './progress.directive';
@@ -16,7 +16,8 @@ import { ProgressDirective } from './progress.directive';
     [attr.aria-valuetext]="percent.toFixed(0) + '%'"
     [attr.aria-valuemax]="progress.max"
     ><ng-content></ng-content></div>
-`
+`,
+    encapsulation: ViewEncapsulation.None
 })
 export class BarComponent implements OnInit, OnDestroy {
     @Input() public type: string;
