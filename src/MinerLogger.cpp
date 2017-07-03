@@ -573,6 +573,7 @@ void Burst::MinerLogger::setup()
 		fileChannel_->setProperty("purgeAge", "1 days");
 
 		auto filePattern = new Poco::PatternFormatter{ "%d.%m.%Y %H:%M:%S (%I, %U, %u, %p): %t" };
+		filePattern->setProperty("times", "local");
 		fileFormatter_ = new Poco::FormattingChannel{ filePattern, fileChannel_ };
 	}
 
