@@ -389,13 +389,9 @@ bool Burst::Miner::getMiningInfo()
 		}
 		catch (Poco::Exception& exc)
 		{
-			std::vector<std::string> lines = {
-				"Error on getting new block-info!",
-				exc.what(),
-				"Full response: " + responseData
-			};
-
-			log_error(MinerLogger::miner, "Error on getting new block-info!\n\t%s\n\tFull response:\n\t%s", exc.displayText(), responseData);
+			log_error(MinerLogger::miner, "Error on getting new block-info!\n\t%s", exc.displayText());
+			// because the full response may be too long, we only log the it in the logfile
+			log_file_only(MinerLogger::miner, Poco::Message::PRIO_ERROR, TextType::Error, "Block-info full response:\n%s", responseData);
 			log_current_stackframe(MinerLogger::miner);
 		}
 	}
