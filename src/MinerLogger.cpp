@@ -583,6 +583,7 @@ void Burst::MinerLogger::setup()
 	}
 
 	refreshChannels();
+	setLogDir("");
 }
 
 void Burst::MinerLogger::refreshChannels()
@@ -608,8 +609,6 @@ void Burst::MinerLogger::refreshChannels()
 
 		Poco::Logger::get(channel.name).setChannel(splitter);
 	}
-
-	setLogDir("");
 }
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::getTextTypeColor(TextType type)

@@ -267,7 +267,7 @@ namespace Burst
 		size_t walletRequestRetryWaitTime_ = 3;
 		Passphrase passphrase_;
 		bool useInsecurePlotfiles_ = false;
-		bool logfile_ = false;
+		bool logfile_ = true;
 		mutable Poco::Mutex mutex_;
 	};
 }

@@ -493,6 +493,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			loggingObj->set("output", outputObj);
 		}
+
+		MinerLogger::refreshChannels();
 	}
 
 	// mining
@@ -1394,8 +1396,12 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 	auto logDirAndFile = MinerLogger::setLogDir(log_dir);
 	pathLogfile_ = logDirAndFile;
 
-	if (!log_dir.empty() && logfile_)
-		log_system(MinerLogger::config, "Changing path for log file to\n\t%s", logDirAndFile);
+	if (log_dir.empty())
+		log_warning(MinerLogger::config, "Could not create logfile");
+	else if (logfile_)
+		log_system(MinerLogger::config, "Changed logfile path to\n\t%s", logDirAndFile);
+	else
+		log_system(MinerLogger::config, "Logfile deactivated");
 }
 
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
