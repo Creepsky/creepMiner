@@ -1,7 +1,7 @@
 <div class="col-md-3">
   <!-- Progress -->
   <div class="progress">
-    <progressbar class="progress-striped" [value]="b.progress" type="warning" max="100" animate="true">{{progressRound()}}%</progressbar>
+    <progressbar class="progress-striped" [value]="b.progress" type="warning" max="100" animate="true">{{round(b.progress)}}%</progressbar>
   </div>
   <!-- Command Buttons -->
   <div class="btn-group btn-group-justified" role="group" aria-label="commands">
@@ -143,7 +143,7 @@
       </li>
       <li *ngFor="let p of b.plots" id="53352705" class="list-group-item clearfix plots list-group-item-info" [style.display]="p.closed ? 'none' : 'block'">
         <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{p.dir }}
-        <progressbar class="progress-striped plot-progress" [value]="p.value" type="warning" max="100" animate="true">{{p.value}}%</progressbar>
+        <progressbar class="progress-striped plot-progress" [value]="p.value" type="warning" max="100" animate="true">{{round(p.value)}}%</progressbar>
       </li>
       <li *ngFor="let n of b.nonces" id="53352705" class="list-group-item clearfix nonce-found list-group-item-success">
         <span class="glyphicon glyphicon-ok" aria-hidden="true" *ngIf="n.type === 'nonce confirmed'"></span>

@@ -19,9 +19,8 @@ export class StatusComponent implements OnInit {
     this.b.connectBlock();
   }
 
-
-  progressRound(): number {
-    return Math.round(+this.b.progress);
+  round(n: number): number {
+    return Math.round(n);
   }
 
   bestDeadline(): string {
