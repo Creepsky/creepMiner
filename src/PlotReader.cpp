@@ -242,6 +242,10 @@ void Burst::PlotReader::runTask()
 						Poco::DateTimeFormatter::format(span, "%s.%i"),
 						memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
 				}
+
+				// if it was cancelled, we push the current plot dir back in the queue again
+				if (isCancelled())
+					plotReadQueue_->enqueueNotification(plotReadNotification);
 			}
 		}
 		
