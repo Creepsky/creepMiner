@@ -157,6 +157,7 @@ set(HEADER_FILES
 	src/Account.hpp
 	src/Deadline.hpp
 	src/Declarations.hpp
+	src/Message.hpp
 	src/Miner.hpp
 	src/MinerConfig.hpp
 	src/MinerData.hpp
@@ -186,6 +187,7 @@ set(SOURCE_FILES
 	src/Deadline.cpp
 	src/Declarations.cpp
 	src/main.cpp
+	src/Message.cpp
 	src/Miner.cpp
 	src/MinerConfig.cpp
 	src/MinerData.cpp

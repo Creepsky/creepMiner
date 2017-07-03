@@ -42,6 +42,11 @@ int main(int argc, const char* argv[])
 
 	Burst::MinerLogger::setup();
 	
+	// create a message dispatcher..
+	//auto messageDispatcher = Burst::Message::Dispatcher::create();
+	// ..and start it in its own thread
+	//Poco::ThreadPool::defaultPool().start(*messageDispatcher);
+
 	auto general = &Poco::Logger::get("general");
 	
 	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
@@ -151,6 +156,9 @@ int main(int argc, const char* argv[])
 	{
 		log_fatal(general, "Aborting program due to exceptional state: %s", std::string(exc.what()));
 	}
+
+	// wake up all message dispatcher
+	//Burst::Message::wakeUpAllDispatcher();
 
 	// stop all running background-tasks
 	Poco::ThreadPool::defaultPool().stopAll();

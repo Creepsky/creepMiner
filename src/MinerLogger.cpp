@@ -99,7 +99,7 @@ Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel{"startup
 Poco::FormattingChannel* Burst::MinerLogger::fileFormatter_ = nullptr;
 std::string Burst::MinerLogger::logFileName_ = getFilenameWithtimestamp("creepMiner", "log");
 
-std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
+std::map<Burst::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
 	{
 			{ TextType::Normal, { Color::White, Color::Black } },
 			{ TextType::Error, { Color::LightRed, Color::Black } },
@@ -337,6 +337,8 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 {
 	try
 	{
+		std::lock_guard<std::mutex> lock(consoleMutex);
+
 		Poco::Path fullPath;
 		fullPath.parseDirectory(dir);
 

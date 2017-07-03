@@ -17,16 +17,11 @@
 #include <unordered_map>
 #include <Poco/Logger.h>
 #include <Poco/FormattingChannel.h>
-#include <sstream>
-#include <Poco/NestedDiagnosticContext.h>
 #include <functional>
 #include "MinerServer.hpp"
 #include "Output.hpp"
-
-namespace Poco
-{
-	class Logger;
-}
+#include <Poco/NotificationQueue.h>
+#include "Message.hpp"
 
 namespace Burst
 {
@@ -58,21 +53,6 @@ namespace Burst
 		struct ColorPair
 		{
 			Color foreground, background;
-		};
-
-		enum class TextType
-		{
-			Normal,
-			Error,
-			Information,
-			Success,
-			Warning,
-			Important,
-			System,
-			Unimportant,
-			Ok,
-			Debug,
-			Progress
 		};
 
 		class ColoredPriorityConsoleChannel : public Poco::Channel
@@ -187,146 +167,5 @@ namespace Burst
 		static std::string logFileName_;
 	};
 
-	using TextType = MinerLogger::TextType;
-
-	template <Poco::Message::Priority Priority, TextType Type>
-	struct Message
-	{
-		/**
-		 * \brief Logging a message.
-		 * \param logger The logger, that logs the message.
-		 * \param text The logged message.
-		 * \param file The file, in which the log was created.
-		 * \param line The line in the file, in which the log was created.
-		 */
-		Message(Poco::Logger& logger, const std::string& text, const char* file, int line, bool condition = true)
-		{
-			log(logger, text, file, line, condition);
-		}
-
-		/**
-		 * \brief Logging a message with placeholders.
-		 * \tparam Args Variadic types of the values for the placeholders.
-		 * \param logger The logger, that logs the message.
-		 * \param format The logged message including spaceholders.
-		 * \param file The file, in which the log was created.
-		 * \param line The line in the file, in which the log was created.
-		 * \param args The values for the placeholders in format.
-		 */
-		template <typename ...Args>
-		Message(Poco::Logger& logger, const std::string& format, const char* file, int line, bool condition, Args&&... args)
-		{
-			log(logger, Poco::format(format, args...), file, line, condition);
-		}
-
-		/**
-		 * \brief Logging an exception.
-		 * \param logger The logger, that logs the message.
-		 * \param exception The exception being logged.
-		 * \param file The file, in which the log was created.
-		 * \param line The line in the file, in which the log was created.
-		 */
-		Message(Poco::Logger& logger, Poco::Exception& exception, const char* file, int line)
-		{
-			log(logger, Poco::format("Exception occured: %s\n\terror-code: %d\n\tclass: %s",
-				exception.displayText(), exception.code(), std::string(exception.className())), file, line);
-		}
-
-		/**
-		 * \brief Logging a stackframe.
-		 * \param logger The logger, that logs the message.
-		 * \param stackframe The stackframe, that is being logged.
-		 * \param file The file, in which the log was created.
-		 * \param line The line in the file, in which the log was created.
-		 */
-		Message(Poco::Logger& logger, const Poco::NestedDiagnosticContext& stackframe, const char* file, int line)
-		{
-			Message::stackframe(logger, stackframe, file, line);
-		}
-
-		/**
-		 * \brief Logging a message with a dump of a memory block.
-		 * \param logger The logger, that logs the message.
-		 * \param text The additional logged message.
-		 * \param memory The dumped memory block.
-		 * \param size The size of the memory to dump.
-		 * \param file The file, in which the log was created.
-		 * \param line The line in the file, in which the log was created.
-		 */
-		Message(Poco::Logger& logger, const std::string& text, const void* memory, size_t size, const char* file, int line)
-		{
-			logger.dump(text, memory, size);
-		}
-
-	private:
-		void log(Poco::Logger& logger, const std::string& text, const char* file, int line, bool condition = true) const
-		{
-			Poco::Message message;
-			message.setText(text);
-			message.setPriority(Priority);
-			message.set("type", std::to_string(static_cast<int>(Type)));
-			message.set("condition", std::to_string(condition));
-			message.setSource(logger.name());
-			message.setSourceFile(file);
-			message.setSourceLine(line);
-			logger.log(message);
-		}
-
-		void stackframe(Poco::Logger& logger, const Poco::NestedDiagnosticContext& stackframe, const char* file, int line) const
-		{
-			std::stringstream ss;
-			ss << "Stackframe" << std::endl;
-			stackframe.dump(ss);
-
-			log(logger, ss.str(), file, line);
-		}
-	};
-
-	template <TextType Type>
-	using Fatal = Message<Poco::Message::Priority::PRIO_FATAL, Type>;
-
-	template <TextType Type>
-	using Critical = Message<Poco::Message::Priority::PRIO_CRITICAL, Type>;
-
-	template <TextType Type>
-	using Error = Message<Poco::Message::Priority::PRIO_ERROR, Type>;
-
-	template <TextType Type>
-	using Warning = Message<Poco::Message::Priority::PRIO_WARNING, Type>;
-
-	template <TextType Type>
-	using Notice = Message<Poco::Message::Priority::PRIO_NOTICE, Type>;
-
-	template <TextType Type>
-	using Information = Message<Poco::Message::Priority::PRIO_INFORMATION, Type>;
-
-	template <TextType Type>
-	using Debug = Message<Poco::Message::Priority::PRIO_DEBUG, Type>;
-
-	template <TextType Type>
-	using Trace = Message<Poco::Message::Priority::PRIO_TRACE, Type>;
-
-#define log_fatal(logger, text, ...) Burst::Fatal<Burst::TextType::Error>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_critical(logger, text, ...) Burst::Critical<Burst::TextType::Error>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_error(logger, text, ...) Burst::Error<Burst::TextType::Error>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_warning(logger, text, ...) Burst::Warning<Burst::TextType::Error>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_notice(logger, text, ...) Burst::Notice<Burst::TextType::Information>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_information(logger, text, ...) Burst::Information<Burst::TextType::Normal>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_information_if(logger, cond, text, ...) Burst::Information<Burst::TextType::Normal>(*logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
-#define log_debug(logger, text, ...) Burst::Debug<Burst::TextType::Debug>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_trace(logger, text, ...) Burst::Trace<Burst::TextType::Debug>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_exception(logger, exception) Burst::Error<Burst::TextType::Error>(*logger, exception, __FILE__, __LINE__)
-#define log_memory(logger, text, memory, size) Burst::Trace<Burst::TextType::Debug>(*logger, text, memory, size, __FILE__, __LINE__)
-#define log_stackframe(logger, stackframe) Burst::Error<Burst::TextType::Error>(*logger, stackframe, __FILE__, __LINE__)
-#define log_current_stackframe(logger) log_stackframe(logger, Poco::NestedDiagnosticContext::current())
-
-#define log_ok(logger, text, ...) Burst::Information<Burst::TextType::Ok>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_ok_if(logger, cond, text, ...) Burst::Information<Burst::TextType::Ok>(*logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
-#define log_unimportant(logger, text, ...) Burst::Information<Burst::TextType::Unimportant>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_unimportant_if(logger, cond, text, ...) Burst::Information<Burst::TextType::Unimportant>(*logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
-#define log_success(logger, text, ...) Burst::Information<Burst::TextType::Success>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_success_if(logger, cond, text, ...) Burst::Information<Burst::TextType::Success>(*logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
-#define log_system(logger, text, ...) Burst::Information<Burst::TextType::System>(*logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
-#define log_system_if(logger, cond, text, ...) Burst::Information<Burst::TextType::System>(*logger, text, __FILE__, __LINE__, cond, ##__VA_ARGS__)
-
+	
 }
