@@ -18,7 +18,6 @@
 #include <Poco/Logger.h>
 #include <Poco/FormattingChannel.h>
 #include <functional>
-#include "MinerServer.hpp"
 #include "Output.hpp"
 #include <Poco/NotificationQueue.h>
 #include "Message.hpp"
@@ -26,6 +25,7 @@
 namespace Burst
 {
 	class BlockData;
+	class MinerData;
 
 	class MinerLogger
 	{
