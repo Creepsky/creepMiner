@@ -6,21 +6,15 @@
   <!-- Command Buttons -->
   <div class="btn-group btn-group-justified" role="group" aria-label="commands">
     <div class="btn-group" role="group">
-      <button type="button" class="btn btn-danger" onclick="$.get('/shutdown');">
-				<span class="glyphicon glyphicon-off" aria-hidden="true"></span>
-				shutdown
+      <button type="button" class="btn btn-default">
+				<span id="iconConfirmationSound" class="glyphicon glyphicon-volume-off" aria-hidden="true"></span>
+				block missed sound
 			</button>
     </div>
     <div class="btn-group" role="group">
-      <button type="button" class="btn btn-default" onclick="connectBlock();">
-				<span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
-				refresh
-			</button>
-    </div>
-    <div class="btn-group" role="group">
-      <button type="button" class="btn btn-default" onclick="toggleConfirmationSound();">
-				<span id="iconConfirmationSound" class="glyphicon" aria-hidden="true"></span>
-				toggle sound
+      <button type="button" class="btn btn-default">
+				<span id="iconConfirmationSound" class="glyphicon glyphicon-volume-up" aria-hidden="true"></span>
+				confirmation sound
 			</button>
     </div>
   </div>
