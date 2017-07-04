@@ -180,6 +180,7 @@ void Burst::NotFoundHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 	{
 		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 		response.setChunkedTransferEncoding(true);
+		response.setContentType("text/html; charset=utf-8");
 		auto& out = response.send();
 		out << output;
 	}
@@ -204,6 +205,7 @@ void Burst::RootHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Po
 	{
 		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 		response.setChunkedTransferEncoding(true);
+		response.setContentType("text/html; charset=utf-8");
 		auto& out = response.send();
 		out << output;
 	}
@@ -243,6 +245,7 @@ void Burst::PlotfilesHandler::handleRequest(Poco::Net::HTTPServerRequest& reques
 	{
 		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 		response.setChunkedTransferEncoding(true);
+		response.setContentType("text/html; charset=utf-8");
 		auto& out = response.send();
 		out << output;
 	}
@@ -594,6 +597,7 @@ void Burst::SettingsHandler::handleRequest(Poco::Net::HTTPServerRequest& request
 	{
 		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 		response.setChunkedTransferEncoding(true);
+		response.setContentType("text/html; charset=utf-8");
 		auto& out = response.send();
 		out << output;
 	}
