@@ -138,6 +138,7 @@ elseif (MSVC)
 		${POCO_ROOT}/Util/include
 		${POCO_ROOT}/JSON/include
 		${OPENSSL_ROOT}/include
+		${CMAKE_CURRENT_SOURCE_DIR}/src
 	)
 
 	set_source_files_properties(icon.ico src/resources.rc PROPERTIES LANGUAGE RC)
@@ -155,6 +156,8 @@ set(HEADER_FILES
 	src/shabal/mshabal/mshabal.h
 	src/shabal/sphlib/sph_shabal.h
 	src/shabal/sphlib/sph_types.h
+	src/webserver/MinerServer.hpp
+	src/webserver/RequestHandler.hpp
 	src/Account.hpp
 	src/Deadline.hpp
 	src/Declarations.hpp
@@ -163,7 +166,6 @@ set(HEADER_FILES
 	src/MinerConfig.hpp
 	src/MinerData.hpp
 	src/MinerLogger.hpp
-	src/MinerServer.hpp
 	src/MinerShabal.hpp
 	src/MinerUtil.hpp
 	src/NonceSubmitter.hpp
@@ -172,7 +174,6 @@ set(HEADER_FILES
 	src/PlotSizes.hpp
 	src/PlotVerifier.hpp
 	src/Request.hpp
-	src/RequestHandler.hpp
 	src/Response.hpp
 	src/Url.hpp
 	src/Wallet.hpp
@@ -184,6 +185,8 @@ set(HEADER_FILES
 set(SOURCE_FILES
 	src/nxt/nxt_address.cpp
 	src/shabal/sphlib/sph_shabal.cpp
+	src/webserver/MinerServer.cpp
+	src/webserver/RequestHandler.cpp
 	src/Account.cpp
 	src/Deadline.cpp
 	src/Declarations.cpp
@@ -193,7 +196,6 @@ set(SOURCE_FILES
 	src/MinerConfig.cpp
 	src/MinerData.cpp
 	src/MinerLogger.cpp
-	src/MinerServer.cpp
 	src/MinerUtil.cpp
 	src/NonceSubmitter.cpp
 	src/Output.cpp
@@ -201,7 +203,6 @@ set(SOURCE_FILES
 	src/PlotSizes.cpp
 	src/PlotVerifier.cpp
 	src/Request.cpp
-	src/RequestHandler.cpp
 	src/Response.cpp
 	src/Url.cpp
 	src/Wallet.cpp)

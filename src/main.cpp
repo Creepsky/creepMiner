@@ -17,7 +17,7 @@
 #include <Poco/Net/HTTPSSessionInstantiator.h>
 #include <Poco/Net/PrivateKeyPassphraseHandler.h>
 #include <Poco/NestedDiagnosticContext.h>
-#include "MinerServer.hpp"
+#include "webserver/MinerServer.hpp"
 #include <Poco/Logger.h>
 #include "Request.hpp"
 #include <Poco/Net/HTTPRequest.h>

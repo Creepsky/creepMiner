@@ -24,16 +24,30 @@ namespace Burst
 {
 	namespace RequestHandlerHelper
 	{
+		/**
+		 * \brief Loads a HTML-file that serves as the index page from disk and embedds another page inside it.
+		 * Replaces all template variables inside of both pages.
+		 * \param indexVariables All template variables inside the index file that are replaced.
+		 * \param contentVariables All template variables inside the embedded file that are replaced.
+		 * \param contentPage The path to the HTML-page that is embedded.
+		 * \param output The index page with embedded page and replaced variables.
+		 * \return true if all files could be read and no errors occured during variable replacement.
+		 */
 		bool sendIndexContent(const TemplateVariables& indexVariables, const TemplateVariables& contentVariables,
 			const std::string& contentPage, std::string& output)
 		{
 			Poco::FileInputStream fileIndex, fileContent;
 			output.clear();
 
+			// open the index page
 			try
 			{
+				// TODO: hardcoded path, should be changed to parameter
+				// open the index file
 				fileIndex.open("public/index.html", std::ios::in);
+				// read the content of the file and load it into a string
 				output = std::string{ std::istreambuf_iterator<char>{fileIndex}, {} };
+				// replace all variables
 				indexVariables.inject(output);
 			}
 			catch (Poco::Exception& exc)
@@ -47,11 +61,14 @@ namespace Burst
 				return false;
 			}
 
+			// open the embedded page
 			try
 			{
+				// load it into a string
 				fileContent.open(contentPage, std::ios::in);
 				std::string strContent(std::istreambuf_iterator<char>{fileContent}, {});
 
+				// replace variables inside it
 				TemplateVariables contentFramework;
 				contentFramework.variables.emplace("content", [&strContent]() { return strContent; });
 
@@ -69,16 +86,25 @@ namespace Burst
 				return false;
 			}
 
+			// not necessary, but good style
 			fileIndex.close();
 			fileContent.close();
 
 			return true;
 		}
 
+		/**
+		 * \brief Checks the credentials for a request and compares them with the credentials set in the config file.
+		 * \param request The HTTP request.
+		 * \param response The HTTP response.
+		 * \return true, if the request could be authenticated, false otherwise.
+		 */
 		bool checkCredentials(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 		{
 			auto credentialsOk = false;
 
+			// if there are no credentials in the config, user dont need to
+			// enter them
 			if (MinerConfig::getConfig().getServerUser().empty() &&
 				MinerConfig::getConfig().getServerPass().empty())
 				return true;
@@ -91,20 +117,21 @@ namespace Burst
 				// credentials are base64 encoded
 				std::stringstream encoded(authInfo);
 				std::stringstream decoded;
-				std::string credentials, user = "", password;
+				std::string user = "";
 				//
 				Poco::Base64Decoder base64(encoded);
 				Poco::StreamCopier::copyStream(base64, decoded);
-				//
-				credentials = decoded.str();
+				// the whole credentials string (<user>:<password>)
+				auto credentials = decoded.str();
 
 				Poco::StringTokenizer tokenizer{credentials, ":"};
 
 				if (tokenizer.count() == 2)
 				{
 					user = tokenizer[0];
-					password = tokenizer[1];
+					auto password = tokenizer[1];
 
+					// compare given credentials with the credentials inside the config
 					credentialsOk = 
 						check_HMAC_SHA1(user, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverPassphrase) &&
 						check_HMAC_SHA1(password, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassphrase);
@@ -118,6 +145,7 @@ namespace Burst
 					user);
 			}
 
+			// not authenticated, request again
 			if (!credentialsOk)
 			{
 				response.requireAuthentication("creepMiner");
@@ -125,6 +153,7 @@ namespace Burst
 				return false;
 			}
 
+			// authenticated
 			return true;
 		}
 	}
@@ -266,7 +295,7 @@ void Burst::PlotDirHandler::handleRequest(Poco::Net::HTTPServerRequest& request,
 
 	log_information(MinerLogger::server, "Got request for changing the plotdirs...");
 
-	auto success = false;
+	bool success;
 
 	if (remove_)
 		success = MinerConfig::getConfig().removePlotDir(path);
