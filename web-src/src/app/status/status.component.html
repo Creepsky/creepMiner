@@ -83,7 +83,9 @@
 <!-- Block data -->
 <div id="container" class="col-md-6">
   <div class="panel panel-primary" *ngIf="b.newBlock">
-    <div class="panel-heading">Block {{b.newBlock.block}}</div>
+    <div class="panel-heading">Block {{b.newBlock.block}}
+      <div style="float:right;" title="block read time">{{ b.getBlockReadDate() }}</div>
+    </div>
     <div class="panel-body">
       <div class="row">
         <div class="col-md-3 col-xs-5">Time</div>

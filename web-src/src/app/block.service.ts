@@ -10,12 +10,36 @@ export class BlockService {
   nonces: Array<JSONS.NonceObject> = [];
   plots: Array<JSONS.PlotDirObject> = [];
   confirmedSound = new Audio('assets/sms-alert-1-daniel_simon.mp3');
+  blockTime: Date;
+  blockReadTime: Date;
+
 
   constructor() {
     this.confirmedSound.volume = 0.5;
+
+    const refrFunc = () => {
+      // triggers change detection every second
+      setTimeout(refrFunc, 1000);
+    }
+    refrFunc();
   }
 
+  getBlockReadDate(): string {
+    let diff = 0;
+    if (this.blockReadTime) {
+      diff = this.blockReadTime.getTime() - this.blockTime.getTime();
+    } else {
+      diff = new Date().getTime() - this.blockTime.getTime();
+  }
 
+    const mins = Math.floor(diff / (1000 * 60));
+    diff -= mins * (1000 * 60);
+
+    const seconds = Math.floor(diff / (1000));
+    diff -= seconds * (1000);
+
+    return mins ? mins + ':' + seconds : seconds.toString();
+  }
 
   connectBlock() {
     this.connect((msg) => {
@@ -34,6 +58,8 @@ export class BlockService {
             this.newBlock = response;
             this.nonces = [];
             this.plots = [];
+            this.blockTime = new Date();
+            this.blockReadTime = null;
             break;
           case 'nonce found':
             this.addOrUpdateNonce(response);
@@ -50,6 +76,9 @@ export class BlockService {
             break;
           case 'progress':
             this.progress = response.value;
+            if (response.value === 100) {
+              this.blockReadTime = new Date();
+            }
             break;
           case 'lastWinner':
             this.lastWinner = response;
@@ -66,8 +95,9 @@ export class BlockService {
             break;
           default:
             //        showMessage(response);
-            if (response.type != '7')
+            if (response.type != '7') {
               console.log(response.type, response);
+            }
             break;
         };
       }
