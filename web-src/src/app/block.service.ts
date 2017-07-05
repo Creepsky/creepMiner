@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs/Subject';
 
 @Injectable()
 export class BlockService {
@@ -10,8 +11,12 @@ export class BlockService {
   nonces: Array<JSONS.NonceObject> = [];
   plots: Array<JSONS.PlotDirObject> = [];
   confirmedSound = new Audio('assets/sms-alert-1-daniel_simon.mp3');
+  
   blockTime: Date;
   blockReadTime: Date;
+  
+  private newBlockSource = new Subject();
+  newBlock$ = this.newBlockSource.asObservable();
 
 
   constructor() {
@@ -30,7 +35,7 @@ export class BlockService {
       diff = this.blockReadTime.getTime() - this.blockTime.getTime();
     } else {
       diff = new Date().getTime() - this.blockTime.getTime();
-  }
+    }
 
     const mins = Math.floor(diff / (1000 * 60));
     diff -= mins * (1000 * 60);
@@ -60,6 +65,7 @@ export class BlockService {
             this.plots = [];
             this.blockTime = new Date();
             this.blockReadTime = null;
+            this.newBlockSource.next(response);
             break;
           case 'nonce found':
             this.addOrUpdateNonce(response);
@@ -123,7 +129,6 @@ export class BlockService {
     } else {
       this.plots.push(plot);
     }
-    console.log(plot.value);
     if (plot.value.toString() === '100') {
       setTimeout(() => {
         plot.closed = true;
