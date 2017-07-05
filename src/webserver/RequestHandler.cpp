@@ -20,10 +20,21 @@
 #include <Poco/StringTokenizer.h>
 #include <Poco/Net/HTMLForm.h>
 
+Burst::TemplateVariables::TemplateVariables(std::unordered_map<std::string, Variable> variables)
+	: variables(variables)
+{}
+
 void Burst::TemplateVariables::inject(std::string& source) const
 {
 	for (const auto& var : variables)
 		Poco::replaceInPlace(source, "%" + var.first + "%", var.second());
+}
+
+Burst::TemplateVariables Burst::TemplateVariables::operator+(const TemplateVariables& rhs)
+{
+	TemplateVariables combined(rhs.variables);
+	combined.variables.insert(variables.begin(), variables.end());
+	return combined;
 }
 
 Burst::RequestHandler::LambdaRequestHandler::LambdaRequestHandler(Lambda lambda)
@@ -33,6 +44,68 @@ Burst::RequestHandler::LambdaRequestHandler::LambdaRequestHandler(Lambda lambda)
 void Burst::RequestHandler::LambdaRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
 	lambda_(request, response);
+}
+
+void Burst::RequestHandler::loadTemplate(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
+	const std::string& templatePage, const std::string& contentPage, TemplateVariables& variables)
+{
+	Poco::FileInputStream fileIndex, fileContent;
+	std::string output;
+	bool ok = true;
+
+	// open the index page 
+	try
+	{
+		// open the template file 
+		fileIndex.open("public/" + templatePage, std::ios::in);
+		// read the content of the file and load it into a string 
+		output = std::string{ std::istreambuf_iterator<char>{fileIndex},{} };
+	}
+	catch (Poco::Exception& exc)
+	{
+		log_error(MinerLogger::server, "Could not open public/index.html!");
+		log_exception(MinerLogger::server, exc);
+
+		if (fileIndex)
+			fileIndex.close();
+
+		return notFound(request, response);
+	}
+
+	// open the embedded page 
+	try
+	{
+		// load it into a string 
+		fileContent.open("public/" + contentPage, std::ios::in);
+		std::string strContent(std::istreambuf_iterator<char>{fileContent}, {});
+
+		// replace variables inside it 
+		TemplateVariables contentFramework;
+		contentFramework.variables.emplace("content", [&strContent]() { return strContent; });
+
+		contentFramework.inject(output);
+		variables.inject(output);
+	}
+	catch (Poco::Exception& exc)
+	{
+		log_error(MinerLogger::server, "Could not open 'public/%s'!", contentPage);
+		log_exception(MinerLogger::server, exc);
+
+		if (fileContent)
+			fileContent.close();
+
+		return notFound(request, response);
+	}
+
+	// not necessary, but good style 
+	fileIndex.close();
+	fileContent.close();
+
+	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+	response.setChunkedTransferEncoding(true);
+	
+	auto& responseStream = response.send();
+	responseStream << output << std::flush;
 }
 
 bool Burst::RequestHandler::loadAssetByPath(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, const std::string& path)
@@ -437,7 +510,7 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 			log_error(MinerLogger::config, "Could not save new settings!");
 	}
 
-	redirect(request, response, "/");
+	redirect(request, response, "/settings");
 }
 
 void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,

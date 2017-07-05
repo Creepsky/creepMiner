@@ -222,15 +222,37 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		// root
 		if (path_segments.empty())
-			return new LambdaRequestHandler(RequestHandler::loadAssetByPath, "index.html");
-
-		// status
-		if (path_segments.front() == "status")
-			return new LambdaRequestHandler(RequestHandler::loadAssetByPath, "index.html");
+			return new LambdaRequestHandler([&](auto& req, auto& res)
+			{
+				auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/miner.js'></script>"); } } });
+				RequestHandler::loadTemplate(req ,res, "index.html", "block.html", variables);
+			});
 
 		// plotfiles
 		if (path_segments.front() == "plotfiles")
-			return new LambdaRequestHandler(RequestHandler::loadAssetByPath, "index.html");
+		{
+			return new LambdaRequestHandler([&](auto& req, auto& res)
+			{
+				auto variables = server_->variables_ + TemplateVariables({
+					{
+						"includes", []() { 
+							auto jsonPlotDirs = createJsonPlotDirs();
+
+							std::stringstream sstr;
+							jsonPlotDirs.stringify(sstr);
+
+							std::stringstream sstrContent;
+							sstrContent << "<script src='js/plotfiles.js'></script>";
+							sstrContent << std::endl;
+							sstrContent << "<script>var plotdirs = " << sstr.str() << ";</script>";
+							return sstrContent.str();
+						}
+					}
+				});
+
+				RequestHandler::loadTemplate(req, res, "index.html", "plotfiles.html", variables);
+			});
+		}
 
 		// shutdown everything
 		if (path_segments.front() == "shutdown")
@@ -245,7 +267,11 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		{
 			// no body -> show
 			if (path_segments.size() == 1)
-				return new LambdaRequestHandler(RequestHandler::loadAssetByPath, "index.html");
+				return new LambdaRequestHandler([&](auto& req, auto& res)
+				{
+					auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/settings.js'></script>"); } } });
+					RequestHandler::loadTemplate(req, res, "index.html", "settings.html", variables);
+				});
 
 			// with body -> change
 			if (path_segments.size() > 1)

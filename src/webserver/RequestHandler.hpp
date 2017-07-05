@@ -35,11 +35,16 @@ namespace Burst
 		using Variable = std::function<std::string()>;
 		std::unordered_map<std::string, Variable> variables;
 		
+		TemplateVariables() = default;
+		TemplateVariables(std::unordered_map<std::string, Variable> variables);
+
 		/**
 		 * \brief Replaces all keys (%KEY%) inside a string with the set values.
 		 * \param source The string, in which the keys get replaced.
 		 */
 		void inject(std::string& source) const;
+
+		TemplateVariables operator+ (const TemplateVariables& rhs);
 	};
 
 	namespace RequestHandler
@@ -76,7 +81,7 @@ namespace Burst
 			{
 				lambda_ = [function, &args...](Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 				{
-					function(request, response, std::forward<TArgs>(args)...);
+					function(request, response, std::forward<TArgs&&>(args)...);
 				};
 			}
 
@@ -93,6 +98,10 @@ namespace Burst
 			 */
 			Lambda lambda_;
 		};
+
+		void loadTemplate(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
+		                  const std::string& templatePage, const std::string& contentPage,
+		                  TemplateVariables& variables);
 
 		/**
 		 * \brief Loads an asset from a designated path.
