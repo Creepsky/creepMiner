@@ -155,8 +155,7 @@
   <div class="panel panel-default">
     <div class="panel-heading">Deadlines</div>
     <canvas baseChart width="auto" height="150" style="margin: 10px;" [datasets]="lineChartData" [labels]="lineChartLabels" [options]="lineChartOptions"
-      [colors]="lineChartColors" [legend]="lineChartLegend" [chartType]="lineChartType" (chartHover)="chartHovered($event)"
-      (chartClick)="chartClicked($event)"></canvas>
+      [colors]="lineChartColors" [legend]="false" chartType="line"></canvas>
     <div id="deadlinesInfo" class="panel-footer"></div>
   </div>
   <!-- System -->
