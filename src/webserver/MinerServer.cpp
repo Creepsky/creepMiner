@@ -201,16 +201,20 @@ Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
 
 Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& request)
 {
+	using RequestHandler::LambdaRequestHandler;
+
 	poco_ndc(MinerServer::RequestFactory::createRequestHandler);
 
 	if (request.find("Upgrade") != request.end() &&
 		icompare(request["Upgrade"], "websocket") == 0)
-		return new WebSocketHandler{server_};
+		return new LambdaRequestHandler(RequestHandler::addWebsocket, *server_);
 
 	log_debug(MinerLogger::server, "Request: %s", request.getURI());
 
 	try
 	{
+		using namespace Net;
+
 		URI uri {request.getURI()};
 		std::vector<std::string> path_segments;
 
@@ -218,36 +222,41 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		// root
 		if (path_segments.empty())
-			return new RootHandler{server_->variables_};
+			return new LambdaRequestHandler(RequestHandler::loadAssetByPath, "index.html");
+
+		// status
+		if (path_segments.front() == "status")
+			return new LambdaRequestHandler(RequestHandler::loadAssetByPath, "index.html");
 
 		// plotfiles
 		if (path_segments.front() == "plotfiles")
-			return new PlotfilesHandler{server_->variables_};
+			return new LambdaRequestHandler(RequestHandler::loadAssetByPath, "index.html");
 
 		// shutdown everything
 		if (path_segments.front() == "shutdown")
-			return new ShutdownHandler{*server_->miner_, *server_};
+			return new LambdaRequestHandler(RequestHandler::shutdown, *server_->miner_, *server_);
 
 		// rescan plot files
 		if (path_segments.front() == "rescanPlotfiles")
-			return new RescanPlotfilesHandler(*server_);
+			return new LambdaRequestHandler(RequestHandler::rescanPlotfiles, *server_);
 
 		// show/change settings
 		if (path_segments.front() == "settings")
 		{
 			// no body -> show
 			if (path_segments.size() == 1)
-				return new SettingsHandler(server_->variables_, *server_);
+				return new LambdaRequestHandler(RequestHandler::loadAssetByPath, "index.html");
 
 			// with body -> change
 			if (path_segments.size() > 1)
-				return new SettingsChangeHandler(*server_, *server_->miner_);
+				return new LambdaRequestHandler(RequestHandler::changeSettings, *server_->miner_);
 		}
 
 		// show/change plot files
 		if (path_segments.front() == "plotdir")
 			if (path_segments.size() > 1)
-				return new PlotDirHandler(path_segments[1] == "remove" ? true:  false, *server_->miner_, *server_);
+				return new LambdaRequestHandler(RequestHandler::changePlotDirs, *server_,
+					path_segments[1] == "remove" ? true : false);
 
 		// forward function
 		if (path_segments.front() == "burst")
@@ -257,27 +266,27 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 			// send back local mining infos
 			if (uri.getQuery().compare(0, getMiningInfo.size(), getMiningInfo) == 0)
-				return new MiningInfoHandler{*server_->miner_};
+				return new LambdaRequestHandler(RequestHandler::miningInfo, *server_->miner_);
 
 			// forward nonce with combined capacity
 			if (uri.getQuery().compare(0, submitNonce.size(), submitNonce) == 0)
-				return new SubmitNonceHandler{*server_, *server_->miner_};
+				return new LambdaRequestHandler(RequestHandler::submitNonce, *server_, *server_->miner_);
 
 			// just forward whatever the request is to the wallet
 			// why wallet? because the only requests to a pool are getMiningInfo and submitNonce and we handled them already
-			return new ForwardHandler{MinerConfig::getConfig().createSession(HostType::Wallet)};
+			return new LambdaRequestHandler(RequestHandler::forward, MinerConfig::getConfig().createSession(HostType::Wallet));
 		}
 
 		Path path {"public"};
 		path.append(uri.getPath());
 
 		if (Poco::File {path}.exists())
-			return new AssetHandler{server_->variables_};
-
-		return new NotFoundHandler{server_->variables_};
+			return new LambdaRequestHandler(RequestHandler::loadAsset);
+		
+		return new LambdaRequestHandler(RequestHandler::notFound);
 	}
 	catch (...)
 	{
-		return new BadRequestHandler;
+		return new LambdaRequestHandler(RequestHandler::badRequest);
 	}
 }
