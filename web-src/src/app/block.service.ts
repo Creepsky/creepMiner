@@ -17,7 +17,8 @@ export class BlockService {
   
   private newBlockSource = new Subject();
   newBlock$ = this.newBlockSource.asObservable();
-
+  private newConfirmationSource = new Subject();
+  newConfirmation$ = this.newConfirmationSource.asObservable();
 
   constructor() {
     this.confirmedSound.volume = 0.5;
@@ -72,6 +73,7 @@ export class BlockService {
             break;
           case 'nonce confirmed':
             this.addOrUpdateNonce(response);
+            this.newConfirmationSource.next(response);
             this.confirmedSound.play();
             break;
           case 'nonce submitted':
