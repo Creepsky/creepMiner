@@ -146,7 +146,7 @@ export class BlockService {
         this.websocket.close();
       }
 
-      this.websocket = new WebSocket('ws://' + window.location.host + ':' + window.location.port + '/');
+      this.websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/');
       this.websocket.onmessage = onMessage;
     } else {
       this.websocket = null;
