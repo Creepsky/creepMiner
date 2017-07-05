@@ -3,6 +3,8 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
+import { ChartsModule } from 'ng2-charts';
+
 import { AppComponent } from './app.component';
 import { PlotFilesComponent } from './plot-files/plot-files.component';
 import { SettingsComponent } from './settings/settings.component';
@@ -26,6 +28,7 @@ import { ProgressbarComponent } from './progressbar/progressbar.component';
   imports: [
     BrowserModule,
     CommonModule,
+    ChartsModule,
     RouterModule.forRoot([
       {
         path: 'status',
