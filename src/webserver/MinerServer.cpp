@@ -202,6 +202,8 @@ Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
 Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& request)
 {
 	using RequestHandler::LambdaRequestHandler;
+	using req_t = Poco::Net::HTTPServerRequest;
+	using res_t = Poco::Net::HTTPServerResponse;
 
 	poco_ndc(MinerServer::RequestFactory::createRequestHandler);
 
@@ -222,7 +224,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		// root
 		if (path_segments.empty())
-			return new LambdaRequestHandler([&](auto& req, auto& res)
+			return new LambdaRequestHandler([&](req_t& req, res_t& res)
 			{
 				auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/miner.js'></script>"); } } });
 				RequestHandler::loadTemplate(req ,res, "index.html", "block.html", variables);
@@ -231,7 +233,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		// plotfiles
 		if (path_segments.front() == "plotfiles")
 		{
-			return new LambdaRequestHandler([&](auto& req, auto& res)
+			return new LambdaRequestHandler([&](req_t& req, res_t& res)
 			{
 				auto variables = server_->variables_ + TemplateVariables({
 					{
@@ -267,7 +269,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		{
 			// no body -> show
 			if (path_segments.size() == 1)
-				return new LambdaRequestHandler([&](auto& req, auto& res)
+				return new LambdaRequestHandler([&](req_t& req, res_t& res)
 				{
 					auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/settings.js'></script>"); } } });
 					RequestHandler::loadTemplate(req, res, "index.html", "settings.html", variables);
