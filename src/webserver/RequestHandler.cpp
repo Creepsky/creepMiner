@@ -51,7 +51,6 @@ void Burst::RequestHandler::loadTemplate(Poco::Net::HTTPServerRequest& request, 
 {
 	Poco::FileInputStream fileIndex, fileContent;
 	std::string output;
-	bool ok = true;
 
 	// open the index page 
 	try
