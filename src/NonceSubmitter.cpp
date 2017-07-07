@@ -29,7 +29,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 
 	auto loopConditionHelper = [this, &betterDeadlineInPipeline](size_t tryCount, size_t maxTryCount, SubmitResponse response)
 	{
-        if ((maxTryCount > 0 && tryCount >= maxTryCount) ||
+		if ((maxTryCount > 0 && tryCount >= maxTryCount) ||
 			response == SubmitResponse::Error ||
 			response == SubmitResponse::Confirmed ||
 			deadline->getBlock() != miner.getBlockheight() ||
@@ -68,11 +68,11 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 	{
 		log_debug(MinerLogger::nonceSubmitter, "Submit-loop %z (%s)", submitTryCount + 1, deadline->deadlineToReadableString());
 
-        if (submitTryCount) {
-                log_debug(MinerLogger::nonceSubmitter,"WAITING......................");
-                std::this_thread::sleep_for(std::chrono::seconds(5));
-        }
-
+		if (submitTryCount)
+		{
+			log_debug(MinerLogger::nonceSubmitter,"WAITING......................");
+			std::this_thread::sleep_for(std::chrono::seconds(5));
+		}
 
 		NonceRequest request{MinerConfig::getConfig().createSession(HostType::Pool)};
 

@@ -1,7 +1,6 @@
 ﻿#include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include "Response.hpp"
-#include "Socket.hpp"
 #include "MinerUtil.hpp"
 #include "MinerLogger.hpp"
 #include "Poco/Net/HTTPClientSession.h"

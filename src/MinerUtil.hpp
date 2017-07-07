@@ -16,6 +16,7 @@
 #include <memory>
 #include <Poco/Net/SocketAddress.h>
 #include <array>
+#include <Poco/JSON/Array.h>
 
 namespace Poco
 {
@@ -27,6 +28,7 @@ namespace Poco
 
 namespace Burst
 {
+	class PlotDir;
 	class PlotReadProgress;
 	class BlockData;
 	class Deadline;
@@ -62,6 +64,16 @@ namespace Burst
 		Incomplete
 	};
 
+	enum class DeadlineFragment
+	{
+		Years,
+		Months,
+		Days,
+		Hours,
+		Minutes,
+		Seconds
+	};
+
 	bool isNumberStr(const std::string& str);
 	std::string getFileNameFromPath(const std::string& strPath);
 	std::vector<std::string>& splitStr(const std::string& s, char delim, std::vector<std::string>& elems);
@@ -73,13 +85,14 @@ namespace Burst
 	std::string getNonceCountFromPlotFile(const std::string& path);
 	std::string getStaggerSizeFromPlotFile(const std::string& path);
 	std::string deadlineFormat(Poco::UInt64 seconds);
+	Poco::UInt64 deadlineFragment(Poco::UInt64 seconds, DeadlineFragment fragment);
 	Poco::UInt64 formatDeadline(const std::string& format);
 	std::string gbToString(Poco::UInt64 size);
-	std::string memToString(Poco::UInt64 size, MemoryUnit factor, uint8_t precision);
-	std::string memToString(Poco::UInt64 size, uint8_t precision);
-	std::string getInformationFromPlotFile(const std::string& path, uint8_t index);
-	std::string encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, uint32_t& iterations);
-	std::string decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, uint32_t& iterations);
+	std::string memToString(Poco::UInt64 size, MemoryUnit factor, Poco::UInt8 precision);
+	std::string memToString(Poco::UInt64 size, Poco::UInt8 precision);
+	std::string getInformationFromPlotFile(const std::string& path, Poco::UInt8 index);
+	std::string encrypt(const std::string& decrypted, const std::string& algorithm, std::string& key, std::string& salt, Poco::UInt32 iterations);
+	std::string decrypt(const std::string& encrypted, const std::string& algorithm, const std::string& key, const std::string& salt, Poco::UInt32 iterations);
 
 	template <typename T, typename U>
 	void transferSession(T& from, U& to)
@@ -103,6 +116,9 @@ namespace Burst
 	Poco::JSON::Object createJsonLastWinner(const MinerData& data);
 	Poco::JSON::Object createJsonShutdown();
 	Poco::JSON::Object createJsonWonBlocks(const MinerData& data);
+	Poco::JSON::Object createJsonPlotDir(const PlotDir& plotDir);
+	Poco::JSON::Array createJsonPlotDirs();
+	Poco::JSON::Object createJsonPlotDirsRescan();
 
 	std::string getTime();
 	std::string getFilenameWithtimestamp(const std::string& name, const std::string& ending);

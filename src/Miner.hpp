@@ -60,11 +60,16 @@ namespace Burst
 		MinerData& getData();
 		std::shared_ptr<Account> getAccount(AccountId id);
 
+		void setMiningIntensity(Poco::UInt32 intensity);
+		void setMaxPlotReader(Poco::UInt32 max_reader);
+		static void setMaxBufferSize(Poco::UInt64 size);
+
 	private:
 		bool getMiningInfo();
 		NonceConfirmation submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data);
 		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile,
 			 std::shared_ptr<Deadline>& newDeadline);
+		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const;
 
 		bool running_ = false;
 		MinerData data_;
@@ -72,10 +77,10 @@ namespace Burst
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
 		Accounts accounts_;
 		Wallet wallet_;
-		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_;
+		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_, plot_reader_, verifier_;
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
-		std::unique_ptr<WorkerList<PlotVerifier>> verifier_;
-		std::unique_ptr<WorkerList<PlotReader>> plotReader_;
+		std::unique_ptr<Poco::ThreadPool> verifier_pool_, plot_reader_pool_;
+		mutable Poco::Mutex worker_mutex_;
 	};
 }

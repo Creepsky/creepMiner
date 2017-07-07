@@ -23,8 +23,8 @@ Burst::Url::Url(const std::string& url, const std::string& defaultScheme, unsign
 				uri_.setPort(defaultPort);
 		}
 
-		if (!uri_.empty())
-			ip_ = Poco::Net::DNS::resolveOne(uri_.getHost());
+//		if (!uri_.empty())
+//			ip_ = Poco::Net::DNS::resolveOne(uri_.getHost());
 	}
 	catch (...)
 	{}

@@ -113,7 +113,24 @@ void Burst::BlockData::setProgress(float progress, Poco::UInt64 blockheight)
 	jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progress)};
 
 	if (parent_ != nullptr)
-		parent_->notifiyBlockDataChanged_.postNotification(new BlockDataChangedNotification{jsonProgress_});
+		parent_->blockDataChangedEvent.notifyAsync(this, *jsonProgress_);
+}
+
+void Burst::BlockData::setProgress(const std::string& plotDir, float progress, Poco::UInt64 blockheight)
+{
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
+
+	if (blockheight != getBlockheight())
+		return;
+
+	auto json = new Poco::JSON::Object{createJsonProgress(progress)};
+	json->set("type", "plotdir-progress");
+	json->set("dir", plotDir);
+
+	jsonDirProgress_[plotDir].assign(json);
+
+	if (parent_ != nullptr)
+		parent_->blockDataChangedEvent.notifyAsync(this, *json);
 }
 
 void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
@@ -123,7 +140,7 @@ void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
 	entries_->emplace_back(std::move(entry));
 	
 	if (parent_ != nullptr)
-		parent_->notifiyBlockDataChanged_.postNotification(new BlockDataChangedNotification{&entry});
+		parent_->blockDataChangedEvent.notifyAsync(this, entry);
 }
 
 Poco::UInt64 Burst::BlockData::getBlockheight() const
@@ -182,9 +199,14 @@ bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)>
 	for (auto iter = entries_->begin(); iter != entries_->end() && !error; ++iter)
 		error = !traverseFunction(*iter);
 
-	// send the progress, if any
+	// send the overall progress, if any
 	if (!error && !jsonProgress_.isNull())
 		error = !traverseFunction(*jsonProgress_);
+
+	// send the dir progress
+	if (!error)
+		for (auto iter = jsonDirProgress_.begin(); !error && iter != jsonDirProgress_.end(); ++iter)
+			error = !traverseFunction(*iter->second);
 
 	return error;
 }
@@ -233,6 +255,33 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadlineIfBest(Poco::UInt6
 		return addDeadline(nonce, deadline, account, block, plotFile);
 
 	return nullptr;
+}
+
+void Burst::BlockData::addMessage(const Poco::Message& message) const
+{
+	Poco::ScopedLock<Poco::Mutex> lock {mutex_};
+
+	if (entries_ == nullptr)
+		return;
+
+	Poco::JSON::Object json;
+	json.set("type", std::to_string(static_cast<int>(message.getPriority())));
+	json.set("text", message.getText());
+	json.set("source", message.getSource());
+	json.set("line", message.getSourceLine());
+	json.set("file", message.getSourceFile());
+	json.set("time", Poco::DateTimeFormatter::format(Poco::LocalDateTime(message.getTime()), "%H:%M:%S"));
+
+	entries_->emplace_back(json);
+
+	if (parent_ != nullptr)
+		parent_->blockDataChangedEvent.notifyAsync(this, json);
+}
+
+void Burst::BlockData::clearEntries() const
+{
+	Poco::ScopedLock<Poco::Mutex> lock {mutex_};
+	entries_->clear();
 }
 
 std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pair<const Wallet*, const Accounts*>& args)
@@ -298,6 +347,10 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 		if (historicalBlocks_.size() + 1 > maxSize)
 			historicalBlocks_.pop_front();
 
+		// we clear all entries, because it is also in the logfile
+		// and we dont need it in the ram anymore
+		blockData_->clearEntries();
+
 		historicalBlocks_.emplace_back(blockData_);
 
 		++blocksMined_;
@@ -330,6 +383,14 @@ void Burst::MinerData::setBestDeadline(std::shared_ptr<Deadline> deadline)
 void Burst::MinerData::setTargetDeadline(Poco::UInt64 deadline)
 {
 	targetDeadline_ = deadline;
+}
+
+void Burst::MinerData::addMessage(const Poco::Message& message)
+{
+	auto blockData = getBlockData();
+
+	if (blockData != nullptr)
+		blockData->addMessage(message);
 }
 
 void Burst::MinerData::addWonBlock()
@@ -391,7 +452,7 @@ std::shared_ptr<const Burst::BlockData> Burst::MinerData::getBlockData() const
 //	return blockData->getLastWinner();
 //}
 
-std::shared_ptr<const Burst::BlockData> Burst::MinerData::getHistoricalBlockData(uint32_t roundsBefore) const
+std::shared_ptr<const Burst::BlockData> Burst::MinerData::getHistoricalBlockData(Poco::UInt32 roundsBefore) const
 {
 	if (roundsBefore == 0)
 		return getBlockData();
@@ -429,18 +490,30 @@ Poco::UInt64 Burst::MinerData::getConfirmedDeadlines() const
 	return deadlinesConfirmed_;
 }
 
-Poco::UInt64 Burst::MinerData::getTargetDeadline() const
+Poco::UInt64 Burst::MinerData::getTargetDeadline(TargetDeadlineType type) const
 {
-	auto targetDeadline = targetDeadline_.load();
-	auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
+	switch (type)
+	{
+	case TargetDeadlineType::Pool:
+		return targetDeadline_.load();
+	case TargetDeadlineType::Local:
+		return MinerConfig::getConfig().getTargetDeadline();
+	case TargetDeadlineType::Combined:
+		{
+			auto targetDeadline = targetDeadline_.load();
+			auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
 
-	if (targetDeadline == 0)
-		targetDeadline = manualTargetDeadline;
-	else if (targetDeadline > manualTargetDeadline &&
-		manualTargetDeadline > 0)
-		targetDeadline = manualTargetDeadline;
+			if (targetDeadline == 0)
+				targetDeadline = manualTargetDeadline;
+			else if (targetDeadline > manualTargetDeadline &&
+				manualTargetDeadline > 0)
+				targetDeadline = manualTargetDeadline;
 
-	return targetDeadline;
+			return targetDeadline;
+		}
+	default:
+		return 0;
+	}
 }
 
 bool Burst::MinerData::compareToTargetDeadline(Poco::UInt64 deadline) const
