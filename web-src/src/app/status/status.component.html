@@ -78,7 +78,7 @@
 <div id="container" class="col-md-6">
   <div class="panel panel-primary" *ngIf="b.newBlock">
     <div class="panel-heading">Block {{b.newBlock.block}}
-      <div style="float:right;" title="block read time">{{ b.getBlockReadDate() }}</div>
+      <div class="pull-right" title="block read time">{{ b.getBlockReadDate() }}</div>
     </div>
     <div class="panel-body">
       <div class="row">
@@ -98,45 +98,8 @@
         <div class="col-md-9 col-xs-7">{{b.newBlock.bestOverall}}</div>
       </div>
     </div>
-    <!-- To Do -->
+  
     <ul id="blkdata" class="list-group">
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="server" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:36:39</span>
-          </p>Request: /css/cerulean.min.css<small><dl class="dl" style="display: none;"><dt>Logger</dt>
-              <dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small>
-        </div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="server" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:36:39</span></p>Request: /css/cerulean.min.css<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="wallet" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:34:21</span></p>Could not get last winner!<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>wallet</dd><dt>File</dt><dd>src\Wallet.cpp</dd><dt>Line</dt><dd>54</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-danger" style="display: none;" logger="wallet" level="3">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:34:21</span></p>Got no response for wallet request '/burst?requestType=getBlock&amp;height=374636'<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>wallet</dd><dt>File</dt><dd>src\Wallet.cpp</dd><dt>Line</dt><dd>201</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-danger" style="display: none;" logger="socket" level="3">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:34:06</span></p>Stackframe<br>Miner::runGetLastWinner (in "src\MinerData.cpp",
-          line 289)<br>Wallet::getWinnerOfBlock (in "src\Wallet.cpp", line 30)<br>Wallet::sendWalletRequest (in "src\Wallet.cpp",
-          line 158)<br>Request::send(Poco::Net::HTTPRequest&amp;) (in "src\Request.cpp", line 36)<br><small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>socket</dd><dt>File</dt><dd>src\Request.cpp</dd><dt>Line</dt><dd>48</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-danger" style="display: none;" logger="socket" level="3">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:34:06</span></p>Error on sending request: SSL connection unexpectedly closed<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>socket</dd><dt>File</dt><dd>src\Request.cpp</dd><dt>Line</dt><dd>47</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="server" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:33:04</span></p>Request: /favicon.ico<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="server" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:33:03</span></p>Request: /<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
-      </li>
       <li *ngFor="let p of b.plots" id="53352705" class="list-group-item clearfix plots list-group-item-info" [style.display]="p.closed ? 'none' : 'block'">
         <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{p.dir }}
         <progressbar class="progress-striped plot-progress" [value]="p.value" type="warning" max="100" animate="true">{{round(p.value)}}%</progressbar>
