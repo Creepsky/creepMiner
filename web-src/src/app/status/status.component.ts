@@ -31,7 +31,7 @@ export class StatusComponent implements OnInit {
 
 
   ngOnInit() {
-    this.b.connectBlock();
+    this.b.connect();
     this.b.newBlock$.subscribe(nb => {
       const bestDl = <Array<Array<number>>>nb['bestDeadlines'];
       this.lineChartLabels = bestDl.map(x => x[0]);
