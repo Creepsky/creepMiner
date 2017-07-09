@@ -98,7 +98,7 @@
         <div class="col-md-9 col-xs-7">{{b.newBlock.bestOverall}}</div>
       </div>
     </div>
-  
+
     <ul id="blkdata" class="list-group">
       <li *ngFor="let p of b.plots" id="53352705" class="list-group-item clearfix plots list-group-item-info" [style.display]="p.closed ? 'none' : 'block'">
         <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{p.dir }}
@@ -109,6 +109,7 @@
         <span class="glyphicon glyphicon-share-alt" style="color: #c09853;" aria-hidden="true" *ngIf="n.type === 'nonce submitted'"></span>
         <b>{{n.account}}</b>: {{n.type}} ({{n.deadline}})
         <p class="pull-right">{{n.time}}</p>
+        <div style="font-size: 10px; margin-top: 5px;"> {{n.plotfile}} </div>
       </li>
     </ul>
   </div>
