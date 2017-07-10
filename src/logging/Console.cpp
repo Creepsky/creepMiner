@@ -25,6 +25,7 @@ Burst::PrintBlock::PrintBlock(PrintBlock&& rhs) noexcept
 
 Burst::PrintBlock::~PrintBlock()
 {
+	Console::resetColor();
 	finish();
 }
 
@@ -69,6 +70,13 @@ const Burst::PrintBlock& Burst::PrintBlock::nextLine() const
 		return *this;
 
 	*stream_ << std::endl;
+	return *this;
+}
+
+const Burst::PrintBlock& Burst::PrintBlock::resetColor() const
+{
+	std::lock_guard<std::mutex> lock(inner_mutex_);
+	Console::resetColor();
 	return *this;
 }
 

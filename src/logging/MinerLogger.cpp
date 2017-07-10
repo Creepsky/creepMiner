@@ -338,6 +338,8 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 
 		if (i != tokenizer.count() - 1)
 			block->nextLine();
+
+		block->resetColor();
 	}
 
 	if (!progressFlag_)

@@ -114,6 +114,11 @@ namespace Burst
 		const PrintBlock& clearLine(bool wipe = true) const;
 
 		/**
+		 * \brief Resets the font color.
+		 */
+		const PrintBlock& resetColor() const;
+
+		/**
 		 * \brief Unlocks the console mutex.
 		 * Every output that will be made with this object will not be discarded.
 		 */
