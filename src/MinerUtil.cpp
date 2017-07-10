@@ -674,3 +674,26 @@ bool Burst::check_HMAC_SHA1(const std::string& plain, const std::string& hashed,
 	// check if its the same
 	return digest == hashedDigest;
 }
+
+std::string Burst::createTruncatedString(const std::string& string, size_t padding, size_t size)
+{
+	std::string padded_string;
+
+	for (auto i = 0u; i < string.size(); i += size)
+	{
+		auto max_size = std::min(size, string.size());
+
+		padded_string += string.substr(i, max_size);
+
+		// reached the end of the string
+		if (i >= string.size())
+			break;
+		else if (i + size < string.size())
+		{
+			padded_string += '\n';
+			padded_string += std::string(padding, ' ');
+		}
+	}
+
+	return padded_string;
+}

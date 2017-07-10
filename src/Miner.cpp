@@ -156,11 +156,12 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 	// printing block info and transfer it to local server
 	{
 		log_notice(MinerLogger::miner, std::string(50, '-') + "\n"
-			"block#      %Lu\n"
-			"scoop#      %Lu\n"
-			"baseTarget# %Lu\n" +
+			"block#     \t%Lu\n"
+			"scoop#     \t%Lu\n"
+			"baseTarget#\t%Lu\n"
+			"gensig     \t%s\n" +
 			std::string(50, '-'),
-			blockHeight, block->getScoop(), baseTarget
+			blockHeight, block->getScoop(), baseTarget, createTruncatedString(getGensigStr(), 14, 32)
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
@@ -294,7 +295,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	{
 		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound), "%s: nonce found (%s)\n"
 			"\tnonce: %Lu\n"
-			"\tin: %s",
+			"\tin:    %s",
 			newDeadline->getAccountName(), deadlineFormat(deadline), newDeadline->getNonce(), plotFile);
 
 		return SubmitResponse::Found;

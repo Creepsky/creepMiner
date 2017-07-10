@@ -125,6 +125,15 @@ namespace Burst
 
 	std::string hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase);
 	bool check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase);
+
+	/*
+	 * \brief Creates a string that is padded and locked on a specific size.
+	 * \param string The string, that is sized.
+	 * \param padding The padding from left side of the string.
+	 * \param size The max. size of the string. Every time the string exceeds the size,
+	 * it gets wrapped into a new line.
+	 */
+	std::string createTruncatedString(const std::string& string, size_t padding, size_t size);
 }
 
 #if !defined POCO_COMPILER_MSVC && __cplusplus < 201402L
