@@ -325,8 +325,6 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 
 	progressFlag_ = type == TextType::Progress;
 	
-	auto typeBefore = currentTextType_;
-
 	Poco::StringTokenizer tokenizer(text, "\n");
 	
 	for (auto i = 0u; i < tokenizer.count(); ++i)

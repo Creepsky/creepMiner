@@ -123,7 +123,7 @@ void Burst::Console::resetColor()
 #ifdef _WIN32
 	setColor(ConsoleColor::White);
 #elif defined __linux__
-	std::cout << getUnixConsoleCode(foreground) << std::endl;
+	std::cout << getUnixConsoleCode(ConsoleColor::White) << std::endl;
 #endif
 #endif
 	currentColor_ = { ConsoleColor::White, ConsoleColor::Black };
