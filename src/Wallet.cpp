@@ -7,7 +7,7 @@
 #include <Poco/JSON/Parser.h>
 #include <cassert>
 #include <Poco/NestedDiagnosticContext.h>
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "Account.hpp"
 #include <thread>
 

@@ -1,7 +1,6 @@
 ﻿#include "Url.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include <Poco/Net/HostEntry.h>
-#include <Poco/Net/DNS.h>
 #include <Poco/Net/HTTPSessionFactory.h>
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/String.h>

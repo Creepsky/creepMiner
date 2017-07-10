@@ -1,7 +1,5 @@
 ﻿#include "PlotSizes.hpp"
-#include <algorithm>
-#include <numeric>
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 
 std::unordered_map<std::string, Burst::PlotSizes::HistoricalPlotSize> Burst::PlotSizes::sizes_;
 Poco::Mutex Burst::PlotSizes::mutex_;

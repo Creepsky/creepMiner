@@ -3,7 +3,7 @@
 #include <Poco/String.h>
 #include <Poco/StringTokenizer.h>
 #include <Poco/NumberParser.h>
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 
 const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0 };
 

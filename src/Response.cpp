@@ -2,7 +2,7 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "Response.hpp"
 #include "MinerUtil.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "Poco/Net/HTTPClientSession.h"
 #include "Poco/Net/HTTPResponse.h"
 

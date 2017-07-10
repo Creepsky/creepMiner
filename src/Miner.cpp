@@ -7,7 +7,8 @@
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
 #include "Miner.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
+#include "logging/Output.hpp"
 #include "MinerConfig.hpp"
 #include "PlotReader.hpp"
 #include "MinerUtil.hpp"
@@ -21,7 +22,6 @@
 #include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include "PlotSizes.hpp"
-#include "Output.hpp"
 
 namespace Burst
 {

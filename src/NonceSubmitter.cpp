@@ -1,12 +1,12 @@
 ﻿#include "NonceSubmitter.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "Deadline.hpp"
 #include "MinerUtil.hpp"
 #include "Request.hpp"
 #include "MinerConfig.hpp"
 #include "Miner.hpp"
 #include <fstream>
-#include "Output.hpp"
+#include "logging/Output.hpp"
 #include <chrono>
 #include <thread>
 

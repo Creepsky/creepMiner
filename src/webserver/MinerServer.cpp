@@ -7,7 +7,7 @@
 #include "RequestHandler.hpp"
 #include <Poco/JSON/Object.h>
 #include <Poco/File.h>
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include <Poco/URI.h>
 #include "Miner.hpp"
 #include "MinerConfig.hpp"

@@ -148,6 +148,13 @@ endif ()
 # Header files
 ##################################################################
 set(HEADER_FILES
+	src/logging/channels/ColoredPriorityConsoleChannel.hpp
+	src/logging/channels/MinerDataChannel.hpp
+	src/logging/Console.hpp
+	src/logging/Message.hpp
+	src/logging/MinerLogger.hpp
+	src/logging/Output.hpp
+	src/logging/ProgressPrinter.hpp
 	src/nxt/nxt_address.h
 	src/shabal/cuda/Shabal.hpp
 	src/shabal/impl/mshabal_avx_impl.hpp
@@ -161,15 +168,12 @@ set(HEADER_FILES
 	src/Account.hpp
 	src/Deadline.hpp
 	src/Declarations.hpp
-	src/Message.hpp
 	src/Miner.hpp
 	src/MinerConfig.hpp
 	src/MinerData.hpp
-	src/MinerLogger.hpp
 	src/MinerShabal.hpp
 	src/MinerUtil.hpp
 	src/NonceSubmitter.hpp
-	src/Output.hpp
 	src/PlotReader.hpp
 	src/PlotSizes.hpp
 	src/PlotVerifier.hpp
@@ -183,6 +187,13 @@ set(HEADER_FILES
 # Source files
 ##################################################################
 set(SOURCE_FILES
+	src/logging/channels/ColoredPriorityConsoleChannel.cpp
+	src/logging/channels/MinerDataChannel.cpp
+	src/logging/Console.cpp
+	src/logging/Message.cpp
+	src/logging/MinerLogger.cpp
+	src/logging/Output.cpp
+	src/logging/ProgressPrinter.cpp
 	src/nxt/nxt_address.cpp
 	src/shabal/sphlib/sph_shabal.cpp
 	src/webserver/MinerServer.cpp
@@ -191,14 +202,11 @@ set(SOURCE_FILES
 	src/Deadline.cpp
 	src/Declarations.cpp
 	src/main.cpp
-	src/Message.cpp
 	src/Miner.cpp
 	src/MinerConfig.cpp
 	src/MinerData.cpp
-	src/MinerLogger.cpp
 	src/MinerUtil.cpp
 	src/NonceSubmitter.cpp
-	src/Output.cpp
 	src/PlotReader.cpp
 	src/PlotSizes.cpp
 	src/PlotVerifier.cpp

@@ -7,7 +7,7 @@
 //
 
 #include "MinerConfig.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "MinerUtil.hpp"
 #include <fstream>
 #include <memory>
@@ -22,7 +22,7 @@
 #include "PlotSizes.hpp"
 #include <Poco/Logger.h>
 #include <Poco/SplitterChannel.h>
-#include "Output.hpp"
+#include "logging/Output.hpp"
 #include "PlotReader.hpp"
 
 const std::string Burst::MinerConfig::WebserverPassphrase = "secret-webserver-pass-951";

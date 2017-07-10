@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <algorithm>
 #include "Declarations.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include <Poco/URI.h>
 #include <Poco/Net/HTTPClientSession.h>
 #include "Deadline.hpp"

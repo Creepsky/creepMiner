@@ -1,7 +1,7 @@
 ﻿#include "PlotVerifier.hpp"
 #include "MinerShabal.hpp"
 #include "Miner.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "PlotReader.hpp"
 #include <atomic>
 #include "Declarations.hpp"

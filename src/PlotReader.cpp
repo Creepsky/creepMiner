@@ -8,14 +8,14 @@
 
 #include "PlotReader.hpp"
 #include "MinerUtil.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "MinerConfig.hpp"
 #include <fstream>
 #include "Miner.hpp"
 #include <Poco/NotificationQueue.h>
 #include "PlotVerifier.hpp"
 #include <Poco/Timestamp.h>
-#include "Output.hpp"
+#include "logging/Output.hpp"
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
@@ -301,7 +301,7 @@ void Burst::PlotReadProgress::add(uintmax_t value, Poco::UInt64 blockheight)
 	progress_ += value;
 
 	if (max_ > 0)
-		MinerLogger::writeProgress(getProgress(), 48);
+		MinerLogger::writeProgress(getProgress());
 }
 
 bool Burst::PlotReadProgress::isReady() const

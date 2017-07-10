@@ -4,7 +4,7 @@
 #include <Poco/Net/HTTPServerResponse.h>
 #include <Poco/Net/WebSocket.h>
 #include <Poco/FileStream.h>
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "MinerUtil.hpp"
 #include <Poco/JSON/Object.h>
 #include "MinerServer.hpp"

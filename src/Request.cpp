@@ -1,7 +1,7 @@
 ﻿#include "Request.hpp"
 #include "Response.hpp"
 #include "nxt/nxt_address.h"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "MinerConfig.hpp"
 #include "Poco/Net/HTTPClientSession.h"
 #include "Poco/Net/HTTPRequest.h"

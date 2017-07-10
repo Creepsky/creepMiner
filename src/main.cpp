@@ -7,7 +7,7 @@
 //  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
 
 #include "Miner.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "MinerConfig.hpp"
 #include "MinerUtil.hpp"
 #include <Poco/Net/SSLManager.h>

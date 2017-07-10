@@ -1,9 +1,9 @@
 ﻿#include "MinerData.hpp"
 #include <Poco/ScopedLock.h>
 #include "MinerConfig.hpp"
-#include "MinerLogger.hpp"
+#include "logging/MinerLogger.hpp"
 #include "MinerShabal.hpp"
-#include "Output.hpp"
+#include "logging/Output.hpp"
 #include "MinerUtil.hpp"
 #include "Wallet.hpp"
 #include "Account.hpp"
