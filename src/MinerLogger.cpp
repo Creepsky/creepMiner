@@ -440,8 +440,19 @@ void Burst::MinerLogger::writeProgress(float progress, size_t pipes)
 {
 	std::lock_guard<std::mutex> lock(consoleMutex);
 
+	auto done = static_cast<size_t>(pipes * (progress / 100));
+	auto doneBefore = static_cast<size_t>(pipes * (lastProgress_ / 100));
+
+	lastProgress_ = progress;
+	
+	if (done == doneBefore)
+		return;
+
 	if (progressFlag_)
 		clearLine(false);
+
+	lastPipeCount_ = pipes;
+	progressFlag_ = true;
 
 	printProgress(progress, pipes);
 }
@@ -526,8 +537,7 @@ void Burst::MinerLogger::printProgress(float progress, size_t pipes)
 #ifdef LOG_TERMINAL
 	auto done = static_cast<size_t>(pipes * (progress / 100));
 	auto notDone = pipes - done;
-	lastProgress_ = progress;
-	lastPipeCount_ = pipes;
+
 	progressFlag_ = true;
 
 	setColor(TextType::Normal);
