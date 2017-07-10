@@ -123,7 +123,7 @@ void Burst::Console::resetColor()
 #ifdef _WIN32
 	setColor(ConsoleColor::White);
 #elif defined __linux__
-	std::cout << getUnixConsoleCode(ConsoleColor::White) << std::endl;
+	std::cout << "\033[0m";
 #endif
 #endif
 	currentColor_ = { ConsoleColor::White, ConsoleColor::Black };
@@ -135,13 +135,13 @@ std::string Burst::Console::getUnixConsoleCode(ConsoleColor color)
 	{
 	case ConsoleColor::Black: return "\033[30m";
 	case ConsoleColor::Blue: return "\033[34m";
-	case ConsoleColor::Green: return "\033[32m";
+	case ConsoleColor::Green: return "\033[0;32m";
 	case ConsoleColor::Cyan: return "\033[36m";
 	case ConsoleColor::Red: return "\033[31m";
 	case ConsoleColor::Magenta: return "\033[35m";
 	case ConsoleColor::Brown:
-	case ConsoleColor::Yellow: return "\033[33m";
-	case ConsoleColor::LightGray: return "\033[30;1m";
+	case ConsoleColor::Yellow: return "\033[33;1m";
+	case ConsoleColor::LightGray: return "\033[2;37m";
 	case ConsoleColor::DarkGray: return "\033[30;1m";
 	case ConsoleColor::LightBlue: return "\033[34;1m";
 	case ConsoleColor::LightGreen: return "\033[32;1m";
@@ -149,9 +149,8 @@ std::string Burst::Console::getUnixConsoleCode(ConsoleColor color)
 	case ConsoleColor::LightRed: return "\033[31;1m";;
 	case ConsoleColor::LightMagenta: return "\033[35;1m";;
 	case ConsoleColor::White: return "\033[37;1m";
+	default: return "\033[0m";
 	}
-
-	return "\033[0m";
 }
 
 std::shared_ptr<Burst::PrintBlock> Burst::Console::print()

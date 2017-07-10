@@ -108,7 +108,11 @@ std::map<Burst::TextType, Burst::ConsoleColorPair> Burst::MinerLogger::typeColor
 			{ TextType::Warning, { ConsoleColor::Brown, ConsoleColor::Black } },
 			{ TextType::Important, { ConsoleColor::Black, ConsoleColor::White } },
 			{ TextType::System, { ConsoleColor::Yellow, ConsoleColor::Black } },
+#ifdef _WIN32
 			{ TextType::Unimportant, { ConsoleColor::DarkGray, ConsoleColor::Black } },
+#else
+			{ TextType::Unimportant, { ConsoleColor::LightGray, ConsoleColor::Black } },
+#endif
 			{ TextType::Ok, { ConsoleColor::Green, ConsoleColor::Black } },
 			{ TextType::Debug, { ConsoleColor::LightMagenta, ConsoleColor::Black } },
 			{ TextType::Progress, { ConsoleColor::DarkGray, ConsoleColor::Black } },
