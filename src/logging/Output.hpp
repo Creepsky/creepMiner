@@ -13,7 +13,6 @@ namespace Burst
 	{
 		LastWinner,
 		NonceFound,
-		NonceOnTheWay,
 		NonceSent,
 		NonceConfirmed,
 		PlotDone,

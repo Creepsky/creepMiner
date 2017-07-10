@@ -54,9 +54,6 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 
 	//MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
 
-	log_information_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceOnTheWay), "%s: nonce on the way (%s)",
-		accountName, deadline->deadlineToReadableString());
-
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
 	size_t submitTryCount = 0;
 	auto firstSendAttempt = true;

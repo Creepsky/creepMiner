@@ -6,7 +6,6 @@ const std::map<Burst::Output, std::string> Burst::Output_Helper::Output_Names = 
 	return std::map<Burst::Output, std::string> {
 		{LastWinner, "lastWinner"},
 		{NonceFound, "nonceFound"},
-		{NonceOnTheWay, "nonceOnTheWay"},
 		{NonceSent, "nonceSent"},
 		{NonceConfirmed, "nonceConfirmed"},
 		{PlotDone, "plotDone"},
@@ -41,7 +40,6 @@ Burst::Output_Flags Burst::Output_Helper::create_flags(bool default_flag)
 	return {
 		{LastWinner, default_flag},
 		{NonceFound, default_flag},
-		{NonceOnTheWay, default_flag},
 		{NonceSent, default_flag},
 		{NonceConfirmed, default_flag},
 		{PlotDone, default_flag},
