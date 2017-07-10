@@ -82,8 +82,10 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 			confirmation.errorCode = SubmitResponse::Submitted;
 			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)\n"
 				"\tnonce: %Lu\n"
-				"\tin %s",
-				accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
+				"\tin:    %s",
+				accountName, deadlineFormat(deadline->getDeadline()),
+				deadline->getNonce(),
+				deadline->getPlotFile());
 			firstSendAttempt = false;
 		}
 
@@ -150,7 +152,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 				if (showConfirmation)
 					log_success_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceConfirmed), "%s: nonce confirmed (%s)\n"
 						"\tnonce: %Lu\n"
-						"\tin %s",
+						"\tin:    %s",
 						accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
 
 				// we have to confirm it at the very last position

@@ -273,12 +273,15 @@ void Burst::PlotReader::runTask()
 			for (const auto& relatedPlotList : plotReadNotification->relatedPlotLists)
 				sstr << " + " << relatedPlotList.first;
 
-			log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone), "Dir %s read (%z files, %s total) in %ss (~%s/s)",
+			log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone),
+				"Dir %s read in %ss (~%s/s)\n"
+				"\tfiles: %z,\n"
+				"\tsize:  %s",
 				sstr.str(),
-				plotReadNotification->plotList.size(),
-				memToString(totalSizeBytes, 2),
 				Poco::DateTimeFormatter::format(span, "%s.%i"),
-				memToString(static_cast<Poco::UInt64>(bytesPerSecond), 2));
+				memToString(static_cast<Poco::UInt64>(bytesPerSecond), 2),
+				plotReadNotification->plotList.size(),
+				memToString(totalSizeBytes, 2));
 		}
 	}
 }
