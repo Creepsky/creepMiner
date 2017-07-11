@@ -21,10 +21,10 @@ endif ()
 ##################################################################
 # LOG_TERMINAL / LOG_SERVICE
 ##################################################################
-set(LOG_OUTPUT "Terminal" CACHE STRING "Logging output location")
-set_property(CACHE LOG_OUTPUT PROPERTY STRINGS Terminal Service) 
+set(LOG_OUTPUT "TERMINAL" CACHE STRING "Logging output location")
+set_property(CACHE LOG_OUTPUT PROPERTY STRINGS TERMINAL SERVICE) 
 
-if (LOG_OUTPUT STREQUAL "Service")
+if (LOG_OUTPUT STREQUAL "SERVICE")
 	set(LOG_OUTPUT_FLAG "-DLOG_SERVICE")
 else ()
 	set(LOG_OUTPUT_FLAG "-DLOG_TERMINAL")
@@ -67,8 +67,8 @@ endif ()
 ##################################################################
 # GPU acceleration
 ##################################################################
-set(GPU_ACCELERATION "None" CACHE STRING "GPU acceleration")
-set_property(CACHE GPU_ACCELERATION PROPERTY STRINGS None CUDA) 
+set(GPU_ACCELERATION "NONE" CACHE STRING "GPU acceleration")
+set_property(CACHE GPU_ACCELERATION PROPERTY STRINGS NONE CUDA) 
 
 if (GPU_ACCELERATION STREQUAL "CUDA")
 	find_package(CUDA)
