@@ -1,4 +1,4 @@
-﻿// ==========================================================================
+// ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
 // Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
@@ -21,35 +21,43 @@
 
 #pragma once
 
-#include <string>
-#include <Poco/URI.h>
-#include <Poco/Net/IPAddress.h>
-#include <memory>
-#include <functional>
-
-namespace Poco { namespace Net
-{
-	class HTTPClientSession;
-	class HTTPSessionFactory;
-} }
+#include "shabal/mshabal/mshabal.h"
 
 namespace Burst
 {
-	class Url
+	struct Mshabal_sse4_Impl
 	{
-	public:
-		Url() = default;
-		Url(const std::string& url, const std::string& defaultScheme = "", unsigned short defaultPort = 0);
+		static constexpr size_t HashSize = 4;
 
-		std::string getCanonical(bool withScheme = false) const;
-		std::string getIp() const;
-		uint16_t getPort() const;
-		const Poco::URI& getUri() const;
-		bool empty() const;
-		std::unique_ptr<Poco::Net::HTTPClientSession> createSession() const;
+		using context_t = mshabal_context;
 
-	private:
-		Poco::URI uri_;
-		Poco::Net::IPAddress ip_;
+		static void init(context_t& context)
+		{
+			sse4_mshabal_init(&context, 256);
+		}
+
+		static void update(context_t& context, const void* data, size_t length)
+		{
+			update(context, data, data, data, data, length);
+		}
+
+		static void update(context_t& context,
+			const void* data1, const void* data2, const void* data3, const void* data4,
+			size_t length)
+		{
+			sse4_mshabal(&context, data1, data2, data3, data4, length);
+		}
+
+		static void close(context_t& context, void* output)
+		{
+			sse4_mshabal_close(&context, 0, 0, 0, 0, 0, output, nullptr, nullptr, nullptr);
+		}
+
+		static void close(context_t& context,
+			void* out1, void* out2, void* out3, void* out4)
+		{
+			sse4_mshabal_close(&context, 0, 0, 0, 0, 0, out1, out2, out3, out4);
+		}
 	};
 }
+
