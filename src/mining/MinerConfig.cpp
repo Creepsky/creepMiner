@@ -126,33 +126,6 @@ T getOrAdd(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValu
 	return defaultValue;
 }
 
-template <typename T>
-T getOrAddAlt(Poco::JSON::Object::Ptr object, Poco::JSON::Object::Ptr alt, const std::string& key, T defaultValue, std::string altkey = "")
-{
-	auto json = object->get(key);
-	Poco::Dynamic::Var jsonAlt;
-
-	if (altkey.empty())
-		altkey = key;
-
-	if (!alt.isNull() && alt->has(altkey))
-		jsonAlt = alt->get(altkey);
-
-	alt->remove(altkey);
-
-	T defaultOrAltValue = defaultValue;
-
-	if (!jsonAlt.isEmpty())
-		defaultOrAltValue = jsonAlt.extract<T>();
-
-	if (json.isEmpty())
-		object->set(key, defaultOrAltValue);
-	else if (json.type() == typeid(T))
-		return json.extract<T>();
-
-	return defaultOrAltValue;
-}
-
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 {
 	poco_ndc(readConfigFile);
@@ -208,12 +181,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 
 	auto checkCreateUrlFunc = [&config](Poco::JSON::Object::Ptr urlsObj, const std::string& name, Url& url,
-		const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl, std::string altName = "", bool forceInsert = false)
+		const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl, bool forceInsert = false)
 	{
-		if (altName.empty())
-			altName = name;
-
-		auto var = getOrAddAlt(urlsObj, config, name, createUrl, altName);
+		auto var = getOrAdd(urlsObj, name, createUrl);
 
 		if (var.empty() && forceInsert)
 		{
@@ -284,35 +254,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		// output
 		{
-			Poco::JSON::Object::Ptr outputObj = nullptr;
+			Poco::JSON::Object::Ptr outputObj;
 
-			// the output element can occur in two places:
-			//  a) the old one, directly under the root element
-			//  b) the new one, inside the logging element
 			auto outputLoggingObj = readOutput(loggingObj->getObject("output"));
-			auto outputConfigObj = readOutput(config->getObject("output"));
 
-			// the plan is
-			//  - use the new one
-			//  - if its not there, but the old one exists, move it to the new place
-			//  - otherwise create it
-
-			// new one exists
 			if (!outputLoggingObj.isNull())
 				outputObj = outputLoggingObj;
-			// old one exists
-			else if (!outputConfigObj.isNull())
-			{
-				// if only the old one exists, move it to the new place
-				if (outputLoggingObj.isNull())
-					outputObj = outputConfigObj;
-
-				// delete the old one
-				config->remove("output");
-			}
-			// none exists
 			else
-				outputObj = new Poco::JSON::Object;
+				outputObj.assign(new Poco::JSON::Object);
 
 			outputObj = readOutput(outputObj);
 
@@ -331,25 +280,23 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		else
 			miningObj = new Poco::JSON::Object;
 
-		submission_max_retry_ = getOrAddAlt(miningObj, config, "submissionMaxRetry", 3);
-		maxBufferSizeMB_ = getOrAddAlt(miningObj, config, "maxBufferSizeMB", 256);
+		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 3);
+		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 256);
 
 		if (maxBufferSizeMB_ == 0)
 			maxBufferSizeMB_ = 256;
 
-		auto timeout = getOrAddAlt(miningObj, config, "timeout", 30);
+		auto timeout = getOrAdd(miningObj, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
 
-		miningIntensity_ = getOrAddAlt(miningObj, config, "intensity", 3, "miningIntensity");
-		
-		auto maxPlotReaders = getOrAddAlt(miningObj, config, "maxPlotReaders", 0);
-		maxPlotReaders_ = maxPlotReaders;
+		miningIntensity_ = getOrAdd(miningObj, "intensity", 3);
+		maxPlotReaders_ = getOrAdd(miningObj, "maxPlotReaders", 0);
 
-		walletRequestTries_ = getOrAddAlt(miningObj, config, "walletRequestTries", 5);
-		walletRequestRetryWaitTime_ = getOrAddAlt(miningObj, config, "walletRequestRetryWaitTime", 3);
+		walletRequestTries_ = getOrAdd(miningObj, "walletRequestTries", 5);
+		walletRequestRetryWaitTime_ = getOrAdd(miningObj, "walletRequestRetryWaitTime", 3);
 
 		// use insecure plotfiles
-		useInsecurePlotfiles_ = getOrAddAlt(miningObj, config, "useInsecurePlotfiles", false);
+		useInsecurePlotfiles_ = getOrAdd(miningObj, "useInsecurePlotfiles", false);
 
 		// urls
 		{
@@ -378,7 +325,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			try
 			{
 				Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
-				auto plotsArr = getOrAddAlt(miningObj, config, "plots", arr);
+				auto plotsArr = getOrAdd(miningObj, "plots", arr);
 
 				auto plotsDyn = miningObj->get("plots");
 
@@ -490,13 +437,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		// target deadline
 		{
 			auto targetDeadline = miningObj->get("targetDeadline");
-			auto targetDeadlineAlt = config->get("targetDeadline");
-
-			if (targetDeadline.isEmpty())
-				targetDeadline = targetDeadlineAlt;
-
-			config->remove("targetDeadline");
-			miningObj->set("targetDeadline", targetDeadline);
 
 			if (!targetDeadline.isEmpty())
 			{
@@ -527,14 +467,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			try
 			{
 				auto passphraseJson = miningObj->get("passphrase");
-				auto passphraseJsonAlt = config->get("passphrase");
 				Poco::JSON::Object::Ptr passphrase = nullptr;
-
-				if (passphraseJson.isEmpty())
-					passphraseJson = passphraseJsonAlt;
-
-				config->remove("passphrase");
-				miningObj->set("passphrase", passphraseJson);
 
 				if (!passphraseJson.isEmpty())
 					passphrase = passphraseJson.extract<Poco::JSON::Object::Ptr>();
@@ -626,8 +559,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		else
 			webserverObj.assign(new Poco::JSON::Object);
 
-		startServer_ = getOrAddAlt(webserverObj, config, "start", true, "Start Server");
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", "serverUrl", startServer_);
+		startServer_ = getOrAdd(webserverObj, "start", true);
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", startServer_);
 
 		// credentials
 		{
@@ -644,7 +577,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			if (credentials.isNull())
 			{
-				credentials = new Poco::JSON::Object;
+				credentials.assign(new Poco::JSON::Object);
 				webserverObj->set("credentials", credentials);
 			}
 
