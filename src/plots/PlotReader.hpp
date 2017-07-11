@@ -30,7 +30,8 @@
 #include <Poco/Task.h>
 #include <atomic>
 #include <Poco/Notification.h>
-#include "MinerConfig.hpp"
+#include "mining/MinerConfig.hpp"
+#include "Plot.hpp"
 
 namespace Poco
 {
@@ -40,7 +41,6 @@ namespace Poco
 namespace Burst
 {
 	class Miner;
-	class PlotFile;
 	class PlotReadProgress;
 
 	class GlobalBufferSize

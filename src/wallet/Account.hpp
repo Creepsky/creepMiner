@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "Deadline.hpp"
+#include "mining/Deadline.hpp"
 #include <Poco/Nullable.h>
 #include <unordered_map>
 #include <Poco/Activity.h>

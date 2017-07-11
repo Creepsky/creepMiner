@@ -22,7 +22,7 @@
 #include "MinerLogger.hpp"
 #include <iostream>
 #include <mutex>
-#include "MinerConfig.hpp"
+#include "mining/MinerConfig.hpp"
 #include <Poco/NestedDiagnosticContext.h>
 #include "MinerUtil.hpp"
 #include <sstream>
@@ -43,7 +43,7 @@
 #include "Output.hpp"
 #include <fstream>
 #include <Poco/FileStream.h>
-#include "MinerData.hpp"
+#include "mining/MinerData.hpp"
 #include "Console.hpp"
 #include "channels/MinerDataChannel.hpp"
 #include "ProgressPrinter.hpp"

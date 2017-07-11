@@ -24,7 +24,7 @@
 #include <memory>
 #include <Poco/JSON/Object.h>
 #include "Declarations.hpp"
-#include "Url.hpp"
+#include "network/Url.hpp"
 
 namespace Poco
 {

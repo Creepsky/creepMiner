@@ -27,11 +27,11 @@
 #include "logging/MinerLogger.hpp"
 #include <Poco/URI.h>
 #include <Poco/Net/HTTPClientSession.h>
-#include "Deadline.hpp"
+#include "mining/Deadline.hpp"
 #include <Poco/JSON/Object.h>
-#include "MinerConfig.hpp"
-#include "MinerData.hpp"
-#include "PlotReader.hpp"
+#include "mining/MinerConfig.hpp"
+#include "mining/MinerData.hpp"
+#include "plots/PlotReader.hpp"
 #include <Poco/JSON/Parser.h>
 #include <locale>
 #include <regex>
@@ -41,12 +41,12 @@
 #include <Poco/Crypto/CipherFactory.h>
 #include <Poco/Random.h>
 #include <Poco/NestedDiagnosticContext.h>
-#include "Account.hpp"
+#include "wallet/Account.hpp"
 #include <Poco/HMACEngine.h>
 #include <Poco/SHA1Engine.h>
 #include <Poco/File.h>
 #include <fstream>
-#include "PlotSizes.hpp"
+#include "plots/PlotSizes.hpp"
 
 bool Burst::isNumberStr(const std::string& str)
 {

@@ -21,7 +21,7 @@
 
 #include "MinerDataChannel.hpp"
 #include <Poco/Message.h>
-#include "MinerData.hpp"
+#include "mining/MinerData.hpp"
 
 Burst::MinerDataChannel::MinerDataChannel()
 	: minerData_{ nullptr }

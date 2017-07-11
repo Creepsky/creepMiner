@@ -20,8 +20,8 @@
 // ==========================================================================
 
 #include "PlotVerifier.hpp"
-#include "MinerShabal.hpp"
-#include "Miner.hpp"
+#include "shabal/MinerShabal.hpp"
+#include "mining/Miner.hpp"
 #include "logging/MinerLogger.hpp"
 #include "PlotReader.hpp"
 #include <atomic>

@@ -23,7 +23,7 @@
 #include "MinerUtil.hpp"
 #include <algorithm>
 #include "nxt/nxt_address.h"
-#include "Account.hpp"
+#include "wallet/Account.hpp"
 #include "MinerData.hpp"
 
 Burst::Deadline::Deadline(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile,

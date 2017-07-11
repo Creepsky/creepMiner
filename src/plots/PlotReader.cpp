@@ -22,13 +22,14 @@
 #include "PlotReader.hpp"
 #include "MinerUtil.hpp"
 #include "logging/MinerLogger.hpp"
-#include "MinerConfig.hpp"
+#include "mining/MinerConfig.hpp"
 #include <fstream>
-#include "Miner.hpp"
+#include "mining/Miner.hpp"
 #include <Poco/NotificationQueue.h>
 #include "PlotVerifier.hpp"
 #include <Poco/Timestamp.h>
 #include "logging/Output.hpp"
+#include "Plot.hpp"
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 

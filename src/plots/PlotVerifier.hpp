@@ -27,7 +27,7 @@
 #include <Poco/AutoPtr.h>
 #include <Poco/Notification.h>
 #include <Poco/NotificationQueue.h>
-#include "MinerShabal.hpp"
+#include "shabal/MinerShabal.hpp"
 
 namespace Burst
 {

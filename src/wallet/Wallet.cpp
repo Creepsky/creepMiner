@@ -22,8 +22,8 @@
 #include "Wallet.hpp"
 #include "MinerUtil.hpp"
 #include <Poco/Net/HTTPClientSession.h>
-#include "MinerConfig.hpp"
-#include "Request.hpp"
+#include "mining/MinerConfig.hpp"
+#include "network/Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/JSON/Parser.h>
 #include <cassert>

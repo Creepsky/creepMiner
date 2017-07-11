@@ -21,11 +21,11 @@
 
 #include "NonceSubmitter.hpp"
 #include "logging/MinerLogger.hpp"
-#include "Deadline.hpp"
+#include "mining/Deadline.hpp"
 #include "MinerUtil.hpp"
 #include "Request.hpp"
-#include "MinerConfig.hpp"
-#include "Miner.hpp"
+#include "mining/MinerConfig.hpp"
+#include "mining/Miner.hpp"
 #include <fstream>
 #include "logging/Output.hpp"
 #include <chrono>

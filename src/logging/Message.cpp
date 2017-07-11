@@ -24,7 +24,7 @@
 #include <sstream>
 #include <memory>
 #include "MinerLogger.hpp"
-#include "MinerConfig.hpp"
+#include "mining/MinerConfig.hpp"
 #include <memory>
 #include "MinerUtil.hpp"
 

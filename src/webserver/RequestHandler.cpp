@@ -29,12 +29,12 @@
 #include "MinerUtil.hpp"
 #include <Poco/JSON/Object.h>
 #include "MinerServer.hpp"
-#include "Miner.hpp"
+#include "mining/Miner.hpp"
 #include <Poco/NestedDiagnosticContext.h>
-#include "Request.hpp"
-#include "MinerConfig.hpp"
+#include "network/Request.hpp"
+#include "mining/MinerConfig.hpp"
 #include <Poco/Net/HTTPClientSession.h>
-#include "PlotSizes.hpp"
+#include "plots/PlotSizes.hpp"
 #include <Poco/Logger.h>
 #include <Poco/Base64Decoder.h>
 #include <Poco/StreamCopier.h>

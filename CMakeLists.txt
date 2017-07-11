@@ -155,7 +155,19 @@ set(HEADER_FILES
 	src/logging/MinerLogger.hpp
 	src/logging/Output.hpp
 	src/logging/ProgressPrinter.hpp
+	src/mining/Deadline.hpp
+	src/mining/Miner.hpp
+	src/mining/MinerConfig.hpp
+	src/mining/MinerData.hpp
+	src/network/NonceSubmitter.hpp
+	src/network/Response.hpp
+	src/network/Request.hpp
+	src/network/Url.hpp
 	src/nxt/nxt_address.h
+	src/plots/Plot.hpp
+	src/plots/PlotReader.hpp
+	src/plots/PlotSizes.hpp
+	src/plots/PlotVerifier.hpp
 	src/shabal/cuda/Shabal.hpp
 	src/shabal/impl/mshabal_avx_impl.hpp
 	src/shabal/impl/mshabal_avx2_impl.hpp
@@ -163,24 +175,13 @@ set(HEADER_FILES
 	src/shabal/mshabal/mshabal.h
 	src/shabal/sphlib/sph_shabal.h
 	src/shabal/sphlib/sph_types.h
+	src/shabal/MinerShabal.hpp
+	src/wallet/Account.hpp
+	src/wallet/Wallet.hpp
 	src/webserver/MinerServer.hpp
 	src/webserver/RequestHandler.hpp
-	src/Account.hpp
-	src/Deadline.hpp
 	src/Declarations.hpp
-	src/Miner.hpp
-	src/MinerConfig.hpp
-	src/MinerData.hpp
-	src/MinerShabal.hpp
 	src/MinerUtil.hpp
-	src/NonceSubmitter.hpp
-	src/PlotReader.hpp
-	src/PlotSizes.hpp
-	src/PlotVerifier.hpp
-	src/Request.hpp
-	src/Response.hpp
-	src/Url.hpp
-	src/Wallet.hpp
 	src/resources.rc)
 
 ##################################################################
@@ -194,26 +195,27 @@ set(SOURCE_FILES
 	src/logging/MinerLogger.cpp
 	src/logging/Output.cpp
 	src/logging/ProgressPrinter.cpp
+	src/mining/Deadline.cpp
+	src/mining/Miner.cpp
+	src/mining/MinerConfig.cpp
+	src/mining/MinerData.cpp
+	src/network/NonceSubmitter.cpp
+	src/network/Response.cpp
+	src/network/Request.cpp
+	src/network/Url.cpp
 	src/nxt/nxt_address.cpp
+	src/plots/Plot.cpp
+	src/plots/PlotReader.cpp
+	src/plots/PlotSizes.cpp
+	src/plots/PlotVerifier.cpp
+	src/wallet/Account.cpp
+	src/wallet/Wallet.cpp
 	src/shabal/sphlib/sph_shabal.cpp
 	src/webserver/MinerServer.cpp
 	src/webserver/RequestHandler.cpp
-	src/Account.cpp
-	src/Deadline.cpp
 	src/Declarations.cpp
 	src/main.cpp
-	src/Miner.cpp
-	src/MinerConfig.cpp
-	src/MinerData.cpp
-	src/MinerUtil.cpp
-	src/NonceSubmitter.cpp
-	src/PlotReader.cpp
-	src/PlotSizes.cpp
-	src/PlotVerifier.cpp
-	src/Request.cpp
-	src/Response.cpp
-	src/Url.cpp
-	src/Wallet.cpp)
+	src/MinerUtil.cpp)
 
 ##################################################################
 # GPU acceleration source files

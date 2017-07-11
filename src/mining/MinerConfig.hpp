@@ -24,7 +24,7 @@
 #include <memory>
 #include <vector>
 #include <Poco/Net/HTTPClientSession.h>
-#include "Url.hpp"
+#include "network/Url.hpp"
 #include <Poco/Path.h>
 #include <Poco/JSON/Object.h>
 #include <functional>
@@ -36,6 +36,8 @@ namespace Poco
 
 namespace Burst
 {
+	class PlotDir;
+	class PlotFile;
 	class MinerData;
 
 	enum class HostType
@@ -44,60 +46,6 @@ namespace Burst
 		Wallet,
 		MiningInfo,
 		Server
-	};
-
-	class PlotFile
-	{
-	public:
-		PlotFile(std::string&& path, Poco::UInt64 size);
-
-		const std::string& getPath() const;
-		Poco::UInt64 getSize() const;
-		
-	private:
-		std::string path_;
-		Poco::UInt64 size_;
-	};
-
-	class PlotDir
-	{
-	public:
-		enum class Type
-		{
-			Sequential,
-			Parallel
-		};
-
-		using PlotList = std::vector<std::shared_ptr<PlotFile>>;
-
-		PlotDir(std::string path, Type type);
-		PlotDir(std::string path, const std::vector<std::string>& relatedPaths, Type type);
-
-		/**
-		 * \brief Returns all plot files inside the directory.
-		 * \param recursive If true, also all plot files in all related plot directories are count.
-		 * \return A list of all plot files.
-		 */
-		PlotList getPlotfiles(bool recursive = false) const;
-		const std::string& getPath() const;
-		Poco::UInt64 getSize() const;
-		Type getType() const;
-		std::vector<std::shared_ptr<PlotDir>> getRelatedDirs() const;
-		const std::string& getHash() const;
-		void rescan();
-
-	private:
-		bool addPlotLocation(const std::string& fileOrPath);
-		std::shared_ptr<PlotFile> addPlotFile(const Poco::File& file);
-
-		void recalculateHash();
-
-		std::string path_;
-		Type type_;
-		Poco::UInt64 size_;
-		PlotList plotfiles_;
-		std::vector<std::shared_ptr<PlotDir>> relatedDirs_;
-		std::string hash_;
 	};
 
 	/**

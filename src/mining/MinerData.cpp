@@ -23,11 +23,11 @@
 #include <Poco/ScopedLock.h>
 #include "MinerConfig.hpp"
 #include "logging/MinerLogger.hpp"
-#include "MinerShabal.hpp"
+#include "shabal/MinerShabal.hpp"
 #include "logging/Output.hpp"
 #include "MinerUtil.hpp"
-#include "Wallet.hpp"
-#include "Account.hpp"
+#include "wallet/Wallet.hpp"
+#include "wallet/Account.hpp"
 
 Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent)
 	: blockHeight_ {blockHeight},

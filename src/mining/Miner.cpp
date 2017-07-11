@@ -23,18 +23,19 @@
 #include "logging/MinerLogger.hpp"
 #include "logging/Output.hpp"
 #include "MinerConfig.hpp"
-#include "PlotReader.hpp"
+#include "plots/PlotReader.hpp"
 #include "MinerUtil.hpp"
 #include "nxt/nxt_address.h"
-#include "Response.hpp"
-#include "Request.hpp"
+#include "network/Response.hpp"
+#include "network/Request.hpp"
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/JSON/Object.h>
-#include "NonceSubmitter.hpp"
+#include "network/NonceSubmitter.hpp"
 #include <Poco/JSON/Parser.h>
 #include <Poco/NestedDiagnosticContext.h>
-#include "PlotSizes.hpp"
+#include "plots/PlotSizes.hpp"
+#include "plots/Plot.hpp"
 
 namespace Burst
 {

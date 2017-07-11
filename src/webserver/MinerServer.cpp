@@ -30,8 +30,8 @@
 #include <Poco/File.h>
 #include "logging/MinerLogger.hpp"
 #include <Poco/URI.h>
-#include "Miner.hpp"
-#include "MinerConfig.hpp"
+#include "mining/Miner.hpp"
+#include "mining/MinerConfig.hpp"
 #include <Poco/Path.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include <Poco/String.h>

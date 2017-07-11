@@ -19,9 +19,9 @@
 // 
 // ==========================================================================
 
-#include "Miner.hpp"
+#include "mining/Miner.hpp"
 #include "logging/MinerLogger.hpp"
-#include "MinerConfig.hpp"
+#include "mining/MinerConfig.hpp"
 #include "MinerUtil.hpp"
 #include <Poco/Net/SSLManager.h>
 #include "Poco/Net/ConsoleCertificateHandler.h"
@@ -32,7 +32,7 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "webserver/MinerServer.hpp"
 #include <Poco/Logger.h>
-#include "Request.hpp"
+#include "network/Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
 
 class SSLInitializer

@@ -24,14 +24,14 @@
 #include "Declarations.hpp"
 #include "Deadline.hpp"
 #include <memory>
-#include "Account.hpp"
-#include "Wallet.hpp"
+#include "wallet/Account.hpp"
+#include "wallet/Wallet.hpp"
 #include <Poco/TaskManager.h>
 #include "MinerData.hpp"
 #include <Poco/NotificationQueue.h>
-#include "PlotVerifier.hpp"
+#include "plots/PlotVerifier.hpp"
 #include "WorkerList.hpp"
-#include "Response.hpp"
+#include "network/Response.hpp"
 
 namespace Poco
 {

@@ -23,16 +23,16 @@
 #include "Response.hpp"
 #include "nxt/nxt_address.h"
 #include "logging/MinerLogger.hpp"
-#include "MinerConfig.hpp"
+#include "mining/MinerConfig.hpp"
 #include "Poco/Net/HTTPClientSession.h"
 #include "Poco/Net/HTTPRequest.h"
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/NestedDiagnosticContext.h>
 #include "Poco/StreamCopier.h"
 #include "Declarations.hpp"
-#include "PlotSizes.hpp"
+#include "plots/PlotSizes.hpp"
 #include <Poco/Net/HTMLForm.h>
-#include "Deadline.hpp"
+#include "mining/Deadline.hpp"
 #include <Poco/Base64Encoder.h>
 
 using namespace Poco::Net;
