@@ -1156,7 +1156,7 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 
 	if (!logfile_)
 		log_system(MinerLogger::config, "Logfile deactivated");
-	else if (log_dir.empty())
+	else if (logDirAndFile.empty())
 		log_warning(MinerLogger::config, "Could not create logfile");
 	else
 		log_system(MinerLogger::config, "Changed logfile path to\n\t%s", logDirAndFile);
