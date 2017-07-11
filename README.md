@@ -7,10 +7,6 @@ The creepMiner is a client application for mining Burst on a pool or solo. For m
 It is written in C++ and therefore can be compiled on different operating systems.
 It is designed multi-threaded to reach the best performance.
 
-## Fork
-
-This is a (standalone) fork of the burst-miner found on [this github repository](https://github.com/uraymeiviar/burst-miner).
-
 ## Features
 
 - Mine with your **CPU** (__AVX__/__AVX2__) or your Nvidia **GPU**
@@ -28,8 +24,7 @@ This is a (standalone) fork of the burst-miner found on [this github repository]
 
 ## Instructions
 
-### [Quickstart](https://github.com/Creepsky/creepMiner/wiki/Quickstart)
-
+- [Quickstart](https://github.com/Creepsky/creepMiner/wiki/Quickstart)
 - [Compilation & Installation](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation)
 - [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Forwarding](https://github.com/Creepsky/creepMiner/wiki/Forwarding)
@@ -40,15 +35,3 @@ This is a (standalone) fork of the burst-miner found on [this github repository]
 
 - [POCO C++ libraries](https://pocoproject.org) ([Boost Software License 1.0](https://pocoproject.org/license.html))
 - [OpenSSL](https://www.openssl.org) ([Apache style license](https://www.openssl.org/source/license.html))
-
-## Contribution
-
-We are glad about every contribution to the project. Dont hesitate to open an issue, if you found a bug (with or without fix) or have an idea for a new feature!
-
-If you want to share your own code, please follow these steps:
-- create a fork of this repository
-- add a new branch for your changings
-- add your changes to the code
-- dont forget to mention the issue number in the commit messages (just write something like ```<message> #<id>```)
-- open a pull request and try to describe what the change is for
-- done :)

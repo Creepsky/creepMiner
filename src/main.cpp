@@ -68,12 +68,6 @@ int main(int argc, const char* argv[])
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
 	log_information(general, "Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
 	log_information(general, "----------------------------------------------");
-	log_unimportant(general, "Based on http://github.com/uraymeiviar/burst-miner");
-	log_unimportant(general, "author : uray meiviar [ uraymeiviar@gmail.com ]");
-	log_unimportant(general, "please donate to support developments :");
-	log_unimportant(general, " [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX");
-	log_unimportant(general, " [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b");
-	log_unimportant(general, "----------------------------------------------");
 
 	std::string configFile = "mining.conf";
 
@@ -81,7 +75,7 @@ int main(int argc, const char* argv[])
 	{
 		if (argv[1][0] == '-')
 		{
-			log_information(general, "usage : burstminer <config-file>");
+			log_information(general, "usage : creepMiner <config-file>");
 			log_information(general, "if no config-file specified, program will look for mining.conf file inside current directory");
 		}
 		configFile = std::string(argv[1]);
