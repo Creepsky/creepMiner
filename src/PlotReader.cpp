@@ -288,12 +288,12 @@ void Burst::PlotReader::runTask()
 
 			log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone),
 				"Dir %s read in %ss (~%s/s)\n"
-				"\tfiles: %z,\n"
-				"\tsize:  %s",
+				"\t%z %s (%s)",
 				sstr.str(),
 				Poco::DateTimeFormatter::format(span, "%s.%i"),
 				memToString(static_cast<Poco::UInt64>(bytesPerSecond), 2),
 				plotReadNotification->plotList.size(),
+				plotReadNotification->plotList.size() == 1 ? std::string("file") : std::string("files"),
 				memToString(totalSizeBytes, 2));
 		}
 	}
