@@ -71,13 +71,13 @@ set(GPU_ACCELERATION "NONE" CACHE STRING "GPU acceleration")
 set_property(CACHE GPU_ACCELERATION PROPERTY STRINGS NONE CUDA) 
 
 if (GPU_ACCELERATION STREQUAL "CUDA")
-	find_package(CUDA)
+	find_package(CUDA REQUIRED)
 	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-cuda)
+	set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
 	set(CUDA_NVCC_FLAGS
 		${CUDA_NVCC_FLAGS}
-		-O3 -std=c++11 -gencode arch=compute_52,code=sm_52
-		-arch=sm_61
-		-gencode=arch=compute_20,code=sm_20
+		-O3 -std=c++11
+		-arch=${GPU_CUDA_ARCH}
 		-gencode=arch=compute_30,code=sm_30
 		-gencode=arch=compute_50,code=sm_50
 		-gencode=arch=compute_52,code=sm_52
