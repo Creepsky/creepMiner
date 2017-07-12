@@ -93,8 +93,8 @@ void Burst::MinerConfig::printUrl(HostType type) const
 
 	switch (type)
 	{
-	case HostType::MiningInfo: return printUrl(urlMiningInfo_, "Submission URL");
-	case HostType::Pool: return printUrl(urlPool_, "Mininginfo URL");
+	case HostType::MiningInfo: return printUrl(urlMiningInfo_, "Mininginfo URL");
+	case HostType::Pool: return printUrl(urlPool_, "Submission URL");
 	case HostType::Wallet: return printUrl(urlWallet_, "Wallet URL");
 	case HostType::Server: return printUrl(serverUrl_, "Server URL");
 	}

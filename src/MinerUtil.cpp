@@ -692,7 +692,7 @@ std::string Burst::createTruncatedString(const std::string& string, size_t paddi
 {
 	std::string padded_string;
 
-	for (auto i = 0u; i < string.size(); i += size)
+	for (size_t i = 0; i < string.size(); i += size)
 	{
 		auto max_size = std::min(size, string.size());
 
