@@ -88,11 +88,12 @@ function parsePlots() {
 
         plotDir["plotfiles"].forEach(function (plotFile, index, array) {
             var path = plotFile["path"];
-            var path_tokens = path.split("_");
-            var account = (path_tokens[0].split('\\').pop().split('/').pop().split('.'))[0];
-            var start_nonce = path_tokens[1];
-            var nonces = path_tokens[2];
-            var staggersize = path_tokens[3];
+            var filename = path.replace(/^.*[\\\/]/, '');
+            var filename_tokens = filename.split("_");
+            var account = filename_tokens[0];
+            var start_nonce = filename_tokens[1];
+            var nonces = filename_tokens[2];
+            var staggersize = filename_tokens[3];
             var size = plotFile["size"];
             var lineFile = createPlotfileLine(account, start_nonce, nonces, staggersize, size);
 
