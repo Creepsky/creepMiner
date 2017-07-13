@@ -97,6 +97,11 @@ option(OVERWRITE_MINING_CONF "If yes, on install the mining.conf will be overwri
 # UNIX / BSD specific
 ##################################################################
 if (UNIX OR APPLE)
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${LOG_OUTPUT_FLAG}")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} -O3")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${LOG_OUTPUT_FLAG} -O3")
+	set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${LOG_OUTPUT_FLAG} -O3")
+	 
 	add_definitions(
 		${LOG_OUTPUT_FLAG}
 		-D_REENTRANT
