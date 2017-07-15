@@ -17,16 +17,12 @@ You can log in with your **github.com** account.
 Please tell exactly what was wrong, how often it is or was wrong, how it normally works and what you changed.
 Also it would be really helpful to get a log file and your configuration file that you can attach by simply drag and drop it into the issue window.
 
-You can use the following template and fill in your data:
+Thank you very much!
 
-```
+You can use the following template and fill in your data (simply delete the rest of the issue template):
+
 **OS**: Linux Mint 18.2
 **APP-VERSION**: 1.6.0
 **APP-BRANCH**: development
 **EXECUTABLE**: self compiled
 **CMAKE-SETTINGS**: cmake -DCMAKE_BUILD_TYPE=RELEASE -DCPU_INSTRUCTION_SET=AVX
-
-your issue description here
-```
-
-Thank you very much!
