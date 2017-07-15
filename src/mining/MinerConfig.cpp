@@ -120,10 +120,19 @@ T getOrAdd(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValu
 
 	if (json.isEmpty())
 		object->set(key, defaultValue);
-	else if (json.type() == typeid(T))
-		return json.extract<T>();
 
-	return defaultValue;
+	return json.convert<T>();
+}
+
+template <typename T>
+T getOrAddExtract(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValue)
+{
+	auto json = object->get(key);
+
+	if (json.isEmpty())
+		object->set(key, defaultValue);
+
+	return json.extract<T>();
 }
 
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
@@ -325,7 +334,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			try
 			{
 				Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
-				auto plotsArr = getOrAdd(miningObj, "plots", arr);
+				auto plotsArr = getOrAddExtract(miningObj, "plots", arr);
 
 				auto plotsDyn = miningObj->get("plots");
 
