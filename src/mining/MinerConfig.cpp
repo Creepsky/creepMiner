@@ -119,8 +119,11 @@ T getOrAdd(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValu
 	auto json = object->get(key);
 
 	if (json.isEmpty())
+	{
 		object->set(key, defaultValue);
-
+		return defaultValue;
+	}
+	
 	return json.convert<T>();
 }
 
