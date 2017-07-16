@@ -187,8 +187,19 @@ void Burst::RequestHandler::forward(Poco::Net::HTTPServerRequest& request, Poco:
 
 	try
 	{
+		// HTTPRequest has a private copy constructor, so we need to copy
+		// all fields one by one
+		Poco::Net::HTTPRequest forwardingRequest;
+		forwardingRequest.setURI(request.getURI());
+		forwardingRequest.setMethod(request.getMethod());
+		forwardingRequest.setContentLength(request.getContentLength());
+		forwardingRequest.setTransferEncoding(request.getTransferEncoding());
+		forwardingRequest.setChunkedTransferEncoding(request.getChunkedTransferEncoding());
+		forwardingRequest.setKeepAlive(request.getKeepAlive());
+		forwardingRequest.setVersion(request.getVersion());
+
 		Request forwardRequest{ std::move(session) };
-		auto forwardResponse = forwardRequest.send(request);
+		auto forwardResponse = forwardRequest.send(forwardingRequest);
 
 		log_debug(MinerLogger::server, "Request forwarded, waiting for response...");
 
