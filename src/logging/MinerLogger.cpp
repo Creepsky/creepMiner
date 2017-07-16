@@ -372,10 +372,8 @@ void Burst::MinerLogger::writeProgress(float progress)
 	if (static_cast<size_t>(progress) == static_cast<size_t>(lastProgress_))
 		return;
 
-	auto block = Console::print();
-
 	if (progressFlag_)
-		block->clearLine(false);
+		Console::print()->clearLine(false);
 
 	lastProgress_ = progress;
 	progressFlag_ = true;
