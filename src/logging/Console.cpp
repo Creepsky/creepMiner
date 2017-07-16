@@ -23,6 +23,7 @@
 #include "Console.hpp"
 #include <iostream>
 #include "mining/Miner.hpp"
+#include "MinerUtil.hpp"
 
 #ifdef _WIN32
 #include <wincon.h>

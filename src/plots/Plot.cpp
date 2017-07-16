@@ -27,6 +27,7 @@
 #include <Poco/DirectoryIterator.h>
 #include "logging/Message.hpp"
 #include "logging/MinerLogger.hpp"
+#include "MinerUtil.hpp"
 
 Burst::PlotFile::PlotFile(std::string&& path, Poco::UInt64 size)
 	: path_(move(path)), size_(size)
