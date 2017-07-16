@@ -117,7 +117,7 @@ void Burst::Console::resetColor()
 	setColor(ConsoleColor::White);
 #elif defined __linux__
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
+		std::lock_guard<std::recursive_mutex> lock(mutex_);
 		std::cout << "\033[0m";
 	}
 #endif
