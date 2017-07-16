@@ -26,6 +26,7 @@
 #include <memory>
 #include <functional>
 #include <unordered_map>
+#include "mining/MinerConfig.hpp"
 
 namespace Poco
 {
@@ -88,25 +89,6 @@ namespace Burst
 			LambdaRequestHandler(Lambda lambda);
 
 			/**
-			 * \brief Constructor.
-			 * \tparam TFunction The Function type.
-			 * \tparam TArgs The Function Argument types.
-			 * \param function The lambda function, that is called when processing a request.
-			 * The lambda function must have a signature, that starts with 
-			 * Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
-			 * followed by n >= 0 variadic arguments.
-			 * \param args The arguments, that are forwarded into the lambda function call.
-			 */
-			template <typename TFunction, typename ...TArgs>
-			LambdaRequestHandler(TFunction function, TArgs&&... args)
-			{
-				lambda_ = [function, &args...](Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
-				{
-					function(request, response, std::forward<TArgs&&>(args)...);
-				};
-			}
-
-			/**
 			 * \brief Handles an incoming HTTP request by expanding and executing the lambda.
 			 * \param request The HTTP request.
 			 * \param response The HTTP response.
@@ -155,10 +137,10 @@ namespace Burst
 		 * \brief Forwards a request to a destination and returns the response of it to the caller.
 		 * \param request The HTTP request.
 		 * \param response The HTTP response.
-		 * \param session The HTTP sesssion, that is the destination of the forwarding.
+		 * \param hostType The HTTP session host type, that is the destination of the forwarding.
 		 */
 		void forward(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
-		             std::unique_ptr<Poco::Net::HTTPClientSession> session);
+			HostType hostType);
 		
 		/**
 		 * \brief Sends a 400 Bad Request as a response to the caller.

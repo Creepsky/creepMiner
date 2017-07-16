@@ -230,7 +230,10 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 	if (request.find("Upgrade") != request.end() &&
 		icompare(request["Upgrade"], "websocket") == 0)
-		return new LambdaRequestHandler(RequestHandler::addWebsocket, *server_);
+		return new LambdaRequestHandler([&](req_t& req, res_t& res)
+		{
+			RequestHandler::addWebsocket(req, res, *server_);
+		});
 
 	log_debug(MinerLogger::server, "Request: %s", request.getURI());
 
@@ -279,11 +282,14 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		// shutdown everything
 		if (path_segments.front() == "shutdown")
-			return new LambdaRequestHandler(RequestHandler::shutdown, *server_->miner_, *server_);
+			return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			{
+				RequestHandler::shutdown(req, res, *server_->miner_, *server_);
+			});
 
 		// rescan plot files
 		if (path_segments.front() == "rescanPlotfiles")
-			return new LambdaRequestHandler(RequestHandler::rescanPlotfiles, *server_);
+			return new LambdaRequestHandler([&](req_t& req, res_t& res) { RequestHandler::rescanPlotfiles(req, res, *server_); });
 
 		// show/change settings
 		if (path_segments.front() == "settings")
@@ -298,14 +304,19 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 			// with body -> change
 			if (path_segments.size() > 1)
-				return new LambdaRequestHandler(RequestHandler::changeSettings, *server_->miner_);
+				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+				{
+					RequestHandler::changeSettings(req, res, *server_->miner_);
+				});
 		}
 
 		// show/change plot files
 		if (path_segments.front() == "plotdir")
 			if (path_segments.size() > 1)
-				return new LambdaRequestHandler(RequestHandler::changePlotDirs, *server_,
-					path_segments[1] == "remove" ? true : false);
+				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+				{
+					RequestHandler::changePlotDirs(req, res, *server_, path_segments[1] == "remove" ? true : false);
+				});
 
 		// forward function
 		if (path_segments.front() == "burst")
@@ -315,15 +326,24 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 			// send back local mining infos
 			if (uri.getQuery().compare(0, getMiningInfo.size(), getMiningInfo) == 0)
-				return new LambdaRequestHandler(RequestHandler::miningInfo, *server_->miner_);
+				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+				{
+					RequestHandler::miningInfo(req, res, *server_->miner_);
+				});
 
 			// forward nonce with combined capacity
 			if (uri.getQuery().compare(0, submitNonce.size(), submitNonce) == 0)
-				return new LambdaRequestHandler(RequestHandler::submitNonce, *server_, *server_->miner_);
+				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+				{
+					RequestHandler::submitNonce(req, res, *server_, *server_->miner_);
+				});
 
 			// just forward whatever the request is to the wallet
 			// why wallet? because the only requests to a pool are getMiningInfo and submitNonce and we handled them already
-			return new LambdaRequestHandler(RequestHandler::forward, MinerConfig::getConfig().createSession(HostType::Wallet));
+			return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			{
+				RequestHandler::forward(req, res, HostType::Wallet);
+			});
 		}
 
 		Path path {"public"};

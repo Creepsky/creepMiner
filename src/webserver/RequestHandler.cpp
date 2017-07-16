@@ -176,9 +176,10 @@ void Burst::RequestHandler::redirect(Poco::Net::HTTPServerRequest& request, Poco
 	response.redirect(redirectUri);
 }
 
-void Burst::RequestHandler::forward(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
-	std::unique_ptr<Poco::Net::HTTPClientSession> session)
+void Burst::RequestHandler::forward(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, HostType hostType)
 {
+	auto session = MinerConfig::getConfig().createSession(hostType);
+
 	if (session == nullptr)
 		return;
 
@@ -430,7 +431,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			request.set("X-Capacity", std::to_string(PlotSizes::getTotal()));
 
 			// forward the request to the pool
-			forward(request, response, MinerConfig::getConfig().createSession(HostType::Pool));
+			forward(request, response, HostType::Pool);
 		}
 	}
 	catch (Poco::Exception& exc)
