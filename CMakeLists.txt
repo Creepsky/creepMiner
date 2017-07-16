@@ -1,9 +1,9 @@
 ##################################################################
 # Project and CMake settings
 ##################################################################
-cmake_minimum_required(VERSION 3.2.2)
+cmake_minimum_required(VERSION 3.0.2)
 project(creepMiner VERSION 1.6.0)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 ##################################################################
 # Configuration types
@@ -33,8 +33,8 @@ endif ()
 ##################################################################
 # CPU instruction set
 ##################################################################
-set(CPU_INSTRUCTION_SET "SSE2" CACHE STRING "Additional CPU instruction set")
-set_property(CACHE CPU_INSTRUCTION_SET PROPERTY STRINGS None SSE2 SSE4 AVX AVX2)
+set(CPU_INSTRUCTION_SET "NONE" CACHE STRING "Additional CPU instruction set")
+set_property(CACHE CPU_INSTRUCTION_SET PROPERTY STRINGS NONE SSE2 SSE4 AVX AVX2)
 
 if (CPU_INSTRUCTION_SET STREQUAL "AVX2")
 	add_definitions(-DUSE_AVX2)
@@ -106,7 +106,8 @@ if (UNIX OR APPLE)
 		${LOG_OUTPUT_FLAG}
 		-D_REENTRANT
 		-Wall
-		-march=native)
+		-march=native
+		-std=c++14)
 
 	link_directories(/usr/local/lib)
 	include_directories(
@@ -307,15 +308,16 @@ elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
 	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse2)
 elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
 	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse4)
-else ()
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}"")
 endif ()
 
-set_target_properties(creepMiner PROPERTIES
-		DEBUG_POSTFIX ${CREEPMINER_POSTFIX}-d
+set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX ${CREEPMINER_POSTFIX}-d)
+
+if (NOT ${CREEPMINER_POSTFIX} STREQUAL "")
+	set_target_properties(creepMiner PROPERTIES
 		RELEASE_POSTFIX ${CREEPMINER_POSTFIX}
 		MINSIZEREL_POSTFIX ${CREEPMINER_POSTFIX}
 		RELWITHDEBINFO_POSTFIX ${CREEPMINER_POSTFIX})
+endif ()
 
 ##################################################################
 # Installing

@@ -148,14 +148,3 @@ namespace Burst
 	 */
 	std::string createTruncatedString(const std::string& string, size_t padding, size_t size);
 }
-
-#if !defined POCO_COMPILER_MSVC && __cplusplus < 201402L
-namespace std
-{
-	template<typename T, typename ...Args>
-	std::unique_ptr<T> make_unique(Args&& ...args)
-	{
-		return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-	}
-}
-#endif
