@@ -93,9 +93,6 @@ namespace Burst
 		template <typename T>
 		const PrintBlock& operator<< (const T& text) const
 		{
-			if (finished_)
-				return *this;
-
 			*stream_ << text;
 			return *this;
 		}
@@ -138,18 +135,10 @@ namespace Burst
 		 * \brief Resets the font color.
 		 */
 		const PrintBlock& resetColor() const;
-
-		/**
-		 * \brief Unlocks the console mutex.
-		 * Every output that will be made with this object will not be discarded.
-		 */
-		void finish();
-
+		
 	private:
 		std::ostream* stream_;
 		std::recursive_mutex* mutex_;
-		mutable std::mutex inner_mutex_;
-		bool finished_;
 	};
 
 	/**

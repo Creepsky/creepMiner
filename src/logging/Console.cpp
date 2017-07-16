@@ -37,99 +37,61 @@ Burst::ConsoleColorPair Burst::Console::currentColor_ = { ConsoleColor::White, C
 std::recursive_mutex Burst::Console::mutex_;
 
 Burst::PrintBlock::PrintBlock(std::ostream& stream, std::recursive_mutex& mutex)
-	: stream_(&stream), mutex_(&mutex), finished_(false)
+	: stream_(&stream), mutex_(&mutex)
 {
 	mutex_->lock();
 }
 
 Burst::PrintBlock::PrintBlock(PrintBlock&& rhs) noexcept
-	: stream_(rhs.stream_), mutex_(rhs.mutex_), finished_(rhs.finished_)
+	: stream_(rhs.stream_), mutex_(rhs.mutex_)
 {}
 
 Burst::PrintBlock::~PrintBlock()
 {
 	Console::resetColor();
-	finish();
+	mutex_->unlock();
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::operator<<(ConsoleColor color) const
 {
-	std::lock_guard<std::mutex> lock(inner_mutex_);
-
-	if (finished_)
-		return *this;
-
 	Console::setColor(color);
 	return *this;
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::operator<<(ConsoleColorPair color) const
 {
-	std::lock_guard<std::mutex> lock(inner_mutex_);
-
-	if (finished_)
-		return *this;
-
 	Console::setColor(color);
 	return *this;
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::addTime() const
 {
-	std::lock_guard<std::mutex> lock(inner_mutex_);
-
-	if (finished_)
-		return *this;
-
 	*this << getTime();
 	return *this;
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::nextLine() const
 {
-	std::lock_guard<std::mutex> lock(inner_mutex_);
-
-	if (finished_)
-		return *this;
-
 	*stream_ << std::endl;
 	return *this;
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::resetColor() const
 {
-	std::lock_guard<std::mutex> lock(inner_mutex_);
 	Console::resetColor();
 	return *this;
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::clearLine(bool wipe) const
 {
-	std::lock_guard<std::mutex> lock(inner_mutex_);
-
-	if (finished_)
-		return *this;
-
 	Console::clearLine(wipe);
 	return *this;
 }
 
-void Burst::PrintBlock::finish()
-{
-	std::lock_guard<std::mutex> lock(inner_mutex_);
-
-	if (!finished_)
-	{
-		finished_ = true;
-		mutex_->unlock();
-	}
-}
-
 void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 {
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
-
 #ifdef LOG_TERMINAL
+	std::lock_guard<std::recursive_mutex> lock(mutex_);
 #ifdef _WIN32
 	auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD color = (static_cast<int>(foreground) & 0x0F) + ((static_cast<int>(background) & 0x0F) << 4);
@@ -143,21 +105,25 @@ void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 
 void Burst::Console::setColor(ConsoleColorPair color)
 {
+#ifdef LOG_TERMINAL
 	setColor(color.foreground, color.background);
+#endif
 }
 
 void Burst::Console::resetColor()
 {
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
-
 #ifdef LOG_TERMINAL
 #ifdef _WIN32
 	setColor(ConsoleColor::White);
 #elif defined __linux__
-	std::cout << "\033[0m";
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		std::cout << "\033[0m";
+	}
 #endif
-#endif
+	std::lock_guard<std::recursive_mutex> lock(mutex_);
 	currentColor_ = { ConsoleColor::White, ConsoleColor::Black };
+#endif
 }
 
 std::string Burst::Console::getUnixConsoleCode(ConsoleColor color)
@@ -191,9 +157,8 @@ std::shared_ptr<Burst::PrintBlock> Burst::Console::print()
 
 void Burst::Console::clearLine(bool wipe)
 {
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
-
 #ifdef LOG_TERMINAL
+	std::lock_guard<std::recursive_mutex> lock(mutex_);
 	size_t consoleLength;
 #ifdef WIN32
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
