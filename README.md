@@ -1,5 +1,8 @@
-creepMiner [![Join the chat at https://gitter.im/creepminer/lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/creepminer/lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+creepMiner
 ===========
+
+[![Join the chat at https://gitter.im/creepminer/lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/creepminer/lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt)
 
 ## What is the creepMiner
 
@@ -9,7 +12,7 @@ It is designed multi-threaded to reach the best performance.
 
 ## Features
 
-- Mine with your **CPU** (__AVX__/__AVX2__) or your Nvidia **GPU**
+- Mine with your **CPU** (__SSE2__/__SSE4__/__AVX__/__AVX2__) or your Nvidia **GPU**
 - Mine **solo** or in a **pool**
 - Filter bad deadlines with the auto target deadline feature
 - Build a network of several miners with the forwarding feature
