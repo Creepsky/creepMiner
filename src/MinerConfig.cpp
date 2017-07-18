@@ -60,7 +60,8 @@ void Burst::MinerConfig::printConsole() const
 
 	printTargetDeadline();
 
-	log_system(MinerLogger::config, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
+	if (isLogfileUsed())
+		log_system(MinerLogger::config, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
 
 	printConsolePlots();
 }
@@ -349,6 +350,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
+	if (!inputFileStream.is_open())
+	{
+		log_critical(MinerLogger::config, "Config file %s does not exist", configPath);
+		return false;
+	}
+
 	configPath_ = configPath;
 	plotDirs_.clear();
 
@@ -414,6 +421,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		if (!loggingObj.isNull())
 		{
+			// do we need to create a logfile
+			logfile_ = getOrAdd(loggingObj, "logfile", false);
+
 			try
 			{
 				auto logPathObj = loggingObj->get("path");
@@ -445,6 +455,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		{
 			loggingObj = new Poco::JSON::Object;
 			loggingObj->set("path", "");
+			loggingObj->set("logfile", false);
 
 			for (auto& channel : MinerLogger::channelDefinitions)
 				loggingObj->set(channel.name, MinerLogger::getChannelPriority(channel.name));
@@ -488,6 +499,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			loggingObj->set("output", outputObj);
 		}
+
+		MinerLogger::refreshChannels();
 	}
 
 	// mining
@@ -515,6 +528,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		walletRequestTries_ = getOrAddAlt(miningObj, config, "walletRequestTries", 5);
 		walletRequestRetryWaitTime_ = getOrAddAlt(miningObj, config, "walletRequestRetryWaitTime", 3);
+
+		// use insecure plotfiles
+		useInsecurePlotfiles_ = getOrAddAlt(miningObj, config, "useInsecurePlotfiles", false);
 
 		// urls
 		{
@@ -771,7 +787,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				);
 
 				log_current_stackframe(MinerLogger::config);
-			}
+			}			
 		}
 
 		config->set("mining", miningObj);
@@ -1070,8 +1086,19 @@ size_t Burst::MinerConfig::getMaxPlotReaders(bool real) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
+	// if maxPlotReaders is zero it means we have to set it to 
+	// the amount of active plot dirs
 	if (maxPlotReaders_ == 0 && real)
-		return static_cast<size_t>(plotDirs_.size());
+	{
+		size_t notEmptyPlotdirs = 0;
+
+		// count only the plotdirs that are not empty
+		for (const auto& plotDir : plotDirs_)
+			if (!plotDir->getPlotfiles().empty())
+				++notEmptyPlotdirs;
+
+		return notEmptyPlotdirs;
+	}
 
 	return maxPlotReaders_;
 }
@@ -1375,8 +1402,12 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 	auto logDirAndFile = MinerLogger::setLogDir(log_dir);
 	pathLogfile_ = logDirAndFile;
 
-	if (!log_dir.empty())
-		log_system(MinerLogger::config, "Changing path for log file to\n\t%s", logDirAndFile);
+	if (!logfile_)
+		log_system(MinerLogger::config, "Logfile deactivated");
+	else if (log_dir.empty())
+		log_warning(MinerLogger::config, "Could not create logfile");
+	else
+		log_system(MinerLogger::config, "Changed logfile path to\n\t%s", logDirAndFile);
 }
 
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
@@ -1411,4 +1442,29 @@ const std::string& Burst::Passphrase::encrypt()
 {
 	encrypted = Burst::encrypt(decrypted, algorithm, key, salt, iterations);
 	return encrypted;
+}
+
+bool Burst::MinerConfig::useInsecurePlotfiles() const
+{
+	return useInsecurePlotfiles_;
+}
+
+bool Burst::MinerConfig::isLogfileUsed() const
+{
+	return logfile_;
+}
+
+void Burst::MinerConfig::useLogfile(bool use)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+
+	if (logfile_ == use)
+		return;
+
+	// do we use a logfile?
+	logfile_ = use;
+
+	// refresh the log channels
+	// because we need to open or close the filechannel
+	MinerLogger::refreshChannels();
 }

@@ -29,12 +29,12 @@ namespace Burst
 	{
 		template <typename T, typename ...Args>
 		void create_worker(std::unique_ptr<Poco::ThreadPool>& thread_pool, std::unique_ptr<Poco::TaskManager>& task_manager,
-			unsigned size, Args&&... args)
+			size_t size, Args&&... args)
 		{
-			thread_pool = std::make_unique<Poco::ThreadPool>(1, size);
+			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
 			task_manager = std::make_unique<Poco::TaskManager>(*thread_pool);
 
-			for (auto i = 0; i < size; ++i)
+			for (auto i = 0u; i < size; ++i)
 				task_manager->start(new T(std::forward<Args>(args)...));
 		}
 	}
@@ -123,9 +123,7 @@ void Burst::Miner::stop()
 	shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
 	// stop verifier
 	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
-	// also stop all running background-tasks
-	Poco::ThreadPool::defaultPool().stopAll();
-	Poco::ThreadPool::defaultPool().joinAll();
+	
 	running_ = false;
 }
 
@@ -391,13 +389,9 @@ bool Burst::Miner::getMiningInfo()
 		}
 		catch (Poco::Exception& exc)
 		{
-			std::vector<std::string> lines = {
-				"Error on getting new block-info!",
-				exc.what(),
-				"Full response: " + responseData
-			};
-
-			log_error(MinerLogger::miner, "Error on getting new block-info!\n\t%s\n\tFull response:\n\t%s", exc.displayText(), responseData);
+			log_error(MinerLogger::miner, "Error on getting new block-info!\n\t%s", exc.displayText());
+			// because the full response may be too long, we only log the it in the logfile
+			log_file_only(MinerLogger::miner, Poco::Message::PRIO_ERROR, TextType::Error, "Block-info full response:\n%s", responseData);
 			log_current_stackframe(MinerLogger::miner);
 		}
 	}

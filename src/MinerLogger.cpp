@@ -34,6 +34,7 @@
 #include <fstream>
 #include <Poco/FileStream.h>
 #include "MinerData.hpp"
+#include <Poco/FileChannel.h>
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::currentColor = { Color::White, Color::Black };
 std::mutex Burst::MinerLogger::consoleMutex;
@@ -98,7 +99,7 @@ Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel{"startup
 Poco::FormattingChannel* Burst::MinerLogger::fileFormatter_ = nullptr;
 std::string Burst::MinerLogger::logFileName_ = getFilenameWithtimestamp("creepMiner", "log");
 
-std::map<Burst::MinerLogger::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
+std::map<Burst::TextType, Burst::MinerLogger::ColorPair> Burst::MinerLogger::typeColors =
 	{
 			{ TextType::Normal, { Color::White, Color::Black } },
 			{ TextType::Error, { Color::LightRed, Color::Black } },
@@ -293,10 +294,14 @@ Poco::Message::Priority Burst::MinerLogger::getStringToPriority(const std::strin
 
 std::string Burst::MinerLogger::getPriorityToString(Poco::Message::Priority priority)
 {
+	if (static_cast<int>(priority) == 0)
+		return "off";
+
+	if (static_cast<int>(priority) > static_cast<int>(Poco::Message::Priority::PRIO_TRACE))
+		return "all";
+
 	switch (priority)
 	{
-	case static_cast<Poco::Message::Priority>(0):
-		return "off";
 	case Poco::Message::PRIO_FATAL:
 		return "fatal";
 	case Poco::Message::PRIO_CRITICAL:
@@ -332,6 +337,8 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 {
 	try
 	{
+		std::lock_guard<std::mutex> lock(consoleMutex);
+
 		Poco::Path fullPath;
 		fullPath.parseDirectory(dir);
 
@@ -392,6 +399,11 @@ void Burst::MinerLogger::setChannelMinerData(MinerData* minerData)
 		channel.second->setMinerData(minerData);
 }
 
+Poco::FormattingChannel* Burst::MinerLogger::getFileFormattingChannel()
+{
+	return fileFormatter_;
+}
+
 void Burst::MinerLogger::setOutput(Burst::Output id, bool set)
 {
 	output_[id] = set;
@@ -428,8 +440,19 @@ void Burst::MinerLogger::writeProgress(float progress, size_t pipes)
 {
 	std::lock_guard<std::mutex> lock(consoleMutex);
 
+	auto done = static_cast<size_t>(pipes * (progress / 100));
+	auto doneBefore = static_cast<size_t>(pipes * (lastProgress_ / 100));
+
+	lastProgress_ = progress;
+	
+	if (done == doneBefore)
+		return;
+
 	if (progressFlag_)
-		clearLine();
+		clearLine(false);
+
+	lastPipeCount_ = pipes;
+	progressFlag_ = true;
 
 	printProgress(progress, pipes);
 }
@@ -477,7 +500,7 @@ void Burst::MinerLogger::setColor(TextType type)
 	currentTextType = type;
 }
 
-void Burst::MinerLogger::clearLine()
+void Burst::MinerLogger::clearLine(bool wipe)
 {
 #ifdef LOG_TERMINAL
 	static auto consoleLength = 0u;
@@ -495,7 +518,12 @@ void Burst::MinerLogger::clearLine()
 #endif
 	}
 
-	std::cout << '\r' << std::string(consoleLength, ' ') << '\r' << std::flush;
+	std::cout << '\r';
+
+	if (wipe)
+		 std::cout << std::string(consoleLength, ' ') << '\r';
+
+	std::cout << std::flush;
 #endif
 }
 
@@ -509,8 +537,7 @@ void Burst::MinerLogger::printProgress(float progress, size_t pipes)
 #ifdef LOG_TERMINAL
 	auto done = static_cast<size_t>(pipes * (progress / 100));
 	auto notDone = pipes - done;
-	lastProgress_ = progress;
-	lastPipeCount_ = pipes;
+
 	progressFlag_ = true;
 
 	setColor(TextType::Normal);
@@ -562,10 +589,26 @@ void Burst::MinerLogger::setup()
 		fileChannel_->setProperty("rotation", "1 M");
 		// purge old logs
 		fileChannel_->setProperty("purgeAge", "1 days");
+		// use local times
+		fileChannel_->setProperty("times", "local");
+		// archive old logfiles
+		fileChannel_->setProperty("compress", "true");
 
-		auto filePattern = new Poco::PatternFormatter{"%d.%m.%Y %H:%M:%S (%I, %U, %u, %p): %t"};
-		fileFormatter_ = new Poco::FormattingChannel{filePattern, fileChannel_};
+		auto filePattern = new Poco::PatternFormatter{ "%d.%m.%Y %H:%M:%S (%I, %U, %u, %p): %t" };
+		filePattern->setProperty("times", "local");
+		fileFormatter_ = new Poco::FormattingChannel{ filePattern, fileChannel_ };
 	}
+
+	refreshChannels();
+	setLogDir("");
+}
+
+void Burst::MinerLogger::refreshChannels()
+{
+	// close the filechannel if not used
+	if (!MinerConfig::getConfig().isLogfileUsed() &&
+		fileChannel_ != nullptr)
+		fileChannel_->close();
 
 	// create all logger channels
 	for (auto& channel : channelDefinitions)
@@ -579,13 +622,15 @@ void Burst::MinerLogger::setup()
 		auto& websocketChannel = websocketChannels_.at(channel.name);
 
 		splitter->addChannel(consoleChannel);
-		splitter->addChannel(websocketChannel);
-		splitter->addChannel(fileFormatter_);
+
+		if (MinerConfig::getConfig().getStartServer())
+			splitter->addChannel(websocketChannel);
+
+		if (MinerConfig::getConfig().isLogfileUsed())
+			splitter->addChannel(fileFormatter_);
 
 		Poco::Logger::get(channel.name).setChannel(splitter);
 	}
-	
-	setLogDir("");
 }
 
 Burst::MinerLogger::ColorPair Burst::MinerLogger::getTextTypeColor(TextType type)

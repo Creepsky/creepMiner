@@ -34,7 +34,7 @@ namespace Burst
 		Version version;
 
 		std::string nameAndVersion;
-		std::string nameAndVersionAndOs;
+		std::string nameAndVersionVerbose;
 	};
 
 	class Settings
@@ -65,6 +65,7 @@ namespace Burst
 		static constexpr auto Arch = "x32";
 #endif
 
+		static const std::string Cpu_Instruction_Set;
 		static const Version ProjectVersion;
 		static const ProjectData Project;
 	};

@@ -13,12 +13,11 @@ This is a (standalone) fork of the burst-miner found on [this github repository]
 
 ## Features
 
-- Mine with your **CPU** or your Nvidia **GPU**
+- Mine with your **CPU** (__AVX__/__AVX2__) or your Nvidia **GPU**
 - Mine **solo** or in a **pool**
 - Filter bad deadlines with the auto target deadline feature
-- Build a network of several miners
-- Watch the status of the miner in your web browser
-- Manage your memory
+- Build a network of several miners with the forwarding feature
+- Watch the status of the miner in your web browser on every device
 
 ## Build
 
@@ -39,8 +38,8 @@ This is a (standalone) fork of the burst-miner found on [this github repository]
 
 ## Dependencies
 
-- POCO C++ libraries ([Boost Software License 1.0](https://pocoproject.org/license.html))
-- OpenSSL ([Apache style license](https://www.openssl.org/source/license.html))
+- [POCO C++ libraries](https://pocoproject.org) ([Boost Software License 1.0](https://pocoproject.org/license.html))
+- [OpenSSL](https://www.openssl.org) ([Apache style license](https://www.openssl.org/source/license.html))
 
 ## Contribution
 
@@ -53,20 +52,3 @@ If you want to share your own code, please follow these steps:
 - dont forget to mention the issue number in the commit messages (just write something like ```<message> #<id>```)
 - open a pull request and try to describe what the change is for
 - done :)
-
-## Donations :moneybag:
-
-The orignal author is uray meiviar (uraymeiviar@gmail.com).
-
-If you want to support him, you can donate to:
-
-```
-- [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
-- [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
-```
-
-If you want to support me, you can donate to:
-
-```
-- [ Burst   ] BURST-JBKL-ZUAV-UXMB-2G795
-```

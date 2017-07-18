@@ -7,6 +7,7 @@ declare module JSONS {
         poolUrl: string;
         submissionMaxRetry: string;
         targetDeadline: string;
+        targetDeadlineText: string;
         timeout: number;
         totalPlotSize: string;
         type: string;
@@ -49,4 +50,12 @@ declare module JSONS {
         time: string;
         type: string;
     }
+
+    export interface PlotDirObject {
+        dir: string;
+        type: string;
+        value: number;
+        closed: boolean;
+    }
+
 }

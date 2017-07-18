@@ -89,7 +89,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 	HTTPRequest request{HTTPRequest::HTTP_POST, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
 	request.set(X_Capacity, std::to_string(PlotSizes::getTotal()));
 	request.set(X_PlotsHash, plotsHashStr);
-	request.set(X_Miner, Settings::Project.nameAndVersionAndOs);
+	request.set(X_Miner, Settings::Project.nameAndVersionVerbose);
 	request.set(X_Deadline, std::to_string(deadline.getDeadline()));
 	request.set(X_Plotfile, plotFileStr);
 	request.setKeepAlive(false);

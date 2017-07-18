@@ -83,6 +83,9 @@ void Burst::PlotReader::runTask()
 
 		Poco::Timestamp timeStartDir;
 
+		// check, if the incoming plot-read-notification is for the current round
+		auto currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+
 		// put in all related plot files
 		for (const auto& relatedPlotList : plotReadNotification->relatedPlotLists)
 			for (const auto& relatedPlotFile : relatedPlotList.second)
@@ -90,7 +93,8 @@ void Burst::PlotReader::runTask()
 
 		for (auto plotFileIter = plotReadNotification->plotList.begin();
 			plotFileIter != plotReadNotification->plotList.end() &&
-			!isCancelled();
+			!isCancelled() &&
+			currentBlock;
 			++plotFileIter)
 		{
 			auto& plotFile = **plotFileIter;
@@ -115,6 +119,9 @@ void Burst::PlotReader::runTask()
 					Poco::UInt64 a = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
 					Poco::UInt64 b = staggerScoopBytes;
 
+					if (a > b)
+						return b;
+
 					for(;;) 
 					{ 
 						if (a == 0) // trap if a==0 
@@ -133,19 +140,43 @@ void Burst::PlotReader::runTask()
 				const auto staggerChunks = staggerScoopBytes / staggerChunkBytes;
 				const auto staggerChunkSize = staggerSize / staggerChunks;
 
-				for (auto staggerBlock = 0ul; !isCancelled() && staggerBlock < staggerBlocks; ++staggerBlock)
+				// check, if the incoming plot-read-notification is for the current round
+				currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+
+				for (auto staggerBlock = 0ul; !isCancelled() && staggerBlock < staggerBlocks && currentBlock; ++staggerBlock)
 				{
 					const auto staggerBlockOffset = staggerBlock * staggerBlockSize;
 					const auto staggerScoopOffset = plotReadNotification->scoopNum * staggerSize * Settings::ScoopSize;
 
-					for (auto staggerChunk = 0u; staggerChunk < staggerChunks && !isCancelled(); ++staggerChunk)
+					// check, if the incoming plot-read-notification is for the current round
+					currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+
+					for (auto staggerChunk = 0u; staggerChunk < staggerChunks && !isCancelled() && currentBlock; ++staggerChunk)
 					{
 						auto memoryAcquired = false;
 
-						while (!isCancelled() && !memoryAcquired)
+						while (!isCancelled() && !memoryAcquired && currentBlock)
+						{
 							memoryAcquired = globalBufferSize.reserve(staggerChunkBytes);
 
-						if (!isCancelled() && memoryAcquired)
+							// check, if the incoming plot-read-notification is for the current round
+							// this could actually be very heavy on performance, maybe it should be
+							// called every x loops
+							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+						}
+
+						// if the reader is cancelled, jump out of the loop
+						if (isCancelled())
+						{
+							// but first give free the allocated memory
+							if (memoryAcquired)
+								globalBufferSize.free(staggerChunkBytes);
+
+							continue;
+						}
+
+						// only send the data to the verifiers, if the memory could be acquired and it is the right block
+						if (memoryAcquired && currentBlock)
 						{
 							const auto chunkOffset = staggerChunk * staggerChunkBytes;
 
@@ -164,20 +195,31 @@ void Burst::PlotReader::runTask()
 							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerChunkBytes);
 
 							verificationQueue_->enqueueNotification(verification);
+
+							if (progress_ != nullptr)
+							{
+								progress_->add(staggerChunkBytes * Settings::ScoopPerPlot, plotReadNotification->blockheight);
+								miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
+							}
+
+							// check, if the incoming plot-read-notification is for the current round
+							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
 						}
+						// if the memory was acquired, but it was not the right block, give it free
+						else if (memoryAcquired)
+							globalBufferSize.free(staggerChunkBytes);
+						// this should never happen.. no memory allocated, not cancelled, wrong block
+						else;
 					}
 				}
 
 				inputStream.close();
 
-				if (!isCancelled())
-				{
-					if (progress_ != nullptr)
-					{
-						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
-						miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
-					}
+				// check, if the incoming plot-read-notification is for the current round
+				currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
 
+				if (!isCancelled() && currentBlock)
+				{
 					auto fileReadDiff = timeStartFile.elapsed();
 					auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
 					Poco::Timespan span{fileReadDiff};
@@ -200,6 +242,10 @@ void Burst::PlotReader::runTask()
 						Poco::DateTimeFormatter::format(span, "%s.%i"),
 						memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
 				}
+
+				// if it was cancelled, we push the current plot dir back in the queue again
+				if (isCancelled())
+					plotReadQueue_->enqueueNotification(plotReadNotification);
 			}
 		}
 		
@@ -214,7 +260,7 @@ void Burst::PlotReader::runTask()
 		for (const auto& plot : plotReadNotification->plotList)
 			totalSizeBytes += plot->getSize();
 		
-		if (plotReadNotification->type == PlotDir::Type::Sequential)
+		if (plotReadNotification->type == PlotDir::Type::Sequential && totalSizeBytes > 0 && currentBlock)
 		{
 			const auto sumNonces = totalSizeBytes / Settings::PlotSize;
 			const auto sumNoncesBytes = static_cast<float>(sumNonces * Settings::ScoopSize);

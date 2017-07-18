@@ -1,73 +1,114 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs/Subject';
 
 @Injectable()
 export class BlockService {
-  websocket;
+  websocket: WebSocket;
   config: JSONS.ConfigObject;
   newBlock: JSONS.NewBlockObject;
   lastWinner: JSONS.LastWinnerObject;
   progress = 0;
   nonces: Array<JSONS.NonceObject> = [];
+  plots: Array<JSONS.PlotDirObject> = [];
+  confirmedSound = new Audio('assets/sms-alert-1-daniel_simon.mp3');
+  private _isreconn = false;
 
-  constructor() { }
+  blockTime: Date;
+  blockReadTime: Date;
 
+  private newBlockSource = new Subject();
+  newBlock$ = this.newBlockSource.asObservable();
+  private newConfirmationSource = new Subject();
+  newConfirmation$ = this.newConfirmationSource.asObservable();
 
+  constructor() {
+    this.confirmedSound.volume = 0.5;
 
-  connectBlock() {
-    this.connect((msg) => {
+    const refrFunc = () => {
+      // triggers change detection every second
+      setTimeout(refrFunc, 1000);
+    }
+    refrFunc();
+  }
 
-      const data = msg['data'];
+  getBlockReadDate(): string {
+    let diff = 0;
+    if (this.blockReadTime) {
+      diff = this.blockReadTime.getTime() - this.blockTime.getTime();
+    } else {
+      diff = new Date().getTime() - this.blockTime.getTime();
+    }
 
-      if (data) {
-        if (data === 'ping') {
-          return;
-        }
-        const response = JSON.parse(data);
-        console.log(response.type, response);
+    const mins = Math.floor(diff / (1000 * 60));
+    diff -= mins * (1000 * 60);
 
-        switch (response['type']) {
-          case 'new block':
-            this.newBlock = response;
-            this.nonces = [];
-            break;
-          case 'nonce found':
-            //     nonceFound(response);
-            this.addOrUpdateNonce(response);
-            break;
-          case 'nonce confirmed':
-            this.addOrUpdateNonce(response);
+    const seconds = Math.floor(diff / (1000));
+    diff -= seconds * (1000);
 
-            //     addOrConfirm(response);
-            ////     checkAddBestRound(BigInteger(response['deadlineNum']), response['deadline']);
-            //    checkAddBestOverall(BigInteger(response['deadlineNum']), response['deadline']);
-            break;
-          case 'nonce submitted':
-            this.addOrUpdateNonce(response);
+    return mins ? mins + ':' + seconds : seconds.toString();
+  }
 
-            //    addOrSubmit(response);
-            break;
-          case 'config':
-            this.config = response;
-            break;
-          case 'progress':
-            this.progress = response.value;
-            break;
-          case 'lastWinner':
-            this.lastWinner = response;
-            break;
-          case 'blocksWonUpdate':
-            //      wonBlocks.html(reponse['blocksWon']);
-            break;
-          case 'plotdir-progress':
-          case 'plotdirs-rescan':
-            // do nothing
-            break;
-          default:
-            //        showMessage(response);
-            break;
-        };
+  private rcvMsg(msg) {
+
+    const data = msg['data'];
+
+    if (data) {
+      if (data === 'ping') {
+        return;
       }
-    });
+      const response = JSON.parse(data);
+
+
+      switch (response['type']) {
+        case 'new block':
+          this.newBlock = response;
+          this.nonces = [];
+          this.plots = [];
+          this.blockTime = new Date();
+          this.blockReadTime = null;
+          this.newBlockSource.next(response);
+          break;
+        case 'nonce found':
+          this.addOrUpdateNonce(response);
+          break;
+        case 'nonce confirmed':
+          this.addOrUpdateNonce(response);
+          this.newConfirmationSource.next(response);
+          this.confirmedSound.play();
+          break;
+        case 'nonce submitted':
+          this.addOrUpdateNonce(response);
+          break;
+        case 'config':
+          this.config = response;
+          break;
+        case 'progress':
+          this.progress = response.value;
+          if (response.value === 100) {
+            this.blockReadTime = new Date();
+          }
+          break;
+        case 'lastWinner':
+          this.lastWinner = response;
+          break;
+        case 'blocksWonUpdate':
+          //      wonBlocks.html(reponse['blocksWon']);
+          console.log(response.type, response);
+          break;
+        case 'plotdir-progress':
+          this.addOrUpdatePlot(response);
+          break;
+        case 'plotdirs-rescan':
+          console.log(response.type, response);
+          break;
+        default:
+          //        showMessage(response);
+          if (response.type != '7') {
+            console.log(response.type, response);
+          }
+          break;
+      };
+    }
   }
 
 
@@ -81,18 +122,51 @@ export class BlockService {
   }
 
 
+  private addOrUpdatePlot(plot: JSONS.PlotDirObject) {
+    const p = this.plots.filter(x => x.dir === plot.dir);
+    if (p.length > 0) {
+      p[0].value = plot.value;
+      plot = p[0];
+    } else {
+      this.plots.push(plot);
+    }
+    if (plot.value.toString() === '100') {
+      setTimeout(() => {
+        plot.closed = true;
+      }, 2000 + (Math.random() * 1000));
+    }
+  }
 
-  connect(onMessage) {
+
+
+  connect() {
     if ('WebSocket' in window) {
       if (this.websocket) {
         this.websocket.close();
       }
 
-      this.websocket = new WebSocket('ws://' + window.location.host + ':' + window.location.port + '/');
-      this.websocket.onmessage = onMessage;
+      this.websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/');
+      this.websocket.onmessage = this.rcvMsg.bind(this);
+
+      this.websocket.onerror = this.reconnect.bind(this);
+      this.websocket.onclose = this.reconnect.bind(this);
     } else {
       this.websocket = null;
     }
+  }
+
+
+
+  private reconnect() {
+    if (this._isreconn) {
+      return;
+    }
+    this._isreconn = true;
+    setTimeout(() => {
+      console.log('Reconnecting...');
+      this._isreconn = false;
+      this.connect();
+    }, 3000);
   }
 
 }

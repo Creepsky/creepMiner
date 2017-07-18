@@ -17,7 +17,7 @@
 #include <Poco/Net/HTTPSSessionInstantiator.h>
 #include <Poco/Net/PrivateKeyPassphraseHandler.h>
 #include <Poco/NestedDiagnosticContext.h>
-#include "MinerServer.hpp"
+#include "webserver/MinerServer.hpp"
 #include <Poco/Logger.h>
 #include "Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
@@ -42,9 +42,14 @@ int main(int argc, const char* argv[])
 
 	Burst::MinerLogger::setup();
 	
+	// create a message dispatcher..
+	//auto messageDispatcher = Burst::Message::Dispatcher::create();
+	// ..and start it in its own thread
+	//Poco::ThreadPool::defaultPool().start(*messageDispatcher);
+
 	auto general = &Poco::Logger::get("general");
 	
-	log_information(general, Burst::Settings::Project.nameAndVersionAndOs);
+	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
@@ -151,6 +156,13 @@ int main(int argc, const char* argv[])
 	{
 		log_fatal(general, "Aborting program due to exceptional state: %s", std::string(exc.what()));
 	}
+
+	// wake up all message dispatcher
+	//Burst::Message::wakeUpAllDispatcher();
+
+	// stop all running background-tasks
+	Poco::ThreadPool::defaultPool().stopAll();
+	Poco::ThreadPool::defaultPool().joinAll();
 
 	return 0;
 }
