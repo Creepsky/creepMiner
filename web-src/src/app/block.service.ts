@@ -49,7 +49,6 @@ export class BlockService {
   }
 
   private rcvMsg(msg) {
-
     const data = msg['data'];
 
     if (data) {
@@ -74,7 +73,9 @@ export class BlockService {
         case 'nonce confirmed':
           this.addOrUpdateNonce(response);
           this.newConfirmationSource.next(response);
-          this.confirmedSound.play();
+          if (localStorage.getItem('confirmationSound') === 'true') {
+            this.confirmedSound.play();
+          }
           break;
         case 'nonce submitted':
           this.addOrUpdateNonce(response);

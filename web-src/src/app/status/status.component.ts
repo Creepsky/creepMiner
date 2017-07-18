@@ -24,13 +24,27 @@ export class StatusComponent implements OnInit {
       pointHoverBorderColor: 'rgba(77,83,96,1)'
     }
   ];
+  public sounds = {
+    newBlock: false,
+    confirmation: false
+  }
+
+  toggleConfirmation() {
+    this.sounds.confirmation = !this.sounds.confirmation;
+    localStorage.setItem('confirmationSound', this.sounds.confirmation.toString());
+  }
 
   constructor(
     public b: BlockService
-  ) { }
+  ) {
+   }
 
 
   ngOnInit() {
+    const confSound = localStorage.getItem('confirmationSound');
+    this.sounds.confirmation = (confSound === 'true');
+
+
     this.b.connect();
     this.b.newBlock$.subscribe(nb => {
       const bestDl = <Array<Array<number>>>nb['bestDeadlines'];
