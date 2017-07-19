@@ -12,7 +12,46 @@ export class StatusComponent implements OnInit {
   ];
   public lineChartLabels: Array<any>;
   public lineChartOptions: any = {
-    responsive: true
+    responsive: true,
+    scales: {
+      yAxes: [{
+        ticks: {
+          callback: value => {
+            let first = Math.floor(value / 60 / 60);
+            let second = Math.round(value / 60) - first * 60;
+            let sufix1 = 'h';
+            let sufix2 = 'm';
+            if (first > 24.0) {
+              first = Math.floor(first / 24);
+              second = Math.round(Math.round(value / 3600)) - first * 24;
+              sufix1 = 'd';
+              sufix2 = 'h';
+            }
+            return (first + ' ' + sufix1 + ' ' + second + ' ' + sufix2);
+          }
+        }
+      }]
+    },
+    tooltips: {
+      enabled: true,
+      mode: 'single',
+      callbacks: {
+        label: tooltipItems => {
+          let value = tooltipItems.yLabel;
+          let first = Math.floor(value / 60 / 60);
+          let second = Math.round(value / 60) - first * 60;
+          let sufix1 = 'h';
+          let sufix2 = 'm';
+          if (first > 24.0) {
+            first = Math.floor(first / 24);
+            second = Math.round(Math.round(value / 3600)) - first * 24;
+            sufix1 = 'd';
+            sufix2 = 'h';
+          }
+          return (first + ' ' + sufix1 + ' ' + second + ' ' + sufix2);
+        }
+      }
+    }
   };
   public lineChartColors: Array<any> = [
     { // dark grey
@@ -43,7 +82,6 @@ export class StatusComponent implements OnInit {
   ngOnInit() {
     const confSound = localStorage.getItem('confirmationSound');
     this.sounds.confirmation = (confSound === 'true');
-
 
     this.b.connect();
     this.b.newBlock$.subscribe(nb => {
