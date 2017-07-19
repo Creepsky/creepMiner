@@ -126,8 +126,11 @@ float Burst::Performance::Probe::sumToSeconds() const
 	return std::chrono::duration_cast<std::chrono::duration<float>>(sumTime).count();
 }
 
-std::ostream& Burst::operator<<(std::ostream& stream, const Performance& performance)
+namespace Burst
 {
-	performance.print(stream);
-	return stream;
+	std::ostream& operator<<(std::ostream& stream, const Performance& performance)
+	{
+		performance.print(stream);
+		return stream;
+	}
 }
