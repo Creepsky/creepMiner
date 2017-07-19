@@ -277,11 +277,13 @@ void Burst::PlotReader::runTask()
     				auto plotListSize = plotReadNotification->plotList.size();
     
     				if (plotListSize > 0)
+    				{
     					miner_.getData().getBlockData()->setProgress(
 							plotReadNotification->dir,
     						static_cast<float>(std::distance(plotReadNotification->plotList.begin(), plotFileIter) + 1) / plotListSize * 100.f,
 							plotReadNotification->blockheight
 						);
+    				}
 
 					const auto nonceBytes = static_cast<float>(nonceCount * Settings::ScoopSize);
 					const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
