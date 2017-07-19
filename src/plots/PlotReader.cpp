@@ -30,6 +30,7 @@
 #include <Poco/Timestamp.h>
 #include "logging/Output.hpp"
 #include "Plot.hpp"
+#include "logging/Performance.hpp"
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
@@ -91,6 +92,8 @@ void Burst::PlotReader::runTask()
 		else
 			break;
 
+		START_PROBE(std::string("PlotReader.ReadDir.") + plotReadNotification->dir)
+
 		// only process the current block
 		if (miner_.getBlockheight() != plotReadNotification->blockheight)
 			continue;
@@ -114,6 +117,8 @@ void Burst::PlotReader::runTask()
 			auto& plotFile = **plotFileIter;
 			std::ifstream inputStream(plotFile.getPath(), std::ifstream::in | std::ifstream::binary);
 			
+			START_PROBE("PlotReader.ReadFile")
+			START_PROBE(std::string("PlotReader.ReadFile.") + plotFile.getPath())
 			Poco::Timestamp timeStartFile;
 
 			if (!isCancelled() && inputStream.is_open())
@@ -157,8 +162,13 @@ void Burst::PlotReader::runTask()
 				// check, if the incoming plot-read-notification is for the current round
 				currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
 
+				START_PROBE("PlotReader.StaggerBlocks")
+				START_PROBE(std::string("PlotReader.StaggerBlocks.") + plotFile.getPath())
+
 				for (auto staggerBlock = 0ul; !isCancelled() && staggerBlock < staggerBlocks && currentBlock; ++staggerBlock)
 				{
+					START_PROBE("PlotReader.StaggerBlock")
+					START_PROBE(std::string("PlotReader.StaggerBlock.") + plotFile.getPath())
 					const auto staggerBlockOffset = staggerBlock * staggerBlockSize;
 					const auto staggerScoopOffset = plotReadNotification->scoopNum * staggerSize * Settings::ScoopSize;
 
@@ -167,8 +177,11 @@ void Burst::PlotReader::runTask()
 
 					for (auto staggerChunk = 0u; staggerChunk < staggerChunks && !isCancelled() && currentBlock; ++staggerChunk)
 					{
+						START_PROBE("PlotReader.StaggerChunk")
+						START_PROBE(std::string("PlotReader.StaggerChunk.") + plotFile.getPath())
 						auto memoryAcquired = false;
 
+						START_PROBE("PlotReader.AllocMemory")
 						while (!isCancelled() && !memoryAcquired && currentBlock)
 						{
 							memoryAcquired = globalBufferSize.reserve(staggerChunkBytes);
@@ -178,6 +191,7 @@ void Burst::PlotReader::runTask()
 							// called every x loops
 							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
 						}
+						TAKE_PROBE("PlotReader.AllocMemory")
 
 						// if the reader is cancelled, jump out of the loop
 						if (isCancelled())
@@ -192,8 +206,12 @@ void Burst::PlotReader::runTask()
 						// only send the data to the verifiers, if the memory could be acquired and it is the right block
 						if (memoryAcquired && currentBlock)
 						{
+							START_PROBE("PlotReader.PushWork")
+							START_PROBE(std::string("PlotReader.PushWork.") + plotFile.getPath())
+
 							const auto chunkOffset = staggerChunk * staggerChunkBytes;
 
+							START_PROBE("PlotReader.CreateVerification")
 							VerifyNotification::Ptr verification(new VerifyNotification{});
 							verification->accountId = accountId;
 							verification->nonceStart = nonceStart;
@@ -203,18 +221,28 @@ void Burst::PlotReader::runTask()
 							verification->buffer.resize(static_cast<size_t>(staggerChunkSize));
 							verification->nonceRead = staggerBlock * staggerSize + staggerChunkSize * staggerChunk;
 							verification->baseTarget = plotReadNotification->baseTarget;
+							TAKE_PROBE("PlotReader.CreateVerification")
 
+							START_PROBE("PlotReader.SeekAndRead")
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							//inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
 							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerChunkBytes);
+							TAKE_PROBE("PlotReader.SeekAndRead")
 
+							START_PROBE("PlotReader.EnqueueWork")
 							verificationQueue_->enqueueNotification(verification);
+							TAKE_PROBE("PlotReader.EnqueueWork")
 
+							TAKE_PROBE("PlotReader.PushWork")
+							TAKE_PROBE(std::string("PlotReader.PushWork.") + plotFile.getPath())
+
+							START_PROBE("PlotReader.Progress")
 							if (progress_ != nullptr)
 							{
 								progress_->add(staggerChunkBytes * Settings::ScoopPerPlot, plotReadNotification->blockheight);
 								miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
 							}
+							TAKE_PROBE("PlotReader.Progress")
 
 							// check, if the incoming plot-read-notification is for the current round
 							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
@@ -224,8 +252,16 @@ void Burst::PlotReader::runTask()
 							globalBufferSize.free(staggerChunkBytes);
 						// this should never happen.. no memory allocated, not cancelled, wrong block
 						else;
+
+						TAKE_PROBE("PlotReader.StaggerChunk")
+						TAKE_PROBE(std::string("PlotReader.StaggerChunk.") + plotFile.getPath())
 					}
+					TAKE_PROBE("PlotReader.StaggerBlock")
+					TAKE_PROBE(std::string("PlotReader.StaggerBlock.") + plotFile.getPath())
 				}
+
+				TAKE_PROBE("PlotReader.StaggerBlocks")
+				TAKE_PROBE(std::string("PlotReader.StaggerBlocks.") + plotFile.getPath())
 
 				inputStream.close();
 
@@ -261,6 +297,9 @@ void Burst::PlotReader::runTask()
 				if (isCancelled())
 					plotReadQueue_->enqueueNotification(plotReadNotification);
 			}
+
+			TAKE_PROBE("PlotReader.ReadFile")
+			TAKE_PROBE(std::string("PlotReader.ReadFile.") + plotFile.getPath())
 		}
 		
 		miner_.getData().getBlockData()->setProgress(plotReadNotification->dir, 100.f, plotReadNotification->blockheight);
@@ -297,6 +336,8 @@ void Burst::PlotReader::runTask()
 				plotReadNotification->plotList.size() == 1 ? std::string("file") : std::string("files"),
 				memToString(totalSizeBytes, 2));
 		}
+
+		TAKE_PROBE(std::string("PlotReader.ReadDir.") + plotReadNotification->dir)
 	}
 }
 

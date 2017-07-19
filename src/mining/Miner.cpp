@@ -36,6 +36,7 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "plots/PlotSizes.hpp"
 #include "plots/Plot.hpp"
+#include "logging/Performance.hpp"
 
 namespace Burst
 {
@@ -98,6 +99,9 @@ void Burst::Miner::run()
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
 
 	const auto sleepTime = std::chrono::seconds(3);
+#ifdef RUN_BENCHMARK
+	size_t benchmarkLoop = 0;
+#endif
 	running_ = true;
 
 	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
@@ -124,6 +128,18 @@ void Burst::Miner::run()
 			errors = 0;
 		}
 
+
+#ifdef RUN_BENCHMARK
+		if (benchmarkLoop > 20)
+		{
+			auto console = Console::print();
+			*console << Performance::instance();
+			benchmarkLoop = 0;
+		}
+		else
+			++benchmarkLoop;
+#endif
+
 		std::this_thread::sleep_for(sleepTime);
 	}
 
@@ -145,21 +161,30 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 {
 	poco_ndc(Miner::updateGensig);
 
+	CLEAR_PROBES()
+	START_PROBE("Miner.StartNewBlock")
+
 	// stop all reading processes if any
 	if (!MinerConfig::getConfig().getPlotFiles().empty())
 	{
 		log_debug(MinerLogger::miner, "Plot-read-queue: %d, verification-queue: %d",
 			plotReadQueue_.size(), verificationQueue_.size());
 		log_debug(MinerLogger::miner, "Allocated memory: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
-		
+	
+		START_PROBE("Miner.SetBuffersize")
 		PlotReader::globalBufferSize.setMax(MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024);
+		TAKE_PROBE("Miner.SetBuffersize")
 	}
 	
 	// clear the plot read queue
+	START_PROBE("Miner.ClearPlotreadqueue")
 	plotReadQueue_.clear();
+	TAKE_PROBE("Miner.ClearPlotreadqueue")
 
 	// setup new block-data
+	START_PROBE("Miner.Data-StartNewBlock")
 	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr);
+	TAKE_PROBE("Miner.Data-StartNewBlock")
 
 	// why we start a new thread to gather the last winner:
 	// it could be slow and is not necessary for the whole process
@@ -181,7 +206,9 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 		data_.getBlockData()->refreshBlockEntry();
 	}
 
+	START_PROBE("Miner.ProgressRest")
 	progress_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
+	TAKE_PROBE("Miner.ProgressRest")
 
 	PlotSizes::nextRound();
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
@@ -205,6 +232,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 		plotReadQueue_.enqueueNotification(plotRead);
 	};
 
+	START_PROBE("Miner.CreatePlotreadWork")
 	MinerConfig::getConfig().forPlotDirs([this, &addParallel, &initPlotReadNotification](PlotDir& plotDir)
 	{
 		if (plotDir.getType() == PlotDir::Type::Parallel)
@@ -229,6 +257,9 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 
 		return true;
 	});
+	TAKE_PROBE("Miner.CreatePlotreadWork")
+
+	TAKE_PROBE("Miner.StartNewBlock")
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const

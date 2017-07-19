@@ -86,6 +86,25 @@
           "value": "CUDA"
         }
       ]
+    },
+    {
+      "buildCommandArgs": "-m -v:minimal",
+      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
+      "cmakeCommandArgs": "",
+      "configurationType": "Release",
+      "ctestCommandArgs": "",
+      "generator": "Visual Studio 15 2017 Win64",
+      "name": "x64-Release-AVX-BENCHMARK",
+      "variables": [
+        {
+          "name": "CPU_INSTRUCTION_SET",
+          "value": "AVX"
+        },
+        {
+          "name": "RUN_BENCHMARK",
+          "value": "ON"
+        }
+      ]
     }
   ]
 }

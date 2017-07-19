@@ -31,6 +31,15 @@ else ()
 endif ()
 
 ##################################################################
+# BENCHMARK
+##################################################################
+option(RUN_BENCHMARK "If yes, a benchmark will be run" OFF)
+
+if (RUN_BENCHMARK)
+	add_definitions(-DRUN_BENCHMARK)
+endif ()
+
+##################################################################
 # CPU instruction set
 ##################################################################
 set(CPU_INSTRUCTION_SET "NONE" CACHE STRING "Additional CPU instruction set")
@@ -188,6 +197,7 @@ set(HEADER_FILES
 	src/webserver/RequestHandler.hpp
 	src/Declarations.hpp
 	src/MinerUtil.hpp
+	src/logging/Performance.hpp
 	src/resources.rc)
 
 ##################################################################
@@ -221,7 +231,8 @@ set(SOURCE_FILES
 	src/webserver/RequestHandler.cpp
 	src/Declarations.cpp
 	src/main.cpp
-	src/MinerUtil.cpp)
+	src/MinerUtil.cpp
+	src/logging/Performance.cpp)
 
 ##################################################################
 # GPU acceleration source files
@@ -308,6 +319,10 @@ elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
 	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse2)
 elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
 	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse4)
+endif ()
+
+if (RUN_BENCHMARK)
+	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-b)
 endif ()
 
 set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX ${CREEPMINER_POSTFIX}-d)

@@ -26,6 +26,7 @@
 #include "PlotReader.hpp"
 #include <atomic>
 #include "Declarations.hpp"
+#include "logging/Performance.hpp"
 
 #ifdef MINING_CUDA 
 #include "shabal/cuda/Shabal.hpp"
@@ -116,6 +117,8 @@ void Burst::PlotVerifier::runTask()
 #else
 		Poco::Nullable<DeadlineTuple> bestResult;
 
+		START_PROBE("PlotVerifier.SearchDeadline")
+
 		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i += Shabal256::HashSize)
 		{
 			auto result = verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
@@ -130,16 +133,24 @@ void Burst::PlotVerifier::runTask()
 						bestResult = pair;
 		}
 
+		TAKE_PROBE("PlotVerifier.SearchDeadline")
+
 		if (!bestResult.isNull())
+		{
+			START_PROBE("PlotVerifier.Submit")
 			miner_->submitNonce(bestResult.value().first,
 			                    verifyNotification->accountId,
 			                    bestResult.value().second,
 			                    verifyNotification->block,
 			                    verifyNotification->inputPath);
+			TAKE_PROBE("PlotVerifier.Submit")
+		}
 
 #endif
 		
+		START_PROBE("PlotVerifier.FreeMemory")
 		PlotReader::globalBufferSize.free(verifyNotification->buffer.size() * sizeof(ScoopData));
+		TAKE_PROBE("PlotVerifier.FreeMemory")
 	}
 
 #if defined MINING_CUDA
