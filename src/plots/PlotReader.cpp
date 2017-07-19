@@ -138,9 +138,6 @@ void Burst::PlotReader::runTask()
 					Poco::UInt64 a = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
 					Poco::UInt64 b = staggerScoopBytes;
 
-					if (a > b)
-						return b;
-
 					for(;;) 
 					{ 
 						if (a == 0) // trap if a==0 
