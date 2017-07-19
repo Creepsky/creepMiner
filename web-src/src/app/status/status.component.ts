@@ -76,7 +76,7 @@ export class StatusComponent implements OnInit {
   constructor(
     public b: BlockService
   ) {
-   }
+  }
 
 
   ngOnInit() {
@@ -105,16 +105,28 @@ export class StatusComponent implements OnInit {
     return Math.round(n);
   }
 
-  bestDeadline(): JSONS.NonceObject {
-    const bestDl = Math.min(...this.b.nonces.map(x => x.deadlineNum));
-
-    if (bestDl !== Infinity) {
-      return this.b.nonces.filter(x => x.deadlineNum == bestDl)[0];
-    } else {
-      return null;
+  countNonces(): number{
+    var sum = 0
+    for(var i = 0; i < this.b.plots.length; i++){
+      sum += this.b.plots[i].nonces.length;
     }
-
+     return sum;
   }
 
+
+  bestDeadline(): JSONS.NonceObject {
+    var DlArr = [];
+    for (var i = 0; i < this.b.plots.length; i++) {
+      DlArr[i] = Math.min(...this.b.plots[i].nonces.map(x => x.deadlineNum)); 
+    }
+    const bestDl = Math.min(...DlArr); 
+      if (bestDl !== Infinity) {
+
+        return bestDl[0];
+        
+      } else {
+        return null;
+      }
+    }
 
 }
