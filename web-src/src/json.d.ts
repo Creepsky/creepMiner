@@ -52,6 +52,7 @@ declare module JSONS {
     }
 
     export interface PlotDirObject {
+        nonces: Array<JSONS.NonceObject>;
         dir: string;
         type: string;
         value: number;
