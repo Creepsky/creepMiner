@@ -78,7 +78,7 @@ void Burst::MinerConfig::printConsole() const
 
 	printConsolePlots();
 
-	log_system(MinerLogger::config, "Get mining info interval : %z", MinerConfig::getConfig().getMiningInfoInterval());
+	log_system(MinerLogger::config, "Get mining info interval : %z seconds", MinerConfig::getConfig().getMiningInfoInterval());
 }
 
 void Burst::MinerConfig::printConsolePlots() const

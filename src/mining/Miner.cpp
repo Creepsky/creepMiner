@@ -109,6 +109,8 @@ void Burst::Miner::run()
 	// TODO REWORK
 	//wallet_.getLastBlock(currentBlockHeight_);
 
+	log_information(MinerLogger::miner, "Looking for mining info...");
+
 	while (running_)
 	{
 		if (getMiningInfo())
@@ -384,9 +386,22 @@ bool Burst::Miner::getMiningInfo()
 	{
 		try
 		{
+			if (responseData.empty())
+				return false;
+
 			HttpResponse httpResponse(responseData);
 			Poco::JSON::Parser parser;
-			auto root = parser.parse(httpResponse.getMessage()).extract<Poco::JSON::Object::Ptr>();
+			Poco::JSON::Object::Ptr root;
+
+			try
+			{
+				root = parser.parse(httpResponse.getMessage()).extract<Poco::JSON::Object::Ptr>();
+			}
+			catch (...)
+			{
+				return false;
+			}
+
 			std::string gensig;
 
 			if (root->has("height"))
