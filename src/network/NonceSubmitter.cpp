@@ -153,8 +153,10 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 			// our calculated deadlines differs from the pools one
 			if (confirmation.deadline != deadline->getDeadline())
 			{
-				log_debug(MinerLogger::nonceSubmitter, "The pools deadline for the nonce is different then ours!\n"
-					"\tPools deadline: %s\n\tOur deadline: %s",
+				log_error(MinerLogger::nonceSubmitter,
+					"The pool calculated a different deadline for your nonce than your miner has!\n"
+					"\tPools deadline: %s\n"
+					"\tYour deadline: %s",
 					deadlineFormat(confirmation.deadline), deadlineFormat(deadline->getDeadline()));
 
 				// change the deadline
