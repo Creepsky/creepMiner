@@ -85,7 +85,7 @@ if (GPU_ACCELERATION STREQUAL "CUDA")
 	set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
 	set(CUDA_NVCC_FLAGS
 		${CUDA_NVCC_FLAGS}
-		-O3 -std=c++11
+		-std=c++11
 		-arch=${GPU_CUDA_ARCH}
 		-gencode=arch=compute_30,code=sm_30
 		-gencode=arch=compute_50,code=sm_50
@@ -238,8 +238,16 @@ set(SOURCE_FILES
 # GPU acceleration source files
 ##################################################################
 if (GPU_ACCELERATION STREQUAL "CUDA")
+	set(HEADER_FILES
+		${HEADER_FILES}
+		src/gpu/algorithm/gpu_algorithm_atomic.hpp
+		src/gpu/impl/gpu_cuda_impl.hpp
+		src/gpu/gpu_algorithm_shell.hpp
+		src/gpu/gpu_declarations.hpp
+		src/gpu/gpu_shell.hpp)
 	set(SOURCE_FILES
 		${SOURCE_FILES}
+		src/gpu/impl/gpu_cuda_impl.cpp
 		src/shabal/cuda/Shabal.cu)
 endif ()
 

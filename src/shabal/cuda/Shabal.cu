@@ -37,6 +37,8 @@
 #include <iostream>
 #include <string>
 
+using namespace Burst;
+
 #define SPH_C32(x)    ((sph_u32)(x ## U))
 #define C32   SPH_C32
 
@@ -166,22 +168,22 @@
 	} while (0)
 
 #define DECODE_BLOCK   do { \
-		M0 = sph_dec32le_aligned_cuda(buf + 0); \
-		M1 = sph_dec32le_aligned_cuda(buf + 4); \
-		M2 = sph_dec32le_aligned_cuda(buf + 8); \
-		M3 = sph_dec32le_aligned_cuda(buf + 12); \
-		M4 = sph_dec32le_aligned_cuda(buf + 16); \
-		M5 = sph_dec32le_aligned_cuda(buf + 20); \
-		M6 = sph_dec32le_aligned_cuda(buf + 24); \
-		M7 = sph_dec32le_aligned_cuda(buf + 28); \
-		M8 = sph_dec32le_aligned_cuda(buf + 32); \
-		M9 = sph_dec32le_aligned_cuda(buf + 36); \
-		MA = sph_dec32le_aligned_cuda(buf + 40); \
-		MB = sph_dec32le_aligned_cuda(buf + 44); \
-		MC = sph_dec32le_aligned_cuda(buf + 48); \
-		MD = sph_dec32le_aligned_cuda(buf + 52); \
-		ME = sph_dec32le_aligned_cuda(buf + 56); \
-		MF = sph_dec32le_aligned_cuda(buf + 60); \
+		M0 = cuda_sph_dec32le_aligned(buf + 0); \
+		M1 = cuda_sph_dec32le_aligned(buf + 4); \
+		M2 = cuda_sph_dec32le_aligned(buf + 8); \
+		M3 = cuda_sph_dec32le_aligned(buf + 12); \
+		M4 = cuda_sph_dec32le_aligned(buf + 16); \
+		M5 = cuda_sph_dec32le_aligned(buf + 20); \
+		M6 = cuda_sph_dec32le_aligned(buf + 24); \
+		M7 = cuda_sph_dec32le_aligned(buf + 28); \
+		M8 = cuda_sph_dec32le_aligned(buf + 32); \
+		M9 = cuda_sph_dec32le_aligned(buf + 36); \
+		MA = cuda_sph_dec32le_aligned(buf + 40); \
+		MB = cuda_sph_dec32le_aligned(buf + 44); \
+		MC = cuda_sph_dec32le_aligned(buf + 48); \
+		MD = cuda_sph_dec32le_aligned(buf + 52); \
+		ME = cuda_sph_dec32le_aligned(buf + 56); \
+		MF = cuda_sph_dec32le_aligned(buf + 60); \
 	} while (0)
 
 #define INPUT_BLOCK_ADD   do { \
@@ -409,7 +411,7 @@ C32(0xBC968828), C32(0xE6E00BF7), C32(0xBA839E55), C32(0x9B491C60)
 */
 
 __device__
-sph_u32 sph_dec32le_aligned_cuda(const void *src)
+sph_u32 cuda_sph_dec32le_aligned(const void *src)
 {
 #if SPH_LITTLE_ENDIAN
 	return *(const sph_u32 *)src;
@@ -440,7 +442,7 @@ sph_u32 sph_dec32le_aligned_cuda(const void *src)
 }
 
 __device__
-void shabal_init_cuda(void *cc, unsigned size)
+void cuda_shabal_init(void *cc, unsigned size)
 {
 	/*
 	* We have precomputed initial states for all the supported
@@ -465,7 +467,7 @@ void shabal_init_cuda(void *cc, unsigned size)
 }
 
 __device__
-void shabal_core_cuda(void *cc, const unsigned char *data, size_t len)
+void cuda_shabal_core(void *cc, const unsigned char *data, size_t len)
 {
 	sph_shabal_context *sc;
 	unsigned char *buf;
@@ -516,7 +518,7 @@ void shabal_core_cuda(void *cc, const unsigned char *data, size_t len)
 }
 
 __device__
-void sph_enc32le_aligned_cuda(void *dst, sph_u32 val)
+void cuda_sph_enc32le_aligned(void *dst, sph_u32 val)
 {
 #if SPH_LITTLE_ENDIAN
 	*(sph_u32 *)dst = val;
@@ -531,7 +533,7 @@ void sph_enc32le_aligned_cuda(void *dst, sph_u32 val)
 }
 
 __device__
-void shabal_close_cuda(void *cc, unsigned ub, unsigned n, void *dst)
+void cuda_shabal_close(void *cc, unsigned ub, unsigned n, void *dst)
 {
 	const auto size_word = 8;
 	sph_shabal_context *sc;
@@ -569,65 +571,83 @@ void shabal_close_cuda(void *cc, unsigned ub, unsigned n, void *dst)
 	* emit the relevant words into a temporary buffer, which
 	* we finally copy into the destination array.
 	*/
-	sph_enc32le_aligned_cuda(u.tmp_out + 32, B8);
-	sph_enc32le_aligned_cuda(u.tmp_out + 36, B9);
-	sph_enc32le_aligned_cuda(u.tmp_out + 40, BA);
-	sph_enc32le_aligned_cuda(u.tmp_out + 44, BB);
-	sph_enc32le_aligned_cuda(u.tmp_out + 48, BC);
-	sph_enc32le_aligned_cuda(u.tmp_out + 52, BD);
-	sph_enc32le_aligned_cuda(u.tmp_out + 56, BE);
-	sph_enc32le_aligned_cuda(u.tmp_out + 60, BF);
+	cuda_sph_enc32le_aligned(u.tmp_out + 32, B8);
+	cuda_sph_enc32le_aligned(u.tmp_out + 36, B9);
+	cuda_sph_enc32le_aligned(u.tmp_out + 40, BA);
+	cuda_sph_enc32le_aligned(u.tmp_out + 44, BB);
+	cuda_sph_enc32le_aligned(u.tmp_out + 48, BC);
+	cuda_sph_enc32le_aligned(u.tmp_out + 52, BD);
+	cuda_sph_enc32le_aligned(u.tmp_out + 56, BE);
+	cuda_sph_enc32le_aligned(u.tmp_out + 60, BF);
 
 	out_len = size_word << 2;
 	memcpy(dst, u.tmp_out + (sizeof u.tmp_out) - out_len, out_len);
-	shabal_init_cuda(sc, size_word << 5);
+	cuda_shabal_init(sc, size_word << 5);
 }
 
 __global__
-void calculate_shabal_cuda_device(Burst::ScoopData* buffer, Poco::UInt64 len, const Burst::GensigData* gensig, CalculatedDeadline* bestDeadline,
-	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget)
+void cuda_calculate_shabal(Burst::ScoopData* buffer, Poco::UInt64 len, const Burst::GensigData* gensig, CalculatedDeadline* bestDeadline,
+	Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
 {
-	sph_shabal256_context context;
-	shabal_init_cuda(&context, 256);
+	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-	int i = threadIdx.x + blockIdx.x * blockDim.x;
+	sph_shabal256_context context;
+	cuda_shabal_init(&context, 256);
 
 	//printf("blockIdx.x = %i\n", blockIdx.x);
 	//printf("blockIdx.x = %i, threadIdx.x = %i, index = %i\n", blockIdx.x, threadIdx.x, i);
 	
-	if (i >= len)
+	if (tid >= len)
 	{
 		//printf("blockIdx.x = %i, threadIdx.x = %i, index = %i\n", blockIdx.x, threadIdx.x, i);
 		return;
 	}
 
 	Poco::UInt8 target[Burst::Settings::HashSize];
-	auto test = buffer[i];
+	auto test = buffer[tid];
 
-	shabal_core_cuda(&context, (const unsigned char *)gensig, Burst::Settings::HashSize);
-	shabal_core_cuda(&context, (const unsigned char *)&test, Burst::Settings::ScoopSize);
-	shabal_close_cuda(&context, 0, 0, &target[0]);
+	cuda_shabal_core(&context, (const unsigned char *)gensig, Burst::Settings::HashSize);
+	cuda_shabal_core(&context, (const unsigned char *)&test, Burst::Settings::ScoopSize);
+	cuda_shabal_close(&context, 0, 0, &target[0]);
 
 	Poco::UInt64 targetResult = 0;
 	memcpy(&targetResult, &target[0], sizeof(Poco::UInt64));
 	auto deadline = targetResult / baseTarget;
-	
-	bestDeadline[i].deadline = deadline;
-	bestDeadline[i].nonce = nonceStart + nonceRead + i;
+
+	auto buffer_deadline = (Poco::UInt64*)(buffer + tid);
+	*buffer_deadline = deadline;
+
+	__syncthreads();
+
+	if (tid == 0)
+	{
+		for (auto i = 0u; i < len; ++i)
+		{
+			auto test = buffer[i];
+			auto currentDeadline_ptr = (Poco::UInt64*)&test;
+			auto currentDeadline = *currentDeadline_ptr;
+			
+			if (i == 0 || bestDeadline->deadline > currentDeadline && currentDeadline > 0)
+			{
+				bestDeadline->nonce = nonceStart + i;
+				bestDeadline->deadline = currentDeadline;
+			}
+		}
+	}
 }
 
-void calc_occupancy_cuda(int bufferSize, int& gridSize, int& blockSize)
+void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize)
 {
 	int minGridSize;
 
-	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)calculate_shabal_cuda_device, 0, 0);
+	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)cuda_calculate_shabal, 0, 0);
 
 	gridSize = (bufferSize + blockSize - 1) / blockSize;
 }
 
-bool alloc_memory_cuda(MemoryType memType, Poco::UInt64 size, void** mem)
+bool cuda_alloc_memory(MemoryType memType, Poco::UInt64 size, void** mem)
 {
-	size = calc_memory_size(memType, size);
+	size = cuda_calc_memory_size(memType, size);
 
 	if (size <= 0)
 		return false;
@@ -635,22 +655,22 @@ bool alloc_memory_cuda(MemoryType memType, Poco::UInt64 size, void** mem)
 	return cudaMalloc((void**)&*mem, size) == cudaSuccess;
 }
 
-bool realloc_memory_cuda(MemoryType memType, Poco::UInt64 size,  void** mem)
+bool cuda_realloc_memory(MemoryType memType, Poco::UInt64 size,  void** mem)
 {
-	size = calc_memory_size(memType, size);
+	size = cuda_calc_memory_size(memType, size);
 
 	if (size <= 0)
 		return false;
 
 	if (*mem != nullptr)
-		free_memory_cuda(*mem);
+		cuda_free_memory(*mem);
 
 	return cudaMalloc((void**)&*mem, size) == cudaSuccess;
 }
 
-bool copy_memory_cuda(MemoryType memType, Poco::UInt64 size, const void* from, void* to, MemoryCopyDirection copyDirection)
+bool cuda_copy_memory(MemoryType memType, Poco::UInt64 size, const void* from, void* to, MemoryCopyDirection copyDirection)
 {
-	size = calc_memory_size(memType, size);
+	size = cuda_calc_memory_size(memType, size);
 
 	if (size <= 0)
 		return false;
@@ -658,7 +678,7 @@ bool copy_memory_cuda(MemoryType memType, Poco::UInt64 size, const void* from, v
 	return cudaMemcpy(to, from, size, copyDirection == MemoryCopyDirection::ToDevice ? cudaMemcpyHostToDevice : cudaMemcpyDeviceToHost) == cudaSuccess;
 }
 
-bool free_memory_cuda(void* mem)
+bool cuda_free_memory(void* mem)
 {
 	if (mem == nullptr)
 		return false;
@@ -666,7 +686,7 @@ bool free_memory_cuda(void* mem)
 	return cudaFree(mem) == cudaSuccess;
 }
 
-Poco::UInt64 calc_memory_size(MemoryType memType, Poco::UInt64 size)
+Poco::UInt64 cuda_calc_memory_size(MemoryType memType, Poco::UInt64 size)
 {
 	if (memType == MemoryType::Buffer)
 		size *= sizeof(Poco::UInt8) * Burst::Settings::ScoopSize;
@@ -678,8 +698,8 @@ Poco::UInt64 calc_memory_size(MemoryType memType, Poco::UInt64 size)
 	return size;
 }
 
-void calculate_shabal_cuda(Burst::ScoopData* buffer, Poco::UInt64 len, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
-	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget)
+void cuda_calculate_shabal_host(Burst::ScoopData* buffer, Poco::UInt64 len, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
+	Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
 {
 	Burst::ScoopData* cudaBuffer;
 	Burst::GensigData* cudaGensig;
@@ -701,12 +721,12 @@ void calculate_shabal_cuda(Burst::ScoopData* buffer, Poco::UInt64 len, const Bur
 	int minGridSize;
 	int gridSize;
 	
-	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)calculate_shabal_cuda_device, 0, 0);
+	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)cuda_calculate_shabal, 0, 0);
 
 	gridSize = (len + blockSize - 1) / blockSize;
 
-	calculate_shabal_cuda_device<<<gridSize, blockSize>>>(cudaBuffer, len, cudaGensig, cudaDeadlines,
-		nonceStart, nonceRead, baseTarget);
+	cuda_calculate_shabal<<<gridSize, blockSize>>>(cudaBuffer, len, cudaGensig, cudaDeadlines,
+		nonceStart, baseTarget);
 	
 	err = cudaMemcpy(deadlines, cudaDeadlines, sizeDeadlines, cudaMemcpyDeviceToHost);
 
@@ -716,18 +736,30 @@ void calculate_shabal_cuda(Burst::ScoopData* buffer, Poco::UInt64 len, const Bur
 	err = err;
 }
 
-bool calculate_shabal_prealloc_cuda(Burst::ScoopData* buffer, Poco::UInt64 bufferSize, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
-	Poco::UInt64 nonceStart, Poco::UInt64 nonceRead, Poco::UInt64 baseTarget, int gridSize, int blockSize, std::string& errorString)
+bool cuda_calculate_shabal_host_preallocated(Burst::ScoopData* buffer, Poco::UInt64 bufferSize, const Burst::GensigData* gensig, CalculatedDeadline* deadlines,
+	Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, std::string& errorString)
 {
-	calculate_shabal_cuda_device<<<gridSize, blockSize>>>(buffer, bufferSize, gensig, deadlines, nonceStart, nonceRead, baseTarget);
+	int blockSize = 0;
+	int minGridSize = 0;
+	
+	cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)cuda_calculate_shabal, 0, 0);
 
+	int gridSize = gridSize = (bufferSize + blockSize - 1) / blockSize;
+
+	cuda_calculate_shabal<<<gridSize, blockSize>>>(buffer, bufferSize, gensig, deadlines, nonceStart, baseTarget);
+
+	return !cuda_get_error(errorString);
+}
+
+bool cuda_get_error(std::string& errorString)
+{
 	auto err = cudaPeekAtLastError();
 
 	if (err != cudaSuccess)
 	{
 		errorString = cudaGetErrorString(err);
-		return false;
+		return true;
 	}
 
-	return true;
+	return false;
 }

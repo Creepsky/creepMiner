@@ -27,9 +27,12 @@
 #include <atomic>
 #include "Declarations.hpp"
 #include "logging/Performance.hpp"
+#include <Poco/Nullable.h>
 
-#ifdef MINING_CUDA 
-#include "shabal/cuda/Shabal.hpp"
+#if MINING_CUDA || MINING_OPENCL
+#include "gpu/gpu_declarations.hpp"
+#include "gpu/gpu_shell.hpp"
+#include "gpu/algorithm/gpu_algorithm_atomic.hpp"
 #endif
 
 Burst::PlotVerifier::PlotVerifier(Miner &miner, Poco::NotificationQueue& queue)
@@ -60,65 +63,22 @@ void Burst::PlotVerifier::runTask()
 			verifyNotification = notification.cast<VerifyNotification>();
 		else
 			break;
-		
-#if defined MINING_CUDA
-#define check(x) if (!x) log_critical(MinerLogger::plotVerifier, "Error on %s", std::string(#x));
-		
-		check(alloc_memory_cuda(MemoryType::Gensig, 0, reinterpret_cast<void**>(&cudaGensig)));
-		check(alloc_memory_cuda(MemoryType::Buffer, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaBuffer)));
-		check(alloc_memory_cuda(MemoryType::Deadlines, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaDeadlines)));
-		calculatedDeadlines.resize(verifyNotification->buffer.size(), CalculatedDeadline{0, 0});
-		calc_occupancy_cuda(static_cast<int>(verifyNotification->buffer.size()), gridSize, blockSize);
 
-		/*if (calculatedDeadlines.size() < verifyNotification->buffer.size())
-		{
-			check(realloc_memory_cuda(MemoryType::Buffer, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaBuffer)));
-			check(realloc_memory_cuda(MemoryType::Deadlines, verifyNotification->buffer.size(), reinterpret_cast<void**>(&cudaDeadlines)));
-			calculatedDeadlines.resize(verifyNotification->buffer.size(), CalculatedDeadline{0, 0});
-			calc_occupancy_cuda(verifyNotification->buffer.size(), gridSize, blockSize);
-		}*/
-
-		check(copy_memory_cuda(MemoryType::Buffer, verifyNotification->buffer.size(), verifyNotification->buffer.data(), cudaBuffer, MemoryCopyDirection::ToDevice));
-		check(copy_memory_cuda(MemoryType::Gensig, 0, &miner_->getGensig(), cudaGensig, MemoryCopyDirection::ToDevice));
-		
-		if (!calculate_shabal_prealloc_cuda(cudaBuffer, verifyNotification->buffer.size(), cudaGensig, cudaDeadlines,
-			verifyNotification->nonceStart, verifyNotification->nonceRead, miner_->getBaseTarget(), gridSize, blockSize, errorString))
-			log_error(Burst::MinerLogger::plotVerifier, "CUDA error: %s", errorString);
-
-		check(copy_memory_cuda(MemoryType::Deadlines, verifyNotification->buffer.size(), cudaDeadlines, calculatedDeadlines.data(), MemoryCopyDirection::ToHost));
-
-		CalculatedDeadline* bestDeadline = nullptr;
-
-		for (auto i = 0u; i < verifyNotification->buffer.size(); ++i)
-		{
-			if (bestDeadline == nullptr || bestDeadline->deadline > calculatedDeadlines[i].deadline)
-				bestDeadline = &calculatedDeadlines[i];
-
-			if (calculatedDeadlines[i].deadline == 0)
-				log_trace(MinerLogger::plotVerifier, "zero deadline!");
-		}
-
-		if (bestDeadline == nullptr || bestDeadline->deadline == 0)
-			log_debug(MinerLogger::plotVerifier, "CUDA processing gave null deadline!\n"
-				"\tplotfile = %s\n"
-				"\tbuffer.size() = %z\n"
-				"\tnonceStart = %Lu\n"
-				"\tnonceRead = %Lu",
-				verifyNotification->inputPath, verifyNotification->buffer.size(), verifyNotification->nonceStart, verifyNotification->nonceRead
-			);
-
-		miner_->submitNonce(bestDeadline->nonce, verifyNotification->accountId, bestDeadline->deadline,
-			verifyNotification->block, verifyNotification->inputPath);
-
-		check(free_memory_cuda(cudaBuffer));
-		check(free_memory_cuda(cudaGensig));
-		check(free_memory_cuda(cudaDeadlines));
-		calculatedDeadlines.resize(0);
-#else
 		Poco::Nullable<DeadlineTuple> bestResult;
 
 		START_PROBE("PlotVerifier.SearchDeadline")
-
+#if MINING_CUDA || MINING_OPENCL
+		DeadlineTuple bestDeadline;
+		bestDeadline.first = 0;
+		bestDeadline.second = 0;
+		Gpu::run<Gpu_Algorithm_Atomic>(
+			verifyNotification->buffer,
+			verifyNotification->gensig,
+			verifyNotification->nonceStart + verifyNotification->nonceRead,
+			verifyNotification->baseTarget,
+			bestDeadline);
+		bestResult = bestDeadline;
+#else
 		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i += Shabal256::HashSize)
 		{
 			auto result = verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
@@ -132,9 +92,9 @@ void Burst::PlotVerifier::runTask()
 					if (bestResult.isNull() || pair.second < bestResult.value().second)
 						bestResult = pair;
 		}
-
+#endif
 		TAKE_PROBE("PlotVerifier.SearchDeadline")
-
+		
 		if (!bestResult.isNull())
 		{
 			START_PROBE("PlotVerifier.Submit")
@@ -145,19 +105,11 @@ void Burst::PlotVerifier::runTask()
 			                    verifyNotification->inputPath);
 			TAKE_PROBE("PlotVerifier.Submit")
 		}
-
-#endif
 		
 		START_PROBE("PlotVerifier.FreeMemory")
 		PlotReader::globalBufferSize.free(verifyNotification->buffer.size() * sizeof(ScoopData));
 		TAKE_PROBE("PlotVerifier.FreeMemory")
 	}
-
-#if defined MINING_CUDA
-	free_memory_cuda(cudaBuffer);
-	free_memory_cuda(cudaDeadlines);
-	free_memory_cuda(cudaGensig);
-#endif
 
 	log_debug(MinerLogger::plotVerifier, "Verifier stopped");
 }
