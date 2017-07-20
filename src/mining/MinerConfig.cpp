@@ -295,9 +295,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 3);
 		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 256);
 
-		if (maxBufferSizeMB_ == 0)
-			maxBufferSizeMB_ = 256;
-
 		auto timeout = getOrAdd(miningObj, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
 

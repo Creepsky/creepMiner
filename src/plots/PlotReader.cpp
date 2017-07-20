@@ -42,6 +42,10 @@ void Burst::GlobalBufferSize::setMax(Poco::UInt64 max)
 
 bool Burst::GlobalBufferSize::reserve(Poco::UInt64 size)
 {
+	// unlimited memory
+	if (MinerConfig::getConfig().getMaxBufferSize() == 0)
+		return true;
+
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	
 	if (size_ + size > max_)
@@ -53,6 +57,10 @@ bool Burst::GlobalBufferSize::reserve(Poco::UInt64 size)
 
 void Burst::GlobalBufferSize::free(Poco::UInt64 size)
 {
+	// unlimited memory
+	if (MinerConfig::getConfig().getMaxBufferSize() == 0)
+		return;
+
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	
 	if (size > size_)
