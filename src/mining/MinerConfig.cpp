@@ -62,7 +62,7 @@ void Burst::MinerConfig::printConsole() const
 	Poco::Mutex::ScopedLock lock(mutex_);
 
 	log_system(MinerLogger::config, "Submission Max Retry : %s",
-		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()));
+		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()) + " seconds");
 	
 	printBufferSize();
 
@@ -1008,7 +1008,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		logging.set("logfile", isLogfileUsed());
 
 		// miningInfoInterval
-		logging.set("miningInfoInterval", getMiningInfoInterval()),
+		logging.set("miningInfoInterval", getMiningInfoInterval());
 
 		json.set("logging", logging);
 	}
