@@ -431,12 +431,14 @@ bool Burst::Miner::getMiningInfo()
 						// if its changed, print it
 						if (target_deadline_pool_before != data_.getTargetDeadline(TargetDeadlineType::Pool))
 							log_system(MinerLogger::config,
-								"got new target deadline\n"
-								"\told target deadline: %s\n"
-								"\tnew target deadline: %s\n"
+								"got new target deadline from pool\n"
+								"\told pool target deadline: %s\n"
+								"\tnew pool target deadline: %s\n"
+								"\ttarget deadline from config: %s\n"
 								"\tlowest target deadline: %s",
 								deadlineFormat(target_deadline_pool_before),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Pool)),
+								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Local)),
 								deadlineFormat(data_.getTargetDeadline()));
 					}
 
