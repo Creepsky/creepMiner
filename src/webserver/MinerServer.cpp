@@ -114,13 +114,22 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 	auto blockData = minerData_->getBlockData();
 	bool error;
 
+	// send the config
 	{
 		std::stringstream ss;
 		createJsonConfig().stringify(ss);
 		error = !sendToWebsocket(*websocket, ss.str());
 	}
 
-	if (blockData != nullptr)
+	// send the plot dir data
+	if (!error)
+	{
+		std::stringstream ss;
+		createJsonPlotDirs().stringify(ss);
+		error = !sendToWebsocket(*websocket, ss.str());
+	}
+
+	if (!error && blockData != nullptr)
 	{
 		blockData->forEntries([this, &websocket](const Poco::JSON::Object& entry)
 		{
