@@ -46,14 +46,14 @@ declare module JSONS {
         deadline: string;
         deadlineNum: number;
         nonce: number;
-        plotfile: string;//
+        plotfile: string;
         time: string;
         type: string;
     }
 
     export interface PlotDirObject {
         nonces: Array<JSONS.NonceObject>;
-        dir: string;//
+        dir: string;
         type: string;
         value: number;
         closed: boolean;
