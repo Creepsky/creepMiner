@@ -141,7 +141,7 @@ void Burst::Message::stackframe(Poco::Message::Priority priority, TextType type,
 	ss << "Stackframe" << std::endl;
 	stackframe.dump(ss);
 
-	log(priority, type, logger, ss.str(), file, line);
+	logIntoFile(priority, type, logger, ss.str(), file, line);
 }
 
 Burst::Message::Message()
