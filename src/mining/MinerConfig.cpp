@@ -1004,6 +1004,12 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// path
 		logging.set("path", getLogDir());
 		
+		// logfile
+		logging.set("logfile", isLogfileUsed());
+
+		// miningInfoInterval
+		logging.set("miningInfoInterval", getMiningInfoInterval()),
+
 		json.set("logging", logging);
 	}
 
@@ -1034,6 +1040,9 @@ bool Burst::MinerConfig::save(const std::string& path) const
 
 		// wallet max request tries
 		mining.set("walletRequestTries", walletRequestTries_);
+
+		// insecurePlotfiles
+		mining.set("useInsecurePlotfiles", useInsecurePlotfiles());
 
 		// passphrase
 		{
