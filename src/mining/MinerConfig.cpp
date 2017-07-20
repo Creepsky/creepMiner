@@ -77,6 +77,8 @@ void Burst::MinerConfig::printConsole() const
 		log_system(MinerLogger::config, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
 
 	printConsolePlots();
+
+	log_system(MinerLogger::config, "Get mining info interval : %z", MinerConfig::getConfig().getMiningInfoInterval());
 }
 
 void Burst::MinerConfig::printConsolePlots() const
@@ -110,7 +112,7 @@ void Burst::MinerConfig::printUrl(const Url& url, const std::string& url_name)
 void Burst::MinerConfig::printBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB_);
+	log_system(MinerLogger::config, "Buffer Size : %z MB%s", maxBufferSizeMB_, maxBufferSizeMB_ == 0 ? " (unlimited)" : "");
 }
 
 template <typename T>
@@ -306,6 +308,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		// use insecure plotfiles
 		useInsecurePlotfiles_ = getOrAdd(miningObj, "useInsecurePlotfiles", false);
+		getMiningInfoInterval_ = getOrAdd(miningObj, "getMiningInfoInterval", 3);
 
 		// urls
 		{
@@ -1171,6 +1174,12 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 		log_system(MinerLogger::config, "Changed logfile path to\n\t%s", logDirAndFile);
 }
 
+void Burst::MinerConfig::setGetMiningInfoInterval(size_t interval)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	getMiningInfoInterval_ = interval;
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
 	return addPlotDir(std::make_shared<PlotDir>(dir, PlotDir::Type::Sequential));
@@ -1213,6 +1222,12 @@ bool Burst::MinerConfig::useInsecurePlotfiles() const
 bool Burst::MinerConfig::isLogfileUsed() const
 {
 	return logfile_;
+}
+
+size_t Burst::MinerConfig::getMiningInfoInterval() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return getMiningInfoInterval_;
 }
 
 void Burst::MinerConfig::useLogfile(bool use)

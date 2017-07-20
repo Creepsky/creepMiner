@@ -98,7 +98,6 @@ void Burst::Miner::run()
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
 
-	const auto sleepTime = std::chrono::seconds(3);
 #ifdef RUN_BENCHMARK
 	size_t benchmarkLoop = 0;
 #endif
@@ -140,7 +139,7 @@ void Burst::Miner::run()
 			++benchmarkLoop;
 #endif
 
-		std::this_thread::sleep_for(sleepTime);
+		std::this_thread::sleep_for(std::chrono::seconds(MinerConfig::getConfig().getMiningInfoInterval()));
 	}
 
 	running_ = false;

@@ -147,6 +147,7 @@ namespace Burst
 		const std::string& getPassphrase() const;
 		bool useInsecurePlotfiles() const;
 		bool isLogfileUsed() const;
+		size_t getMiningInfoInterval() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -171,6 +172,7 @@ namespace Burst
 		void setMininigIntensity(unsigned intensity);
 		void setMaxPlotReaders(unsigned max_reader);
 		void setLogDir(const std::string& log_dir);
+		void setGetMiningInfoInterval(size_t interval);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.
@@ -229,6 +231,7 @@ namespace Burst
 		Passphrase passphrase_;
 		bool useInsecurePlotfiles_ = false;
 		bool logfile_ = true;
+		size_t getMiningInfoInterval_;
 		mutable Poco::Mutex mutex_;
 	};
 }
