@@ -6,14 +6,14 @@
   <!-- Command Buttons -->
   <div class="btn-group btn-group-justified" role="group" aria-label="commands">
     <div class="btn-group" role="group">
-      <button type="button" class="btn btn-default">
-        <span class="glyphicon glyphicon-volume-off"></span>
-        <span class="glyphicon glyphicon-volume-up"></span>
+      <button type="button" class="btn btn-default" (click)="toggleSound('block')">
+        <span class="glyphicon glyphicon-volume-off" *ngIf = "!sounds.block"></span>
+        <span class="glyphicon glyphicon-volume-up" *ngIf = "sounds.block"></span>
 				block missed sound
 			</button>
     </div>
     <div class="btn-group" role="group">
-      <button type="button" class="btn btn-default" (click)="toggleConfirmation()">
+      <button type="button" class="btn btn-default" (click)="toggleSound('confirmation')">
         <span class="glyphicon glyphicon-volume-off" *ngIf = "!sounds.confirmation"></span>
 				<span class="glyphicon glyphicon-volume-up" *ngIf = "sounds.confirmation"></span>
 				confirmation sound
@@ -102,7 +102,7 @@
     </div>
 
     <ul id="blkdata" class="list-group">
-      <li *ngFor="let p of b.plots" class="list-group-item clearfix plots" [class.list-group-item-info]= "!p.nonces.length" [class.list-group-item-success]= "p.nonces.length"
+      <li *ngFor="let p of b.plots" class="list-group-item clearfix plots" [class.list-group-item-info]="!p.nonces.length" [class.list-group-item-success]="p.nonces.length"
         [style.display]="(p.closed && p.nonces.length == 0) ? 'none' : 'block'">
         <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{p.dir }}
         <progressbar class="progress-striped plot-progress" [value]="p.value" type="warning" max="100" animate="true">{{round(p.value)}}%</progressbar>

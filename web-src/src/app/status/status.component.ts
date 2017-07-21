@@ -64,13 +64,13 @@ export class StatusComponent implements OnInit {
     }
   ];
   public sounds = {
-    newBlock: false,
+    block: false,
     confirmation: false
   }
 
-  toggleConfirmation() {
-    this.sounds.confirmation = !this.sounds.confirmation;
-    localStorage.setItem('confirmationSound', this.sounds.confirmation.toString());
+  toggleSound(type: 'block' | 'confirmation') {
+    this.sounds[type] = !this.sounds[type];
+    localStorage.setItem(type + 'Sound', this.sounds[type].toString());
   }
 
   constructor(
@@ -80,8 +80,11 @@ export class StatusComponent implements OnInit {
 
 
   ngOnInit() {
-    const confSound = localStorage.getItem('confirmationSound');
-    this.sounds.confirmation = (confSound === 'true');
+    for (const p in this.sounds) {
+      if (this.sounds.hasOwnProperty(p)) {
+        this.sounds[p] = (localStorage.getItem(p + 'Sound') === 'true');
+      }
+    }
 
     this.b.connect();
     this.b.newBlock$.subscribe(nb => {
@@ -90,13 +93,13 @@ export class StatusComponent implements OnInit {
       this.lineChartData[0].data = bestDl.map(x => x[1]);
     });
     this.b.newConfirmation$.subscribe(nc => {
+      const data = this.lineChartData[0].data;
       if (this.lineChartLabels[this.lineChartLabels.length - 1] === this.b.newBlock.block) {
-        console.log('vec ima');
+        data[data.length - 1] = this.bestDeadline().deadlineNum;
       } else {
-        console.log('treba push');
         this.lineChartLabels.push(this.b.newBlock.block);
-        this.lineChartData[0].data.push(this.bestDeadline().deadlineNum);
-        setTimeout(() => { }, 0);
+        data.push(this.bestDeadline().deadlineNum);
+        setTimeout(() => { }, 0); // ?
       }
     });
   }
@@ -105,28 +108,26 @@ export class StatusComponent implements OnInit {
     return Math.round(n);
   }
 
-  countNonces(): number{
-    var sum = 0
-    for(var i = 0; i < this.b.plots.length; i++){
+  countNonces(): number {
+    let sum = 0
+    for (let i = 0; i < this.b.plots.length; i++) {
       sum += this.b.plots[i].nonces.length;
     }
-     return sum;
+    return sum;
   }
 
 
   bestDeadline(): JSONS.NonceObject {
-    var DlArr = [];
-    for (var i = 0; i < this.b.plots.length; i++) {
-      DlArr[i] = Math.min(...this.b.plots[i].nonces.map(x => x.deadlineNum)); 
+    const DlArr = [];
+    for (let i = 0; i < this.b.plots.length; i++) {
+      DlArr[i] = Math.min(...this.b.plots[i].nonces.map(x => x.deadlineNum));
     }
-    const bestDl = Math.min(...DlArr); 
-      if (bestDl !== Infinity) {
-
-        return bestDl[0];
-        
-      } else {
-        return null;
-      }
+    const bestDl = Math.min(...DlArr);
+    if (bestDl !== Infinity) {
+      return bestDl[0];
+    } else {
+      return null;
     }
+  }
 
 }
