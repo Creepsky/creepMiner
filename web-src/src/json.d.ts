@@ -52,11 +52,17 @@ declare module JSONS {
     }
 
     export interface PlotDirObject {
-        nonces: Array<JSONS.NonceObject>;
-        dir: string;
-        type: string;
-        value: number;
+        path: string;
+        plotfiles: Plotfile[];
+        progress: number;
+        size: string;
         closed: boolean;
+    }
+
+    export interface Plotfile {
+        path: string;
+        size: string;
+        nonces: Array<JSONS.NonceObject>;
     }
 
 }

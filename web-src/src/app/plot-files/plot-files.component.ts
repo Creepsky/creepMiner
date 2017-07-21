@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { BlockService } from '../block.service';
+
 
 @Component({
   selector: 'app-plot-files',
@@ -7,9 +9,12 @@ import { Component, OnInit } from '@angular/core';
 })
 export class PlotFilesComponent implements OnInit {
 
-  constructor() { }
+  constructor(
+    public b: BlockService
+  ) { }
 
   ngOnInit() {
+    this.b.connect();
   }
 
 }

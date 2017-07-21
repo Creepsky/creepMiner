@@ -53,6 +53,9 @@
         </tr>
       </thead>
       <tbody id="plotFileDiv">
+        <tr *ngFor="let pf of b.plots">
+          {{pf | json}}
+        </tr>
       </tbody>
     </table>
   </div>

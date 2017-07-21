@@ -58,19 +58,19 @@
       <div id="lastWinnerNameRow" class="row">
         <div class="col-md-5 col-xs-4">Name</div>
         <div class="col-md-7 col-xs-8">
-          <a id="lastWinnerName" href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.name}}</a>
+          <a href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.name}}</a>
         </div>
       </div>
       <div class="row">
         <div class="col-md-5 col-xs-4">Numeric</div>
         <div class="col-md-7 col-xs-8">
-          <a id="lastWinnerNumeric" href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.numeric}}</a>
+          <a href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.numeric}}</a>
         </div>
       </div>
       <div class="row">
         <div class="col-md-5 col-xs-4">Address</div>
         <div class="col-md-7 col-xs-8">
-          <a id="lastWinnerAddress" href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.address}}</a>
+          <a href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.address}}</a>
         </div>
       </div>
     </div>
@@ -102,15 +102,17 @@
     </div>
 
     <ul id="blkdata" class="list-group">
-      <li *ngFor="let p of b.plots" class="list-group-item clearfix plots" [class.list-group-item-info]="!p.nonces.length" [class.list-group-item-success]="p.nonces.length"
-        [style.display]="(p.closed && p.nonces.length == 0) ? 'none' : 'block'">
-        <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{p.dir }}
-        <progressbar class="progress-striped plot-progress" [value]="p.value" type="warning" max="100" animate="true">{{round(p.value)}}%</progressbar>
-        <div *ngFor="let n of p.nonces" style="margin-top: 10px;">
-          <span class="glyphicon glyphicon-ok" aria-hidden="true" *ngIf="n.type === 'nonce confirmed'"></span>
-          <span class="glyphicon <glyphicon-share-alt></glyphicon-share-alt>" style="color: #c09853;" aria-hidden="true" *ngIf="n.type === 'nonce submitted'"></span>
-          <b>{{n.account}}</b>: {{n.type}} ({{n.deadline}})
-          <div style="font-size: 10px; margin-top: 5px;"> {{n.plotfile}} </div>
+      <li *ngFor="let p of b.plots" class="list-group-item clearfix plots" [class.list-group-item-info]="!countNonces(p)" [class.list-group-item-success]="countNonces(p)"
+        [style.display]="p.closed ? 'none' : 'block'">
+        <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{ p.path }}
+        <progressbar class="progress-striped plot-progress" [value]="p.progress" type="warning" max="100" animate="true">{{round(p.progress)}}%</progressbar>
+        <div *ngFor="let pf of p.plotfiles" style="margin-top: 10px;">
+          <div *ngFor="let n of pf.nonces" style="margin-top: 10px;">
+            <span class="glyphicon glyphicon-ok" aria-hidden="true" *ngIf="n.type === 'nonce confirmed'"></span>
+            <span class="glyphicon glyphicon-share-alt" style="color: #c09853;" aria-hidden="true" *ngIf="n.type === 'nonce submitted'"></span>
+            <b>{{n.account}}</b>: {{n.type}} ({{n.deadline}})
+            <div style="font-size: 10px; margin-top: 5px;"> {{n.plotfile}} </div>
+          </div>
         </div>
       </li>
     </ul>

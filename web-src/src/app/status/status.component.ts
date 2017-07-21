@@ -37,7 +37,7 @@ export class StatusComponent implements OnInit {
       mode: 'single',
       callbacks: {
         label: tooltipItems => {
-          let value = tooltipItems.yLabel;
+          const value = tooltipItems.yLabel;
           let first = Math.floor(value / 60 / 60);
           let second = Math.round(value / 60) - first * 60;
           let sufix1 = 'h';
@@ -95,10 +95,10 @@ export class StatusComponent implements OnInit {
     this.b.newConfirmation$.subscribe(nc => {
       const data = this.lineChartData[0].data;
       if (this.lineChartLabels[this.lineChartLabels.length - 1] === this.b.newBlock.block) {
-        data[data.length - 1] = this.bestDeadline().deadlineNum;
+        //  data[data.length - 1] = this.bestDeadline().deadlineNum;
       } else {
         this.lineChartLabels.push(this.b.newBlock.block);
-        data.push(this.bestDeadline().deadlineNum);
+        //       data.push(this.bestDeadline().deadlineNum);
         setTimeout(() => { }, 0); // ?
       }
     });
@@ -108,20 +108,25 @@ export class StatusComponent implements OnInit {
     return Math.round(n);
   }
 
-  countNonces(): number {
-    let sum = 0
-    for (let i = 0; i < this.b.plots.length; i++) {
-      sum += this.b.plots[i].nonces.length;
-    }
+  countNonces(plotDir?: JSONS.PlotDirObject): number {
+    let sum = 0;
+    (plotDir ? [plotDir] : this.b.plots).forEach(p => {
+      p.plotfiles.forEach(pf => {
+        sum += pf.nonces.length;
+      })
+    });
     return sum;
   }
 
 
   bestDeadline(): JSONS.NonceObject {
     const DlArr = [];
-    for (let i = 0; i < this.b.plots.length; i++) {
-      DlArr[i] = Math.min(...this.b.plots[i].nonces.map(x => x.deadlineNum));
-    }
+    this.b.plots.forEach(p => {
+      p.plotfiles.forEach(pf => {
+        DlArr.push(Math.min(...pf.nonces.map(x => x.deadlineNum)));
+      })
+    });
+
     const bestDl = Math.min(...DlArr);
     if (bestDl !== Infinity) {
       return bestDl[0];

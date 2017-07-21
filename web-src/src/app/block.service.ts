@@ -57,11 +57,11 @@ export class BlockService {
       }
       const response = JSON.parse(data);
 
+      //  console.log('sve', response.type, response);
 
       switch (response['type']) {
         case 'new block':
           this.newBlock = response;
-          this.plots = [];
 
           this.blockTime = new Date();
           this.blockReadTime = null;
@@ -100,7 +100,14 @@ export class BlockService {
           this.addOrUpdatePlot(response);
           break;
         case 'plotdirs-rescan':
-          console.log(response.type, response);
+          this.plots = response.plotdirs;
+          this.plots.forEach(p => {
+            p.plotfiles.forEach(pf => {
+              pf.nonces = [];
+            });
+            p.closed = false;
+            p.progress = 0;
+          });
           break;
         default:
           //        showMessage(response);
@@ -113,18 +120,18 @@ export class BlockService {
   }
 
 
-  private addOrUpdatePlot(plot: JSONS.PlotDirObject) {
-    const p = this.plots.filter(x => x.dir === plot.dir);
-    if (p.length > 0) {
-      p[0].value = plot.value;
-      plot = p[0];
+  private addOrUpdatePlot(plotUpdate) {
+    const p = this.plots.filter(x => x.path === plotUpdate.dir)[0];
+    if (p) {
+      p.progress = plotUpdate.value;
     } else {
-      plot.nonces = [];
-      this.plots.push(plot);
+      console.error('OVO NE MOZE');
+      //  plot.nonces = [];
+      // this.plots.push(plot);
     }
-    if (plot.value.toString() === '100') {
+    if (plotUpdate.value.toString() === '100' && !p.plotfiles.some(pf => !!pf.nonces.length)) {
       setTimeout(() => {
-        plot.closed = true;
+        p.closed = true;
       }, 2000 + (Math.random() * 1000));
     }
   }
@@ -132,19 +139,24 @@ export class BlockService {
   private addOrUpdateNonce(nonce: JSONS.NonceObject) {
     const index = nonce.plotfile.lastIndexOf('/');
     const plotDir = nonce.plotfile.slice(0, index);
-    const p = this.plots.filter(x => x.dir === plotDir);
-    const ns = p[0].nonces.filter(x => x.nonce === nonce.nonce);
-    if (ns.length > 0) {
-      ns[0].type = nonce.type;
-    } else {
-      p[0].nonces.push(nonce);
-    }
+
+    this.plots.forEach(p => {
+      const pf = p.plotfiles.filter(p2 => p2.path === nonce.plotfile)[0];
+      if (pf) {
+        const ns = pf.nonces.filter(x => x.nonce === nonce.nonce)[0];
+        if (ns) {
+          ns.type = nonce.type;
+        } else {
+          pf.nonces.push(nonce);
+        }
+      }
+    });
   }
 
   connect() {
     if ('WebSocket' in window) {
       if (this.websocket) {
-        this.websocket.close();
+        return;
       }
 
       this.websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/');
