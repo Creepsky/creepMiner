@@ -127,10 +127,7 @@ export class StatusComponent implements OnInit {
       })
     });
 
-    console.log(nonces);
-
     const bestDl = Math.min(...nonces.map(x => x.deadlineNum));
-    console.log('best', bestDl);
     if (bestDl !== Infinity) {
       return nonces.filter(n => n.deadlineNum === bestDl)[0];
     } else {
