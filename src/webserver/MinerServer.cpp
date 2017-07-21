@@ -146,7 +146,7 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 	if (!error)
 	{
 		std::stringstream ss;
-		createJsonPlotDirs().stringify(ss);
+		createJsonPlotDirsRescan().stringify(ss);
 		error = !sendToWebsocket(*websocket, ss.str());
 	}
 
