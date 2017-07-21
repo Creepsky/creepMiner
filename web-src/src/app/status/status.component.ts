@@ -120,16 +120,19 @@ export class StatusComponent implements OnInit {
 
 
   bestDeadline(): JSONS.NonceObject {
-    const DlArr = [];
+    const nonces: Array<JSONS.NonceObject> = [];
     this.b.plots.forEach(p => {
       p.plotfiles.forEach(pf => {
-        DlArr.push(Math.min(...pf.nonces.map(x => x.deadlineNum)));
+        nonces.push(...pf.nonces);
       })
     });
 
-    const bestDl = Math.min(...DlArr);
+    console.log(nonces);
+
+    const bestDl = Math.min(...nonces.map(x => x.deadlineNum));
+    console.log('best', bestDl);
     if (bestDl !== Infinity) {
-      return bestDl[0];
+      return nonces.filter(n => n.deadlineNum === bestDl)[0];
     } else {
       return null;
     }
