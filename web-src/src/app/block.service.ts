@@ -10,6 +10,7 @@ export class BlockService {
   progress = 0;
 
   plots: Array<JSONS.PlotDirObject> = [];
+  unknownNonces: Array<JSONS.NonceObject> = [];
   confirmedSound = new Audio('assets/sms-alert-1-daniel_simon.mp3');
   private _isreconn = false;
 
@@ -62,7 +63,7 @@ export class BlockService {
       switch (response['type']) {
         case 'new block':
           this.newBlock = response;
-
+          this.unknownNonces = [];
           this.blockTime = new Date();
           this.blockReadTime = null;
           this.newBlockSource.next(response);
@@ -140,17 +141,29 @@ export class BlockService {
     const index = nonce.plotfile.lastIndexOf('/');
     const plotDir = nonce.plotfile.slice(0, index);
 
+    let pfFound = false;
+
+    const pushOrUpdate = (arr: Array<JSONS.NonceObject>) => {
+      const ns = arr.filter(x => x.nonce === nonce.nonce)[0];
+      if (ns) {
+        ns.type = nonce.type;
+      } else {
+        nonce.deadlineNum = +nonce.deadlineNum;
+        arr.push(nonce);
+      }
+    }
+
     this.plots.forEach(p => {
       const pf = p.plotfiles.filter(p2 => p2.path === nonce.plotfile)[0];
       if (pf) {
-        const ns = pf.nonces.filter(x => x.nonce === nonce.nonce)[0];
-        if (ns) {
-          ns.type = nonce.type;
-        } else {
-          pf.nonces.push(nonce);
-        }
+        pfFound = true;
+        pushOrUpdate(pf.nonces);
       }
     });
+
+    if (!pfFound) {
+      pushOrUpdate(this.unknownNonces);
+    }
   }
 
   connect() {
