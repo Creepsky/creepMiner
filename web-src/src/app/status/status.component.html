@@ -27,34 +27,34 @@
     <div class="panel-body">
       <div class="row">
         <div class="col-md-6 col-xs-6">This block</div>
-        <div id="thisBlockBest" class="col-md-6 col-xs-6">{{bestDeadline()?.deadline}}</div>
+        <div class="col-md-6 col-xs-6">{{bestDeadline()?.deadline}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Overall</div>
-        <div id="bestOverall" class="col-md-6 col-xs-6">{{b.newBlock.bestOverall}}</div>
+        <div class="col-md-6 col-xs-6">{{b.newBlock.bestOverall}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Confirmed deadlines</div>
-        <div id="confirmedDeadlines" class="col-md-6 col-xs-6">{{ b.newBlock.deadlinesConfirmed - 0 + countNonces()}}</div>
+        <div class="col-md-6 col-xs-6">{{ b.newBlock.deadlinesConfirmed - 0 + countNonces()}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Won blocks</div>
-        <div id="wonBlocks" class="col-md-6 col-xs-6">{{b.newBlock.blocksWon}}</div>
+        <div class="col-md-6 col-xs-6">{{b.newBlock.blocksWon}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Mined blocks</div>
-        <div id="minedBlocks" class="col-md-6 col-xs-6">{{b.newBlock.blocksMined}}</div>
+        <div class="col-md-6 col-xs-6">{{b.newBlock.blocksMined}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Average deadline</div>
-        <div id="avgDeadline" class="col-md-6 col-xs-6">{{b.newBlock.deadlinesAvg}}</div>
+        <div class="col-md-6 col-xs-6">{{b.newBlock.deadlinesAvg}}</div>
       </div>
     </div>
   </div>
   <!-- Last Winner -->
   <div id="lastWinnerContainer" class="panel panel-default" *ngIf="b.lastWinner">
     <div class="panel-heading">Last winner</div>
-    <div id="lastWinner" class="panel-body">
+    <div class="panel-body">
       <div id="lastWinnerNameRow" class="row">
         <div class="col-md-5 col-xs-4">Name</div>
         <div class="col-md-7 col-xs-8">
