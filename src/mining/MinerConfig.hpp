@@ -28,6 +28,7 @@
 #include <Poco/Path.h>
 #include <Poco/JSON/Object.h>
 #include <functional>
+#include "Declarations.hpp"
 
 namespace Poco
 {
@@ -150,6 +151,7 @@ namespace Burst
 		bool isLogfileUsed() const;
 		size_t getMiningInfoInterval() const;
 		bool isRescanningEveryBlock() const;
+		LogOutputType getLogOutputType() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -241,6 +243,7 @@ namespace Burst
 		bool logfile_ = true;
 		size_t getMiningInfoInterval_ = 3;
 		bool rescanEveryBlock_ = true;
+		LogOutputType logOutputType_ = LogOutputType::Terminal;
 		mutable Poco::Mutex mutex_;
 	};
 }

@@ -99,4 +99,10 @@ namespace Burst
 
 	using AccountId = Poco::UInt64;
 	using Nonce = Poco::UInt64;
+
+	enum class LogOutputType
+	{
+		Terminal,
+		Service
+	};
 }

@@ -24,6 +24,7 @@
 #include <iostream>
 #include "mining/Miner.hpp"
 #include "MinerUtil.hpp"
+#include "mining/MinerConfig.hpp"
 
 #ifdef _WIN32
 #include <wincon.h>
@@ -90,7 +91,9 @@ const Burst::PrintBlock& Burst::PrintBlock::clearLine(bool wipe) const
 
 void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 {
-#ifdef LOG_TERMINAL
+	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
+		return;
+
 	std::lock_guard<std::recursive_mutex> lock(mutex_);
 #ifdef _WIN32
 	auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -100,19 +103,21 @@ void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 	std::cout << getUnixConsoleCode(foreground);
 #endif
 	currentColor_ = { foreground, background };
-#endif
 }
 
 void Burst::Console::setColor(ConsoleColorPair color)
 {
-#ifdef LOG_TERMINAL
+	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
+		return;
+
 	setColor(color.foreground, color.background);
-#endif
 }
 
 void Burst::Console::resetColor()
 {
-#ifdef LOG_TERMINAL
+	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
+		return;
+
 #ifdef _WIN32
 	setColor(ConsoleColor::White);
 #elif defined __linux__
@@ -123,7 +128,6 @@ void Burst::Console::resetColor()
 #endif
 	std::lock_guard<std::recursive_mutex> lock(mutex_);
 	currentColor_ = { ConsoleColor::White, ConsoleColor::Black };
-#endif
 }
 
 std::string Burst::Console::getUnixConsoleCode(ConsoleColor color)
@@ -157,7 +161,9 @@ std::shared_ptr<Burst::PrintBlock> Burst::Console::print()
 
 void Burst::Console::clearLine(bool wipe)
 {
-#ifdef LOG_TERMINAL
+	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
+		return;
+
 	std::lock_guard<std::recursive_mutex> lock(mutex_);
 	size_t consoleLength;
 #ifdef WIN32
@@ -176,5 +182,4 @@ void Burst::Console::clearLine(bool wipe)
 		std::cout << std::string(consoleLength, ' ') << '\r';
 
 	std::cout << std::flush;
-#endif
 }

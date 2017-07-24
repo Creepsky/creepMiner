@@ -25,10 +25,13 @@
 #include "Console.hpp"
 #include "MinerLogger.hpp"
 #include "MinerUtil.hpp"
+#include "mining/MinerConfig.hpp"
 
 void Burst::ProgressPrinter::print(float progress) const
 {
-#ifdef LOG_TERMINAL
+	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
+		return;
+
 	// calculate the progress bar proportions
 	size_t doneSize, notDoneSize;
 	calculateProgressProportions(progress, totalSize, doneSize, notDoneSize);
@@ -40,7 +43,6 @@ void Burst::ProgressPrinter::print(float progress) const
 		<< MinerLogger::getTextTypeColor(TextType::Normal) << std::string(totalSize - doneSize, notDoneChar)
 		<< MinerLogger::getTextTypeColor(TextType::Unimportant) << delimiterEnd
 		<< ' ' << static_cast<size_t>(progress) << '%';
-#endif
 }
 
 void Burst::ProgressPrinter::calculateProgressProportions(float progress, size_t totalSize, size_t& doneSize, size_t& notDoneSize)

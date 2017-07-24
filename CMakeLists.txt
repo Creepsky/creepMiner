@@ -19,18 +19,6 @@ if (MSVC)
 endif ()
 
 ##################################################################
-# LOG_TERMINAL / LOG_SERVICE
-##################################################################
-set(LOG_OUTPUT "TERMINAL" CACHE STRING "Logging output location")
-set_property(CACHE LOG_OUTPUT PROPERTY STRINGS TERMINAL SERVICE) 
-
-if (LOG_OUTPUT STREQUAL "SERVICE")
-	set(LOG_OUTPUT_FLAG "-DLOG_SERVICE")
-else ()
-	set(LOG_OUTPUT_FLAG "-DLOG_TERMINAL")
-endif ()
-
-##################################################################
 # BENCHMARK
 ##################################################################
 option(RUN_BENCHMARK "If yes, a benchmark will be run" OFF)

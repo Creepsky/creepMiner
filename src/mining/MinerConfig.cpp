@@ -253,6 +253,15 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			// do we need to create a logfile
 			logfile_ = getOrAdd(loggingObj, "logfile", false);
 
+			auto logOutput = getOrAdd(loggingObj, "outputType", std::string("terminal"));
+
+			if (logOutput == "terminal")
+				logOutputType_ = LogOutputType::Terminal;
+			else if (logOutput == "service")
+				logOutputType_ = LogOutputType::Service;
+			else
+				logOutputType_ = LogOutputType::Terminal;
+
 			try
 			{
 				auto dirLogFile = getOrAdd(loggingObj, "path", std::string(""));
@@ -278,6 +287,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			loggingObj = new Poco::JSON::Object;
 			loggingObj->set("path", "");
 			loggingObj->set("logfile", false);
+			loggingObj->set("outputType", std::string("terminal"));
 
 			for (auto& channel : MinerLogger::channelDefinitions)
 				loggingObj->set(channel.name, MinerLogger::getChannelPriority(channel.name));
@@ -1019,6 +1029,14 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// logfile
 		logging.set("logfile", isLogfileUsed());
 
+		// output type
+		if (logOutputType_ == LogOutputType::Terminal)
+			logging.set("logfile", "terminal");
+		else if (logOutputType_ == LogOutputType::Service)
+			logging.set("logfile", "service");
+		else
+			logging.set("logfile", "terminal");
+
 		json.set("logging", logging);
 	}
 
@@ -1262,6 +1280,11 @@ size_t Burst::MinerConfig::getMiningInfoInterval() const
 bool Burst::MinerConfig::isRescanningEveryBlock() const
 {
 	return rescanEveryBlock_;
+}
+
+Burst::LogOutputType Burst::MinerConfig::getLogOutputType() const
+{
+	return logOutputType_;
 }
 
 void Burst::MinerConfig::useLogfile(bool use)
