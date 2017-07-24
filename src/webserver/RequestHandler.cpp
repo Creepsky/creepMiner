@@ -33,16 +33,12 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "network/Request.hpp"
 #include "mining/MinerConfig.hpp"
-#include <Poco/Net/HTTPClientSession.h>
 #include "plots/PlotSizes.hpp"
 #include <Poco/Logger.h>
 #include <Poco/Base64Decoder.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/StringTokenizer.h>
 #include <Poco/Net/HTMLForm.h>
-#include <Poco/HMACEngine.h>
-#include <Poco/SHA1Engine.h>
-#include <urlmon.h>
 
 const std::string COOKIE_USER_NAME = "creepminer-webserver-user";
 const std::string COOKIE_PASS_NAME = "creepminer-webserver-pass";
