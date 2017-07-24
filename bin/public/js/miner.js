@@ -313,7 +313,7 @@ function config(cfg) {
 	system.html("");
 	addSystemEntry("Pool-URL", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
 	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
-	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"]));
+	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
 	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
 	addSystemEntry("Buffersize", cfg["bufferSize"]);
 	addSystemEntry("Target deadline", cfg["targetDeadlineText"]);
