@@ -262,6 +262,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			else
 				logOutputType_ = LogOutputType::Terminal;
 
+			logUseColors_ = getOrAdd(loggingObj, "useColors", true);
+
 			try
 			{
 				auto dirLogFile = getOrAdd(loggingObj, "path", std::string(""));
@@ -288,6 +290,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			loggingObj->set("path", "");
 			loggingObj->set("logfile", false);
 			loggingObj->set("outputType", std::string("terminal"));
+			loggingObj->set("useColors", true);
 
 			for (auto& channel : MinerLogger::channelDefinitions)
 				loggingObj->set(channel.name, MinerLogger::getChannelPriority(channel.name));
@@ -1037,6 +1040,9 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		else
 			logging.set("logfile", "terminal");
 
+		// log colors
+		logging.set("useColors", isUsingLogColors());
+
 		json.set("logging", logging);
 	}
 
@@ -1285,6 +1291,11 @@ bool Burst::MinerConfig::isRescanningEveryBlock() const
 Burst::LogOutputType Burst::MinerConfig::getLogOutputType() const
 {
 	return logOutputType_;
+}
+
+bool Burst::MinerConfig::isUsingLogColors() const
+{
+	return logUseColors_;
 }
 
 void Burst::MinerConfig::useLogfile(bool use)

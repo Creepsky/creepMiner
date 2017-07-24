@@ -152,6 +152,7 @@ namespace Burst
 		size_t getMiningInfoInterval() const;
 		bool isRescanningEveryBlock() const;
 		LogOutputType getLogOutputType() const;
+		bool isUsingLogColors() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -244,6 +245,7 @@ namespace Burst
 		size_t getMiningInfoInterval_ = 3;
 		bool rescanEveryBlock_ = true;
 		LogOutputType logOutputType_ = LogOutputType::Terminal;
+		bool logUseColors_ = true;
 		mutable Poco::Mutex mutex_;
 	};
 }

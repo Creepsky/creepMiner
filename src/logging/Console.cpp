@@ -91,7 +91,8 @@ const Burst::PrintBlock& Burst::PrintBlock::clearLine(bool wipe) const
 
 void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 {
-	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
+	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal ||
+		!MinerConfig::getConfig().isUsingLogColors())
 		return;
 
 	std::lock_guard<std::recursive_mutex> lock(mutex_);
@@ -107,15 +108,13 @@ void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 
 void Burst::Console::setColor(ConsoleColorPair color)
 {
-	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
-		return;
-
 	setColor(color.foreground, color.background);
 }
 
 void Burst::Console::resetColor()
 {
-	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
+	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal ||
+		!MinerConfig::getConfig().isUsingLogColors())
 		return;
 
 #ifdef _WIN32
