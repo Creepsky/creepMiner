@@ -1006,15 +1006,15 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// logfile
 		logging.set("logfile", isLogfileUsed());
 
-		// miningInfoInterval
-		logging.set("miningInfoInterval", getMiningInfoInterval());
-
 		json.set("logging", logging);
 	}
 
 	// mining
 	{
 		Poco::JSON::Object mining;
+
+		// miningInfoInterval
+		mining.set("miningInfoInterval", getMiningInfoInterval());
 
 		// intensity
 		mining.set("intensity", miningIntensity_);
