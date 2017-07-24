@@ -229,14 +229,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			try
 			{
-				auto logPathObj = loggingObj->get("path");
-				std::string dirLogFile = "";
-
-				if (logPathObj.isEmpty())
-					loggingObj->set("path", "");
-				else if (logPathObj.isString())
-					dirLogFile = logPathObj.extract<std::string>();
-
+				auto dirLogFile = getOrAdd(loggingObj, "path", std::string(""));
 				setLogDir(dirLogFile);
 			}
 			catch (Poco::Exception& exc)
@@ -1176,7 +1169,15 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 	pathLogfile_ = logDirAndFile;
 
 	if (!logfile_)
+	{
+		// remove the logfile
+		Poco::File{ logDirAndFile }.remove();
+
+		// refresh the channels
+		MinerLogger::refreshChannels();
+
 		log_system(MinerLogger::config, "Logfile deactivated");
+	}
 	else if (logDirAndFile.empty())
 		log_warning(MinerLogger::config, "Could not create logfile");
 	else
