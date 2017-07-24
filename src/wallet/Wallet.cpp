@@ -204,13 +204,8 @@ bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::
 			}
 			catch (Poco::Exception& exc)
 			{
-				log_error(MinerLogger::wallet, "Got invalid json response from server\n"
-					"\tURI: %s\n"
-					"\tResponse: %s\n"
-					"\t%s",
-					uri.getPathAndQuery(), data, exc.displayText()
-				);
-
+				log_error(MinerLogger::wallet, "Got invalid json response from wallet!\n\tURI: %s", uri.getPathAndQuery());
+				log_file_only(MinerLogger::wallet, Poco::Message::PRIO_ERROR, TextType::Error, "Got invalid json response from wallet!\n%s", data);
 				log_current_stackframe(MinerLogger::wallet);
 				return false;
 			}
