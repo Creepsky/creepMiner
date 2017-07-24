@@ -79,7 +79,11 @@ void Burst::PlotVerifier::runTask()
 			bestDeadline);
 		bestResult = bestDeadline;
 #else
-		for (size_t i = 0; i < verifyNotification->buffer.size() && !isCancelled(); i += Shabal256::HashSize)
+		for (size_t i = 0;
+			i < verifyNotification->buffer.size() &&
+			!isCancelled() &&
+			verifyNotification->block == miner_->getBlockheight();
+			i += Shabal256::HashSize)
 		{
 			auto result = verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
 				verifyNotification->gensig,
