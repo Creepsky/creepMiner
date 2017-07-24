@@ -38,7 +38,9 @@
 #include "plots/PlotReader.hpp"
 #include "plots/Plot.hpp"
 
-const std::string Burst::MinerConfig::WebserverPassphrase = "secret-webserver-pass-951";
+const std::string Burst::MinerConfig::WebserverUserPassphrase = "ms7zKm7QjsSOQEP13wHAWnraSp7yP7YSQdPzAjvO";
+const std::string Burst::MinerConfig::WebserverPassPassphrase = "CAAwj6RTQqXZGxbNjLVqr5FwAqT7GM9Y1wppNLRp";
+const std::string Burst::MinerConfig::HASH_DELIMITER = "::::";
 
 void Burst::MinerConfig::rescan()
 {
@@ -572,10 +574,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			auto credentialsJson = webserverObj->get("credentials");
 			Poco::JSON::Object::Ptr credentials;
 
-			const auto plainUserId = "plain-user";
-			const auto plainPassId = "plain-pass";
-			const auto hashedUserId = "hashed-user";
-			const auto hashedPassId = "hashed-pass";
+			const auto userId = "user";
+			const auto passId = "pass";
 			
 			if (!credentialsJson.isEmpty())
 				credentials = credentialsJson.extract<Poco::JSON::Object::Ptr>();
@@ -586,39 +586,45 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				webserverObj->set("credentials", credentials);
 			}
 
-			auto plainUser = getOrAdd(credentials, plainUserId, std::string{});
-			auto hashedUser = getOrAdd(credentials, hashedUserId, std::string{});
-			auto plainPass = getOrAdd(credentials, plainPassId, std::string{});
-			auto hashedPass = getOrAdd(credentials, hashedPassId, std::string{});
+			auto pass = getOrAdd(credentials, passId, std::string{});
+			auto user = getOrAdd(credentials, userId, std::string{});
 
-			if (!plainUser.empty())
-			{
-				hashedUser = hash_HMAC_SHA1(plainUser, WebserverPassphrase);
-				credentials->set(hashedUserId, hashedUser);
-				credentials->set(plainUserId, "");
+			const auto getOrHash = [](auto& property, const auto& hashDelimiter,
+				const auto& propertyJsonId, auto credentialsJsonObject,
+				const auto& salt) {
+				// user is already hashed
+				if (property.size() > hashDelimiter.size() && property.substr(0, hashDelimiter.size()) == hashDelimiter)
+				{
+					// cut off the hash delimiter
+					property = property.substr(hashDelimiter.size());
+				}
+				// user needs to be hashed
+				else
+				{
+					// hash it
+					property = hash_HMAC_SHA1(property, salt);
 
-				log_debug(MinerLogger::config, "hashed  the webserver username\n"
-					"\thash: %s", hashedUser);
-			}
+					// save it in json
+					credentialsJsonObject->set(propertyJsonId, hashDelimiter + property);
+				}
 
-			if (!plainPass.empty())
-			{
-				hashedPass = hash_HMAC_SHA1(plainPass, WebserverPassphrase);
-				credentials->set(hashedPassId, hashedPass);
-				credentials->set(plainPassId, "");
+				return property;
+			};
 
-				log_debug(MinerLogger::config, "hashed  the webserver password\n"
-					"\thash: %s", hashedPass);
-			}
+			if (!user.empty())
+				serverUser_ = getOrHash(user, HASH_DELIMITER, userId, credentials, WebserverUserPassphrase);
 
-			if (!hashedUser.empty())
-				serverUser_ = hashedUser;
-
-			if (!hashedPass.empty())
-				serverPass_ = hashedPass;
+			if (!pass.empty())
+				serverPass_ = getOrHash(pass, HASH_DELIMITER, passId, credentials, WebserverPassPassphrase);
 		}
 
 		config->set("webserver", webserverObj);
+
+		// warning message, when webserver is running in unsafe mode
+		if ((serverUser_.empty() || serverPass_.empty()) && startServer_)
+			log_warning(MinerLogger::config,
+				"You are running the webserver without protecting it with an username and/or password!\n"
+				"Every person with access to the webserver has FULL admin rights!");
 	}
 	
 	if (!save(configPath_, *config))
@@ -1083,10 +1089,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		{
 			Poco::JSON::Object credentials;
 			//
-			credentials.set("hashed-pass", serverPass_);
-			credentials.set("hashed-user", serverUser_);
-			credentials.set("plain-pass", "");
-			credentials.set("plain-user", "");
+			credentials.set("pass", serverPass_.empty() ? "" : HASH_DELIMITER + serverPass_);
+			credentials.set("user", serverUser_.empty() ? "" : HASH_DELIMITER + serverUser_);
 			//
 			webserver.set("credentials", credentials);
 		}

@@ -102,9 +102,30 @@ namespace Burst
 			Lambda lambda_;
 		};
 
+		/**
+		 * \brief Loads a template and fills it with content.
+		 * \param request The HTTP request.
+		 * \param response The HTTP response.
+		 * \param templatePage The template page.
+		 * \param contentPage The content page, that is inserted into the template.
+		 * \param variables The variables, that are inserted into template and contentpage.
+		 */
 		void loadTemplate(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
 		                  const std::string& templatePage, const std::string& contentPage,
 		                  TemplateVariables& variables);
+
+		/**
+		 * \brief Loads a template and fills it with content.
+		 * The template is only send as response, when the user is logged in.
+		 * \param request The HTTP request.
+		 * \param response The HTTP response.
+		 * \param templatePage The template page.
+		 * \param contentPage The content page, that is inserted into the template.
+		 * \param variables The variables, that are inserted into template and contentpage.
+		 */
+		void loadSecuredTemplate(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
+								 const std::string& templatePage, const std::string& contentPage,
+								 TemplateVariables& variables);
 
 		/**
 		 * \brief Loads an asset from a designated path.
@@ -123,7 +144,30 @@ namespace Burst
 		 * \return true, when the asset could be loaded, false otherwise.
 		 */
 		bool loadAsset(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response);
-		
+
+		/**
+		 * \brief Logins the user, if the credentials are right.
+		 * \param request The HTTP request.
+		 * \param response The HTTP response.
+		 * \return true, when the user was logged in, false otherwise.
+		 */
+		bool login(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response);
+
+		/**
+		 * \brief Logs the user out. Redirects him to the root dir.
+		 * \param request The HTTP request.
+		 * \param response The HTTP response.
+		 */
+		void logout(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response);
+
+		/**
+		 * \brief Checks, if the user is logged in.
+		 * Refreshes the login session of the user, if he was already logged in.
+		 * \param request The HTTP request.
+		 * \return true, if the user is logged in, false otherwise.
+		 */
+		bool isLoggedIn(Poco::Net::HTTPServerRequest& request);
+
 		/**
 		 * \brief Redirects the request to another destination.
 		 * \param request The HTTP request.

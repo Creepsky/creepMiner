@@ -40,6 +40,13 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/StringTokenizer.h>
 #include <Poco/Net/HTMLForm.h>
+#include <Poco/HMACEngine.h>
+#include <Poco/SHA1Engine.h>
+#include <urlmon.h>
+
+const std::string COOKIE_USER_NAME = "creepminer-webserver-user";
+const std::string COOKIE_PASS_NAME = "creepminer-webserver-pass";
+const std::string COOKIE_TIMESTAMP_NAME = "creepminer-webserver-timestamp";
 
 Burst::TemplateVariables::TemplateVariables(std::unordered_map<std::string, Variable> variables)
 	: variables(variables)
@@ -128,6 +135,15 @@ void Burst::RequestHandler::loadTemplate(Poco::Net::HTTPServerRequest& request, 
 	responseStream << output << std::flush;
 }
 
+void Burst::RequestHandler::loadSecuredTemplate(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
+	const std::string& templatePage, const std::string& contentPage, TemplateVariables& variables)
+{
+	if (!checkCredentials(request, response))
+		return;
+
+	loadTemplate(request, response, templatePage, contentPage, variables);
+}
+
 bool Burst::RequestHandler::loadAssetByPath(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, const std::string& path)
 {
 	try
@@ -146,8 +162,8 @@ bool Burst::RequestHandler::loadAssetByPath(Poco::Net::HTTPServerRequest& reques
 			mimeType = "text/javascript";
 		else if (ext == "png")
 			mimeType = "image/png";
-		else if (ext == "html")
-			mimeType = "text/html; charset=utf-8";
+		//else if (ext == "html")
+		//	mimeType = "text/html; charset=utf-8";
 
 		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 		response.setChunkedTransferEncoding(true);
@@ -168,6 +184,95 @@ bool Burst::RequestHandler::loadAssetByPath(Poco::Net::HTTPServerRequest& reques
 bool Burst::RequestHandler::loadAsset(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
 	return loadAssetByPath(request, response, request.getURI());
+}
+
+bool Burst::RequestHandler::login(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	Poco::Net::HTMLForm post_body(request, request.stream());
+
+	const std::string defaultCredential = "";
+	const auto& plainUserPost = post_body.get(COOKIE_USER_NAME, defaultCredential);
+	const auto& plainPassPost = post_body.get(COOKIE_PASS_NAME, defaultCredential);
+
+	auto credentialsOk =
+		check_HMAC_SHA1(plainUserPost, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverUserPassphrase) &&
+		check_HMAC_SHA1(plainPassPost, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassPassphrase);
+
+	// save the hashed username and password in a clientside cookie
+	if (credentialsOk)
+	{
+		response.addCookie({ COOKIE_USER_NAME, hash_HMAC_SHA1(plainUserPost, MinerConfig::WebserverUserPassphrase) });
+		response.addCookie({ COOKIE_PASS_NAME, hash_HMAC_SHA1(plainPassPost, MinerConfig::WebserverPassPassphrase) });
+		response.addCookie({ COOKIE_TIMESTAMP_NAME,
+			std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
+				std::chrono::system_clock::now().time_since_epoch()).count()) });
+	}
+
+	return credentialsOk;
+}
+
+namespace Burst
+{
+	void clearAuthCookies(Poco::Net::HTTPServerResponse& response)
+	{
+		response.addCookie(Poco::Net::HTTPCookie(COOKIE_USER_NAME, ""));
+		response.addCookie(Poco::Net::HTTPCookie(COOKIE_PASS_NAME, ""));
+		response.addCookie(Poco::Net::HTTPCookie(COOKIE_TIMESTAMP_NAME, ""));
+	}
+}
+
+void Burst::RequestHandler::logout(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
+{
+	clearAuthCookies(response);
+	redirect(request, response, "/");
+}
+
+bool Burst::RequestHandler::isLoggedIn(Poco::Net::HTTPServerRequest& request)
+{
+	auto credentialsOk = false;
+
+	// if there are no credentials in the config, user dont need to
+	// enter them
+	if (MinerConfig::getConfig().getServerUser().empty() &&
+		MinerConfig::getConfig().getServerPass().empty())
+		return true;
+
+	// the user is already logged in
+	// the credentials are in the cookie
+	Poco::Net::NameValueCollection cookies;
+	request.getCookies(cookies);
+	//
+	const std::string emptyValue = "";
+
+	auto hashedUserCookie = cookies.get(COOKIE_USER_NAME, emptyValue);
+	auto hashedPassCookie = cookies.get(COOKIE_PASS_NAME, emptyValue);
+	auto timestampCookie = cookies.get(COOKIE_TIMESTAMP_NAME, emptyValue);
+
+	if ((!hashedUserCookie.empty() || !hashedPassCookie.empty()) && !timestampCookie.empty())
+	{
+		credentialsOk =
+			hashedUserCookie == MinerConfig::getConfig().getServerUser() &&
+			hashedPassCookie == MinerConfig::getConfig().getServerPass();
+		
+		using std::chrono::system_clock;
+		using std::chrono::seconds;
+		using std::stoull;
+		
+		auto lastUsageTimestamp = system_clock::time_point() + seconds(stoull(timestampCookie));
+		auto elapsedTime = system_clock::now() - lastUsageTimestamp;
+		
+		auto loginTimeout = credentialsOk && elapsedTime >= std::chrono::minutes(10);
+
+		credentialsOk = credentialsOk && !loginTimeout;
+
+		if (!loginTimeout)
+			request.response().addCookie({ COOKIE_TIMESTAMP_NAME,
+				std::to_string(std::chrono::duration_cast<seconds>(system_clock::now().time_since_epoch()).count()) });
+		else
+			clearAuthCookies(request.response());
+	}
+
+	return credentialsOk;
 }
 
 void Burst::RequestHandler::redirect(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
@@ -269,55 +374,26 @@ void Burst::RequestHandler::addWebsocket(Poco::Net::HTTPServerRequest& request, 
 
 bool Burst::RequestHandler::checkCredentials(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	auto credentialsOk = false;
+	auto credentialsOk = isLoggedIn(request);
 
-	// if there are no credentials in the config, user dont need to
-	// enter them
-	if (MinerConfig::getConfig().getServerUser().empty() &&
-		MinerConfig::getConfig().getServerPass().empty())
-		return true;
-
-	if (request.hasCredentials())
+	// the user is not logged in yet, but wants to
+	if (!credentialsOk && request.getMethod() == "POST")
 	{
-		std::string scheme, authInfo;
-		request.getCredentials(scheme, authInfo);
+		credentialsOk = login(request, response);
 
-		// credentials are base64 encoded
-		std::stringstream encoded(authInfo);
-		std::stringstream decoded;
-		std::string user = "";
-		//
-		Poco::Base64Decoder base64(encoded);
-		Poco::StreamCopier::copyStream(base64, decoded);
-		// the whole credentials string (<user>:<password>)
-		auto credentials = decoded.str();
-
-		Poco::StringTokenizer tokenizer{ credentials, ":" };
-
-		if (tokenizer.count() == 2)
-		{
-			user = tokenizer[0];
-			auto password = tokenizer[1];
-
-			// compare given credentials with the credentials inside the config
-			credentialsOk =
-				check_HMAC_SHA1(user, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverPassphrase) &&
-				check_HMAC_SHA1(password, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassphrase);
-		}
-
-		log_information(MinerLogger::server, "%s request to shutdown the miner.\n"
-			"\tfrom: %s\n"
-			"\tuser: %s",
-			(credentialsOk ? std::string("Authorized") : std::string("Unauthorized")),
-			request.clientAddress().toString(),
-			user);
+		if (!credentialsOk)
+			log_information(MinerLogger::server, "%s webserver request.\n"
+				"\trequest: %s\n"
+				"\tfrom: %s",
+				credentialsOk ? std::string("Authorized") : std::string("Unauthorized"),
+				request.getURI(),
+				request.clientAddress().toString());
 	}
 
 	// not authenticated, request again
 	if (!credentialsOk)
 	{
-		response.requireAuthentication("creepMiner");
-		response.send();
+		redirect(request, response, "/login");
 		return false;
 	}
 
@@ -486,6 +562,9 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 {
 	if (request.getMethod() == "POST")
 	{
+		if (!checkCredentials(request, response))
+			return;
+
 		Poco::Net::HTMLForm post_body(request, request.stream());
 
 		for (auto& key_val : post_body)
@@ -549,6 +628,9 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 	MinerServer& server, bool remove)
 {
 	poco_ndc("PlotDirHandler::handleRequest");
+
+	if (!checkCredentials(request, response))
+		return;
 
 	std::stringstream sstream;
 	Poco::StreamCopier::copyStream(request.stream(), sstream);

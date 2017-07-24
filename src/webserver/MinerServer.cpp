@@ -241,6 +241,9 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		icompare(request["Upgrade"], "websocket") == 0)
 		return new LambdaRequestHandler([&](req_t& req, res_t& res)
 		{
+			if (!RequestHandler::checkCredentials(req, res))
+				return;
+
 			RequestHandler::addWebsocket(req, res, *server_);
 		});
 
@@ -260,7 +263,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 			return new LambdaRequestHandler([&](req_t& req, res_t& res)
 			{
 				auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/miner.js'></script>"); } } });
-				RequestHandler::loadTemplate(req ,res, "index.html", "block.html", variables);
+				RequestHandler::loadSecuredTemplate(req ,res, "index.html", "block.html", variables);
 			});
 
 		// plotfiles
@@ -285,7 +288,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 					}
 				});
 
-				RequestHandler::loadTemplate(req, res, "index.html", "plotfiles.html", variables);
+				RequestHandler::loadSecuredTemplate(req, res, "index.html", "plotfiles.html", variables);
 			});
 		}
 
@@ -308,7 +311,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 				return new LambdaRequestHandler([&](req_t& req, res_t& res)
 				{
 					auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/settings.js'></script>"); } } });
-					RequestHandler::loadTemplate(req, res, "index.html", "settings.html", variables);
+					RequestHandler::loadSecuredTemplate(req, res, "index.html", "settings.html", variables);
 				});
 
 			// with body -> change
@@ -326,6 +329,24 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 				{
 					RequestHandler::changePlotDirs(req, res, *server_, path_segments[1] == "remove" ? true : false);
 				});
+
+		if (path_segments.front() == "login")
+			return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			{
+				if (req.getMethod() == "POST")
+				{
+					if (RequestHandler::checkCredentials(req, res))
+						return RequestHandler::redirect(req, res, "/");
+				}
+				else
+				{
+					auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string(); } } });
+					RequestHandler::loadTemplate(req, res, "index.html", "login.html", variables);
+				}
+			});
+
+		if (path_segments.front() == "logout")
+			return new LambdaRequestHandler([&](req_t& req, res_t& res) { RequestHandler::logout(req, res); });
 
 		// forward function
 		if (path_segments.front() == "burst")
@@ -357,6 +378,8 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		Path path {"public"};
 		path.append(uri.getPath());
+		
+		log_information(MinerLogger::server, path.toString());
 
 		if (Poco::File {path}.exists())
 			return new LambdaRequestHandler(RequestHandler::loadAsset);

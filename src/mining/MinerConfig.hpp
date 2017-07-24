@@ -193,9 +193,14 @@ namespace Burst
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
 
 		/**
-		 * \brief The passphrase, used by the webserver to hash (hmac) username and password.
+		 * \brief The passphrase, used by the webserver to hash (hmac) the username.
 		 */
-		static const std::string WebserverPassphrase;
+		static const std::string WebserverUserPassphrase;
+
+		/**
+		 * \brief The passphrase, used by the webserver to hash (hmac) the password.
+		 */
+		static const std::string WebserverPassPassphrase;
 
 		/**
 		 * \brief Returns the singleton-instance of the configuration.
@@ -205,7 +210,8 @@ namespace Burst
 		
 	private:
 		static Poco::JSON::Object::Ptr readOutput(Poco::JSON::Object::Ptr json);
-		
+		static const std::string HASH_DELIMITER;
+
 		std::string configPath_;
 		std::vector<std::shared_ptr<PlotDir>> plotDirs_;
 		float timeout_ = 45.f;
