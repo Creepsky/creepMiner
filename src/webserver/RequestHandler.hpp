@@ -198,10 +198,10 @@ namespace Burst
 		 * During this process, the plot size can be changed.
 		 * \param request The HTTP request.
 		 * \param response The HTTP response.
-		 * \param server The Minerserver, which will propagate the changed config to his connected users.
+		 * \param miner The miner, which will propagate the changed config to his connected users.
 		 */
 		void rescanPlotfiles(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
-		                     MinerServer& server);
+		                     Miner& miner);
 
 		/**
 		 * \brief Accepts an incoming websocket connection and if established,

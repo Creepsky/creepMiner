@@ -80,6 +80,7 @@ namespace Burst
 	class MinerConfig
 	{
 	public:
+		void recalculatePlotsHash();
 		bool readConfigFile(const std::string& configPath);
 		void rescan();
 
@@ -87,7 +88,7 @@ namespace Burst
 		 * \brief Rescans all plot dirs that are currently in use.
 		 * Does NOT read new plot dirs from the configuration file!
 		 */
-		void rescanPlotfiles();
+		bool rescanPlotfiles();
 		void printConsole() const;
 		void printConsolePlots() const;
 		void printUrl(HostType type) const;
@@ -148,6 +149,7 @@ namespace Burst
 		bool useInsecurePlotfiles() const;
 		bool isLogfileUsed() const;
 		size_t getMiningInfoInterval() const;
+		bool isRescanningEveryBlock() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -237,7 +239,8 @@ namespace Burst
 		Passphrase passphrase_;
 		bool useInsecurePlotfiles_ = false;
 		bool logfile_ = true;
-		size_t getMiningInfoInterval_;
+		size_t getMiningInfoInterval_ = 3;
+		bool rescanEveryBlock_ = true;
 		mutable Poco::Mutex mutex_;
 	};
 }

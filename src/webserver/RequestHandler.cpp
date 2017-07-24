@@ -314,7 +314,7 @@ void Burst::RequestHandler::badRequest(Poco::Net::HTTPServerRequest& request, Po
 }
 
 void Burst::RequestHandler::rescanPlotfiles(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
-	Burst::MinerServer& server)
+	Miner& miner)
 {
 	// first check the credentials
 	if (!checkCredentials(request, response))
@@ -322,14 +322,7 @@ void Burst::RequestHandler::rescanPlotfiles(Poco::Net::HTTPServerRequest& reques
 
 	log_information(MinerLogger::server, "Got request for rescanning the plotdirs...");
 
-	// rescan the plot files...
-	MinerConfig::getConfig().rescanPlotfiles();
-
-	// we send the new settings (size could be changed)
-	server.sendToWebsockets(createJsonConfig());
-
-	// then we send all plot dirs and files
-	server.sendToWebsockets(createJsonPlotDirsRescan());
+	miner.rescanPlotfiles();
 
 	// respond to the sender
 	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);

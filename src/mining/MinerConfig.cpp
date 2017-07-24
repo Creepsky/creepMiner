@@ -47,7 +47,7 @@ void Burst::MinerConfig::rescan()
 	readConfigFile(configPath_);
 }
 
-void Burst::MinerConfig::rescanPlotfiles()
+bool Burst::MinerConfig::rescanPlotfiles()
 {
 	log_system(MinerLogger::config, "Rescanning plot-dirs...");
 
@@ -56,7 +56,16 @@ void Burst::MinerConfig::rescanPlotfiles()
 	for (auto& plotDir : plotDirs_)
 		plotDir->rescan();
 
-	printConsolePlots();
+	const auto oldPlotsHash = plotsHash_;
+	recalculatePlotsHash();
+	
+	if (oldPlotsHash != plotsHash_)
+	{
+		printConsolePlots();
+		return true;
+	}
+
+	return false;
 }
 
 void Burst::MinerConfig::printConsole() const
@@ -140,6 +149,21 @@ T getOrAddExtract(Poco::JSON::Object::Ptr object, const std::string& key, T defa
 		object->set(key, defaultValue);
 
 	return json.extract<T>();
+}
+
+void Burst::MinerConfig::recalculatePlotsHash()
+{
+	Poco::SHA1Engine sha;
+	Poco::DigestOutputStream shaStream{sha};
+
+	for (const auto plotFile : getPlotFiles())
+		shaStream << plotFile->getPath();
+
+	shaStream << std::flush;
+	plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
+
+	// we remember our total plot size
+	PlotSizes::set(plotsHash_, getTotalPlotsize() / 1024 / 1024 / 1024);
 }
 
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
@@ -304,6 +328,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		// use insecure plotfiles
 		useInsecurePlotfiles_ = getOrAdd(miningObj, "useInsecurePlotfiles", false);
 		getMiningInfoInterval_ = getOrAdd(miningObj, "getMiningInfoInterval", 3);
+		rescanEveryBlock_ = getOrAdd(miningObj, "rescanEveryBlock", true);
 
 		// urls
 		{
@@ -426,19 +451,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			}
 
 			// combining all plotfiles to lists of plotfiles on the same device
-			{
-				Poco::SHA1Engine sha;
-				Poco::DigestOutputStream shaStream{sha};
-
-				for (const auto plotFile : getPlotFiles())
-					shaStream << plotFile->getPath();
-
-				shaStream << std::flush;
-				plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
-
-				// we remember our total plot size
-				PlotSizes::set(plotsHash_, getTotalPlotsize() / 1024 / 1024 / 1024);
-			}
+			recalculatePlotsHash();
 		}
 
 		// target deadline
@@ -1043,6 +1056,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// insecurePlotfiles
 		mining.set("useInsecurePlotfiles", useInsecurePlotfiles());
 
+		mining.set("rescanEveryBlock", isRescanningEveryBlock());
+
 		// passphrase
 		{
 			Poco::JSON::Object passphrase;
@@ -1242,6 +1257,11 @@ size_t Burst::MinerConfig::getMiningInfoInterval() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return getMiningInfoInterval_;
+}
+
+bool Burst::MinerConfig::isRescanningEveryBlock() const
+{
+	return rescanEveryBlock_;
 }
 
 void Burst::MinerConfig::useLogfile(bool use)

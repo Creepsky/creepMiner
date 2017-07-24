@@ -124,6 +124,16 @@ void Burst::BlockData::refreshBlockEntry() const
 	addBlockEntry(createJsonNewBlock(*parent_));
 }
 
+void Burst::BlockData::refreshConfig() const
+{
+	addBlockEntry(createJsonConfig());
+}
+
+void Burst::BlockData::refreshPlotDirs() const
+{
+	addBlockEntry(createJsonPlotDirsRescan());
+}
+
 void Burst::BlockData::setProgress(float progress, Poco::UInt64 blockheight)
 {
 	Poco::ScopedLock<Poco::Mutex> lock{mutex_};

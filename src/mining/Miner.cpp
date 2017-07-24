@@ -213,6 +213,9 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 		data_.getBlockData()->refreshBlockEntry();
 	}
 
+	if (MinerConfig::getConfig().isRescanningEveryBlock())
+		MinerConfig::getConfig().rescanPlotfiles();
+
 	progress_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
 
 	PlotSizes::nextRound();
@@ -441,7 +444,10 @@ bool Burst::Miner::getMiningInfo()
 								deadlineFormat(target_deadline_pool_before),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Pool)),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Local)),
-								deadlineFormat(data_.getTargetDeadline()));
+								deadlineFormat(data_.getTargetDeadline()))
+
+
+;
 					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));
@@ -577,4 +583,17 @@ void Burst::Miner::setMaxBufferSize(Poco::UInt64 size)
 {
 	MinerConfig::getConfig().setBufferSize(size);
 	PlotReader::globalBufferSize.setMax(size);
+}
+
+void Burst::Miner::rescanPlotfiles()
+{
+	// rescan the plot files...
+	if (MinerConfig::getConfig().rescanPlotfiles())
+	{
+		// we send the new settings (size could be changed)
+		data_.getBlockData()->refreshConfig();
+
+		// then we send all plot dirs and files
+		data_.getBlockData()->refreshPlotDirs();
+	}
 }

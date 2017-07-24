@@ -76,6 +76,7 @@ namespace Burst
 		void setMiningIntensity(Poco::UInt32 intensity);
 		void setMaxPlotReader(Poco::UInt32 max_reader);
 		static void setMaxBufferSize(Poco::UInt64 size);
+		void rescanPlotfiles();
 
 	private:
 		bool getMiningInfo();

@@ -68,6 +68,8 @@ namespace Burst
 		void setLastWinner(std::shared_ptr<Account> account);
 		
 		void refreshBlockEntry() const;
+		void refreshConfig() const;
+		void refreshPlotDirs() const;
 		void setProgress(float progress, Poco::UInt64 blockheight);
 		void setProgress(const std::string& plotDir, float progress, Poco::UInt64 blockheight);
 

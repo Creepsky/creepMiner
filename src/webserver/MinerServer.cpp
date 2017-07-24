@@ -301,7 +301,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		// rescan plot files
 		if (path_segments.front() == "rescanPlotfiles")
-			return new LambdaRequestHandler([&](req_t& req, res_t& res) { RequestHandler::rescanPlotfiles(req, res, *server_); });
+			return new LambdaRequestHandler([&](req_t& req, res_t& res) { RequestHandler::rescanPlotfiles(req, res, *server_->miner_); });
 
 		// show/change settings
 		if (path_segments.front() == "settings")
