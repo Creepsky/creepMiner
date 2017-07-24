@@ -75,13 +75,27 @@ namespace Burst
 		{
 			std::chrono::high_resolution_clock::time_point currentTime;
 			std::chrono::high_resolution_clock::duration sumTime;
+			std::chrono::high_resolution_clock::duration lowestTime;
+			std::chrono::high_resolution_clock::duration highestTime;
 			size_t size;
 
 			/**
 			 * \brief Returns the average duration of the probes.
 			 * \return The average duration as a float number.
 			 */
-			float toSeconds() const;
+			float avgToSeconds() const;
+
+			/**
+			* \brief Returns the lowest duration of the probes.
+			* \return The lowest duration as a float number.
+			*/
+			float lowestToSeconds() const;
+
+			/**
+			* \brief Returns the highest duration of the probes.
+			* \return The highest duration as a float number.
+			*/
+			float highestToSeconds() const;
 
 			/**
 			 * \brief Returns the sum duration of all the probes.
@@ -103,6 +117,13 @@ namespace Burst
 #define START_PROBE(name) Burst::Performance::instance().reset(name);
 
 /**
+ * \brief Starts a new probe with a specific name and also a probe for a domain.
+ * \param name The name of the probe.
+ * \param domain The domain of the probe.
+ */
+#define START_PROBE_DOMAIN(name, domain) START_PROBE(name) START_PROBE(std::string(name) + "." + domain)
+
+/**
  * \brief Takes a probe with a specific name.
  * First, you need to call START_PROBE
  * \param name The name of the probe.
@@ -110,11 +131,21 @@ namespace Burst
 #define TAKE_PROBE(name) Burst::Performance::instance().takeProbe(name);
 
 /**
+ * \brief Takes a probe with a specific name and also a probe for a specific domain.
+ * First, you need to call START_PROBE_DOMAIN
+ * \param name The name of the probe.
+ * \param domain The domain of the probe.
+ */
+#define TAKE_PROBE_DOMAIN(name, domain) TAKE_PROBE(name) TAKE_PROBE(std::string(name) + "." + domain);
+
+/**
  * \brief Removes all probes.
  */
 #define CLEAR_PROBES() Burst::Performance::instance().clear();
 #else
 #define START_PROBE(name) void();
+#define START_PROBE_DOMAIN(name, domain) void();
 #define TAKE_PROBE(name) void();
+#define TAKE_PROBE_DOMAIN(name, domain) void();
 #define CLEAR_PROBES() void();
 #endif

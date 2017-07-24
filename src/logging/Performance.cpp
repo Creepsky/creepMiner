@@ -57,8 +57,17 @@ void Burst::Performance::takeProbe(const std::string &id)
 	if (iter == probes_.end())
 		return;
 
+	auto probeTime = std::chrono::high_resolution_clock::now() - iter->second.currentTime;
+
 	// add the time
-	iter->second.sumTime += std::chrono::high_resolution_clock::now() - iter->second.currentTime;
+	iter->second.sumTime += probeTime;
+
+	if (iter->second.lowestTime > probeTime || iter->second.size == 0)
+		iter->second.lowestTime = probeTime;
+	
+	if (iter->second.highestTime < probeTime || iter->second.size == 0)
+		iter->second.highestTime = probeTime;
+
 	++iter->second.size;
 }
 
@@ -66,45 +75,25 @@ void Burst::Performance::print(std::ostream& stream) const
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
-	stream << std::string(50, '-') << std::endl;
+	const auto delimiter = ';';
+
+	stream << "name"
+		<< delimiter << "avg time"
+		<< delimiter << "lowest time"
+		<< delimiter << "highest time"
+		<< delimiter << "sum time"
+		<< delimiter << "probes"
+		<< std::endl;
 
 	for (auto& probe : probes_)
-		stream << probe.first << ": "
-			<< std::fixed << std::setprecision(5) << probe.second.toSeconds()
-			<< " (" << probe.second.sumToSeconds() << ") " << " seconds, "
-			<< probe.second.size << " probe(s)"
-			<< std::endl;
-
-	// create top 5 list
-	using ProbeEntry_t = std::pair<const std::string*, const Probe*>;
-
-	std::vector<ProbeEntry_t> probeToplist;
-	probeToplist.reserve(probes_.size());
-
-	for (auto& probe : probes_)
-		probeToplist.emplace_back(&probe.first, &probe.second);
-
-	std::sort(probeToplist.begin(), probeToplist.end(), [](const ProbeEntry_t& lhs, const ProbeEntry_t& rhs)
-	{		
-		return lhs.second->sumTime > rhs.second->sumTime;
-	});
-
-	stream << "toplist" << std::endl;
-
-	for (auto i = 0u; i < probeToplist.size() && i < 10; ++i)
-	{
-		stream << i + 1 << ": "
-			<< *probeToplist[i].first << " "
+		stream << probe.first
 			<< std::fixed << std::setprecision(5)
-			<< probeToplist[i].second->toSeconds();
-		
-		if (probeToplist[i].second->size > 1)
-			stream << " (" << probeToplist[i].second->sumToSeconds() << ")";
-
-		stream << std::endl;
-	}
-
-	stream << std::string(50, '-') << std::endl;
+			<< delimiter << probe.second.avgToSeconds()
+			<< delimiter << probe.second.lowestToSeconds()
+			<< delimiter << probe.second.highestToSeconds()
+			<< delimiter << probe.second.sumToSeconds()
+			<< delimiter << probe.second.size
+			<< std::endl;
 }
 
 Burst::Performance& Burst::Performance::instance()
@@ -113,12 +102,22 @@ Burst::Performance& Burst::Performance::instance()
 	return performance;
 }
 
-float Burst::Performance::Probe::toSeconds() const
+float Burst::Performance::Probe::avgToSeconds() const
 {
 	if (size == 0)
 		return 0.f;
 
 	return std::chrono::duration_cast<std::chrono::duration<float>>(sumTime / size).count();
+}
+
+float Burst::Performance::Probe::lowestToSeconds() const
+{
+	return std::chrono::duration_cast<std::chrono::duration<float>>(lowestTime).count();
+}
+
+float Burst::Performance::Probe::highestToSeconds() const
+{
+	return std::chrono::duration_cast<std::chrono::duration<float>>(highestTime).count();
 }
 
 float Burst::Performance::Probe::sumToSeconds() const
