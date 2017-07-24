@@ -42,7 +42,6 @@
 
 const std::string COOKIE_USER_NAME = "creepminer-webserver-user";
 const std::string COOKIE_PASS_NAME = "creepminer-webserver-pass";
-const std::string COOKIE_TIMESTAMP_NAME = "creepminer-webserver-timestamp";
 
 Burst::TemplateVariables::TemplateVariables(std::unordered_map<std::string, Variable> variables)
 	: variables(variables)
@@ -182,6 +181,23 @@ bool Burst::RequestHandler::loadAsset(Poco::Net::HTTPServerRequest& request, Poc
 	return loadAssetByPath(request, response, request.getURI());
 }
 
+namespace Burst
+{
+	void clearAuthCookies(Poco::Net::HTTPServerResponse& response)
+	{
+		Poco::Net::HTTPCookie cookieUser(COOKIE_USER_NAME);
+		Poco::Net::HTTPCookie cookiePass(COOKIE_PASS_NAME);
+
+		cookieUser.setMaxAge(0);
+		cookiePass.setMaxAge(0);
+
+		response.addCookie(cookieUser);
+		response.addCookie(cookiePass);
+	}
+
+	const auto COOKIE_MAX_AGE = std::chrono::minutes(10);
+}
+
 bool Burst::RequestHandler::login(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
 	Poco::Net::HTMLForm post_body(request, request.stream());
@@ -199,22 +215,9 @@ bool Burst::RequestHandler::login(Poco::Net::HTTPServerRequest& request, Poco::N
 	{
 		response.addCookie({ COOKIE_USER_NAME, hash_HMAC_SHA1(plainUserPost, MinerConfig::WebserverUserPassphrase) });
 		response.addCookie({ COOKIE_PASS_NAME, hash_HMAC_SHA1(plainPassPost, MinerConfig::WebserverPassPassphrase) });
-		response.addCookie({ COOKIE_TIMESTAMP_NAME,
-			std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
-				std::chrono::system_clock::now().time_since_epoch()).count()) });
 	}
 
 	return credentialsOk;
-}
-
-namespace Burst
-{
-	void clearAuthCookies(Poco::Net::HTTPServerResponse& response)
-	{
-		response.addCookie(Poco::Net::HTTPCookie(COOKIE_USER_NAME, ""));
-		response.addCookie(Poco::Net::HTTPCookie(COOKIE_PASS_NAME, ""));
-		response.addCookie(Poco::Net::HTTPCookie(COOKIE_TIMESTAMP_NAME, ""));
-	}
 }
 
 void Burst::RequestHandler::logout(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
@@ -242,32 +245,12 @@ bool Burst::RequestHandler::isLoggedIn(Poco::Net::HTTPServerRequest& request)
 
 	auto hashedUserCookie = cookies.get(COOKIE_USER_NAME, emptyValue);
 	auto hashedPassCookie = cookies.get(COOKIE_PASS_NAME, emptyValue);
-	auto timestampCookie = cookies.get(COOKIE_TIMESTAMP_NAME, emptyValue);
 
-	if ((!hashedUserCookie.empty() || !hashedPassCookie.empty()) && !timestampCookie.empty())
-	{
+	if (!hashedUserCookie.empty() || !hashedPassCookie.empty())
 		credentialsOk =
 			hashedUserCookie == MinerConfig::getConfig().getServerUser() &&
 			hashedPassCookie == MinerConfig::getConfig().getServerPass();
-		
-		using std::chrono::system_clock;
-		using std::chrono::seconds;
-		using std::stoull;
-		
-		auto lastUsageTimestamp = system_clock::time_point() + seconds(stoull(timestampCookie));
-		auto elapsedTime = system_clock::now() - lastUsageTimestamp;
-		
-		auto loginTimeout = credentialsOk && elapsedTime >= std::chrono::minutes(10);
-
-		credentialsOk = credentialsOk && !loginTimeout;
-
-		if (!loginTimeout)
-			request.response().addCookie({ COOKIE_TIMESTAMP_NAME,
-				std::to_string(std::chrono::duration_cast<seconds>(system_clock::now().time_since_epoch()).count()) });
-		else
-			clearAuthCookies(request.response());
-	}
-
+	
 	return credentialsOk;
 }
 
