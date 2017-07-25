@@ -11,6 +11,7 @@ export class BlockService {
 
   plots: Array<JSONS.PlotDirObject> = [];
   unknownNonces: Array<JSONS.NonceObject> = [];
+  blockSound = new Audio('assets/sms-alert-2-daniel_simon.mp3');
   confirmedSound = new Audio('assets/sms-alert-1-daniel_simon.mp3');
   private _isreconn = false;
 
@@ -23,6 +24,7 @@ export class BlockService {
   newConfirmation$ = this.newConfirmationSource.asObservable();
 
   constructor() {
+    this.blockSound.volume = 0.5;
     this.confirmedSound.volume = 0.5;
 
     const refrFunc = () => {
@@ -67,6 +69,9 @@ export class BlockService {
           this.blockTime = new Date();
           this.blockReadTime = null;
           this.newBlockSource.next(response);
+          if (localStorage.getItem('blockSound') === 'true') {
+            this.blockSound.play();
+          }
           break;
         case 'nonce found':
           this.addOrUpdateNonce(response);
