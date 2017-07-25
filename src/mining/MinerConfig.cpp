@@ -379,9 +379,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			else
 				urlsObj = new Poco::JSON::Object;
 
-			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8124, "http://pool.burst-team.us:8124", "poolUrl");
-			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8124, "", "miningInfoUrl");
-			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 8125, "https://wallet.burst-team.us:8128", "walletUrl");
+			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8124, "http://pool.burst-team.us:8124");
+			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8124, "http://pool.burst-team.us:8124");
+			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 8125, "https://wallet.burst-team.us:8128");
 
 			if (urlMiningInfo_.empty() && !urlPool_.empty())
 			{
