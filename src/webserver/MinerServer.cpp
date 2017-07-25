@@ -378,8 +378,6 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		Path path {"public"};
 		path.append(uri.getPath());
-		
-		log_information(MinerLogger::server, path.toString());
 
 		if (Poco::File {path}.exists())
 			return new LambdaRequestHandler(RequestHandler::loadAsset);
