@@ -20,7 +20,6 @@
 // ==========================================================================
 
 #include "MinerLogger.hpp"
-#include <iostream>
 #include <mutex>
 #include "mining/MinerConfig.hpp"
 #include <Poco/NestedDiagnosticContext.h>
@@ -335,12 +334,12 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 
 	auto block = Console::print();
 
-	auto wasProgress = progressFlag_;
+	auto wasProgress = progressFlag_ && MinerConfig::getConfig().isSteadyProgressBar();
 
 	if (wasProgress)
 		block->clearLine();
 
-	progressFlag_ = type == TextType::Progress;
+	progressFlag_ = type == TextType::Progress && MinerConfig::getConfig().isSteadyProgressBar();
 	
 	Poco::StringTokenizer tokenizer(text, "\n");
 	
@@ -376,9 +375,12 @@ void Burst::MinerLogger::writeProgress(float progress)
 		Console::print()->clearLine(false);
 
 	lastProgress_ = progress;
-	progressFlag_ = true;
+	progressFlag_ = MinerConfig::getConfig().isSteadyProgressBar();
 
 	progressPrinter_.print(progress);
+
+	if (!MinerConfig::getConfig().isSteadyProgressBar())
+		Console::print()->nextLine();
 }
 
 void Burst::MinerLogger::setTextTypeColor(TextType type, ConsoleColorPair color)

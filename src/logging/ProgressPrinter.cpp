@@ -20,7 +20,6 @@
 // ==========================================================================
 
 #include "ProgressPrinter.hpp"
-#include <iostream>
 #include "Message.hpp"
 #include "Console.hpp"
 #include "MinerLogger.hpp"
@@ -32,17 +31,24 @@ void Burst::ProgressPrinter::print(float progress) const
 	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
 		return;
 
-	// calculate the progress bar proportions
-	size_t doneSize, notDoneSize;
-	calculateProgressProportions(progress, totalSize, doneSize, notDoneSize);
+	if (MinerConfig::getConfig().isFancyProgressBar())
+	{
+		// calculate the progress bar proportions
+		size_t doneSize, notDoneSize;
+		calculateProgressProportions(progress, totalSize, doneSize, notDoneSize);
 
-	*Console::print()
-		<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
-		<< MinerLogger::getTextTypeColor(TextType::Unimportant) << delimiterFront
-		<< MinerLogger::getTextTypeColor(TextType::Success) << std::string(doneSize, doneChar)
-		<< MinerLogger::getTextTypeColor(TextType::Normal) << std::string(totalSize - doneSize, notDoneChar)
-		<< MinerLogger::getTextTypeColor(TextType::Unimportant) << delimiterEnd
-		<< ' ' << static_cast<size_t>(progress) << '%';
+		*Console::print()
+			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
+			<< MinerLogger::getTextTypeColor(TextType::Unimportant) << delimiterFront
+			<< MinerLogger::getTextTypeColor(TextType::Success) << std::string(doneSize, doneChar)
+			<< MinerLogger::getTextTypeColor(TextType::Normal) << std::string(totalSize - doneSize, notDoneChar)
+			<< MinerLogger::getTextTypeColor(TextType::Unimportant) << delimiterEnd
+			<< ' ' << static_cast<size_t>(progress) << '%';
+	}
+	else
+		*Console::print()
+			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
+			<< "Progress: " << std::fixed << std::setprecision(2) << progress << " %";
 }
 
 void Burst::ProgressPrinter::calculateProgressProportions(float progress, size_t totalSize, size_t& doneSize, size_t& notDoneSize)

@@ -153,6 +153,8 @@ namespace Burst
 		bool isRescanningEveryBlock() const;
 		LogOutputType getLogOutputType() const;
 		bool isUsingLogColors() const;
+		bool isSteadyProgressBar() const;
+		bool isFancyProgressBar() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -246,6 +248,8 @@ namespace Burst
 		bool rescanEveryBlock_ = true;
 		LogOutputType logOutputType_ = LogOutputType::Terminal;
 		bool logUseColors_ = true;
+		bool steadyProgressBar_ = true;
+		bool fancyProgressBar_ = true;
 		mutable Poco::Mutex mutex_;
 	};
 }

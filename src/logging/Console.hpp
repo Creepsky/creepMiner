@@ -20,6 +20,7 @@
 // ==========================================================================
 
 #pragma once
+
 #include "channels/ColoredPriorityConsoleChannel.hpp"
 #include <mutex>
 #include <memory>

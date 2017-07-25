@@ -225,14 +225,13 @@ void Burst::PlotReader::runTask()
 							verificationQueue_->enqueueNotification(verification);
 							TAKE_PROBE("PlotReader.EnqueueWork")
 
-
-							START_PROBE("PlotReader.Progress")
-							if (progress_ != nullptr)
+							if (MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
 							{
+								START_PROBE("PlotReader.Progress")
 								progress_->add(staggerChunkBytes * Settings::ScoopPerPlot, plotReadNotification->blockheight);
 								miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
+								TAKE_PROBE("PlotReader.Progress")
 							}
-							TAKE_PROBE("PlotReader.Progress")
 
 							// check, if the incoming plot-read-notification is for the current round
 							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
@@ -278,6 +277,14 @@ void Burst::PlotReader::runTask()
 						memToString(plotFile.getSize(), 2),
 						Poco::DateTimeFormatter::format(span, "%s.%i"),
 						memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
+
+					if (!MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
+					{
+						START_PROBE("PlotReader.Progress")
+						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
+						miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
+						TAKE_PROBE("PlotReader.Progress")
+					}
 				}
 
 				// if it was cancelled, we push the current plot dir back in the queue again

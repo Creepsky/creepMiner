@@ -264,6 +264,24 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			logUseColors_ = getOrAdd(loggingObj, "useColors", true);
 
+			Poco::JSON::Object::Ptr progressBarObj = nullptr;
+
+			if (loggingObj->has("progressBar"))
+				progressBarObj = loggingObj->get("progressBar").extract<Poco::JSON::Object::Ptr>();
+
+			if (progressBarObj.isNull())
+			{
+				progressBarObj.assign(new Poco::JSON::Object);
+				progressBarObj->set("steady", true);
+				progressBarObj->set("fancy", true);
+				loggingObj->set("progressBar", progressBarObj);
+			}
+			else
+			{
+				steadyProgressBar_ = getOrAdd(progressBarObj, "steady", true);
+				fancyProgressBar_ = getOrAdd(progressBarObj, "fancy", true);
+			}
+
 			try
 			{
 				auto dirLogFile = getOrAdd(loggingObj, "path", std::string(""));
@@ -290,7 +308,16 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			loggingObj->set("path", "");
 			loggingObj->set("logfile", false);
 			loggingObj->set("outputType", std::string("terminal"));
+
 			loggingObj->set("useColors", true);
+
+			// progress bar
+			{
+				Poco::JSON::Object progressBarJson;
+				progressBarJson.set("steady", true);
+				progressBarJson.set("fancy", true);
+				loggingObj->set("progressBar", progressBarJson);
+			}
 
 			for (auto& channel : MinerLogger::channelDefinitions)
 				loggingObj->set(channel.name, MinerLogger::getChannelPriority(channel.name));
@@ -1043,6 +1070,19 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// log colors
 		logging.set("useColors", isUsingLogColors());
 
+		// progress bar
+		{
+			Poco::JSON::Object progressBar;
+
+			// stready progress bar
+			logging.set("steady", isSteadyProgressBar());
+
+			// fancy progress bar
+			logging.set("fancy", isFancyProgressBar());
+
+			logging.set("progressBar", progressBar);
+		}		
+
 		json.set("logging", logging);
 	}
 
@@ -1296,6 +1336,16 @@ Burst::LogOutputType Burst::MinerConfig::getLogOutputType() const
 bool Burst::MinerConfig::isUsingLogColors() const
 {
 	return logUseColors_;
+}
+
+bool Burst::MinerConfig::isSteadyProgressBar() const
+{
+	return steadyProgressBar_;
+}
+
+bool Burst::MinerConfig::isFancyProgressBar() const
+{
+	return fancyProgressBar_;
 }
 
 void Burst::MinerConfig::useLogfile(bool use)
