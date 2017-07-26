@@ -28,11 +28,11 @@
 
 Burst::ProgressPrinter::ProgressPrinter()
 {
-	delimiterFront = { '\xBA', TextType::Unimportant };
-	readDoneChar = { '\xB1', TextType::Normal };
-	verifiedDoneChar = { '\xB2', TextType::Success };
-	readNotDoneChar = { '\xB0', TextType::Unimportant };
-	delimiterEnd = { '\xBA', TextType::Unimportant };
+	delimiterFront = { "\u2590", TextType::Unimportant };
+	readDoneChar = { "\u2592", TextType::Normal };
+	verifiedDoneChar = { "\u2593", TextType::Success };
+	readNotDoneChar = { "\u2591", TextType::Unimportant };
+	delimiterEnd = { "\u258C", TextType::Unimportant };
 	totalSize = 48;
 }
 
@@ -42,6 +42,16 @@ namespace Burst
 	{
 		stream << std::right << std::fixed << std::setw(6) << std::setfill(' ') << std::setprecision(2);
 		return stream;
+	}
+
+	std::string repeat(size_t times, const std::string&token)
+	{
+		std::stringstream sstream;
+
+		for (auto i = 0u; i < times; ++i)
+			sstream << token;
+
+		return sstream.str();
 	}
 }
 
@@ -60,9 +70,9 @@ void Burst::ProgressPrinter::print(float progressRead, float progressVerify) con
 		*Console::print()
 			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
 			<< MinerLogger::getTextTypeColor(delimiterFront.textType) << delimiterFront.character
-			<< MinerLogger::getTextTypeColor(verifiedDoneChar.textType) << std::string(doneSizeVerified, verifiedDoneChar.character)
-			<< MinerLogger::getTextTypeColor(readDoneChar.textType) << std::string(doneSizeRead, readDoneChar.character)
-			<< MinerLogger::getTextTypeColor(readNotDoneChar.textType) << std::string(notDoneSize, readNotDoneChar.character)
+			<< MinerLogger::getTextTypeColor(verifiedDoneChar.textType) << repeat(doneSizeVerified, verifiedDoneChar.character)
+			<< MinerLogger::getTextTypeColor(readDoneChar.textType) << repeat(doneSizeRead, readDoneChar.character)
+			<< MinerLogger::getTextTypeColor(readNotDoneChar.textType) << repeat(notDoneSize, readNotDoneChar.character)
 			<< MinerLogger::getTextTypeColor(delimiterEnd.textType) << delimiterEnd.character
 			<< ' ' << toPercentage << (progressRead + progressVerify) / 2 << '%';
 	}

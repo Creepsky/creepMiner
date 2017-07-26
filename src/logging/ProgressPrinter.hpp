@@ -27,7 +27,7 @@ namespace Burst
 {
 	struct ProgressToken
 	{
-		char character;
+		std::string character;
 		TextType textType;
 	};
 
