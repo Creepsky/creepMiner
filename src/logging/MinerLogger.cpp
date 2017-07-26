@@ -47,7 +47,6 @@
 #include "channels/MinerDataChannel.hpp"
 #include "ProgressPrinter.hpp"
 #include <Poco/StringTokenizer.h>
-#include "channels/ColoredPriorityConsoleChannel.hpp"
 
 std::mutex Burst::MinerLogger::mutex_;
 Burst::TextType Burst::MinerLogger::currentTextType_ = Burst::TextType::Normal;

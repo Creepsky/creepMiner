@@ -35,20 +35,23 @@
 #endif
 
 Burst::ConsoleColorPair Burst::Console::currentColor_ = { ConsoleColor::White, ConsoleColor::Black };
-std::mutex Burst::PrintBlock::mutex_;
+std::recursive_mutex Burst::Console::mutex_;
 
-Burst::PrintBlock::PrintBlock()
+Burst::PrintBlock::PrintBlock(std::ostream& stream, std::recursive_mutex& mutex)
+	: stream_(&stream), mutex_(&mutex)
 {
-	mutex_.lock();
+	mutex_->lock();
 }
 
-Burst::PrintBlock::PrintBlock(PrintBlock&& rhs) noexcept = default;
+Burst::PrintBlock::PrintBlock(PrintBlock&& rhs) noexcept
+	: stream_(rhs.stream_), mutex_(rhs.mutex_)
+{}
 
 Burst::PrintBlock::~PrintBlock()
 {
 	flush();
 	Console::resetColor();
-	mutex_.unlock();
+	mutex_->unlock();
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::operator<<(ConsoleColor color) const
@@ -71,7 +74,7 @@ const Burst::PrintBlock& Burst::PrintBlock::addTime() const
 
 const Burst::PrintBlock& Burst::PrintBlock::nextLine() const
 {
-	std::cout << std::endl;
+	*stream_ << std::endl;
 	return *this;
 }
 
@@ -87,9 +90,9 @@ const Burst::PrintBlock& Burst::PrintBlock::clearLine(bool wipe) const
 	return *this;
 }
 
-const Burst::PrintBlock& Burst::PrintBlock::flush() const
+const Burst::PrintBlock &Burst::PrintBlock::flush() const
 {
-	std::cout << std::flush;
+	*stream_ << std::flush;
 	return *this;
 }
 
@@ -99,6 +102,7 @@ void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 		!MinerConfig::getConfig().isUsingLogColors())
 		return;
 
+	std::lock_guard<std::recursive_mutex> lock(mutex_);
 #ifdef _WIN32
 	auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD color = (static_cast<int>(foreground) & 0x0F) + ((static_cast<int>(background) & 0x0F) << 4);
@@ -128,6 +132,7 @@ void Burst::Console::resetColor()
 		std::cout << "\033[0m";
 	}
 #endif
+	std::lock_guard<std::recursive_mutex> lock(mutex_);
 	currentColor_ = { ConsoleColor::White, ConsoleColor::Black };
 }
 
@@ -157,7 +162,7 @@ std::string Burst::Console::getUnixConsoleCode(ConsoleColor color)
 
 std::shared_ptr<Burst::PrintBlock> Burst::Console::print()
 {
-	return std::make_shared<PrintBlock>();
+	return std::make_shared<PrintBlock>(std::cout, mutex_);
 }
 
 void Burst::Console::clearLine(bool wipe)
@@ -165,6 +170,7 @@ void Burst::Console::clearLine(bool wipe)
 	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
 		return;
 
+	std::lock_guard<std::recursive_mutex> lock(mutex_);
 	size_t consoleLength;
 #ifdef WIN32
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
