@@ -21,9 +21,9 @@
 
 #pragma once
 
-#include "channels/ColoredPriorityConsoleChannel.hpp"
 #include <mutex>
 #include <memory>
+#include <iostream>
 
 namespace Burst
 {
@@ -67,11 +67,8 @@ namespace Burst
 	public:
 		/**
 		 * \brief Constructor.
-		 * Locks the console mutex.
-		 * \param stream The output stream.
-		 * \param mutex The console mutex.
 		 */
-		PrintBlock(std::ostream& stream, std::recursive_mutex& mutex);
+		PrintBlock();
 
 		/**
 		 * \brief Move-constructor.
@@ -94,7 +91,7 @@ namespace Burst
 		template <typename T>
 		const PrintBlock& operator<< (const T& text) const
 		{
-			*stream_ << text;
+			std::cout << text;
 			return *this;
 		}
 
@@ -143,8 +140,7 @@ namespace Burst
 		const PrintBlock& resetColor() const;
 		
 	private:
-		std::ostream* stream_;
-		std::recursive_mutex* mutex_;
+		static std::mutex mutex_;
 	};
 
 	/**
@@ -197,6 +193,5 @@ namespace Burst
 		~Console() = delete;
 
 		static ConsoleColorPair currentColor_;
-		static std::recursive_mutex mutex_;
 	};
 }
