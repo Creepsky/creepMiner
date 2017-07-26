@@ -144,7 +144,7 @@ void Burst::BlockData::setProgress(float progress, Poco::UInt64 blockheight)
 	jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progress)};
 
 	if (parent_ != nullptr)
-		parent_->blockDataChangedEvent.notifyAsync(this, *jsonProgress_);
+		parent_->blockDataChangedEvent.notify(this, *jsonProgress_);
 }
 
 void Burst::BlockData::setProgress(const std::string& plotDir, float progress, Poco::UInt64 blockheight)
