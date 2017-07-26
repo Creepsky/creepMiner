@@ -8,7 +8,7 @@
 
 #include "nxt_address.h"
 
-#ifdef WIN32
+#if defined _WIN32 || defined WIN32
 #	define strcasecmp _stricmp 
 #	define strncasecmp _strnicmp 
 #endif
@@ -54,7 +54,7 @@ char* NxtAddress::c_str(bool prefix)
 {
 	static char out[32]; int pos = 0;
     
-	if(prefix){ strcpy(out, "BURST-"); pos = 4; }
+	if(prefix){ strcpy_s(out, sizeof "BURST-", "BURST-"); pos = 4; }
     
 	for(int i = 0; i < 17; i++)
 	{
@@ -77,7 +77,7 @@ char* NxtAddress::account_id()
 {
 	static char out[21];
     
-	sprintf(out, "%llu", (unsigned long long)(*this));
+	sprintf_s(out, "%llu", (unsigned long long)(*this));
     
 	return out;
 }
@@ -98,7 +98,7 @@ bool NxtAddress::set(char *adr)
             
 			if(digits == 20 && *adr != '1') return false;
 			
-			if(sscanf(adr, "%llu", (unsigned long long*)(&acc)) == 1)
+			if(sscanf_s(adr, "%llu", (unsigned long long*)(&acc)) == 1)
 			{
 				*this = acc; return true;
 			}
