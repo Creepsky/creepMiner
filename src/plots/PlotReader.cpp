@@ -229,7 +229,6 @@ void Burst::PlotReader::runTask()
 							{
 								START_PROBE("PlotReader.Progress")
 								progress_->add(staggerChunkBytes * Settings::ScoopPerPlot, plotReadNotification->blockheight);
-								miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
 								TAKE_PROBE("PlotReader.Progress")
 							}
 

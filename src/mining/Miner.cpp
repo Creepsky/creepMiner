@@ -21,21 +21,14 @@
 
 #include "Miner.hpp"
 #include "logging/MinerLogger.hpp"
-#include "logging/Output.hpp"
 #include "MinerConfig.hpp"
 #include "plots/PlotReader.hpp"
 #include "MinerUtil.hpp"
-#include "nxt/nxt_address.h"
-#include "network/Response.hpp"
 #include "network/Request.hpp"
-#include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
-#include <Poco/JSON/Object.h>
 #include "network/NonceSubmitter.hpp"
 #include <Poco/JSON/Parser.h>
-#include <Poco/NestedDiagnosticContext.h>
 #include "plots/PlotSizes.hpp"
-#include "plots/Plot.hpp"
 #include "logging/Performance.hpp"
 #include <Poco/FileStream.h>
 #include <fstream>
@@ -63,8 +56,7 @@ Burst::Miner::Miner()
 	: submitNonceAsync{this, &Miner::submitNonceAsyncImpl}
 {}
 
-Burst::Miner::~Miner()
-{}
+Burst::Miner::~Miner() = default;
 
 void Burst::Miner::run()
 {
@@ -73,8 +65,8 @@ void Burst::Miner::run()
 	progressRead_ = std::make_shared<PlotReadProgress>();
 	progressVerify_ = std::make_shared<PlotReadProgress>();
 
-	progressRead_->progressChanged.add(Poco::delegate(this, &Miner::progressReadChanged));
-	progressVerify_->progressChanged.add(Poco::delegate(this, &Miner::progressVerifyChanged));
+	progressRead_->progressChanged.add(Poco::delegate(this, &Miner::progressChanged));
+	progressVerify_->progressChanged.add(Poco::delegate(this, &Miner::progressChanged));
 
 	auto& config = MinerConfig::getConfig();
 	auto errors = 0u;
@@ -367,7 +359,7 @@ void Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco:
 	
 	std::shared_ptr<Deadline> newDeadline;
 
-	auto result = addNewDeadline(nonce, accountId, deadline, blockheight, plotFile, newDeadline);
+	auto result = addNewDeadline(nonce, accountId, deadline, blockheight, std::move(plotFile), newDeadline);
 
 	// is the new nonce better then the best one we already have?
 	if (result == SubmitResponse::Found)
@@ -497,12 +489,7 @@ namespace Burst
 	}
 }
 
-void Burst::Miner::progressVerifyChanged(float& progress)
-{
-	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight());
-}
-
-void Burst::Miner::progressReadChanged(float& progress)
+void Burst::Miner::progressChanged(float &progress)
 {
 	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight());
 }
@@ -515,7 +502,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poc
 	auto accountId = std::get<1>(data);
 	auto deadline = std::get<2>(data);
 	auto blockheight = std::get<3>(data);
-	auto plotFile = std::get<4>(data);
+	const auto& plotFile = std::get<4>(data);
 
 	std::shared_ptr<Deadline> newDeadline;
 
@@ -530,7 +517,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poc
 
 	NonceConfirmation nonceConfirmation;
 	nonceConfirmation.deadline = 0;
-	nonceConfirmation.json = Poco::format("{ \"result\" : \"success\", \"deadline\" : %Lu }", deadline);
+	nonceConfirmation.json = Poco::format(R"({ "result" : "success", "deadline" : %Lu })", deadline);
 	nonceConfirmation.errorCode = result;
 
 	return nonceConfirmation;

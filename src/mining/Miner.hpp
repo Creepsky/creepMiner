@@ -84,9 +84,7 @@ namespace Burst
 		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile,
 			 std::shared_ptr<Deadline>& newDeadline);
 		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const;
-
-		void progressReadChanged(float& progress);
-		void progressVerifyChanged(float& progress);
+		void progressChanged(float& progress);
 
 		bool running_ = false;
 		MinerData data_;
