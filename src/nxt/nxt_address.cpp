@@ -6,6 +6,8 @@
 //  Copyright (c) 2014 Miner. All rights reserved.
 //
 
+#pragma warning(disable:4996)
+
 #include "nxt_address.h"
 
 #if defined _WIN32 || defined WIN32
@@ -54,7 +56,7 @@ char* NxtAddress::c_str(bool prefix)
 {
 	static char out[32]; int pos = 0;
     
-	if(prefix){ strcpy_s(out, sizeof "BURST-", "BURST-"); pos = 4; }
+	if(prefix){ strcpy(out, "BURST-"); pos = 4; }
     
 	for(int i = 0; i < 17; i++)
 	{
@@ -77,7 +79,7 @@ char* NxtAddress::account_id()
 {
 	static char out[21];
     
-	sprintf_s(out, "%llu", (unsigned long long)(*this));
+	sprintf(out, "%llu", (unsigned long long)(*this));
     
 	return out;
 }
@@ -98,7 +100,7 @@ bool NxtAddress::set(char *adr)
             
 			if(digits == 20 && *adr != '1') return false;
 			
-			if(sscanf_s(adr, "%llu", (unsigned long long*)(&acc)) == 1)
+			if(sscanf(adr, "%llu", (unsigned long long*)(&acc)) == 1)
 			{
 				*this = acc; return true;
 			}
