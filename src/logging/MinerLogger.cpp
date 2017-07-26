@@ -48,10 +48,13 @@
 #include "ProgressPrinter.hpp"
 #include <Poco/StringTokenizer.h>
 
-std::recursive_mutex Burst::MinerLogger::mutex_;
+std::mutex Burst::MinerLogger::mutex_;
 Burst::TextType Burst::MinerLogger::currentTextType_ = Burst::TextType::Normal;
 bool Burst::MinerLogger::progressFlag_ = false;
-float Burst::MinerLogger::lastProgress_ = 0.f;
+float Burst::MinerLogger::lastProgressRead_ = 0.f;
+float Burst::MinerLogger::lastProgressVerify_ = 0.f;
+size_t Burst::MinerLogger::lastProgressDoneRead_ = 0;
+size_t Burst::MinerLogger::lastProgressDoneVerify_ = 0;
 size_t Burst::MinerLogger::lastPipeCount_ = 0u;
 Burst::ProgressPrinter Burst::MinerLogger::progressPrinter_;
 
@@ -246,7 +249,7 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 {
 	try
 	{
-		std::lock_guard<std::recursive_mutex> lock(mutex_);
+		std::lock_guard<std::mutex> lock(mutex_);
 
 		Poco::Path fullPath;
 		fullPath.parseDirectory(dir);
@@ -330,7 +333,7 @@ bool Burst::MinerLogger::hasOutput(Burst::Output id)
 
 void Burst::MinerLogger::write(const std::string& text, TextType type)
 {
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
+	std::lock_guard<std::mutex> lock(mutex_);
 
 	auto block = Console::print();
 
@@ -357,27 +360,45 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	if (!progressFlag_)
 		block->nextLine();
 
-	if (wasProgress && lastProgress_ < 100.f)
+	if (wasProgress && (lastProgressRead_ < 100.f || lastProgressVerify_ < 100.f))
 	{
-		progressPrinter_.print(lastProgress_);
+		progressPrinter_.print(lastProgressRead_, lastProgressVerify_);
 		progressFlag_ = true;
 	}
 }
 
-void Burst::MinerLogger::writeProgress(float progress)
+void Burst::MinerLogger::writeProgress(float progressRead, float progressVerify)
 {
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
+	std::lock_guard<std::mutex> lock(mutex_);
 
-	if (static_cast<size_t>(progress) == static_cast<size_t>(lastProgress_))
-		return;
+	size_t doneSizeRead, notDoneSize, doneSizeVerified;
+
+	ProgressPrinter::calculateProgressProportions(progressRead, progressVerify,
+		progressPrinter_.totalSize, doneSizeRead, doneSizeVerified, notDoneSize);
+
+	if (MinerConfig::getConfig().isFancyProgressBar())
+	{
+		if (static_cast<size_t>(lastProgressDoneRead_) == static_cast<size_t>(doneSizeRead) &&
+			static_cast<size_t>(lastProgressDoneVerify_) == static_cast<size_t>(doneSizeVerified))
+			return;
+	}
+	else
+	{
+		if (static_cast<size_t>(progressRead) == static_cast<size_t>(lastProgressRead_) &&
+			static_cast<size_t>(progressVerify) == static_cast<size_t>(lastProgressVerify_))
+			return;
+	}
 
 	if (progressFlag_)
 		Console::print()->clearLine(false);
 
-	lastProgress_ = progress;
+	lastProgressRead_ = progressRead;
+	lastProgressVerify_ = progressVerify;
+	lastProgressDoneRead_ = doneSizeRead;
+	lastProgressDoneVerify_ = doneSizeVerified;
 	progressFlag_ = MinerConfig::getConfig().isSteadyProgressBar();
 
-	progressPrinter_.print(progress);
+	progressPrinter_.print(progressRead, progressVerify);
 
 	if (!MinerConfig::getConfig().isSteadyProgressBar())
 		Console::print()->nextLine();
@@ -385,7 +406,7 @@ void Burst::MinerLogger::writeProgress(float progress)
 
 void Burst::MinerLogger::setTextTypeColor(TextType type, ConsoleColorPair color)
 {
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
+	std::lock_guard<std::mutex> lock(mutex_);
 	typeColors[type] = color;
 }
 
