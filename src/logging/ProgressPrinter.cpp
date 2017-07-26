@@ -28,11 +28,19 @@
 
 Burst::ProgressPrinter::ProgressPrinter()
 {
+#ifdef POCO_COMPILER_MSVC
+	delimiterFront = { "\xBA", TextType::Unimportant };
+	readDoneChar = { "\xB1", TextType::Normal };
+	verifiedDoneChar = { "\xB2", TextType::Success };
+	readNotDoneChar = { "\xB0", TextType::Unimportant };
+	delimiterEnd = { "\xBA", TextType::Unimportant };
+#else
 	delimiterFront = { "\u2590", TextType::Unimportant };
 	readDoneChar = { "\u2592", TextType::Normal };
 	verifiedDoneChar = { "\u2593", TextType::Success };
 	readNotDoneChar = { "\u2591", TextType::Unimportant };
 	delimiterEnd = { "\u258C", TextType::Unimportant };
+#endif
 	totalSize = 48;
 }
 
