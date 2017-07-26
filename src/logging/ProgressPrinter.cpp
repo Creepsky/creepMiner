@@ -1,4 +1,4 @@
-// ==========================================================================
+﻿// ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
 // Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
@@ -26,7 +26,26 @@
 #include "MinerUtil.hpp"
 #include "mining/MinerConfig.hpp"
 
-void Burst::ProgressPrinter::print(float progress) const
+Burst::ProgressPrinter::ProgressPrinter()
+{
+	delimiterFront = { '\xBA', TextType::Unimportant };
+	readDoneChar = { '\xB1', TextType::Normal };
+	verifiedDoneChar = { '\xB2', TextType::Success };
+	readNotDoneChar = { '\xB0', TextType::Unimportant };
+	delimiterEnd = { '\xBA', TextType::Unimportant };
+	totalSize = 48;
+}
+
+namespace Burst
+{
+	std::ostream& toPercentage(std::ostream& stream)
+	{
+		stream << std::right << std::fixed << std::setw(6) << std::setfill(' ') << std::setprecision(2);
+		return stream;
+	}
+}
+
+void Burst::ProgressPrinter::print(float progressRead, float progressVerify) const
 {
 	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
 		return;
@@ -34,33 +53,38 @@ void Burst::ProgressPrinter::print(float progress) const
 	if (MinerConfig::getConfig().isFancyProgressBar())
 	{
 		// calculate the progress bar proportions
-		size_t doneSize, notDoneSize;
-		calculateProgressProportions(progress, totalSize, doneSize, notDoneSize);
+		size_t doneSizeRead, notDoneSize, doneSizeVerified;
+
+		calculateProgressProportions(progressRead, progressVerify, totalSize, doneSizeRead, doneSizeVerified, notDoneSize);
 
 		*Console::print()
 			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
-			<< MinerLogger::getTextTypeColor(TextType::Unimportant) << delimiterFront
-			<< MinerLogger::getTextTypeColor(TextType::Success) << std::string(doneSize, doneChar)
-			<< MinerLogger::getTextTypeColor(TextType::Normal) << std::string(totalSize - doneSize, notDoneChar)
-			<< MinerLogger::getTextTypeColor(TextType::Unimportant) << delimiterEnd
-			<< ' ' << static_cast<size_t>(progress) << '%';
+			<< MinerLogger::getTextTypeColor(delimiterFront.textType) << delimiterFront.character
+			<< MinerLogger::getTextTypeColor(verifiedDoneChar.textType) << std::string(doneSizeVerified, verifiedDoneChar.character)
+			<< MinerLogger::getTextTypeColor(readDoneChar.textType) << std::string(doneSizeRead, readDoneChar.character)
+			<< MinerLogger::getTextTypeColor(readNotDoneChar.textType) << std::string(notDoneSize, readNotDoneChar.character)
+			<< MinerLogger::getTextTypeColor(delimiterEnd.textType) << delimiterEnd.character
+			<< ' ' << toPercentage << (progressRead + progressVerify) / 2 << '%';
 	}
 	else
 		*Console::print()
 			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
-			<< "Progress: " << std::fixed << std::setprecision(2) << progress << " %";
+			<< "Read:  " << toPercentage << progressRead << "%    "
+			<< "Verified:  " << toPercentage << progressVerify << "%";
 }
 
-void Burst::ProgressPrinter::calculateProgressProportions(float progress, size_t totalSize, size_t& doneSize, size_t& notDoneSize)
+void Burst::ProgressPrinter::calculateProgressProportions(float progressRead, float progressVerified, size_t totalSize, size_t& readSize, size_t& verifiedSize, size_t& notDoneSize)
 {
-	// precatch division by zero
-	if (progress == 0.f)
-	{
-		doneSize = 0;
-		notDoneSize = 0;
-		return;
-	}
+	readSize = static_cast<size_t>(totalSize * (progressRead / 100));
+	verifiedSize = static_cast<size_t>(totalSize * (progressVerified / 100));
 
-	doneSize = static_cast<size_t>(totalSize * (progress / 100));
-	notDoneSize = totalSize - doneSize;
+	auto notReadSize = totalSize - readSize;
+	auto notVerifiedSize = totalSize - verifiedSize;
+
+	if (readSize > verifiedSize)
+		readSize = readSize - verifiedSize;
+	else
+		readSize = 0;
+
+	notDoneSize = std::min(notReadSize, notVerifiedSize);
 }

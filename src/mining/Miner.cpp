@@ -40,6 +40,7 @@
 #include <Poco/FileStream.h>
 #include <fstream>
 #include <Poco/File.h>
+#include <Poco/Delegate.h>
 
 namespace Burst
 {
@@ -69,7 +70,11 @@ void Burst::Miner::run()
 {
 	poco_ndc(Miner::run);
 	running_ = true;
-	progress_ = std::make_shared<PlotReadProgress>();
+	progressRead_ = std::make_shared<PlotReadProgress>();
+	progressVerify_ = std::make_shared<PlotReadProgress>();
+
+	progressRead_->progressChanged.add(Poco::delegate(this, &Miner::progressReadChanged));
+	progressVerify_->progressChanged.add(Poco::delegate(this, &Miner::progressVerifyChanged));
 
 	auto& config = MinerConfig::getConfig();
 	auto errors = 0u;
@@ -92,11 +97,11 @@ void Burst::Miner::run()
 
 		// create the plot readers
 		MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
-			*this, progress_, verificationQueue_, plotReadQueue_);
+			*this, progressRead_, verificationQueue_, plotReadQueue_);
 
 		// create the plot verifiers
 		MinerHelper::create_worker<PlotVerifier>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
-			*this, verificationQueue_);
+			*this, verificationQueue_, progressVerify_);
 	}
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
@@ -216,7 +221,8 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 	if (MinerConfig::getConfig().isRescanningEveryBlock())
 		MinerConfig::getConfig().rescanPlotfiles();
 
-	progress_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
+	progressRead_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
+	progressVerify_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
 
 	PlotSizes::nextRound();
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
@@ -444,10 +450,7 @@ bool Burst::Miner::getMiningInfo()
 								deadlineFormat(target_deadline_pool_before),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Pool)),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Local)),
-								deadlineFormat(data_.getTargetDeadline()))
-
-
-;
+								deadlineFormat(data_.getTargetDeadline()));
 					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));
@@ -479,6 +482,30 @@ void Burst::Miner::shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskMan
 	task_manager.cancelAll();
 	thread_pool.stopAll();
 	thread_pool.joinAll();
+}
+
+namespace Burst
+{
+	std::mutex progressMutex_;
+
+	void showProgress(PlotReadProgress& progressRead, PlotReadProgress& progressVerify, MinerData& data, Poco::UInt64 blockheight)
+	{
+		std::lock_guard<std::mutex> lock(progressMutex_);
+		auto readProgress = progressRead.getProgress();
+		auto readVerify = progressVerify.getProgress();
+		MinerLogger::writeProgress(readProgress, progressVerify.getProgress());
+		data.getBlockData()->setProgress(readProgress, blockheight);
+	}
+}
+
+void Burst::Miner::progressVerifyChanged(float& progress)
+{
+	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight());
+}
+
+void Burst::Miner::progressReadChanged(float& progress)
+{
+	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight());
 }
 
 Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data)
@@ -561,7 +588,7 @@ void Burst::Miner::setMiningIntensity(Poco::UInt32 intensity)
 	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
 	MinerConfig::getConfig().setMininigIntensity(intensity);
 	MinerHelper::create_worker<PlotVerifier>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
-		*this, verificationQueue_);
+		*this, verificationQueue_, progressVerify_);
 }
 
 void Burst::Miner::setMaxPlotReader(Poco::UInt32 max_reader)
@@ -576,7 +603,7 @@ void Burst::Miner::setMaxPlotReader(Poco::UInt32 max_reader)
 	shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
 	MinerConfig::getConfig().setMaxPlotReaders(max_reader);
 	MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
-		*this, progress_, verificationQueue_, plotReadQueue_);
+		*this, progressRead_, verificationQueue_, plotReadQueue_);
 }
 
 void Burst::Miner::setMaxBufferSize(Poco::UInt64 size)

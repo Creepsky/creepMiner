@@ -85,9 +85,12 @@ namespace Burst
 			 std::shared_ptr<Deadline>& newDeadline);
 		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const;
 
+		void progressReadChanged(float& progress);
+		void progressVerifyChanged(float& progress);
+
 		bool running_ = false;
 		MinerData data_;
-		std::shared_ptr<PlotReadProgress> progress_;
+		std::shared_ptr<PlotReadProgress> progressRead_, progressVerify_;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
 		Accounts accounts_;
 		Wallet wallet_;

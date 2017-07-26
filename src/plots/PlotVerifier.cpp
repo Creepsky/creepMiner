@@ -35,8 +35,8 @@
 #include "gpu/algorithm/gpu_algorithm_atomic.hpp"
 #endif
 
-Burst::PlotVerifier::PlotVerifier(Miner &miner, Poco::NotificationQueue& queue)
-	: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}
+Burst::PlotVerifier::PlotVerifier(Miner &miner, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress)
+	: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}, progress_{progress}
 {}
 
 void Burst::PlotVerifier::runTask()
@@ -113,6 +113,9 @@ void Burst::PlotVerifier::runTask()
 		START_PROBE("PlotVerifier.FreeMemory")
 		PlotReader::globalBufferSize.free(verifyNotification->buffer.size() * sizeof(ScoopData));
 		TAKE_PROBE("PlotVerifier.FreeMemory")
+
+		if (progress_ != nullptr)
+			progress_->add(verifyNotification->buffer.size() * Settings::PlotSize, verifyNotification->block);
 	}
 
 	log_debug(MinerLogger::plotVerifier, "Verifier stopped");
