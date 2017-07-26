@@ -6,8 +6,6 @@
 //  Copyright (c) 2014 Miner. All rights reserved.
 //
 
-#pragma warning(disable:4996)
-
 #include "nxt_address.h"
 
 #if defined _WIN32 || defined WIN32
