@@ -49,6 +49,7 @@ Burst::PrintBlock::PrintBlock(PrintBlock&& rhs) noexcept
 
 Burst::PrintBlock::~PrintBlock()
 {
+	flush();
 	Console::resetColor();
 	mutex_->unlock();
 }
@@ -86,6 +87,12 @@ const Burst::PrintBlock& Burst::PrintBlock::resetColor() const
 const Burst::PrintBlock& Burst::PrintBlock::clearLine(bool wipe) const
 {
 	Console::clearLine(wipe);
+	return *this;
+}
+
+const Burst::PrintBlock &Burst::PrintBlock::flush() const
+{
+	*stream_ << std::flush;
 	return *this;
 }
 

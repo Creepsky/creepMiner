@@ -133,6 +133,11 @@ namespace Burst
 		const PrintBlock& clearLine(bool wipe = true) const;
 
 		/**
+		 * \brief Flushes the current console buffer.
+		 */
+		const PrintBlock& flush() const;
+
+		/**
 		 * \brief Resets the font color.
 		 */
 		const PrintBlock& resetColor() const;
