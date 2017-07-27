@@ -36,8 +36,8 @@ Burst::ProgressPrinter::ProgressPrinter()
 	delimiterEnd = { "\xBA", TextType::Unimportant };
 #else
 	delimiterFront = { "\u2590", TextType::Unimportant };
-	readDoneChar = { "\u2592", TextType::Normal };
-	verifiedDoneChar = { "\u2593", TextType::Success };
+	readDoneChar = { "\u2592", TextType::Success };
+	verifiedDoneChar = { "\u2593", TextType::Ok };
 	readNotDoneChar = { "\u2591", TextType::Unimportant };
 	delimiterEnd = { "\u258C", TextType::Unimportant };
 #endif
