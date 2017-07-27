@@ -20,7 +20,6 @@
 // ==========================================================================
 
 #include "ProgressPrinter.hpp"
-#include "Message.hpp"
 #include "Console.hpp"
 #include "MinerLogger.hpp"
 #include "MinerUtil.hpp"
@@ -75,17 +74,20 @@ void Burst::ProgressPrinter::print(float progressRead, float progressVerify) con
 
 		calculateProgressProportions(progressRead, progressVerify, totalSize, doneSizeRead, doneSizeVerified, notDoneSize);
 
-		*Console::print()
-			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
+		auto block = Console::print();
+
+		block << MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
 			<< MinerLogger::getTextTypeColor(delimiterFront.textType) << delimiterFront.character
 			<< MinerLogger::getTextTypeColor(verifiedDoneChar.textType) << repeat(doneSizeVerified, verifiedDoneChar.character)
 			<< MinerLogger::getTextTypeColor(readDoneChar.textType) << repeat(doneSizeRead, readDoneChar.character)
 			<< MinerLogger::getTextTypeColor(readNotDoneChar.textType) << repeat(notDoneSize, readNotDoneChar.character)
 			<< MinerLogger::getTextTypeColor(delimiterEnd.textType) << delimiterEnd.character
 			<< ' ' << toPercentage << (progressRead + progressVerify) / 2 << '%';
+
+		block.flush();
 	}
 	else
-		*Console::print()
+		Console::print()
 			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
 			<< "Read:  " << toPercentage << progressRead << "%    "
 			<< "Verified:  " << toPercentage << progressVerify << "%";

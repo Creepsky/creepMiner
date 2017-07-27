@@ -340,7 +340,7 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	auto wasProgress = progressFlag_ && MinerConfig::getConfig().isSteadyProgressBar();
 
 	if (wasProgress)
-		block->clearLine();
+		block.clearLine();
 
 	progressFlag_ = type == TextType::Progress && MinerConfig::getConfig().isSteadyProgressBar();
 	
@@ -348,17 +348,17 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	
 	for (auto i = 0u; i < tokenizer.count(); ++i)
 	{
-		*block << getTextTypeColor(TextType::Normal) << getTime() << ": "
+		block << getTextTypeColor(TextType::Normal) << getTime() << ": "
 			<< getTextTypeColor(type) << tokenizer[i];
 
 		if (i != tokenizer.count() - 1)
-			block->nextLine();
+			block.nextLine();
 
-		block->resetColor();
+		block.resetColor();
 	}
 
 	if (!progressFlag_)
-		block->nextLine();
+		block.nextLine();
 
 	if (wasProgress && (lastProgressRead_ < 100.f || lastProgressVerify_ < 100.f))
 	{
@@ -390,7 +390,7 @@ void Burst::MinerLogger::writeProgress(float progressRead, float progressVerify)
 	}
 
 	if (progressFlag_)
-		Console::print()->clearLine(false);
+		Console::clearLine(false);
 
 	lastProgressRead_ = progressRead;
 	lastProgressVerify_ = progressVerify;
@@ -401,7 +401,7 @@ void Burst::MinerLogger::writeProgress(float progressRead, float progressVerify)
 	progressPrinter_.print(progressRead, progressVerify);
 
 	if (!MinerConfig::getConfig().isSteadyProgressBar())
-		Console::print()->nextLine();
+		Console::nextLine();
 }
 
 void Burst::MinerLogger::setTextTypeColor(TextType type, ConsoleColorPair color)

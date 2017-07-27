@@ -24,6 +24,7 @@
 #include "channels/ColoredPriorityConsoleChannel.hpp"
 #include <mutex>
 #include <memory>
+#include <iostream>
 
 namespace Burst
 {
@@ -59,8 +60,8 @@ namespace Burst
 	};
 
 	/**
-	 * \brief A print block for the console, that will block the output on the console when created
-	 * and unlocks it on destruction of the object.
+	 * \brief A print block for the console.
+	 * This class is not thread-safe and should not be used in concurrent way!
 	 */
 	class PrintBlock
 	{
@@ -71,25 +72,23 @@ namespace Burst
 		 * \param stream The output stream.
 		 * \param mutex The console mutex.
 		 */
-		PrintBlock(std::ostream& stream, std::recursive_mutex& mutex);
-
-		/**
-		 * \brief Move-constructor.
-		 * \param rhs The object to move.
-		 */
-		PrintBlock(PrintBlock&& rhs) noexcept;
+		explicit PrintBlock(std::ostream& stream);
 
 		/**
 		 * \brief Destructor.
-		 * Unlocks the console mutex.
 		 */
 		~PrintBlock();
 
+		PrintBlock(PrintBlock&& rhs) noexcept = default;
+		PrintBlock(const PrintBlock& rhs) = default;
+		PrintBlock& operator=(const PrintBlock& rhs) = default;
+		PrintBlock& operator=(PrintBlock&& rhs) noexcept = default;
+
 		/**
 		 * \brief Prints a value to output.
-		 * \tparam T 
-		 * \param text 
-		 * \return 
+		 * \tparam T The type of the value.
+		 * \param text The value.
+		 * \return The print block instance.
 		 */
 		template <typename T>
 		const PrintBlock& operator<< (const T& text) const
@@ -144,15 +143,23 @@ namespace Burst
 		
 	private:
 		std::ostream* stream_;
-		std::recursive_mutex* mutex_;
 	};
 
 	/**
 	 * \brief A static abstraction class for the console/terminal.
+	 * These functions are not thread-safe and should not be used in concurrent way!
 	 */
 	class Console
 	{
 	public:
+		Console() = delete;
+		~Console() = delete;
+		Console(const Console& rhs) = delete;
+		Console(Console&& rhs) = delete;
+
+		Console& operator=(const Console& rhs) = delete;
+		Console& operator=(Console&& rhs) = delete;
+
 		/**
 		 * \brief Changes the color of the font in the console.
 		 * \param foreground The new foreground color.
@@ -183,7 +190,7 @@ namespace Burst
 		 * \brief Creates a print block for the console for console output.
 		 * \return The shared_ptr for a newly created print block.
 		 */
-		static std::shared_ptr<PrintBlock> print();
+		static PrintBlock print();
 
 		/**
 		 * \brief Resets the current line.
@@ -192,11 +199,9 @@ namespace Burst
 		 */
 		static void clearLine(bool wipe = true);
 
-	private:
-		Console() = delete;
-		~Console() = delete;
-
-		static ConsoleColorPair currentColor_;
-		static std::recursive_mutex mutex_;
+		/**
+		 * \brief Prints a line break.
+		 */
+		static void nextLine();
 	};
 }
