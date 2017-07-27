@@ -31,6 +31,7 @@
 
 namespace Burst
 {
+	class PlotReadProgress;
 	class Miner;
 
 	struct VerifyNotification : Poco::Notification
@@ -55,7 +56,7 @@ namespace Burst
 		 */
 		using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
 
-		PlotVerifier(Miner &miner, Poco::NotificationQueue& queue);
+		PlotVerifier(Miner &miner, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress);
 		void runTask() override;
 		
 		static std::array<DeadlineTuple, Shabal256::HashSize> verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
@@ -64,5 +65,6 @@ namespace Burst
 	private:
 		Miner* miner_;
 		Poco::NotificationQueue* queue_;
+		std::shared_ptr<PlotReadProgress> progress_;
 	};
 }

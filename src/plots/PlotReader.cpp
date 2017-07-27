@@ -229,7 +229,6 @@ void Burst::PlotReader::runTask()
 							{
 								START_PROBE("PlotReader.Progress")
 								progress_->add(staggerChunkBytes * Settings::ScoopPerPlot, plotReadNotification->blockheight);
-								miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
 								TAKE_PROBE("PlotReader.Progress")
 							}
 
@@ -282,7 +281,6 @@ void Burst::PlotReader::runTask()
 					{
 						START_PROBE("PlotReader.Progress")
 						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
-						miner_.getData().getBlockData()->setProgress(progress_->getProgress(), plotReadNotification->blockheight);
 						TAKE_PROBE("PlotReader.Progress")
 					}
 				}
@@ -336,7 +334,7 @@ void Burst::PlotReader::runTask()
 
 void Burst::PlotReadProgress::reset(Poco::UInt64 blockheight, uintmax_t max)
 {
-	Poco::Mutex::ScopedLock guard(lock_);
+	std::lock_guard<std::mutex> guard(mutex_);
 	progress_ = 0;
 	blockheight_ = blockheight;
 	max_ = max;
@@ -344,31 +342,42 @@ void Burst::PlotReadProgress::reset(Poco::UInt64 blockheight, uintmax_t max)
 
 void Burst::PlotReadProgress::add(uintmax_t value, Poco::UInt64 blockheight)
 {
-	Poco::Mutex::ScopedLock guard(lock_);
+	{
+		std::lock_guard<std::mutex> guard(mutex_);
 
-	if (blockheight != blockheight_)
-		return;
+		if (blockheight != blockheight_)
+			return;
 
-	progress_ += value;
+		progress_ += value;
+	}
 
-	if (max_ > 0)
-		MinerLogger::writeProgress(getProgress());
+	fireProgressChanged();
 }
 
 bool Burst::PlotReadProgress::isReady() const
 {
-	Poco::Mutex::ScopedLock guard(lock_);
+	std::lock_guard<std::mutex> guard(mutex_);
 	return progress_ >= max_;
 }
 
 uintmax_t Burst::PlotReadProgress::getValue() const
 {
-	Poco::Mutex::ScopedLock guard(lock_);
+	std::lock_guard<std::mutex> guard(mutex_);
 	return progress_;
 }
 
 float Burst::PlotReadProgress::getProgress() const
 {
-	Poco::Mutex::ScopedLock guard(lock_);
+	std::lock_guard<std::mutex> guard(mutex_);
+
+	if (max_ == 0.f)
+		return 0.f;
+
 	return progress_ * 1.f / max_ * 100;
+}
+
+void Burst::PlotReadProgress::fireProgressChanged()
+{
+	auto progress = getProgress();
+	progressChanged.notify(this, progress);
 }

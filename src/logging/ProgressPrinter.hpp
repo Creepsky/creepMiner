@@ -21,50 +21,68 @@
 
 #pragma once
 
-#include <cstdio>
+#include "Message.hpp"
 
 namespace Burst
 {
+	struct ProgressToken
+	{
+		std::string character;
+		TextType textType;
+	};
+
 	struct ProgressPrinter
 	{
 		/**
 		* \brief The front delimiter.
 		*/
-		char delimiterFront = '[';
+		ProgressToken delimiterFront;
 
 		/**
-		* \brief A char that represents the filled part of the progress bar.
+		* \brief A char that represents the filled part of the progress bar for reading.
 		*/
-		char doneChar = '+';
+		ProgressToken readDoneChar;
 
 		/**
-		* \brief A char that represents the not filled  part of the progress bar.
+		* \brief A char that represents the filled part of the progress bar for reading.
 		*/
-		char notDoneChar = '-';
+		ProgressToken verifiedDoneChar;
+
+		/**
+		* \brief A char that represents the not filled  part of the progress bar for reading.
+		*/
+		ProgressToken readNotDoneChar;
 
 		/**
 		* \brief The end delimiter.
 		*/
-		char delimiterEnd = ']';
+		ProgressToken delimiterEnd;
 
 		/**
 		 * \brief The size of the filled and not filled part of the progressbar combined.
 		 */
-		size_t totalSize = 48;
+		size_t totalSize;
+
+		/**
+		 * \brief Constructor.
+		 */
+		ProgressPrinter();
 
 		/**
 		 * \brief Prints the progress bar.
 		 */
-		void print(float progress) const;
+		void print(float progressRead, float progressVerify) const;
 
 		/**
 		* \brief Calculates the proportion of the filled and not filled part of a progress bar.
-		* \param progress The progress, where 0 <= progress <= 100.
+		* \param progressRead The read progress, where 0 <= progress <= 100.
+		* \param progressVerified The verification progress, where 0 <= progress <= 100.
 		* \param totalSize The whole size of the progress bar.
 		* It will be split it by done and not done (doneSize + notDoneSize = totalSize).
-		* \param doneSize The proportion of the filled part.
+		* \param readSize The proportion of the filled part that was read.
+		* \param verifiedSize The proportion of the filled part that was verified.
 		* \param notDoneSize The proportion of the not filled part.
 		*/
-		static void calculateProgressProportions(float progress, size_t totalSize, size_t& doneSize, size_t& notDoneSize);
+		static void calculateProgressProportions(float progressRead, float progressVerified, size_t totalSize, size_t& readSize, size_t& verifiedSize, size_t& notDoneSize);
 	};
 }

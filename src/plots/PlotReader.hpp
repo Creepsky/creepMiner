@@ -99,9 +99,13 @@ namespace Burst
 		uintmax_t getValue() const;
 		float getProgress() const;
 
+		Poco::BasicEvent<float> progressChanged;
+
 	private:
 		uintmax_t progress_ = 0, max_ = 0;
 		Poco::UInt64 blockheight_ = 0;
-		mutable Poco::Mutex lock_;
+		mutable std::mutex mutex_;
+
+		void fireProgressChanged();
 	};
 }

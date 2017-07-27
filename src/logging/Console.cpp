@@ -34,23 +34,9 @@
 #include <cmath>
 #endif
 
-Burst::ConsoleColorPair Burst::Console::currentColor_ = { ConsoleColor::White, ConsoleColor::Black };
-std::recursive_mutex Burst::Console::mutex_;
-
-Burst::PrintBlock::PrintBlock(std::ostream& stream, std::recursive_mutex& mutex)
-	: stream_(&stream), mutex_(&mutex)
+Burst::PrintBlock::PrintBlock(std::ostream& stream)
+	: stream_(&stream)
 {
-	mutex_->lock();
-}
-
-Burst::PrintBlock::PrintBlock(PrintBlock&& rhs) noexcept
-	: stream_(rhs.stream_), mutex_(rhs.mutex_)
-{}
-
-Burst::PrintBlock::~PrintBlock()
-{
-	Console::resetColor();
-	mutex_->unlock();
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::operator<<(ConsoleColor color) const
@@ -89,13 +75,24 @@ const Burst::PrintBlock& Burst::PrintBlock::clearLine(bool wipe) const
 	return *this;
 }
 
+const Burst::PrintBlock& Burst::PrintBlock::flush() const
+{
+	*stream_ << std::flush;
+	return *this;
+}
+
+Burst::PrintBlock::~PrintBlock()
+{
+	flush();
+	resetColor();
+}
+
 void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 {
 	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal ||
 		!MinerConfig::getConfig().isUsingLogColors())
 		return;
 
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
 #ifdef _WIN32
 	auto hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	WORD color = (static_cast<int>(foreground) & 0x0F) + ((static_cast<int>(background) & 0x0F) << 4);
@@ -103,7 +100,6 @@ void Burst::Console::setColor(ConsoleColor foreground, ConsoleColor background)
 #elif defined __linux__
 	std::cout << getUnixConsoleCode(foreground);
 #endif
-	currentColor_ = { foreground, background };
 }
 
 void Burst::Console::setColor(ConsoleColorPair color)
@@ -120,13 +116,8 @@ void Burst::Console::resetColor()
 #ifdef _WIN32
 	setColor(ConsoleColor::White);
 #elif defined __linux__
-	{
-		std::lock_guard<std::recursive_mutex> lock(mutex_);
-		std::cout << "\033[0m";
-	}
+	std::cout << "\033[0m";
 #endif
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
-	currentColor_ = { ConsoleColor::White, ConsoleColor::Black };
 }
 
 std::string Burst::Console::getUnixConsoleCode(ConsoleColor color)
@@ -153,9 +144,9 @@ std::string Burst::Console::getUnixConsoleCode(ConsoleColor color)
 	}
 }
 
-std::shared_ptr<Burst::PrintBlock> Burst::Console::print()
+Burst::PrintBlock Burst::Console::print()
 {
-	return std::make_shared<PrintBlock>(std::cout, mutex_);
+	return PrintBlock{ std::cout };
 }
 
 void Burst::Console::clearLine(bool wipe)
@@ -163,22 +154,31 @@ void Burst::Console::clearLine(bool wipe)
 	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
 		return;
 
-	std::lock_guard<std::recursive_mutex> lock(mutex_);
-	size_t consoleLength;
+	size_t consoleLength = 0;
+
 #ifdef WIN32
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
 	consoleLength = csbi.srWindow.Right - csbi.srWindow.Left;
 #else
-	struct winsize size;
-	ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
-	consoleLength = size.ws_col;
+	winsize size;
+
+	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &size) > -1)
+		consoleLength = size.ws_col;
 #endif
 
-	std::cout << '\r';
+	if (consoleLength > 0)
+	{
+		std::cout << '\r';
 
-	if (wipe)
-		std::cout << std::string(consoleLength, ' ') << '\r';
+		if (wipe)
+			std::cout << std::string(consoleLength, ' ') << '\r';
 
-	std::cout << std::flush;
+		std::cout << std::flush;
+	}
+}
+
+void Burst::Console::nextLine()
+{
+	std::cout << std::endl;
 }

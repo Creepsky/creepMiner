@@ -72,7 +72,7 @@ namespace Burst
 		 * \brief Writes a simple progress bar into stdcout.
 		 * \param progress The procentual progress value (0-100).
 		 */
-		static void writeProgress(float progress);
+		static void writeProgress(float progressRead, float progressVerify);
 
 		/**
 		 * \brief Writes a text of a specifig type and a timestamp into stdout.
@@ -138,11 +138,12 @@ namespace Burst
 		static const Output_Flags& getOutput();
 
 	private:		
-		static std::recursive_mutex mutex_;
+		static std::mutex mutex_;
 		static TextType currentTextType_;
 		static std::map<TextType, ConsoleColorPair> typeColors;
 		static bool progressFlag_;
-		static float lastProgress_;
+		static float lastProgressRead_, lastProgressVerify_;
+		static size_t lastProgressDoneRead_, lastProgressDoneVerify_;
 		static size_t lastPipeCount_;
 
 		static const std::unordered_map<std::string, ColoredPriorityConsoleChannel*> channels_;
