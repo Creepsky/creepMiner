@@ -155,6 +155,7 @@ namespace Burst
 		bool isUsingLogColors() const;
 		bool isSteadyProgressBar() const;
 		bool isFancyProgressBar() const;
+		size_t getBufferChunkCount() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -180,6 +181,7 @@ namespace Burst
 		void setMaxPlotReaders(unsigned max_reader);
 		void setLogDir(const std::string& log_dir);
 		void setGetMiningInfoInterval(size_t interval);
+		void setBufferChunkCount(size_t bufferChunkCount);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.
@@ -239,6 +241,7 @@ namespace Burst
 		size_t maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
 		size_t maxBufferSizeMB_ = 256;
+		size_t bufferChunkCount_ = 8;
 		size_t walletRequestTries_ = 5;
 		size_t walletRequestRetryWaitTime_ = 3;
 		Passphrase passphrase_;

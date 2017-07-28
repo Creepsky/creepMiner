@@ -369,6 +369,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		useInsecurePlotfiles_ = getOrAdd(miningObj, "useInsecurePlotfiles", false);
 		getMiningInfoInterval_ = getOrAdd(miningObj, "getMiningInfoInterval", 3);
 		rescanEveryBlock_ = getOrAdd(miningObj, "rescanEveryBlock", true);
+		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
 
 		// urls
 		{
@@ -1122,6 +1123,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 
 		mining.set("rescanEveryBlock", isRescanningEveryBlock());
 
+		mining.set("bufferChunkCount", getBufferChunkCount());
+
 		// passphrase
 		{
 			Poco::JSON::Object passphrase;
@@ -1273,6 +1276,12 @@ void Burst::MinerConfig::setGetMiningInfoInterval(size_t interval)
 	getMiningInfoInterval_ = interval;
 }
 
+void Burst::MinerConfig::setBufferChunkCount(size_t bufferChunkCount)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	bufferChunkCount_ = bufferChunkCount;
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
 	return addPlotDir(std::make_shared<PlotDir>(dir, PlotDir::Type::Sequential));
@@ -1319,7 +1328,6 @@ bool Burst::MinerConfig::isLogfileUsed() const
 
 size_t Burst::MinerConfig::getMiningInfoInterval() const
 {
-	Poco::Mutex::ScopedLock lock(mutex_);
 	return getMiningInfoInterval_;
 }
 
@@ -1346,6 +1354,11 @@ bool Burst::MinerConfig::isSteadyProgressBar() const
 bool Burst::MinerConfig::isFancyProgressBar() const
 {
 	return fancyProgressBar_;
+}
+
+size_t Burst::MinerConfig::getBufferChunkCount() const
+{
+	return bufferChunkCount_;
 }
 
 void Burst::MinerConfig::useLogfile(bool use)
