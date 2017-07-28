@@ -21,7 +21,6 @@
 
 #pragma once
 
-#include <string>
 #include <Poco/Types.h>
 #include <memory>
 #include <vector>
@@ -59,9 +58,52 @@ namespace Burst
 		 */
 		Poco::UInt64 getSize() const;
 
+		/**
+		 * \brief Returns the account id that the plotfile is bound to.
+		 * \return The account id.
+		 */
+		Poco::UInt64 getAccountId() const;
+
+		/**
+		 * \brief Returns the nonce, that is the first nonce of the plot file.
+		 * \return The first nonce of the plotfile.
+		 */
+		Poco::UInt64 getNonceStart() const;
+
+		/**
+		 * \brief Returns the number of nonces inside the plotfile.
+		 * \return The size of the nonces.
+		 */
+		Poco::UInt64 getNonces() const;
+
+		/**
+		 * \brief Returns the size of the stagger.
+		 * \return The staggersize.
+		 */
+		Poco::UInt64 getStaggerSize() const;
+
+		/**
+		 * \brief Returns the number of staggers.
+		 * \return The number of the stagger, of which the plotfile consists.
+		 */
+		Poco::UInt64 getStaggerCount() const;
+
+		/**
+		 * \brief Returns the size of one stagger.
+		 * \return The size of a stagger in bytes.
+		 */
+		Poco::UInt64 getStaggerBytes() const;
+
+		/**
+		 * \brief Returns the size of the scoops inside a stagger.
+		 * \return The size of a scoop of all nonces inside a stagger in bytes.
+		 */
+		Poco::UInt64 getStaggerScoopBytes() const;
+
 	private:
 		std::string path_;
 		Poco::UInt64 size_;
+		Poco::UInt64 accountId_, nonceStart_, nonces_, staggerSize_;
 	};
 
 	/**
