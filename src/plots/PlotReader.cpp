@@ -197,7 +197,7 @@ void Burst::PlotReader::runTask()
 							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							//inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
-							inputStream.read(verification->buffer.front().data(), readSize);
+							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), readSize);
 							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 
 							START_PROBE("PlotReader.EnqueueWork");
