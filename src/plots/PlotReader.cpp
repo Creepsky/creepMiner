@@ -130,47 +130,18 @@ void Burst::PlotReader::runTask()
 
 			if (!isCancelled() && inputStream.is_open())
 			{
-				auto accountId = stoull(getAccountIdFromPlotFile(plotFile.getPath()));
-				auto nonceStart = stoull(getStartNonceFromPlotFile(plotFile.getPath()));
-				auto nonceCount = stoull(getNonceCountFromPlotFile(plotFile.getPath()));
-				auto staggerSize = stoull(getStaggerSizeFromPlotFile(plotFile.getPath()));
-
 				//MinerLogger::write("reading plot file " + plotFile.getPath());
 
-				const auto staggerBlocks = nonceCount / staggerSize;
-				const auto staggerBlockSize = staggerSize * Settings::PlotSize;
-				const auto staggerScoopBytes = staggerSize * Settings::ScoopSize;
-				const Poco::UInt64 staggerChunkBytes = [staggerScoopBytes]()
-				{
-					Poco::UInt64 a = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
-					Poco::UInt64 b = staggerScoopBytes;
-
-					for(;;) 
-					{ 
-						if (a == 0) // trap if a==0 
-							return b;
-
-						b %= a; // otherwise here would be an error 
-						
-						if (b == 0) // trap if b==0 
-							return a;
-
-						a %= b; // otherwise here would be an error 
-					}
-
-					return Poco::UInt64();
-				}();
-				const auto staggerChunks = staggerScoopBytes / staggerChunkBytes;
-				const auto staggerChunkSize = staggerSize / staggerChunks;
+				const auto staggerChunkBytes = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024 /
+					MinerConfig::getConfig().getBufferChunkCount();
+				const auto staggerChunkRest = plotFile.getStaggerScoopBytes() % staggerChunkBytes;
+				const auto staggerChunks = plotFile.getStaggerScoopBytes() / staggerChunkBytes + staggerChunkRest > 0 ? 1 : 0;
 
 				// check, if the incoming plot-read-notification is for the current round
 				currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
 
-				for (auto staggerBlock = 0ul; !isCancelled() && staggerBlock < staggerBlocks && currentBlock; ++staggerBlock)
+				for (auto staggerBlock = 0ul; !isCancelled() && staggerBlock < plotFile.getStaggerCount() && currentBlock; ++staggerBlock)
 				{
-					const auto staggerBlockOffset = staggerBlock * staggerBlockSize;
-					const auto staggerScoopOffset = plotReadNotification->scoopNum * staggerSize * Settings::ScoopSize;
-
 					// check, if the incoming plot-read-notification is for the current round
 					currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
 
@@ -179,10 +150,15 @@ void Burst::PlotReader::runTask()
 						START_PROBE_DOMAIN("PlotReader.StaggerChunk", plotFile.getPath())
 						auto memoryAcquired = false;
 
+						size_t readSize = staggerChunkBytes;
+
+						if (staggerChunk == staggerChunks - 1 && staggerChunkRest != 0)
+							readSize = staggerChunkRest;
+
 						START_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath())
 						while (!isCancelled() && !memoryAcquired && currentBlock)
 						{
-							memoryAcquired = globalBufferSize.reserve(staggerChunkBytes);
+							memoryAcquired = globalBufferSize.reserve(readSize);
 							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
 						}
 						TAKE_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath())
@@ -192,7 +168,7 @@ void Burst::PlotReader::runTask()
 						{
 							// but first give free the allocated memory
 							if (memoryAcquired)
-								globalBufferSize.free(staggerChunkBytes);
+								globalBufferSize.free(readSize);
 
 							continue;
 						}
@@ -200,41 +176,44 @@ void Burst::PlotReader::runTask()
 						// only send the data to the verifiers, if the memory could be acquired and it is the right block
 						if (memoryAcquired && currentBlock)
 						{
-							START_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath())
+							START_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
 							const auto chunkOffset = staggerChunk * staggerChunkBytes;
+							const auto staggerBlockOffset = staggerBlock * plotFile.getStaggerBytes();
+							const auto staggerScoopOffset = plotReadNotification->scoopNum * plotFile.getStaggerScoopBytes();
 
-							START_PROBE("PlotReader.CreateVerification")
+							START_PROBE("PlotReader.CreateVerification");
 							VerifyNotification::Ptr verification(new VerifyNotification{});
-							verification->accountId = accountId;
-							verification->nonceStart = nonceStart;
+							verification->accountId = plotFile.getAccountId();
+							verification->nonceStart = plotFile.getNonceStart();
 							verification->block = plotReadNotification->blockheight;
 							verification->inputPath = plotFile.getPath();
 							verification->gensig = plotReadNotification->gensig;
-							verification->buffer.resize(static_cast<size_t>(staggerChunkSize));
-							verification->nonceRead = staggerBlock * staggerSize + staggerChunkSize * staggerChunk;
+							verification->buffer.resize(readSize / sizeof ScoopData);
+							verification->nonceRead = staggerBlock * plotFile.getStaggerSize() + readSize * staggerChunk;
 							verification->baseTarget = plotReadNotification->baseTarget;
-							TAKE_PROBE("PlotReader.CreateVerification")
+							verification->memorySize = readSize;
+							TAKE_PROBE("PlotReader.CreateVerification");
 
-							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath())
+							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							//inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
-							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerChunkBytes);
-							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath())
+							inputStream.read(verification->buffer.front().data(), readSize);
+							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 
-							START_PROBE("PlotReader.EnqueueWork")
+							START_PROBE("PlotReader.EnqueueWork");
 							verificationQueue_->enqueueNotification(verification);
-							TAKE_PROBE("PlotReader.EnqueueWork")
+							TAKE_PROBE("PlotReader.EnqueueWork");
 
 							if (MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
 							{
-								START_PROBE("PlotReader.Progress")
-								progress_->add(staggerChunkBytes * Settings::ScoopPerPlot, plotReadNotification->blockheight);
-								TAKE_PROBE("PlotReader.Progress")
+								START_PROBE("PlotReader.Progress");
+								progress_->add(readSize * Settings::ScoopPerPlot, plotReadNotification->blockheight);
+								TAKE_PROBE("PlotReader.Progress");
 							}
+							TAKE_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
 
 							// check, if the incoming plot-read-notification is for the current round
 							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
-							TAKE_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath())
 						}
 						// if the memory was acquired, but it was not the right block, give it free
 						else if (memoryAcquired)
@@ -268,7 +247,7 @@ void Burst::PlotReader::runTask()
 						);
     				}
 
-					const auto nonceBytes = static_cast<float>(nonceCount * Settings::ScoopSize);
+					const auto nonceBytes = static_cast<float>(plotFile.getNonces() * Settings::ScoopSize);
 					const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
 
 					log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",
