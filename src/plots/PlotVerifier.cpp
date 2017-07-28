@@ -139,10 +139,10 @@ std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst
 	// these are the buffer overflow prove arrays
 	// instead of directly working with the raw arrays 
 	// we create an additional level of indirection
-	const unsigned char* gensigPtr[Shabal256::HashSize];
+	const char* gensigPtr[Shabal256::HashSize];
 	const ScoopData* scoopPtr[Shabal256::HashSize];
-	unsigned char* targetPtr[Shabal256::HashSize];
-
+	char* targetPtr[Shabal256::HashSize];
+	
 	// we init the buffer overflow guardians
 	for (auto i = 0u; i < Shabal256::HashSize; ++i)
 	{
