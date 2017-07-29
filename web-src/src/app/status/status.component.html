@@ -104,14 +104,15 @@
     <ul class="list-group">
       <li *ngFor="let p of b.plots" class="list-group-item clearfix plots" [class.list-group-item-info]="!countNonces(p)" [class.list-group-item-success]="countNonces(p)"
         [style.display]="p.closed ? 'none' : 'block'">
-        <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{ p.path }}
-        <progressbar class="progress-striped plot-progress" [value]="p.progress" type="warning" max="100" animate="true">{{round(p.progress)}}%</progressbar>
-        <div *ngFor="let pf of p.plotfiles" style="margin-top: 10px;">
-          <div *ngFor="let n of pf.nonces" style="margin-top: 10px;">
+        <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{ p.path }} ({{p.size}})
+        <progressbar class="progress-striped plot-progress" style="height: 20px;" [value]="p.progress" type="warning" max="100" animate="true">{{round(p.progress)}}%</progressbar>
+        <div class="clearfix"></div>
+        <div *ngFor="let pf of p.plotfiles">
+          <span style="font-size: 10px;">{{pf.path}} ({{pf.size}})</span>
+          <div *ngFor="let n of pf.nonces" style="margin: 10px 0 25px 25px;">
             <span class="glyphicon glyphicon-ok" aria-hidden="true" *ngIf="n.type === 'nonce confirmed'"></span>
             <span class="glyphicon glyphicon-share-alt" style="color: #c09853;" aria-hidden="true" *ngIf="n.type === 'nonce submitted'"></span>
             <b>{{n.account}}</b>: {{n.type}} ({{n.deadline}})
-            <div style="font-size: 10px; margin-top: 5px;"> {{n.plotfile}} </div>
           </div>
         </div>
       </li>

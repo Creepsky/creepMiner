@@ -66,6 +66,13 @@ export class BlockService {
         case 'new block':
           this.newBlock = response;
           this.unknownNonces = [];
+          this.plots.forEach(p => {
+            p.closed = false;
+            p.progress = 0;
+            p.plotfiles.forEach(pf => {
+              pf.nonces = [];
+            })
+          });
           this.blockTime = new Date();
           this.blockReadTime = null;
           this.newBlockSource.next(response);
