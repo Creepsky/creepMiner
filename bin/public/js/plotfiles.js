@@ -45,20 +45,20 @@ function connectCallback(msg) {
     }
 }
 
-function createProgressBar() {
+function createProgressBar(id) {
     var progresStr = '<div class="progress">';
-    progresStr += '<div class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">';
+    progresStr += '<div id="pb-' + id + '" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">';
     progresStr += '</div></div>';
     return progresStr;
 }
 
-function createDirLine(dirElement) {
+function createDirLine(dirElement, index) {
     //var line = $('<li class="list-group-item"></li>');
     var line = $('<a href="#" class="list-group-item"></a>');
 
     line.append(dirElement["path"]);
     line.append(" (" + dirElement.plotfiles.length + " files, " + dirElement["size"] + ")");
-    line.append(createProgressBar());
+    line.append(createProgressBar(index));
 
     line.click(function () {
         showPlotfiles(dirElement["plotfiles"]);
@@ -117,8 +117,8 @@ function parsePlots() {
             element["plotfiles"].push(fileElement);
         });
 
-        element["element"] = createDirLine(element);
-        element["progressBar"] = element["element"].find('.progress .progress-bar');
+        element["element"] = createDirLine(element, index);
+        element["progressBar"] = $("#pb-" + index);
         element["setProgress"] = function (progress) {
             setProgress(element["progressBar"], progress);
         };

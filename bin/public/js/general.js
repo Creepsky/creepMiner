@@ -38,7 +38,7 @@ function setProgress(progressBar, progress) {
 		valueFixed = 100;
 		progressBar.removeClass("active");
 	}
-	else if (valueFixed <= 100) {
+	else if (valueFixed < 100) {
 		if (valueFixed < 0)
 			valueFixed = 0;
 
@@ -46,7 +46,7 @@ function setProgress(progressBar, progress) {
 			progressBar.addClass("active");
 	}
 
-	progressBar.attr("style", "width:" + valueFixed + "%");
+	progressBar.css("width", valueFixed + "%").attr("aria-valuenow", valueFixed);
 	progressBar.html(valueFixed + " %");
 }
 
