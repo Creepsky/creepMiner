@@ -135,7 +135,7 @@ void Burst::PlotReader::runTask()
 				const auto staggerChunkBytes = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024 /
 					MinerConfig::getConfig().getBufferChunkCount();
 				const auto staggerChunkRest = plotFile.getStaggerScoopBytes() % staggerChunkBytes;
-				const auto staggerChunks = plotFile.getStaggerScoopBytes() / staggerChunkBytes + staggerChunkRest > 0 ? 1u : 0u;
+				const auto staggerChunks = plotFile.getStaggerScoopBytes() / staggerChunkBytes + (staggerChunkRest > 0 ? 1u : 0u);
 
 				// check, if the incoming plot-read-notification is for the current round
 				currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
