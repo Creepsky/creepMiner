@@ -340,8 +340,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			loggingObj->set("output", outputObj);
 		}
-
-		MinerLogger::refreshChannels();
 	}
 
 	// mining

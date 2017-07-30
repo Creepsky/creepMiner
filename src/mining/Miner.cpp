@@ -321,8 +321,9 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 		return SubmitResponse::WrongBlock;
 
 	auto targetDeadline = getTargetDeadline();
+	auto tooHigh = targetDeadline > 0 && deadline > targetDeadline;
 
-	if (targetDeadline > 0 && deadline > targetDeadline)
+	if (tooHigh && !MinerLogger::hasOutput(NonceFoundTooHigh))
 		return SubmitResponse::TooHigh;
 
 	auto block = data_.getBlockData();
@@ -330,7 +331,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	if (block == nullptr)
 		return SubmitResponse::Error;
 
-	auto bestDeadline = block->getBestDeadline(accountId, BlockData::DeadlineSearchType::Found);
+	//auto bestDeadline = block->getBestDeadline(accountId, BlockData::DeadlineSearchType::Found);
 
 	newDeadline = block->addDeadlineIfBest(
 		nonce,
@@ -342,10 +343,14 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 
 	if (newDeadline)
 	{
-		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound), "%s: nonce found (%s)\n"
+		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound) || tooHigh,
+			"%s: nonce found (%s)\n"
 			"\tnonce: %Lu\n"
 			"\tin:    %s",
 			newDeadline->getAccountName(), deadlineFormat(deadline), newDeadline->getNonce(), plotFile);
+			
+		if (tooHigh)
+			return SubmitResponse::TooHigh;
 
 		return SubmitResponse::Found;
 	}

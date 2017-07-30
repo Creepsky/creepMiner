@@ -34,6 +34,7 @@ namespace Burst
 	{
 		LastWinner,
 		NonceFound,
+		NonceFoundTooHigh,
 		NonceSent,
 		NonceConfirmed,
 		PlotDone,
