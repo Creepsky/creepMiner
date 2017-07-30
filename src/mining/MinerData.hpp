@@ -25,7 +25,7 @@
 #include <Poco/Timestamp.h>
 #include <Poco/Timespan.h>
 #include <Poco/JSON/Object.h>
-#include <Poco/Mutex.h>
+#include <mutex>
 #include <deque>
 #include <Poco/ActiveDispatcher.h>
 #include <Poco/ActiveMethod.h>
@@ -98,6 +98,11 @@ namespace Burst
 		void confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline);
 
 	private:
+		std::shared_ptr<Burst::Deadline> getBestDeadlineUnlocked(Poco::UInt64 accountId,
+			Burst::BlockData::DeadlineSearchType searchType);
+		std::shared_ptr<Burst::Deadline> addDeadlineUnlocked(Poco::UInt64 nonce,
+			Poco::UInt64 deadline, std::shared_ptr<Burst::Account> account, Poco::UInt64 block, std::string plotFile);
+
 		std::atomic<Poco::UInt64> blockHeight_;
 		std::atomic<Poco::UInt64> scoop_;
 		std::atomic<Poco::UInt64> baseTarget_;
@@ -112,7 +117,7 @@ namespace Burst
 		MinerData* parent_;
 		Poco::JSON::Object::Ptr jsonProgress_;
 		std::unordered_map<std::string, Poco::JSON::Object::Ptr> jsonDirProgress_;
-		mutable Poco::Mutex mutex_;
+		mutable std::mutex mutex_;
 
 		friend class Deadlines;
 	};
@@ -159,7 +164,7 @@ namespace Burst
 		std::atomic<Poco::UInt64> targetDeadline_;
 		std::shared_ptr<BlockData> blockData_ = nullptr;
 		std::deque<std::shared_ptr<BlockData>> historicalBlocks_;
-		mutable Poco::Mutex mutex_;
+		mutable std::mutex mutex_;
 
 		std::atomic<Poco::UInt64> currentBlockheight_;
 		std::atomic<Poco::UInt64> currentBasetarget_;
