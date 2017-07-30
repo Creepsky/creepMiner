@@ -1254,7 +1254,10 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 	if (!logfile_)
 	{
 		// remove the logfile
-		Poco::File{ logDirAndFile }.remove();
+		Poco::File file{ logDirAndFile };
+		
+		if (file.exists())
+			file.remove();
 
 		// refresh the channels
 		MinerLogger::refreshChannels();
