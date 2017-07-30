@@ -1063,11 +1063,11 @@ bool Burst::MinerConfig::save(const std::string& path) const
 
 		// output type
 		if (logOutputType_ == LogOutputType::Terminal)
-			logging.set("logfile", "terminal");
+			logging.set("outputType", "terminal");
 		else if (logOutputType_ == LogOutputType::Service)
-			logging.set("logfile", "service");
+			logging.set("outputType", "service");
 		else
-			logging.set("logfile", "terminal");
+			logging.set("outputType", "terminal");
 
 		// log colors
 		logging.set("useColors", isUsingLogColors());

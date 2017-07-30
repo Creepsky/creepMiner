@@ -26,7 +26,7 @@
 #include <Poco/NumberParser.h>
 #include "logging/MinerLogger.hpp"
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0, 2 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0, 3 };
 
 #if USE_AVX
 const std::string Burst::Settings::Cpu_Instruction_Set = "AVX";
