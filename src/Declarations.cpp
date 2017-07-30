@@ -26,7 +26,7 @@
 #include <Poco/NumberParser.h>
 #include "logging/MinerLogger.hpp"
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0, 1 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0, 2 };
 
 #if USE_AVX
 const std::string Burst::Settings::Cpu_Instruction_Set = "AVX";
@@ -72,12 +72,18 @@ Burst::Version::Version(std::string version)
 			const auto& majorStr = tokenizer[0];
 			const auto& minorStr = tokenizer[1];
 			const auto& buildStr = tokenizer[2];
-			const auto& revisionStr = tokenizer[3];
 
 			major = Poco::NumberParser::parseUnsigned(majorStr);
 			minor = Poco::NumberParser::parseUnsigned(minorStr);
 			build = Poco::NumberParser::parseUnsigned(buildStr);
-			revision = Poco::NumberParser::parseUnsigned(revisionStr);
+
+			if (tokenizer.count() == 4)
+			{
+				const auto& revisionStr = tokenizer[3];
+				revision = Poco::NumberParser::parseUnsigned(revisionStr);
+			}
+			else
+				revision = 0;
 
 			updateLiterals();
 		}
