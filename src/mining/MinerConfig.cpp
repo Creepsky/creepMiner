@@ -678,6 +678,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			log_warning(MinerLogger::config,
 				"You are running the webserver without protecting it with an username and/or password!\n"
 				"Every person with access to the webserver has FULL admin rights!");
+
+		MinerLogger::refreshChannels();
 	}
 	
 	if (!save(configPath_, *config))
