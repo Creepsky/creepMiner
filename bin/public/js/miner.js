@@ -76,7 +76,14 @@ var plot;
 var deadlinesInfo;
 var miningData = new Block();
 var settingsDlComboboxes;
-var logSettings = [];
+
+// ******************************************
+var logSettings = {};
+// ******************************************
+
+// I change this [] to {} and also in settings.js and general.js
+
+// var logSettings = [];
 
 if (confirmedSound)
 	confirmedSound.volume = 0.5;
@@ -84,6 +91,91 @@ if (confirmedSound)
 var NONCE_FOUND = 1 << 0;
 var NONCE_SENT = 1 << 1;
 var NONCE_CONFIRMED = 1 << 2;
+
+
+
+// ******************************************
+
+// Set on click event of elements
+
+$("#cbHideSameNonces").on('click', function () {
+	localSet('hideSameNonces', this.checked);
+})
+
+$("#cbNoncesFound").on('click', function () {
+	localSet('noncesFound', this.checked);
+})
+
+$("#cbNoncesSent").on('click', function () {
+	localSet('noncesSent', this.checked);
+})
+
+$("#cbNoncesConfirmed").on('click', function () {
+	localSet('noncesConfirmed', this.checked);
+})
+
+
+
+// Retrieve any possible local variable and set in js vars
+
+function localInitCheckBoxes() {
+	playConfirmationSound = localGet('playConfirmationSound');
+
+	// Check if values exist in local or set true(default)
+
+	var temp = localGet('hideSameNonces');
+	
+	if (temp == null) temp = true;
+	hideSameNonces.prop('checked', temp);
+
+	temp = localGet('noncesFound');
+	if (temp == null) temp = true;
+	noncesFound.prop('checked', temp);
+
+	temp = localGet('noncesSent');
+	if (temp == null) temp = true;
+	noncesSent.prop('checked', temp);
+
+	temp = localGet('noncesConfirmed');
+	if (temp == null) temp = true;
+	noncesConfirmed.prop('checked', temp);
+}
+
+// I break in 2 functions because must initialized in different points of initBlock
+
+function localInitLogSettings() {
+	var temp = localGet('logSettings');
+
+	if (temp['miner']) $("#cmb_miner").val(temp['miner'])
+	if (temp['config']) $("#cmb_config").val(temp['config'])
+	if (temp['server']) $("#cmb_server").val(temp['server'])
+	if (temp['socket']) $("#cmb_socket").val(temp['socket'])
+	if (temp['session']) $("#cmb_session").val(temp['session'])
+	if (temp['nonceSubmitter']) $("#cmb_nonceSubmitter").val(temp['nonceSubmitter'])
+	if (temp['plotReader']) $("#cmb_plotReader").val(temp['plotReader'])
+	if (temp['plotVerifier']) $("#cmb_plotVerifier").val(temp['plotVerifier'])
+	if (temp['wallet']) $("#cmb_wallet").val(temp['wallet'])
+	if (temp['general']) $("#cmb_general").val(temp['general'])
+}
+
+// Saves in local storage - no expiration
+// Item : name of local variable
+// Data : content of item variable
+
+function localSet(item, data) {
+	localStorage.setItem(item, JSON.stringify(data));
+}
+
+// Get from local storage 
+// Item : name of local variable
+
+function localGet(item) {
+	return JSON.parse(localStorage.getItem(item));
+}
+
+
+// ******************************************
+
 
 function newBlock(json) {
 	miningData.newBlock(json);
@@ -375,6 +467,10 @@ function deActivateConfirmationSound(on) {
 }
 
 function toggleConfirmationSound() {
+	// ******************************************
+	localSet('playConfirmationSound', !playConfirmationSound);
+	// ******************************************
+
 	deActivateConfirmationSound(!playConfirmationSound);
 }
 
@@ -453,6 +549,23 @@ function reparseMessages() {
 				$(this).hide();
 		}
 	});
+	
+	// ******************************************
+	var tempSettings = {
+		miner: logSettings['miner'].val(),
+		config: logSettings['config'].val(),
+		server: logSettings['server'].val(),
+		socket: logSettings['socket'].val(),
+		session: logSettings['session'].val(),
+		nonceSubmitter: logSettings['nonceSubmitter'].val(),
+		plotReader: logSettings['plotReader'].val(),
+		plotVerifier: logSettings['plotVerifier'].val(),
+		wallet: logSettings['wallet'].val(),
+		general: logSettings['general'].val(),
+	}
+	
+	localSet('logSettings', tempSettings);
+	// ******************************************
 }
 
 function resetLogSettings() {
@@ -574,10 +687,19 @@ function initBlock() {
 	deadlinesInfo = $("#deadlinesInfo");
 	settingsDlComboboxes = $("#settingsDlComboboxes");
 
+	// ******************************************
+	localInitCheckBoxes();
+	// ******************************************
+
 	initPlot();
 	bestDeadlineOverallElement.html(nullDeadline);
 	connectBlock();
-	deActivateConfirmationSound(true);
+	// deActivateConfirmationSound(true);
+	
+	// ******************************************
+	deActivateConfirmationSound(playConfirmationSound);
+	// ******************************************
+	
 	showDeadlinesInfo(null);
 	$("#container").append(miningData.panel);
 
@@ -587,6 +709,10 @@ function initBlock() {
 	noncesConfirmed.change(reparseMessages);
 
 	logSettings = initSettings(settingsDlComboboxes, reparseMessages);
+
+	// ******************************************
+	localInitLogSettings();
+	// ******************************************
 }
 
 function initPlot() {

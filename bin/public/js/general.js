@@ -51,7 +51,7 @@ function setProgress(progressBar, progress) {
 }
 
 function initSettings(container, onChange) {
-	output = [];
+	output = {};
 	loggers.forEach(function (element, index, array) {
 		element[1][0].toUpperCase();
 		var cmb = $("<select id='cmb_" + element[0] + "' name='cmb_" + element[0] + "' class='selectpicker form-control'></select>");

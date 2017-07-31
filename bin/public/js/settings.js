@@ -1,4 +1,4 @@
-var logSetting = [];
+var logSetting = {};
 
 function update_settings(config) {
     mining_info_url.val(config['miningInfoUrl'] + ':' + config['miningInfoUrlPort']);
