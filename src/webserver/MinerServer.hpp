@@ -74,6 +74,7 @@ namespace Burst
 		Poco::Mutex mutex_;
 		TemplateVariables variables_;
 		Poco::ThreadPool threadPool_;
+		float progressRead_ = 0.f, progressVerification_ = 0.f;
 
 		struct RequestFactory : Poco::Net::HTTPRequestHandlerFactory
 		{

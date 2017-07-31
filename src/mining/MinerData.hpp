@@ -70,7 +70,7 @@ namespace Burst
 		void refreshBlockEntry() const;
 		void refreshConfig() const;
 		void refreshPlotDirs() const;
-		void setProgress(float progress, Poco::UInt64 blockheight);
+		void setProgress(float progressRead, float progressVerification, Poco::UInt64 blockheight);
 		void setProgress(const std::string& plotDir, float progress, Poco::UInt64 blockheight);
 
 		Poco::UInt64 getBlockheight() const;

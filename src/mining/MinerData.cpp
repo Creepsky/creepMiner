@@ -138,14 +138,14 @@ void Burst::BlockData::refreshPlotDirs() const
 	addBlockEntry(createJsonPlotDirsRescan());
 }
 
-void Burst::BlockData::setProgress(float progress, Poco::UInt64 blockheight)
+void Burst::BlockData::setProgress(float progressRead, float progressVerification, Poco::UInt64 blockheight)
 {
 	if (blockheight != getBlockheight())
 		return;
 
 	{
 		std::lock_guard<std::mutex> lock{ mutex_ };
-		jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progress)};
+		jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progressRead, progressVerification)};
 	}
 
 	if (parent_ != nullptr)
@@ -158,7 +158,7 @@ void Burst::BlockData::setProgress(const std::string& plotDir, float progress, P
 		return;
 
 	std::lock_guard<std::mutex> lock{ mutex_ };
-	auto json = new Poco::JSON::Object{createJsonProgress(progress)};
+	auto json = new Poco::JSON::Object{ createJsonProgress(progress, 0.f) };
 	json->set("type", "plotdir-progress");
 	json->set("dir", plotDir);
 

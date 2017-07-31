@@ -125,7 +125,7 @@ namespace Burst
 	Poco::JSON::Object createJsonDeadline(const Deadline& deadline, const std::string& type);
 	Poco::JSON::Object createJsonNewBlock(const MinerData& data);
 	Poco::JSON::Object createJsonConfig();
-	Poco::JSON::Object createJsonProgress(float progress);
+	Poco::JSON::Object createJsonProgress(float progressRead, float progressVerification);
 	Poco::JSON::Object createJsonLastWinner(const MinerData& data);
 	Poco::JSON::Object createJsonShutdown();
 	Poco::JSON::Object createJsonWonBlocks(const MinerData& data);

@@ -490,7 +490,7 @@ namespace Burst
 		std::lock_guard<std::mutex> lock(progressMutex_);
 		auto readProgress = progressRead.getProgress();
 		MinerLogger::writeProgress(readProgress, progressVerify.getProgress());
-		data.getBlockData()->setProgress(readProgress, blockheight);
+		data.getBlockData()->setProgress(readProgress, progressVerify.getProgress(), blockheight);
 	}
 }
 

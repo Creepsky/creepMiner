@@ -546,11 +546,12 @@ Poco::JSON::Object Burst::createJsonConfig()
 	return json;
 }
 
-Poco::JSON::Object Burst::createJsonProgress(float progress)
+Poco::JSON::Object Burst::createJsonProgress(float progressRead, float progressVerification)
 {
 	Poco::JSON::Object json;
 	json.set("type", "progress");
-	json.set("value", progress);
+	json.set("value", progressRead);
+	json.set("valueVerification", progressVerification);
 	return json;
 }
 
