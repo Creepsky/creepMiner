@@ -123,7 +123,11 @@ void Burst::MinerConfig::printUrl(const Url& url, const std::string& url_name)
 void Burst::MinerConfig::printBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	log_system(MinerLogger::config, "Buffer Size : %z MB%s", maxBufferSizeMB_, std::string(maxBufferSizeMB_ == 0 ? " (unlimited)" : ""));
+
+	if (maxBufferSizeMB_ == 0)
+		log_system(MinerLogger::config, "Buffer Size : ~%s MB", memToString(getTotalPlotsize() / 4096, 0));
+	else
+		log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB_);
 }
 
 template <typename T>
