@@ -116,7 +116,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(POCO_ROOT)/Foundation/include;$(POCO_ROOT)/JSON/include;$(POCO_ROOT)/XML/include;$(POCO_ROOT)/Net/include;$(POCO_ROOT)/NetSSL_OpenSSL/include;$(POCO_ROOT)/Crypto/include;$(POCO_ROOT)/Util/include;$(OPENSSL_ROOT)/include;$(ProjectDir)/src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>USE_AVX;POCO_STATIC;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>USE_AVX;POCO_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
