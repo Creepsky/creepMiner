@@ -194,7 +194,7 @@ void Burst::PlotReader::runTask()
 							verification->inputPath = plotFile.getPath();
 							verification->gensig = plotReadNotification->gensig;
 							verification->buffer.resize(readSize / sizeof(ScoopData));
-							verification->nonceRead = staggerBlock * plotFile.getStaggerSize() + readSize * staggerChunk;
+							verification->nonceRead = staggerBlock * plotFile.getStaggerSize() + staggerChunkBytes * staggerChunk;
 							verification->baseTarget = plotReadNotification->baseTarget;
 							verification->memorySize = readSize;
 							TAKE_PROBE("PlotReader.CreateVerification");
