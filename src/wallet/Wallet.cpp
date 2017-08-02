@@ -123,7 +123,7 @@ bool Burst::Wallet::getRewardRecipientOfAccount(AccountId account, AccountId& re
 	{
 		if (json->has("rewardRecipient"))
 		{
-            rewardRecipient = (Poco::UInt64)json->get("rewardRecipient");
+            rewardRecipient = static_cast<Poco::UInt64>(json->get("rewardRecipient"));
 			return true;
 		}
 
@@ -151,7 +151,7 @@ bool Burst::Wallet::getLastBlock(Poco::UInt64& block) const
 	{
 		if (json->has("height"))
 		{
-            block = (Poco::UInt64)json->get("height");
+            block = static_cast<Poco::UInt64>(json->get("height"));
 			return true;
 		}
 

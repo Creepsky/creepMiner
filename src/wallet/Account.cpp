@@ -64,6 +64,15 @@ Burst::AccountId Burst::Account::getId() const
 }
 
 template <typename T>
+struct DefaultValueHolder
+{
+	static const T value;
+};
+
+template <typename T>
+const T DefaultValueHolder<T>::value = T();
+
+template <typename T>
 const T& getHelper(Poco::Nullable<T>& val, bool reset, Poco::Mutex& mutex, std::function<bool(T&)> fetchFunction)
 {
 	Poco::ScopedLockWithUnlock<Poco::Mutex> lock{ mutex };
@@ -96,7 +105,7 @@ const T& getHelper(Poco::Nullable<T>& val, bool reset, Poco::Mutex& mutex, std::
 	}
 
 	Poco::Mutex::ScopedLock innerLock{ mutex };
-	return val;
+	return val.value(DefaultValueHolder<T>::value);
 }
 
 std::string Burst::Account::getName()

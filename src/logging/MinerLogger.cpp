@@ -73,6 +73,7 @@ Burst::Output_Flags Burst::MinerLogger::output_ = []()
 {
 	auto output_flags = Output_Helper::create_flags(true);
 	output_flags[PlotDone] = false;
+	output_flags[NonceFoundTooHigh] = false;
 	return output_flags;
 }();
 

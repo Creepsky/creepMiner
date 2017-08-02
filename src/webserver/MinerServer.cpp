@@ -195,7 +195,24 @@ void Burst::MinerServer::sendToWebsockets(const JSON::Object& json)
 
 void Burst::MinerServer::onMinerDataChangeEvent(const void* sender, const Poco::JSON::Object& data)
 {
-	sendToWebsockets(data);
+	auto send = true;
+
+	// pre-filter progress
+	if (data.has("type") &&
+		data.get("type") == "progress")
+	{
+		auto progressRead = data.get("value").extract<float>();
+		auto progressVerification = data.get("valueVerification").extract<float>();
+
+		send = static_cast<int>(progressRead) != static_cast<int>(progressRead_) ||
+			static_cast<int>(progressVerification) != static_cast<int>(progressVerification_);
+		
+		progressRead_ = progressRead;
+		progressVerification_ = progressVerification;
+	}
+
+	if (send)
+		sendToWebsockets(data);
 }
 
 bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string& data)

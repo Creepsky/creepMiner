@@ -38,7 +38,7 @@ function setProgress(progressBar, progress) {
 		valueFixed = 100;
 		progressBar.removeClass("active");
 	}
-	else if (valueFixed <= 100) {
+	else if (valueFixed < 100) {
 		if (valueFixed < 0)
 			valueFixed = 0;
 
@@ -46,12 +46,12 @@ function setProgress(progressBar, progress) {
 			progressBar.addClass("active");
 	}
 
-	progressBar.attr("style", "width:" + valueFixed + "%");
+	progressBar.css("width", valueFixed + "%").attr("aria-valuenow", valueFixed);
 	progressBar.html(valueFixed + " %");
 }
 
 function initSettings(container, onChange) {
-	output = [];
+	output = {};
 	loggers.forEach(function (element, index, array) {
 		element[1][0].toUpperCase();
 		var cmb = $("<select id='cmb_" + element[0] + "' name='cmb_" + element[0] + "' class='selectpicker form-control'></select>");

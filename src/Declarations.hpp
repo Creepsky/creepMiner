@@ -38,13 +38,16 @@ namespace Burst
 
 	struct Version
 	{
-		Version(uint32_t major, uint32_t minor, uint32_t build);
+		Version(uint32_t major, uint32_t minor, uint32_t build, uint32_t revision);
 		Version(std::string version);
 
 		bool operator>(const Version& rhs) const;
 
-		uint32_t major, minor, build;
-		std::string literal;
+		uint32_t major, minor, build, revision;
+		std::string literal, literalVerbose;
+
+	private:
+		void updateLiterals();
 	};
 
 	struct ProjectData

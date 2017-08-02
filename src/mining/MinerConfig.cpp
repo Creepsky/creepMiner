@@ -340,8 +340,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			loggingObj->set("output", outputObj);
 		}
-
-		MinerLogger::refreshChannels();
 	}
 
 	// mining
@@ -679,6 +677,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			log_warning(MinerLogger::config,
 				"You are running the webserver without protecting it with an username and/or password!\n"
 				"Every person with access to the webserver has FULL admin rights!");
+
+		MinerLogger::refreshChannels();
 	}
 	
 	if (!save(configPath_, *config))
@@ -1062,11 +1062,11 @@ bool Burst::MinerConfig::save(const std::string& path) const
 
 		// output type
 		if (logOutputType_ == LogOutputType::Terminal)
-			logging.set("logfile", "terminal");
+			logging.set("outputType", "terminal");
 		else if (logOutputType_ == LogOutputType::Service)
-			logging.set("logfile", "service");
+			logging.set("outputType", "service");
 		else
-			logging.set("logfile", "terminal");
+			logging.set("outputType", "terminal");
 
 		// log colors
 		logging.set("useColors", isUsingLogColors());
@@ -1257,7 +1257,10 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 	if (!logfile_)
 	{
 		// remove the logfile
-		Poco::File{ logDirAndFile }.remove();
+		Poco::File file{ logDirAndFile };
+		
+		if (file.exists())
+			file.remove();
 
 		// refresh the channels
 		MinerLogger::refreshChannels();

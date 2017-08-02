@@ -26,7 +26,7 @@
 #include <Poco/NumberParser.h>
 #include "logging/MinerLogger.hpp"
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 0, 7 };
 
 #if USE_AVX
 const std::string Burst::Settings::Cpu_Instruction_Set = "AVX";
@@ -42,10 +42,16 @@ const Burst::ProjectData Burst::Settings::Project = { "creepMiner CUDA", Project
 const Burst::ProjectData Burst::Settings::Project = { "creepMiner", ProjectVersion };
 #endif
 
-Burst::Version::Version(uint32_t major, uint32_t minor, uint32_t build)
-	: major{major}, minor{minor}, build{build}
+void Burst::Version::updateLiterals()
 {
 	literal = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(build);
+	literalVerbose = literal + "." + std::to_string(revision);
+}
+
+Burst::Version::Version(uint32_t major, uint32_t minor, uint32_t build, uint32_t revision)
+	: major{major}, minor{minor}, build{build}, revision{revision}
+{
+	updateLiterals();
 }
 
 Burst::Version::Version(std::string version)
@@ -71,13 +77,22 @@ Burst::Version::Version(std::string version)
 			minor = Poco::NumberParser::parseUnsigned(minorStr);
 			build = Poco::NumberParser::parseUnsigned(buildStr);
 
-			literal = version;
+			if (tokenizer.count() == 4)
+			{
+				const auto& revisionStr = tokenizer[3];
+				revision = Poco::NumberParser::parseUnsigned(revisionStr);
+			}
+			else
+				revision = 0;
+
+			updateLiterals();
 		}
 		catch (Poco::Exception& exc)
 		{
 			major = 0;
 			minor = 0;
 			build = 0;
+			revision = 0;
 			literal = "";
 
 			log_error(MinerLogger::general, "Could not parse version from string! (%s)", version);
@@ -111,6 +126,14 @@ bool Burst::Version::operator>(const Version& rhs) const
 		return true;
 
 	// 1.5.>4< vs 1.5.>6<
+	if (build < rhs.build)
+		return false;
+
+	// 1.5.6.>6< vs 1.5.6.>1<
+	if (revision > rhs.revision)
+		return true;
+
+	// 1.5.6.>1< vs 1.5.6.>6<
 	return false;
 }
 
@@ -118,7 +141,9 @@ Burst::ProjectData::ProjectData(std::string&& name, Version version)
 	: name{std::move(name)}, version{std::move(version)}
 {
 	nameAndVersion = this->name + " " + this->version.literal;
-	nameAndVersionVerbose = this->name + " " + this->version.literal + " " + Settings::OsFamily + " " + Settings::Arch;
+	nameAndVersionVerbose = this->name + " " +
+		(this->version.revision > 0 ? this->version.literalVerbose : this->version.literal) + " " +
+		Settings::OsFamily + " " + Settings::Arch;
 
 	if (Settings::Cpu_Instruction_Set != "")
 		nameAndVersionVerbose += std::string(" ") + Settings::Cpu_Instruction_Set;
