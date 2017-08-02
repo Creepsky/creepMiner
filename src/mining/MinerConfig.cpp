@@ -537,7 +537,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 				if (passphrase.isNull())
 				{
-					passphrase = new Poco::JSON::Object;
+					passphrase.assign(new Poco::JSON::Object);
 					miningObj->set("passphrase", passphrase);
 				}
 
@@ -547,27 +547,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				passphrase_.encrypted = getOrAdd<std::string>(passphrase, "encrypted", "");
 				passphrase_.salt = getOrAdd<std::string>(passphrase, "salt", "");
 				passphrase_.key = getOrAdd<std::string>(passphrase, "key", "");
-				passphrase_.iterations = getOrAdd(passphrase, "iterations", 0u);
+				passphrase_.iterations = getOrAdd(passphrase, "iterations", 1000u);
 				passphrase_.deleteKey = getOrAdd(passphrase, "deleteKey", false);
 				passphrase_.algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
-
-				if (!passphrase_.encrypted.empty() &&
-					!passphrase_.key.empty() &&
-					!passphrase_.salt.empty())
-				{
-					log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
-
-					passphrase_.decrypt();
-
-					if (!passphrase_.decrypted.empty())
-						log_debug(MinerLogger::config, "Passphrase decrypted!");
-
-					if (passphrase_.deleteKey)
-					{
-						log_debug(MinerLogger::config, "Passhrase.deleteKey == true, deleting the key...");
-						passphrase->set("key", "");
-					}
-				}
 
 				// there is a decrypted passphrase, we need to encrypt it
 				if (!passphrase_.decrypted.empty())
@@ -586,6 +568,24 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 					}
 				}
 
+				if (!passphrase_.encrypted.empty() &&
+					!passphrase_.key.empty() &&
+					!passphrase_.salt.empty())
+				{
+					log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
+
+					if (passphrase_.deleteKey && passphrase_.decrypted.empty())
+					{
+						log_debug(MinerLogger::config, "Passhrase.deleteKey == true, deleting the key...");
+						passphrase->set("key", "");
+					}
+
+					passphrase_.decrypt();
+
+					if (!passphrase_.decrypted.empty())
+						log_debug(MinerLogger::config, "Passphrase decrypted!");
+				}
+
 				// warn the user, he is possibly mining solo without knowing it
 				// and sending his passphrase plain text all around the globe
 				if (!passphrase_.encrypted.empty())
@@ -602,7 +602,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				);
 
 				log_current_stackframe(MinerLogger::config);
-			}			
+			}
 		}
 
 		config->set("mining", miningObj);
