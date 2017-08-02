@@ -111,7 +111,7 @@ void Burst::PlotVerifier::runTask()
 		}
 		
 		START_PROBE("PlotVerifier.FreeMemory")
-		PlotReader::globalBufferSize.free(verifyNotification->buffer.size() * sizeof(ScoopData));
+		PlotReader::globalBufferSize.free(verifyNotification->memorySize);
 		TAKE_PROBE("PlotVerifier.FreeMemory")
 
 		if (progress_ != nullptr)

@@ -46,6 +46,7 @@ namespace Burst
 		Poco::UInt64 block = 0;
 		GensigData gensig;
 		Poco::UInt64 baseTarget = 0;
+		size_t memorySize = 0;
 	};
 
 	class PlotVerifier : public Poco::Task

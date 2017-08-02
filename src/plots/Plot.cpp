@@ -32,6 +32,10 @@
 Burst::PlotFile::PlotFile(std::string&& path, Poco::UInt64 size)
 	: path_(move(path)), size_(size)
 {
+	accountId_ = stoull(getAccountIdFromPlotFile(path_));
+	nonceStart_ = stoull(getStartNonceFromPlotFile(path_));
+	nonces_ = stoull(getNonceCountFromPlotFile(path_));
+	staggerSize_ = stoull(getStaggerSizeFromPlotFile(path_));
 }
 
 const std::string& Burst::PlotFile::getPath() const
@@ -42,6 +46,41 @@ const std::string& Burst::PlotFile::getPath() const
 Poco::UInt64 Burst::PlotFile::getSize() const
 {
 	return size_;
+}
+
+Poco::UInt64 Burst::PlotFile::getAccountId() const
+{
+	return accountId_;
+}
+
+Poco::UInt64 Burst::PlotFile::getNonceStart() const
+{
+	return nonceStart_;
+}
+
+Poco::UInt64 Burst::PlotFile::getNonces() const
+{
+	return nonces_;
+}
+
+Poco::UInt64 Burst::PlotFile::getStaggerSize() const
+{
+	return staggerSize_;
+}
+
+Poco::UInt64 Burst::PlotFile::getStaggerCount() const
+{
+	return getNonces() / getStaggerSize();
+}
+
+Poco::UInt64 Burst::PlotFile::getStaggerBytes() const
+{
+	return getStaggerSize() * Settings::PlotSize;
+}
+
+Poco::UInt64 Burst::PlotFile::getStaggerScoopBytes() const
+{
+	return getStaggerSize() * Settings::ScoopSize;
 }
 
 Burst::PlotDir::PlotDir(std::string plotPath, Type type)
@@ -192,13 +231,13 @@ std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& f
 		return plotFile;
 	}
 
+	if (result == PlotCheckResult::EmptyParameter)
+		return nullptr;
+
 	std::string errorString = "";
 
 	if (result == PlotCheckResult::Incomplete)
 		errorString = "The plotfile is incomplete!";
-
-	if (result == PlotCheckResult::EmptyParameter)
-		errorString = "The plotfile does not have all the required parameters!";
 
 	if (result == PlotCheckResult::InvalidParameter)
 		errorString = "The plotfile has invalid parameters!";

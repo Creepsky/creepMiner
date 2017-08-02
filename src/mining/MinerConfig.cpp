@@ -123,7 +123,11 @@ void Burst::MinerConfig::printUrl(const Url& url, const std::string& url_name)
 void Burst::MinerConfig::printBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	log_system(MinerLogger::config, "Buffer Size : %z MB%s", maxBufferSizeMB_, std::string(maxBufferSizeMB_ == 0 ? " (unlimited)" : ""));
+
+	if (maxBufferSizeMB_ == 0)
+		log_system(MinerLogger::config, "Buffer Size : ~%s MB", memToString(getTotalPlotsize() / 4096, 0));
+	else
+		log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB_);
 }
 
 template <typename T>
@@ -367,6 +371,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		useInsecurePlotfiles_ = getOrAdd(miningObj, "useInsecurePlotfiles", false);
 		getMiningInfoInterval_ = getOrAdd(miningObj, "getMiningInfoInterval", 3);
 		rescanEveryBlock_ = getOrAdd(miningObj, "rescanEveryBlock", true);
+		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
 
 		// urls
 		{
@@ -532,7 +537,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 				if (passphrase.isNull())
 				{
-					passphrase = new Poco::JSON::Object;
+					passphrase.assign(new Poco::JSON::Object);
 					miningObj->set("passphrase", passphrase);
 				}
 
@@ -542,27 +547,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				passphrase_.encrypted = getOrAdd<std::string>(passphrase, "encrypted", "");
 				passphrase_.salt = getOrAdd<std::string>(passphrase, "salt", "");
 				passphrase_.key = getOrAdd<std::string>(passphrase, "key", "");
-				passphrase_.iterations = getOrAdd(passphrase, "iterations", 0u);
+				passphrase_.iterations = getOrAdd(passphrase, "iterations", 1000u);
 				passphrase_.deleteKey = getOrAdd(passphrase, "deleteKey", false);
 				passphrase_.algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
-
-				if (!passphrase_.encrypted.empty() &&
-					!passphrase_.key.empty() &&
-					!passphrase_.salt.empty())
-				{
-					log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
-
-					passphrase_.decrypt();
-
-					if (!passphrase_.decrypted.empty())
-						log_debug(MinerLogger::config, "Passphrase decrypted!");
-
-					if (passphrase_.deleteKey)
-					{
-						log_debug(MinerLogger::config, "Passhrase.deleteKey == true, deleting the key...");
-						passphrase->set("key", "");
-					}
-				}
 
 				// there is a decrypted passphrase, we need to encrypt it
 				if (!passphrase_.decrypted.empty())
@@ -581,12 +568,30 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 					}
 				}
 
-				// warn the user, he is possibly mining solo without knowing it
-				// and sending his passphrase plain text all around the globe
-				if (!passphrase_.encrypted.empty())
-					log_warning(MinerLogger::config, "WARNING! You entered a passphrase, what means you mine solo!\n"
-						"This means, your passphrase is sent in plain text to 'mining.urls.submission'!\n"
-						"If you don't want to mine solo, clear 'mining.passphrase.key' in your configuration file.");
+				if (!passphrase_.encrypted.empty() &&
+					!passphrase_.key.empty() &&
+					!passphrase_.salt.empty())
+				{
+					log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
+
+					if (passphrase_.deleteKey && passphrase_.decrypted.empty())
+					{
+						log_debug(MinerLogger::config, "Passhrase.deleteKey == true, deleting the key...");
+						passphrase->set("key", "");
+					}
+
+					passphrase_.decrypt();
+
+					if (!passphrase_.decrypted.empty())
+						log_debug(MinerLogger::config, "Passphrase decrypted!");
+
+					// warn the user, he is possibly mining solo without knowing it
+					// and sending his passphrase plain text all around the globe
+					if (!passphrase_.encrypted.empty() && !passphrase_.key.empty())
+						log_warning(MinerLogger::config, "WARNING! You entered a passphrase, what means you mine solo!\n"
+							"This means, your passphrase is sent in plain text to 'mining.urls.submission'!\n"
+							"If you don't want to mine solo, clear 'mining.passphrase.key' in your configuration file.");
+				}
 			}
 			catch (Poco::Exception& exc)
 			{
@@ -597,7 +602,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				);
 
 				log_current_stackframe(MinerLogger::config);
-			}			
+			}
 		}
 
 		config->set("mining", miningObj);
@@ -1122,6 +1127,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 
 		mining.set("rescanEveryBlock", isRescanningEveryBlock());
 
+		mining.set("bufferChunkCount", getBufferChunkCount());
+
 		// passphrase
 		{
 			Poco::JSON::Object passphrase;
@@ -1276,6 +1283,12 @@ void Burst::MinerConfig::setGetMiningInfoInterval(size_t interval)
 	getMiningInfoInterval_ = interval;
 }
 
+void Burst::MinerConfig::setBufferChunkCount(size_t bufferChunkCount)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	bufferChunkCount_ = bufferChunkCount;
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
 	return addPlotDir(std::make_shared<PlotDir>(dir, PlotDir::Type::Sequential));
@@ -1322,7 +1335,6 @@ bool Burst::MinerConfig::isLogfileUsed() const
 
 size_t Burst::MinerConfig::getMiningInfoInterval() const
 {
-	Poco::Mutex::ScopedLock lock(mutex_);
 	return getMiningInfoInterval_;
 }
 
@@ -1349,6 +1361,11 @@ bool Burst::MinerConfig::isSteadyProgressBar() const
 bool Burst::MinerConfig::isFancyProgressBar() const
 {
 	return fancyProgressBar_;
+}
+
+size_t Burst::MinerConfig::getBufferChunkCount() const
+{
+	return bufferChunkCount_;
 }
 
 void Burst::MinerConfig::useLogfile(bool use)
