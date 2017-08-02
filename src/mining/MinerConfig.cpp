@@ -125,7 +125,7 @@ void Burst::MinerConfig::printBufferSize() const
 	Poco::Mutex::ScopedLock lock(mutex_);
 
 	if (maxBufferSizeMB_ == 0)
-		log_system(MinerLogger::config, "Buffer Size : ~%s MB", memToString(getTotalPlotsize() / 4096, 0));
+		log_system(MinerLogger::config, "Buffer Size : ~%s", memToString(getTotalPlotsize() / 4096, 0));
 	else
 		log_system(MinerLogger::config, "Buffer Size : %z MB", maxBufferSizeMB_);
 }
