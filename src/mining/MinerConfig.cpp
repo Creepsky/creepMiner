@@ -584,14 +584,14 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 					if (!passphrase_.decrypted.empty())
 						log_debug(MinerLogger::config, "Passphrase decrypted!");
-				}
 
-				// warn the user, he is possibly mining solo without knowing it
-				// and sending his passphrase plain text all around the globe
-				if (!passphrase_.encrypted.empty())
-					log_warning(MinerLogger::config, "WARNING! You entered a passphrase, what means you mine solo!\n"
-						"This means, your passphrase is sent in plain text to 'mining.urls.submission'!\n"
-						"If you don't want to mine solo, clear 'mining.passphrase.key' in your configuration file.");
+					// warn the user, he is possibly mining solo without knowing it
+					// and sending his passphrase plain text all around the globe
+					if (!passphrase_.encrypted.empty() && !passphrase_.key.empty())
+						log_warning(MinerLogger::config, "WARNING! You entered a passphrase, what means you mine solo!\n"
+							"This means, your passphrase is sent in plain text to 'mining.urls.submission'!\n"
+							"If you don't want to mine solo, clear 'mining.passphrase.key' in your configuration file.");
+				}
 			}
 			catch (Poco::Exception& exc)
 			{
