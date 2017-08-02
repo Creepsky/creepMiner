@@ -231,13 +231,13 @@ std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& f
 		return plotFile;
 	}
 
+	if (result == PlotCheckResult::EmptyParameter)
+		return nullptr;
+
 	std::string errorString = "";
 
 	if (result == PlotCheckResult::Incomplete)
 		errorString = "The plotfile is incomplete!";
-
-	if (result == PlotCheckResult::EmptyParameter)
-		errorString = "The plotfile does not have all the required parameters!";
 
 	if (result == PlotCheckResult::InvalidParameter)
 		errorString = "The plotfile has invalid parameters!";
