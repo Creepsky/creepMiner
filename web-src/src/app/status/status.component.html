@@ -6,14 +6,16 @@
   <!-- Command Buttons -->
   <div class="btn-group btn-group-justified" role="group" aria-label="commands">
     <div class="btn-group" role="group">
-      <button type="button" class="btn btn-default">
-				<span id="iconConfirmationSound" class="glyphicon glyphicon-volume-off" aria-hidden="true"></span>
+      <button type="button" class="btn btn-default" (click)="toggleSound('block')">
+        <span class="glyphicon glyphicon-volume-off" *ngIf = "!sounds.block"></span>
+        <span class="glyphicon glyphicon-volume-up" *ngIf = "sounds.block"></span>
 				block missed sound
 			</button>
     </div>
     <div class="btn-group" role="group">
-      <button type="button" class="btn btn-default">
-				<span id="iconConfirmationSound" class="glyphicon glyphicon-volume-up" aria-hidden="true"></span>
+      <button type="button" class="btn btn-default" (click)="toggleSound('confirmation')">
+        <span class="glyphicon glyphicon-volume-off" *ngIf = "!sounds.confirmation"></span>
+				<span class="glyphicon glyphicon-volume-up" *ngIf = "sounds.confirmation"></span>
 				confirmation sound
 			</button>
     </div>
@@ -25,50 +27,50 @@
     <div class="panel-body">
       <div class="row">
         <div class="col-md-6 col-xs-6">This block</div>
-        <div id="thisBlockBest" class="col-md-6 col-xs-6">{{bestDeadline()?.deadline}}</div>
+        <div class="col-md-6 col-xs-6">{{bestDeadline()?.deadline}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Overall</div>
-        <div id="bestOverall" class="col-md-6 col-xs-6">{{b.newBlock.bestOverall}}</div>
+        <div class="col-md-6 col-xs-6">{{b.newBlock.bestOverall}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Confirmed deadlines</div>
-        <div id="confirmedDeadlines" class="col-md-6 col-xs-6">{{ b.newBlock.deadlinesConfirmed - 0 + b.nonces.length }}</div>
+        <div class="col-md-6 col-xs-6">{{ b.newBlock.deadlinesConfirmed - 0 + countNonces()}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Won blocks</div>
-        <div id="wonBlocks" class="col-md-6 col-xs-6">{{b.newBlock.blocksWon}}</div>
+        <div class="col-md-6 col-xs-6">{{b.newBlock.blocksWon}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Mined blocks</div>
-        <div id="minedBlocks" class="col-md-6 col-xs-6">{{b.newBlock.blocksMined}}</div>
+        <div class="col-md-6 col-xs-6">{{b.newBlock.blocksMined}}</div>
       </div>
       <div class="row">
         <div class="col-md-6 col-xs-6">Average deadline</div>
-        <div id="avgDeadline" class="col-md-6 col-xs-6">{{b.newBlock.deadlinesAvg}}</div>
+        <div class="col-md-6 col-xs-6">{{b.newBlock.deadlinesAvg}}</div>
       </div>
     </div>
   </div>
   <!-- Last Winner -->
   <div id="lastWinnerContainer" class="panel panel-default" *ngIf="b.lastWinner">
     <div class="panel-heading">Last winner</div>
-    <div id="lastWinner" class="panel-body">
+    <div class="panel-body">
       <div id="lastWinnerNameRow" class="row">
         <div class="col-md-5 col-xs-4">Name</div>
         <div class="col-md-7 col-xs-8">
-          <a id="lastWinnerName" href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.name}}</a>
+          <a href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.name}}</a>
         </div>
       </div>
       <div class="row">
         <div class="col-md-5 col-xs-4">Numeric</div>
         <div class="col-md-7 col-xs-8">
-          <a id="lastWinnerNumeric" href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.numeric}}</a>
+          <a href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.numeric}}</a>
         </div>
       </div>
       <div class="row">
         <div class="col-md-5 col-xs-4">Address</div>
         <div class="col-md-7 col-xs-8">
-          <a id="lastWinnerAddress" href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.address}}</a>
+          <a href="https://block.burstcoin.info/acc.php?acc=BURST-{{b.lastWinner.address}}" target="_blank">{{b.lastWinner.address}}</a>
         </div>
       </div>
     </div>
@@ -78,7 +80,7 @@
 <div id="container" class="col-md-6">
   <div class="panel panel-primary" *ngIf="b.newBlock">
     <div class="panel-heading">Block {{b.newBlock.block}}
-      <div style="float:right;" title="block read time">{{ b.getBlockReadDate() }}</div>
+      <div class="pull-right" title="block read time">{{ b.getBlockReadDate() }}</div>
     </div>
     <div class="panel-body">
       <div class="row">
@@ -98,54 +100,29 @@
         <div class="col-md-9 col-xs-7">{{b.newBlock.bestOverall}}</div>
       </div>
     </div>
-    <!-- To Do -->
-    <ul id="blkdata" class="list-group">
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="server" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:36:39</span>
-          </p>Request: /css/cerulean.min.css<small><dl class="dl" style="display: none;"><dt>Logger</dt>
-              <dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small>
+
+    <ul class="list-group">
+      <li *ngFor="let p of b.plots" class="list-group-item clearfix plots" [class.list-group-item-info]="!countNonces(p)" [class.list-group-item-success]="countNonces(p)"
+        [style.display]="p.closed ? 'none' : 'block'">
+        <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{ p.path }} ({{p.size}})
+        <progressbar class="progress-striped plot-progress" style="height: 20px;" [value]="p.progress" type="warning" max="100" animate="true">{{round(p.progress)}}%</progressbar>
+        <div class="clearfix"></div>
+        <div *ngFor="let pf of p.plotfiles">
+          <span style="font-size: 10px;">{{pf.path}} ({{pf.size}})</span>
+          <div *ngFor="let n of pf.nonces" style="margin: 10px 0 25px 25px;">
+            <span class="glyphicon glyphicon-ok" aria-hidden="true" *ngIf="n.type === 'nonce confirmed'"></span>
+            <span class="glyphicon glyphicon-share-alt" style="color: #c09853;" aria-hidden="true" *ngIf="n.type === 'nonce submitted'"></span>
+            <b>{{n.account}}</b>: {{n.type}} ({{n.deadline}})
+          </div>
         </div>
       </li>
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="server" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:36:39</span></p>Request: /css/cerulean.min.css<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="wallet" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:34:21</span></p>Could not get last winner!<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>wallet</dd><dt>File</dt><dd>src\Wallet.cpp</dd><dt>Line</dt><dd>54</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-danger" style="display: none;" logger="wallet" level="3">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:34:21</span></p>Got no response for wallet request '/burst?requestType=getBlock&amp;height=374636'<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>wallet</dd><dt>File</dt><dd>src\Wallet.cpp</dd><dt>Line</dt><dd>201</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-danger" style="display: none;" logger="socket" level="3">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:34:06</span></p>Stackframe<br>Miner::runGetLastWinner (in "src\MinerData.cpp",
-          line 289)<br>Wallet::getWinnerOfBlock (in "src\Wallet.cpp", line 30)<br>Wallet::sendWalletRequest (in "src\Wallet.cpp",
-          line 158)<br>Request::send(Poco::Net::HTTPRequest&amp;) (in "src\Request.cpp", line 36)<br><small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>socket</dd><dt>File</dt><dd>src\Request.cpp</dd><dt>Line</dt><dd>48</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-danger" style="display: none;" logger="socket" level="3">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:34:06</span></p>Error on sending request: SSL connection unexpectedly closed<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>socket</dd><dt>File</dt><dd>src\Request.cpp</dd><dt>Line</dt><dd>47</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="server" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:33:04</span></p>Request: /favicon.ico<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
-      </li>
-      <li class="list-group-item clearfix list-group-item-debug" style="display: none;" logger="server" level="7">
-        <div>
-          <p class="pull-right"><span class="label label-default">20:33:03</span></p>Request: /<small><dl class="dl" style="display: none;"><dt>Logger</dt><dd>server</dd><dt>File</dt><dd>src\MinerServer.cpp</dd><dt>Line</dt><dd>205</dd></dl></small></div>
-      </li>
-      <li *ngFor="let p of b.plots" id="53352705" class="list-group-item clearfix plots list-group-item-info" [style.display]="p.closed ? 'none' : 'block'">
-        <span class="glyphicon glyphicon-hdd" aria-hidden="true"></span>&nbsp;&nbsp;{{p.dir }}
-        <progressbar class="progress-striped plot-progress" [value]="p.value" type="warning" max="100" animate="true">{{round(p.value)}}%</progressbar>
-      </li>
-      <li *ngFor="let n of b.nonces" id="53352705" class="list-group-item clearfix nonce-found list-group-item-success">
+    </ul>
+    <ul class="list-group">
+      <li *ngFor="let n of b.unknownNonces" class="list-group-item clearfix plots list-group-item-success">
         <span class="glyphicon glyphicon-ok" aria-hidden="true" *ngIf="n.type === 'nonce confirmed'"></span>
         <span class="glyphicon glyphicon-share-alt" style="color: #c09853;" aria-hidden="true" *ngIf="n.type === 'nonce submitted'"></span>
         <b>{{n.account}}</b>: {{n.type}} ({{n.deadline}})
-        <p class="pull-right">{{n.time}}</p>
+        <div style="font-size: 10px; margin-top: 5px;"> {{n.plotfile}} </div>
       </li>
     </ul>
   </div>

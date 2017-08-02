@@ -3,24 +3,28 @@ import { Subject } from 'rxjs/Subject';
 
 @Injectable()
 export class BlockService {
-  websocket;
+  websocket: WebSocket;
   config: JSONS.ConfigObject;
   newBlock: JSONS.NewBlockObject;
   lastWinner: JSONS.LastWinnerObject;
   progress = 0;
-  nonces: Array<JSONS.NonceObject> = [];
+
   plots: Array<JSONS.PlotDirObject> = [];
+  unknownNonces: Array<JSONS.NonceObject> = [];
+  blockSound = new Audio('assets/sms-alert-2-daniel_simon.mp3');
   confirmedSound = new Audio('assets/sms-alert-1-daniel_simon.mp3');
-  
+  private _isreconn = false;
+
   blockTime: Date;
   blockReadTime: Date;
-  
+
   private newBlockSource = new Subject();
   newBlock$ = this.newBlockSource.asObservable();
   private newConfirmationSource = new Subject();
   newConfirmation$ = this.newConfirmationSource.asObservable();
 
   constructor() {
+    this.blockSound.volume = 0.5;
     this.confirmedSound.volume = 0.5;
 
     const refrFunc = () => {
@@ -47,110 +51,161 @@ export class BlockService {
     return mins ? mins + ':' + seconds : seconds.toString();
   }
 
-  connectBlock() {
-    this.connect((msg) => {
+  private rcvMsg(msg) {
+    const data = msg['data'];
 
-      const data = msg['data'];
-
-      if (data) {
-        if (data === 'ping') {
-          return;
-        }
-        const response = JSON.parse(data);
-
-
-        switch (response['type']) {
-          case 'new block':
-            this.newBlock = response;
-            this.nonces = [];
-            this.plots = [];
-            this.blockTime = new Date();
-            this.blockReadTime = null;
-            this.newBlockSource.next(response);
-            break;
-          case 'nonce found':
-            this.addOrUpdateNonce(response);
-            break;
-          case 'nonce confirmed':
-            this.addOrUpdateNonce(response);
-            this.newConfirmationSource.next(response);
-            this.confirmedSound.play();
-            break;
-          case 'nonce submitted':
-            this.addOrUpdateNonce(response);
-            break;
-          case 'config':
-            this.config = response;
-            break;
-          case 'progress':
-            this.progress = response.value;
-            if (response.value === 100) {
-              this.blockReadTime = new Date();
-            }
-            break;
-          case 'lastWinner':
-            this.lastWinner = response;
-            break;
-          case 'blocksWonUpdate':
-            //      wonBlocks.html(reponse['blocksWon']);
-            console.log(response.type, response);
-            break;
-          case 'plotdir-progress':
-            this.addOrUpdatePlot(response);
-            break;
-          case 'plotdirs-rescan':
-            console.log(response.type, response);
-            break;
-          default:
-            //        showMessage(response);
-            if (response.type != '7') {
-              console.log(response.type, response);
-            }
-            break;
-        };
+    if (data) {
+      if (data === 'ping') {
+        return;
       }
-    });
-  }
+      const response = JSON.parse(data);
 
+      //  console.log('sve', response.type, response);
 
-  private addOrUpdateNonce(nonce: JSONS.NonceObject) {
-    const ns = this.nonces.filter(x => x.nonce === nonce.nonce);
-    if (ns.length > 0) {
-      ns[0].type = nonce.type;
-    } else {
-      this.nonces.push(nonce);
+      switch (response['type']) {
+        case 'new block':
+          this.newBlock = response;
+          this.unknownNonces = [];
+          this.plots.forEach(p => {
+            p.closed = false;
+            p.progress = 0;
+            p.plotfiles.forEach(pf => {
+              pf.nonces = [];
+            })
+          });
+          this.blockTime = new Date();
+          this.blockReadTime = null;
+          this.newBlockSource.next(response);
+          if (localStorage.getItem('blockSound') === 'true') {
+            this.blockSound.play();
+          }
+          break;
+        case 'nonce found':
+          this.addOrUpdateNonce(response);
+          break;
+        case 'nonce confirmed':
+          this.addOrUpdateNonce(response);
+          this.newConfirmationSource.next(response);
+          if (localStorage.getItem('confirmationSound') === 'true') {
+            this.confirmedSound.play();
+          }
+          break;
+        case 'nonce submitted':
+          this.addOrUpdateNonce(response);
+          break;
+        case 'config':
+          this.config = response;
+          break;
+        case 'progress':
+          this.progress = response.value;
+          if (response.value === 100) {
+            this.blockReadTime = new Date();
+          }
+          break;
+        case 'lastWinner':
+          this.lastWinner = response;
+          break;
+        case 'blocksWonUpdate':
+          //      wonBlocks.html(reponse['blocksWon']);
+          console.log(response.type, response);
+          break;
+        case 'plotdir-progress':
+          this.addOrUpdatePlot(response);
+          break;
+        case 'plotdirs-rescan':
+          this.plots = response.plotdirs;
+          this.plots.forEach(p => {
+            p.plotfiles.forEach(pf => {
+              pf.nonces = [];
+            });
+            p.closed = false;
+            p.progress = 0;
+          });
+          break;
+        default:
+          //        showMessage(response);
+          if (response.type != '7') {
+            console.log(response.type, response);
+          }
+          break;
+      };
     }
   }
 
 
-  private addOrUpdatePlot(plot: JSONS.PlotDirObject) {
-    const p = this.plots.filter(x => x.dir === plot.dir);
-    if (p.length > 0) {
-      p[0].value = plot.value;
-      plot = p[0];
+  private addOrUpdatePlot(plotUpdate) {
+    const p = this.plots.filter(x => x.path === plotUpdate.dir)[0];
+    if (p) {
+      p.progress = plotUpdate.value;
     } else {
-      this.plots.push(plot);
+      console.error('OVO NE MOZE');
+      //  plot.nonces = [];
+      // this.plots.push(plot);
     }
-    if (plot.value.toString() === '100') {
+    if (plotUpdate.value.toString() === '100' && !p.plotfiles.some(pf => !!pf.nonces.length)) {
       setTimeout(() => {
-        plot.closed = true;
+        p.closed = true;
       }, 2000 + (Math.random() * 1000));
     }
   }
 
+  private addOrUpdateNonce(nonce: JSONS.NonceObject) {
+    const index = nonce.plotfile.lastIndexOf('/');
+    const plotDir = nonce.plotfile.slice(0, index);
 
+    let pfFound = false;
 
-  connect(onMessage) {
+    const pushOrUpdate = (arr: Array<JSONS.NonceObject>) => {
+      const ns = arr.filter(x => x.nonce === nonce.nonce)[0];
+      if (ns) {
+        ns.type = nonce.type;
+      } else {
+        nonce.deadlineNum = +nonce.deadlineNum;
+        arr.push(nonce);
+      }
+    }
+
+    this.plots.forEach(p => {
+      const pf = p.plotfiles.filter(p2 => p2.path === nonce.plotfile)[0];
+      if (pf) {
+        pfFound = true;
+        pushOrUpdate(pf.nonces);
+      }
+    });
+
+    if (!pfFound) {
+      pushOrUpdate(this.unknownNonces);
+    }
+  }
+
+  connect() {
     if ('WebSocket' in window) {
       if (this.websocket) {
-        this.websocket.close();
+        return;
       }
 
       this.websocket = new WebSocket('ws://' + window.location.hostname + ':' + window.location.port + '/');
-      this.websocket.onmessage = onMessage;
+      this.websocket.onmessage = this.rcvMsg.bind(this);
+
+      this.websocket.onerror = this.reconnect.bind(this);
+      this.websocket.onclose = this.reconnect.bind(this);
     } else {
       this.websocket = null;
     }
+  }
+
+
+
+  private reconnect() {
+    if (this._isreconn) {
+      return;
+    }
+    this._isreconn = true;
+    setTimeout(() => {
+      console.log('Reconnecting...');
+      this._isreconn = false;
+      this.connect();
+    }, 3000);
   }
 
 }
