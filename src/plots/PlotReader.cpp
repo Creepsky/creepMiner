@@ -130,152 +130,141 @@ void Burst::PlotReader::runTask()
 
 			if (!isCancelled() && inputStream.is_open())
 			{
-				//MinerLogger::write("reading plot file " + plotFile.getPath());
-
 				const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
-				auto staggerChunkBytes = maxBufferSize / MinerConfig::getConfig().getBufferChunkCount();
+				auto chunkBytes = maxBufferSize / MinerConfig::getConfig().getBufferChunkCount();
 
 				// unlimited buffer size
 				if (maxBufferSize == 0)
-					staggerChunkBytes = plotFile.getStaggerScoopBytes();
+					chunkBytes = plotFile.getStaggerScoopBytes();
 
-				auto staggerChunkRest = plotFile.getStaggerScoopBytes() % staggerChunkBytes;
-				auto staggerChunks = plotFile.getStaggerScoopBytes() / staggerChunkBytes + (staggerChunkRest > 0 ? 1u : 0u);
-
-				// check, if the incoming plot-read-notification is for the current round
-				currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
-
-				for (auto staggerBlock = 0ul; !isCancelled() && staggerBlock < plotFile.getStaggerCount() && currentBlock; ++staggerBlock)
-				{
-					// check, if the incoming plot-read-notification is for the current round
-					currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
-
-					for (auto staggerChunk = 0u; staggerChunk < staggerChunks && !isCancelled() && currentBlock; ++staggerChunk)
-					{
-						START_PROBE_DOMAIN("PlotReader.StaggerChunk", plotFile.getPath())
-						auto memoryAcquired = false;
-
-						size_t readSize = staggerChunkBytes;
-
-						if (staggerChunk == staggerChunks - 1 && staggerChunkRest != 0)
-							readSize = staggerChunkRest;
-
-						START_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath())
-						while (!isCancelled() && !memoryAcquired && currentBlock)
-						{
-							memoryAcquired = globalBufferSize.reserve(readSize);
-							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
-						}
-						TAKE_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath())
-
-						// if the reader is cancelled, jump out of the loop
-						if (isCancelled())
-						{
-							// but first give free the allocated memory
-							if (memoryAcquired)
-								globalBufferSize.free(readSize);
-
-							continue;
-						}
-
-						// only send the data to the verifiers, if the memory could be acquired and it is the right block
-						if (memoryAcquired && currentBlock)
-						{
-							START_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
-							const auto chunkOffset = staggerChunk * staggerChunkBytes;
-							const auto staggerBlockOffset = staggerBlock * plotFile.getStaggerBytes();
-							const auto staggerScoopOffset = plotReadNotification->scoopNum * plotFile.getStaggerScoopBytes();
-
-							START_PROBE("PlotReader.CreateVerification");
-							VerifyNotification::Ptr verification(new VerifyNotification{});
-							verification->accountId = plotFile.getAccountId();
-							verification->nonceStart = plotFile.getNonceStart();
-							verification->block = plotReadNotification->blockheight;
-							verification->inputPath = plotFile.getPath();
-							verification->gensig = plotReadNotification->gensig;
-							verification->buffer.resize(readSize / sizeof(ScoopData));
-							verification->nonceRead = staggerBlock * plotFile.getStaggerSize() + staggerChunkBytes * staggerChunk;
-							verification->baseTarget = plotReadNotification->baseTarget;
-							verification->memorySize = readSize;
-							TAKE_PROBE("PlotReader.CreateVerification");
-
-							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
-							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							//inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), staggerScoopSize);
-							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), readSize);
-							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
-
-							START_PROBE("PlotReader.EnqueueWork");
-							verificationQueue_->enqueueNotification(verification);
-							TAKE_PROBE("PlotReader.EnqueueWork");
-
-							if (MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
-							{
-								START_PROBE("PlotReader.Progress");
-								progress_->add(readSize * Settings::ScoopPerPlot, plotReadNotification->blockheight);
-								TAKE_PROBE("PlotReader.Progress");
-							}
-							TAKE_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
-
-							// check, if the incoming plot-read-notification is for the current round
-							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
-						}
-						// if the memory was acquired, but it was not the right block, give it free
-						else if (memoryAcquired)
-							globalBufferSize.free(staggerChunkBytes);
-						// this should never happen.. no memory allocated, not cancelled, wrong block
-						else;
-
-						TAKE_PROBE_DOMAIN("PlotReader.StaggerChunk", plotFile.getPath())
-					}
-				}
-
-				inputStream.close();
-
-				// check, if the incoming plot-read-notification is for the current round
-				currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
-
-				if (!isCancelled() && currentBlock)
-				{
-					auto fileReadDiff = timeStartFile.elapsed();
-					auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
-					Poco::Timespan span{fileReadDiff};
+				const auto noncesPerChunk = std::min(chunkBytes / Settings::ScoopSize, plotFile.getStaggerSize());
 				
-    				auto plotListSize = plotReadNotification->plotList.size();
-    
-    				if (plotListSize > 0)
-    				{
-    					miner_.getData().getBlockData()->setProgress(
-							plotReadNotification->dir,
-    						static_cast<float>(std::distance(plotReadNotification->plotList.begin(), plotFileIter) + 1) / plotListSize * 100.f,
-							plotReadNotification->blockheight
-						);
-    				}
+				auto nonce = 0ull;
 
-					const auto nonceBytes = static_cast<float>(plotFile.getNonces() * Settings::ScoopSize);
-					const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
+				while (nonce < plotFile.getNonces() && currentBlock)
+				{
+					START_PROBE_DOMAIN("PlotReader.Nonces", plotFile.getPath());
+					auto startNonce = nonce;
+					auto readNonces = noncesPerChunk;
+					auto staggerBegin = startNonce / plotFile.getStaggerSize();
+					auto staggerEnd = (startNonce + readNonces) / plotFile.getStaggerSize();
 
-					log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",
-						plotFile.getPath(),
-						memToString(plotFile.getSize(), 2),
-						Poco::DateTimeFormatter::format(span, "%s.%i"),
-						memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
+					if (staggerBegin != staggerEnd)
+						readNonces = plotFile.getStaggerSize() - startNonce % plotFile.getStaggerSize();
 
-					if (!MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
+					auto memoryAcquired = false;
+					auto memoryToAcquire = std::min(readNonces * Settings::ScoopSize, chunkBytes);
+
+					START_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
+					while (!isCancelled() && !memoryAcquired)
 					{
-						START_PROBE("PlotReader.Progress")
-						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
-						TAKE_PROBE("PlotReader.Progress")
-					}
-				}
+						memoryAcquired = globalBufferSize.reserve(memoryToAcquire);
 
-				// if it was cancelled, we push the current plot dir back in the queue again
-				if (isCancelled())
-					plotReadQueue_->enqueueNotification(plotReadNotification);
+						if (!memoryAcquired)
+							std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
+					}
+					TAKE_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
+
+					// if the reader is cancelled, jump out of the loop
+					if (isCancelled())
+					{
+						// but first give free the allocated memory
+						if (memoryAcquired)
+							globalBufferSize.free(memoryToAcquire);
+
+						continue;
+					}
+
+					if (memoryAcquired && currentBlock)
+					{
+						START_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
+						const auto chunkOffset = startNonce % plotFile.getStaggerSize() * Settings::ScoopSize;
+						const auto staggerBlockOffset = staggerBegin * plotFile.getStaggerBytes();
+						const auto staggerScoopOffset = plotReadNotification->scoopNum * plotFile.getStaggerScoopBytes();
+
+						START_PROBE("PlotReader.CreateVerification");
+						VerifyNotification::Ptr verification(new VerifyNotification{});
+						verification->accountId = plotFile.getAccountId();
+						verification->nonceStart = plotFile.getNonceStart();
+						verification->block = plotReadNotification->blockheight;
+						verification->inputPath = plotFile.getPath();
+						verification->gensig = plotReadNotification->gensig;
+						verification->buffer.resize(readNonces);
+						verification->nonceRead = startNonce;
+						verification->baseTarget = plotReadNotification->baseTarget;
+						verification->memorySize = memoryToAcquire;
+						TAKE_PROBE("PlotReader.CreateVerification");
+
+						START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
+						inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
+						inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire);
+						TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
+
+						verificationQueue_->enqueueNotification(verification);
+
+						if (MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
+							progress_->add(readNonces * Settings::PlotSize, plotReadNotification->blockheight);
+
+						// check, if the incoming plot-read-notification is for the current round
+						currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+						nonce += readNonces;
+
+						TAKE_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
+					}
+					// if the memory was acquired, but it was not the right block, give it free
+					else if (memoryAcquired)
+						globalBufferSize.free(memoryToAcquire);
+					// this should never happen.. no memory allocated, not cancelled, wrong block
+					else;
+					TAKE_PROBE_DOMAIN("PlotReader.Nonces", plotFile.getPath());
+				}
 			}
 
-			TAKE_PROBE_DOMAIN("PlotReader.ReadFile", plotFile.getPath())
+			inputStream.close();
+
+			// check, if the incoming plot-read-notification is for the current round
+			currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+
+			if (!isCancelled() && currentBlock)
+			{
+				auto fileReadDiff = timeStartFile.elapsed();
+				auto fileReadDiffSeconds = static_cast<float>(fileReadDiff) / 1000 / 1000;
+				Poco::Timespan span{fileReadDiff};
+				
+    			auto plotListSize = plotReadNotification->plotList.size();
+    
+    			if (plotListSize > 0)
+    			{
+    				miner_.getData().getBlockData()->setProgress(
+						plotReadNotification->dir,
+    					static_cast<float>(std::distance(plotReadNotification->plotList.begin(), plotFileIter) + 1) / plotListSize * 100.f,
+						plotReadNotification->blockheight
+					);
+    			}
+
+				const auto nonceBytes = static_cast<float>(plotFile.getNonces() * Settings::ScoopSize);
+				const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
+
+				log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",
+					plotFile.getPath(),
+					memToString(plotFile.getSize(), 2),
+					Poco::DateTimeFormatter::format(span, "%s.%i"),
+					memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
+
+				if (!MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
+				{
+					START_PROBE("PlotReader.Progress")
+					progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
+					TAKE_PROBE("PlotReader.Progress")
+				}
+			}
+
+			// if it was cancelled, we push the current plot dir back in the queue again
+			if (isCancelled())
+				plotReadQueue_->enqueueNotification(plotReadNotification);
 		}
+
+		TAKE_PROBE_DOMAIN("PlotReader.ReadFile", plotFile.getPath());
 		
 		miner_.getData().getBlockData()->setProgress(plotReadNotification->dir, 100.f, plotReadNotification->blockheight);
 
