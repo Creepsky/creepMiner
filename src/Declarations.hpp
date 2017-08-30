@@ -1,8 +1,31 @@
-﻿#pragma once
+﻿// ==========================================================================
+// 
+// creepMiner - Burstcoin cryptocurrency CPU and GPU miner
+// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301  USA
+// 
+// ==========================================================================
+
+#pragma once
 
 #include <cstdint>
 #include <array>
+#include <string>
 #include <Poco/Platform.h>
+#include <Poco/Types.h>
 
 namespace Burst
 {
@@ -15,13 +38,16 @@ namespace Burst
 
 	struct Version
 	{
-		Version(uint32_t major, uint32_t minor, uint32_t build);
+		Version(uint32_t major, uint32_t minor, uint32_t build, uint32_t revision);
 		Version(std::string version);
 
 		bool operator>(const Version& rhs) const;
 
-		uint32_t major, minor, build;
-		std::string literal;
+		uint32_t major, minor, build, revision;
+		std::string literal, literalVerbose;
+
+	private:
+		void updateLiterals();
 	};
 
 	struct ProjectData
@@ -32,7 +58,7 @@ namespace Burst
 		Version version;
 
 		std::string nameAndVersion;
-		std::string nameAndVersionAndOs;
+		std::string nameAndVersionVerbose;
 	};
 
 	class Settings
@@ -63,6 +89,7 @@ namespace Burst
 		static constexpr auto Arch = "x32";
 #endif
 
+		static const std::string Cpu_Instruction_Set;
 		static const Version ProjectVersion;
 		static const ProjectData Project;
 	};
@@ -73,6 +100,12 @@ namespace Burst
 	using GensigData = BytesArray<Settings::HashSize>;
 	using HashData = BytesArray<Settings::HashSize>;
 
-	using AccountId = uint64_t;
-	using Nonce = uint64_t;
+	using AccountId = Poco::UInt64;
+	using Nonce = Poco::UInt64;
+
+	enum class LogOutputType
+	{
+		Terminal,
+		Service
+	};
 }

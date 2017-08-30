@@ -8,7 +8,7 @@
 
 #include "nxt_address.h"
 
-#ifdef WIN32
+#if defined _WIN32 || defined WIN32
 #	define strcasecmp _stricmp 
 #	define strncasecmp _strnicmp 
 #endif

@@ -1,15 +1,22 @@
 creepMiner
 ===========
 
+[![Join the chat at https://gitter.im/creepminer/lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/creepminer/lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt)
+
 ## What is the creepMiner
 
 The creepMiner is a client application for mining Burst on a pool or solo. For more informations about Burst follow [this link](https://www.burst-team.us/).
 It is written in C++ and therefore can be compiled on different operating systems.
 It is designed multi-threaded to reach the best performance.
 
-## Fork
+## Features
 
-This is a (standalone) fork of the burst-miner found on [this github repository](https://github.com/uraymeiviar/burst-miner).
+- Mine with your **CPU** (__SSE2__/__SSE4__/__AVX__/__AVX2__) or your Nvidia **GPU**
+- Mine **solo** or in a **pool**
+- Filter bad deadlines with the auto target deadline feature
+- Build a network of several miners with the forwarding feature
+- Watch the status of the miner in your web browser on every device
 
 ## Build
 
@@ -20,41 +27,14 @@ This is a (standalone) fork of the burst-miner found on [this github repository]
 
 ## Instructions
 
+- [Quickstart](https://github.com/Creepsky/creepMiner/wiki/Quickstart)
 - [Compilation & Installation](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation)
 - [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Forwarding](https://github.com/Creepsky/creepMiner/wiki/Forwarding)
 - [Solo mining](https://github.com/Creepsky/creepMiner/wiki/Solo-mining)
+- [The mining process and otimizations](https://github.com/Creepsky/creepMiner/wiki/The-mining-process-and-otimizations)
 
 ## Dependencies
 
-- POCO C++ libraries ([Boost Software License 1.0](https://pocoproject.org/license.html))
-- OpenSSL ([Apache style license](https://www.openssl.org/source/license.html))
-
-## Contribution
-
-We are glad about every contribution to the project. Dont hesitate to open an issue, if you found a bug (with or without fix) or have an idea for a new feature!
-
-If you want to share your own code, please follow these steps:
-- create a fork of this repository
-- add a new branch for your changings
-- add your changes to the code
-- dont forget to mention the issue number in the commit messages (just write something like ```<message> #<id>```)
-- open a pull request and try to describe what the change is for
-- done :)
-
-## Donations :moneybag:
-
-The orignal author is uray meiviar (uraymeiviar@gmail.com).
-
-If you want to support him, you can donate to:
-
-```
-- [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
-- [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
-```
-
-If you want to support me, you can donate to:
-
-```
-- [ Burst   ] BURST-JBKL-ZUAV-UXMB-2G795
-```
+- [POCO C++ libraries](https://pocoproject.org) ([Boost Software License 1.0](https://pocoproject.org/license.html))
+- [OpenSSL](https://www.openssl.org) ([Apache style license](https://www.openssl.org/source/license.html))

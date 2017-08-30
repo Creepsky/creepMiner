@@ -1,108 +1,221 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\Miner.cpp" />
-    <ClCompile Include="src\MinerConfig.cpp" />
-    <ClCompile Include="src\MinerLogger.cpp" />
-    <ClCompile Include="src\MinerShabal.cpp" />
-    <ClCompile Include="src\MinerUtil.cpp" />
-    <ClCompile Include="src\PlotReader.cpp" />
-    <ClCompile Include="src\nxt\nxt_address.cpp">
-      <Filter>nxt</Filter>
-    </ClCompile>
-    <ClCompile Include="src\sphlib\sph_shabal.cpp">
-      <Filter>sphlib</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Deadline.cpp" />
-    <ClCompile Include="src\Url.cpp" />
-    <ClCompile Include="src\Request.cpp" />
-    <ClCompile Include="src\Response.cpp" />
-    <ClCompile Include="src\Socket.cpp" />
-    <ClCompile Include="src\NonceSubmitter.cpp" />
-    <ClCompile Include="src\Wallet.cpp" />
-    <ClCompile Include="src\AccountNames.cpp" />
-    <ClCompile Include="src\RequestHandler.cpp" />
-    <ClCompile Include="src\MinerServer.cpp" />
-    <ClCompile Include="src\MinerData.cpp" />
-    <ClCompile Include="src\PlotGenerator.cpp" />
-    <ClCompile Include="src\Account.cpp" />
-    <ClCompile Include="src\Declarations.cpp" />
-    <ClCompile Include="src\PlotVerifier.cpp" />
-    <ClCompile Include="src\PlotSizes.cpp" />
+    <Filter Include="Quelldateien">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Headerdateien">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Ressourcendateien">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\rapidjson\document.h">
-      <Filter>rapidjson</Filter>
+    <ResourceCompile Include="src\resources.rc">
+      <Filter>Ressourcendateien</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Declarations.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MinerUtil.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\wallet\Account.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\wallet\Wallet.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plots\Plot.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plots\PlotReader.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plots\PlotSizes.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\plots\PlotVerifier.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nxt\nxt_address.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\NonceSubmitter.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\Request.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\Response.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\Url.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mining\Deadline.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mining\Miner.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mining\MinerConfig.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mining\MinerData.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\logging\channels\ColoredPriorityConsoleChannel.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\logging\channels\MinerDataChannel.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\logging\Console.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\logging\Message.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\logging\MinerLogger.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\logging\Output.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\logging\Performance.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\logging\ProgressPrinter.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\webserver\MinerServer.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\webserver\RequestHandler.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shabal\MinerShabal.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shabal\sphlib\sph_shabal.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\shabal\mshabal\mshabal_avx1.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Declarations.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\rapidjson\filestream.h">
-      <Filter>rapidjson</Filter>
+    <ClInclude Include="src\MinerUtil.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\rapidjson\prettywriter.h">
-      <Filter>rapidjson</Filter>
+    <ClInclude Include="src\wallet\Account.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\rapidjson\rapidjson.h">
-      <Filter>rapidjson</Filter>
+    <ClInclude Include="src\wallet\Wallet.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\rapidjson\reader.h">
-      <Filter>rapidjson</Filter>
+    <ClInclude Include="src\plots\Plot.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\rapidjson\stringbuffer.h">
-      <Filter>rapidjson</Filter>
+    <ClInclude Include="src\plots\PlotReader.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\rapidjson\writer.h">
-      <Filter>rapidjson</Filter>
+    <ClInclude Include="src\plots\PlotSizes.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\plots\PlotVerifier.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="src\nxt\nxt_address.h">
-      <Filter>nxt</Filter>
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\sphlib\sph_shabal.h">
-      <Filter>sphlib</Filter>
+    <ClInclude Include="src\network\NonceSubmitter.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\sphlib\sph_types.h">
-      <Filter>sphlib</Filter>
+    <ClInclude Include="src\network\Request.hpp">
+      <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\Declarations.hpp" />
-    <ClInclude Include="src\SocketDefinitions.hpp" />
-    <ClInclude Include="src\Deadline.hpp" />
-    <ClInclude Include="src\Url.hpp" />
-    <ClInclude Include="src\Request.hpp" />
-    <ClInclude Include="src\Response.hpp" />
-    <ClInclude Include="src\Socket.hpp" />
-    <ClInclude Include="src\NonceSubmitter.hpp" />
-    <ClInclude Include="src\Miner.hpp" />
-    <ClInclude Include="src\MinerConfig.hpp" />
-    <ClInclude Include="src\MinerLogger.hpp" />
-    <ClInclude Include="src\MinerShabal.hpp" />
-    <ClInclude Include="src\MinerUtil.hpp" />
-    <ClInclude Include="src\PlotReader.hpp" />
-    <ClInclude Include="src\Wallet.hpp" />
-    <ClInclude Include="src\AccountNames.hpp" />
-    <ClInclude Include="src\RequestHandler.hpp" />
-    <ClInclude Include="src\MinerServer.hpp" />
-    <ClInclude Include="src\MinerData.hpp" />
-    <ClInclude Include="src\PlotGenerator.hpp" />
-    <ClInclude Include="src\Account.hpp" />
-    <ClInclude Include="src\PlotVerifier.hpp" />
-    <ClInclude Include="src\PlotSizes.hpp" />
-    <ClInclude Include="src\WorkerList.hpp" />
-    <ClInclude Include="src\Output.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="sphlib">
-      <UniqueIdentifier>{531922ef-2cd8-4350-b951-76cbc096b866}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="nxt">
-      <UniqueIdentifier>{42eb2a1b-d1fb-4180-8563-9545d4df189e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="rapidjson">
-      <UniqueIdentifier>{242f4f66-14f5-4d5c-8fad-1da976a482d7}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icon.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="src\resources.rc" />
+    <ClInclude Include="src\network\Response.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\Url.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mining\Deadline.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mining\Miner.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mining\MinerConfig.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mining\MinerData.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mining\WorkerList.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging\channels\ColoredPriorityConsoleChannel.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging\channels\MinerDataChannel.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging\Console.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging\Message.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging\MinerLogger.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging\Output.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging\Performance.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\logging\ProgressPrinter.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\webserver\MinerServer.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\webserver\RequestHandler.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shabal\MinerShabal.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shabal\sphlib\sph_shabal.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shabal\sphlib\sph_types.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shabal\mshabal\mshabal.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shabal\impl\mshabal_avx_impl.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\shabal\impl\sphlib_impl.hpp">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,14 +1,27 @@
-//  cryptoport.io Burst Pool Miner
-//
-//  Created by Uray Meiviar < uraymeiviar@gmail.com > 2014
-//  donation :
-//
-//  [Burst  ] BURST-8E8K-WQ2F-ZDZ5-FQWHX
-//  [Bitcoin] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b
+// ==========================================================================
+// 
+// creepMiner - Burstcoin cryptocurrency CPU and GPU miner
+// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301  USA
+// 
+// ==========================================================================
 
-#include "Miner.hpp"
-#include "MinerLogger.hpp"
-#include "MinerConfig.hpp"
+#include "mining/Miner.hpp"
+#include "logging/MinerLogger.hpp"
+#include "mining/MinerConfig.hpp"
 #include "MinerUtil.hpp"
 #include <Poco/Net/SSLManager.h>
 #include "Poco/Net/ConsoleCertificateHandler.h"
@@ -17,9 +30,9 @@
 #include <Poco/Net/HTTPSSessionInstantiator.h>
 #include <Poco/Net/PrivateKeyPassphraseHandler.h>
 #include <Poco/NestedDiagnosticContext.h>
-#include "MinerServer.hpp"
+#include "webserver/MinerServer.hpp"
 #include <Poco/Logger.h>
-#include "Request.hpp"
+#include "network/Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
 
 class SSLInitializer
@@ -42,20 +55,26 @@ int main(int argc, const char* argv[])
 
 	Burst::MinerLogger::setup();
 	
-	auto& general = Poco::Logger::get("general");
+	// create a message dispatcher..
+	//auto messageDispatcher = Burst::Message::Dispatcher::create();
+	// ..and start it in its own thread
+	//Poco::ThreadPool::defaultPool().start(*messageDispatcher);
+
+	auto general = &Poco::Logger::get("general");
 	
-	log_information(general, Burst::Settings::Project.nameAndVersionAndOs);
+#ifdef NDEBUG
+	std::string mode = "Release";
+#else
+	std::string mode = "Debug";
+#endif
+
+	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
+	log_information(general, "%s mode", mode);
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
 	log_information(general, "Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
 	log_information(general, "----------------------------------------------");
-	log_unimportant(general, "Based on http://github.com/uraymeiviar/burst-miner");
-	log_unimportant(general, "author : uray meiviar [ uraymeiviar@gmail.com ]");
-	log_unimportant(general, "please donate to support developments :");
-	log_unimportant(general, " [ Burst   ] BURST-8E8K-WQ2F-ZDZ5-FQWHX");
-	log_unimportant(general, " [ Bitcoin ] 1UrayjqRjSJjuouhJnkczy5AuMqJGRK4b");
-	log_unimportant(general, "----------------------------------------------");
 
 	std::string configFile = "mining.conf";
 
@@ -63,7 +82,7 @@ int main(int argc, const char* argv[])
 	{
 		if (argv[1][0] == '-')
 		{
-			log_information(general, "usage : burstminer <config-file>");
+			log_information(general, "usage : creepMiner <config-file>");
 			log_information(general, "if no config-file specified, program will look for mining.conf file inside current directory");
 		}
 		configFile = std::string(argv[1]);
@@ -132,6 +151,8 @@ int main(int argc, const char* argv[])
 				server.run(Burst::MinerConfig::getConfig().getServerUrl().getPort());
 			}
 
+			Burst::MinerLogger::setChannelMinerData(&miner.getData());
+
 			miner.run();
 			server.stop();
 		}
@@ -149,6 +170,13 @@ int main(int argc, const char* argv[])
 	{
 		log_fatal(general, "Aborting program due to exceptional state: %s", std::string(exc.what()));
 	}
+
+	// wake up all message dispatcher
+	//Burst::Message::wakeUpAllDispatcher();
+
+	// stop all running background-tasks
+	Poco::ThreadPool::defaultPool().stopAll();
+	Poco::ThreadPool::defaultPool().joinAll();
 
 	return 0;
 }

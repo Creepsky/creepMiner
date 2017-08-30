@@ -395,6 +395,23 @@ buildNumber.properties
 /cmake-build*
 
 # Custom files and dirs
+makefile
 mining.conf
 *.graphml
 !/bin/*.dll
+!/bin/public/*
+build/
+
+# Visual Code
+.vscode/*
+
+# CMake
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
