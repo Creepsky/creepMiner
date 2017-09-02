@@ -562,20 +562,25 @@ bool Burst::MinerData::compareToTargetDeadline(Poco::UInt64 deadline) const
 Poco::UInt64 Burst::MinerData::getAverageDeadline() const
 {
 	std::lock_guard<std::mutex> lock{ mutex_ };
+	
 	Poco::UInt64 avg = 0;
+	size_t size = 0;
 
 	if (historicalBlocks_.empty())
 		return 0;
 
-	std::for_each(historicalBlocks_.begin(), historicalBlocks_.end(), [&avg](const std::shared_ptr<const BlockData>& block)
+	for (const auto& block : historicalBlocks_)
 	{
-		auto bestDeadline = block->getBestDeadline();
+		const auto bestDeadline = block->getBestDeadline();
 
 		if (bestDeadline != nullptr)
+		{
 			avg += bestDeadline->getDeadline();
-	});
+			++size;
+		}
+	}
 
-	return avg / historicalBlocks_.size();
+	return avg / size;
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentBlockheight() const
