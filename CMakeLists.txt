@@ -62,6 +62,18 @@ elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
 endif ()
 
 ##################################################################
+# CPU architecture (only for Unix/Mac)
+##################################################################
+if (UNIX OR APPLE)
+	set(CPU_ARCH "X32 X64" CACHE STRING "CPU architecture")
+	set_property(CACHE CPU_ARCH PROPERTY STRINGS X32 X64)
+	
+	if (CPU_ARCH STREQUAL "X32")
+		add_definitions(-m32)
+	endif ()
+endif ()
+
+##################################################################
 # GPU acceleration
 ##################################################################
 set(GPU_ACCELERATION "NONE" CACHE STRING "GPU acceleration")

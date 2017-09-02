@@ -278,10 +278,10 @@ void Burst::PlotReader::runTask()
 			// if it was cancelled, we push the current plot dir back in the queue again
 			if (isCancelled())
 				plotReadQueue_->enqueueNotification(plotReadNotification);
+
+			TAKE_PROBE_DOMAIN("PlotReader.ReadFile", plotFile.getPath());
 		}
 
-		TAKE_PROBE_DOMAIN("PlotReader.ReadFile", plotFile.getPath());
-		
 		if (plotReadNotification->wakeUpCall)
 			continue;
 
