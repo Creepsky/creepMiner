@@ -130,6 +130,22 @@ void Burst::PlotReader::runTask()
 
 			if (!isCancelled() && inputStream.is_open())
 			{
+				if (plotReadNotification->wakeUpCall)
+				{
+					// its just a wake up call for the HDD, simply read the first byte
+					char dummyByte;
+					//
+					inputStream.read(&dummyByte, 1);
+
+					// close the file ...
+					inputStream.close();
+
+					log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
+
+					// ... and then jump to the next notification, no need to search for deadlines
+					break;
+				}
+
 				const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
 				auto chunkBytes = maxBufferSize / MinerConfig::getConfig().getBufferChunkCount();
 
@@ -266,6 +282,9 @@ void Burst::PlotReader::runTask()
 
 		TAKE_PROBE_DOMAIN("PlotReader.ReadFile", plotFile.getPath());
 		
+		if (plotReadNotification->wakeUpCall)
+			continue;
+
 		miner_.getData().getBlockData()->setProgress(plotReadNotification->dir, 100.f, plotReadNotification->blockheight);
 
 		auto dirReadDiff = timeStartDir.elapsed();

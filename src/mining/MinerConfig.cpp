@@ -371,7 +371,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		useInsecurePlotfiles_ = getOrAdd(miningObj, "useInsecurePlotfiles", false);
 		getMiningInfoInterval_ = getOrAdd(miningObj, "getMiningInfoInterval", 3);
 		rescanEveryBlock_ = getOrAdd(miningObj, "rescanEveryBlock", true);
+		
 		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
+		wakeUpTime_ = getOrAdd(miningObj, "wakeUpTime", 0);
 
 		// urls
 		{
@@ -1026,6 +1028,11 @@ size_t Burst::MinerConfig::getWalletRequestRetryWaitTime() const
 	return walletRequestRetryWaitTime_;
 }
 
+size_t Burst::MinerConfig::getWakeUpTime() const
+{
+	return wakeUpTime_;
+}
+
 void Burst::MinerConfig::printTargetDeadline() const
 {
 	if (getTargetDeadline() > 0)
@@ -1128,6 +1135,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		mining.set("rescanEveryBlock", isRescanningEveryBlock());
 
 		mining.set("bufferChunkCount", getBufferChunkCount());
+
+		mining.set("wakeUpTime", getWakeUpTime());
 
 		// passphrase
 		{
