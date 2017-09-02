@@ -32,6 +32,7 @@
 #include "plots/PlotVerifier.hpp"
 #include "WorkerList.hpp"
 #include "network/Response.hpp"
+#include <Poco/Timer.h>
 
 namespace Poco
 {
@@ -55,6 +56,7 @@ namespace Burst
 
 		void run();
 		void stop();
+		void addPlotReadNotifications(bool wakeUpCall = false);
 
 		Poco::UInt64 getScoopNum() const;
 		Poco::UInt64 getBaseTarget() const;
@@ -85,6 +87,7 @@ namespace Burst
 			 std::shared_ptr<Deadline>& newDeadline);
 		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);
+		void on_wake_up(Poco::Timer& timer);
 
 		bool running_ = false;
 		MinerData data_;
@@ -96,6 +99,7 @@ namespace Burst
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
 		std::unique_ptr<Poco::ThreadPool> verifier_pool_, plot_reader_pool_;
+		Poco::Timer wake_up_timer_;
 		mutable Poco::Mutex worker_mutex_;
 	};
 }

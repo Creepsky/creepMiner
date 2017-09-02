@@ -70,6 +70,7 @@ namespace Burst
 		Poco::UInt64 baseTarget = 0;
 		std::vector<std::pair<std::string, std::vector<std::shared_ptr<PlotFile>>>> relatedPlotLists;
 		PlotDir::Type type = PlotDir::Type::Sequential;
+		bool wakeUpCall = false;
 	};
 
 	class PlotReader : public Poco::Task

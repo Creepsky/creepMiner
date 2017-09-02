@@ -98,6 +98,16 @@ void Burst::Miner::run()
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
 
+	auto wakeUpTime = static_cast<long>(config.getWakeUpTime());
+
+	if (wakeUpTime > 0)
+	{
+		Poco::TimerCallback<Miner> callback(*this, &Miner::on_wake_up);
+
+		wake_up_timer_.setPeriodicInterval(wakeUpTime * 1000);
+		wake_up_timer_.start(callback);
+	}
+
 #ifdef RUN_BENCHMARK
 	auto lastBenchmark = std::chrono::system_clock::now();
 #endif
@@ -151,6 +161,9 @@ void Burst::Miner::run()
 		std::this_thread::sleep_for(std::chrono::seconds(MinerConfig::getConfig().getMiningInfoInterval()));
 	}
 
+	if (wakeUpTime > 0)
+		wake_up_timer_.stop();
+
 	running_ = false;
 }
 
@@ -163,6 +176,54 @@ void Burst::Miner::stop()
 	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
 	
 	running_ = false;
+}
+
+void Burst::Miner::addPlotReadNotifications(bool wakeUpCall)
+{
+	const auto initPlotReadNotification = [this, wakeUpCall](PlotDir& plotDir)
+	{
+		auto notification = new PlotReadNotification;
+		notification->dir = plotDir.getPath();
+		notification->gensig = getGensig();
+		notification->scoopNum = getScoopNum();
+		notification->blockheight = getBlockheight();
+		notification->baseTarget = getBaseTarget();
+		notification->type = plotDir.getType();
+		notification->wakeUpCall = wakeUpCall;
+		return notification;
+	};
+
+	const auto addParallel = [this, &initPlotReadNotification](PlotDir& plotDir, std::shared_ptr<PlotFile> plotFile)
+	{
+		auto plotRead = initPlotReadNotification(plotDir);
+		plotRead->plotList.emplace_back(plotFile);
+		plotReadQueue_.enqueueNotification(plotRead);
+	};
+
+	MinerConfig::getConfig().forPlotDirs([this, &addParallel, &initPlotReadNotification](PlotDir& plotDir)
+	{
+		if (plotDir.getType() == PlotDir::Type::Parallel)
+		{
+			for (const auto& plotFile : plotDir.getPlotfiles())
+				addParallel(plotDir, plotFile);
+
+			for (const auto& relatedPlotDir : plotDir.getRelatedDirs())
+				for (const auto& plotFile : relatedPlotDir->getPlotfiles())
+					addParallel(plotDir, plotFile);
+		}
+		else
+		{
+			auto plotRead = initPlotReadNotification(plotDir);
+			plotRead->plotList = plotDir.getPlotfiles();
+
+			for (const auto& relatedPlotDir : plotDir.getRelatedDirs())
+				plotRead->relatedPlotLists.emplace_back(relatedPlotDir->getPath(), relatedPlotDir->getPlotfiles());
+
+			plotReadQueue_.enqueueNotification(plotRead);
+		}
+
+		return true;
+	});
 }
 
 void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget)
@@ -219,49 +280,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 	PlotSizes::nextRound();
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
 
-	const auto initPlotReadNotification = [this](PlotDir& plotDir)
-	{
-		auto notification = new PlotReadNotification;
-		notification->dir = plotDir.getPath();
-		notification->gensig = getGensig();
-		notification->scoopNum = getScoopNum();
-		notification->blockheight = getBlockheight();
-		notification->baseTarget = getBaseTarget();
-		notification->type = plotDir.getType();
-		return notification;
-	};
-
-	const auto addParallel = [this, &initPlotReadNotification](PlotDir& plotDir, std::shared_ptr<PlotFile> plotFile)
-	{
-		auto plotRead = initPlotReadNotification(plotDir);
-		plotRead->plotList.emplace_back(plotFile);
-		plotReadQueue_.enqueueNotification(plotRead);
-	};
-
-	MinerConfig::getConfig().forPlotDirs([this, &addParallel, &initPlotReadNotification](PlotDir& plotDir)
-	{
-		if (plotDir.getType() == PlotDir::Type::Parallel)
-		{
-			for (const auto& plotFile : plotDir.getPlotfiles())
-				addParallel(plotDir, plotFile);
-
-			for (const auto& relatedPlotDir : plotDir.getRelatedDirs())
-				for (const auto& plotFile : relatedPlotDir->getPlotfiles())
-					addParallel(plotDir, plotFile);
-		}
-		else
-		{
-			auto plotRead = initPlotReadNotification(plotDir);
-			plotRead->plotList = plotDir.getPlotfiles();
-
-			for (const auto& relatedPlotDir : plotDir.getRelatedDirs())
-				plotRead->relatedPlotLists.emplace_back(relatedPlotDir->getPath(), relatedPlotDir->getPlotfiles());
-
-			plotReadQueue_.enqueueNotification(plotRead);
-		}
-
-		return true;
-	});
+	addPlotReadNotifications();
 
 	TAKE_PROBE("Miner.StartNewBlock")
 }
@@ -497,6 +516,11 @@ namespace Burst
 void Burst::Miner::progressChanged(float &progress)
 {
 	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight());
+}
+
+void Burst::Miner::on_wake_up(Poco::Timer& timer)
+{
+	addPlotReadNotifications(true);
 }
 
 Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data)
