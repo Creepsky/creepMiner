@@ -29,6 +29,7 @@
 #include <Poco/JSON/Object.h>
 #include <functional>
 #include "Declarations.hpp"
+#include <chrono>
 
 namespace Poco
 {
@@ -170,6 +171,7 @@ namespace Burst
 		std::string getServerPass() const;
 		size_t getWalletRequestTries() const;
 		size_t getWalletRequestRetryWaitTime() const;
+		size_t getWakeUpTime() const;
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(uint64_t bufferSize);
@@ -253,6 +255,7 @@ namespace Burst
 		bool logUseColors_ = true;
 		bool steadyProgressBar_ = true;
 		bool fancyProgressBar_ = true;
+		size_t wakeUpTime_ = 0;
 		mutable Poco::Mutex mutex_;
 	};
 }
