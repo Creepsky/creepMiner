@@ -12,11 +12,28 @@ bool Burst::Gpu_Cuda_Impl::allocateMemory(void** memory, MemoryType type, size_t
 	return true;
 }
 
-bool Burst::Gpu_Cuda_Impl::verify(const GensigData* gensig, ScoopData* scoops, CalculatedDeadline* deadline,
+bool Burst::Gpu_Cuda_Impl::verify(const GensigData* gensig, ScoopData* gpuScoops, std::vector<ScoopData>& cpuScoops,
 	size_t nonces, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, std::pair<Poco::UInt64, Poco::UInt64>& bestDeadline)
 {
 	std::string errorString;
-	check(cuda_calculate_shabal_host_preallocated(scoops, nonces, gensig, deadline, nonceStart, baseTarget, errorString));
+	
+	check(cuda_calculate_shabal_host_preallocated(gpuScoops, nonces, gensig, nonceStart, baseTarget, errorString));
+	
+	copyMemory(gpuScoops, cpuScoops.data(), MemoryType::Buffer, nonces, MemoryCopyDirection::ToHost);
+
+	for (auto i = 0u; i < nonces; ++i)
+	{
+		auto test = cpuScoops[i];
+		const auto currentDeadline_ptr = reinterpret_cast<Poco::UInt64*>(&test);
+		const auto currentDeadline = *currentDeadline_ptr;
+
+		if (i == 0 || bestDeadline.second > currentDeadline && currentDeadline > 0)
+		{
+			bestDeadline.first = nonceStart + i;
+			bestDeadline.second = currentDeadline;
+		}
+	}
+
 	return true;
 }
 

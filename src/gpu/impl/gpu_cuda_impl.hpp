@@ -11,7 +11,7 @@ namespace Burst
 	{
 		static bool allocateMemory(void** memory, MemoryType type, size_t size);
 		static bool copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction);
-		static bool verify(const GensigData* gensig, ScoopData* scoops, CalculatedDeadline* deadline, size_t nonces,
+		static bool verify(const GensigData* gensig, ScoopData* gpuScoops, std::vector<ScoopData>& cpuScoops, size_t nonces,
 			Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, std::pair<Poco::UInt64, Poco::UInt64>& bestDeadline);
 		static bool freeMemory(void* memory);
 		static bool getError(std::string& errorString);
