@@ -132,6 +132,10 @@ void Burst::PlotReader::runTask()
 			{
 				if (plotReadNotification->wakeUpCall)
 				{
+					// only wake up the HDD when there are no other read jobs
+					if (!plotReadQueue_->empty())
+						continue;
+
 					// its just a wake up call for the HDD, simply read the first byte
 					char dummyByte;
 					//
