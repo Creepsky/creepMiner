@@ -580,6 +580,9 @@ Poco::UInt64 Burst::MinerData::getAverageDeadline() const
 		}
 	}
 
+	if (size == 0)
+		return 0;
+
 	return avg / size;
 }
 
