@@ -3,6 +3,7 @@ creepMiner
 
 [![Join the chat at https://gitter.im/creepminer/lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/creepminer/lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt)
+[![GPLv3](https://img.shields.io/badge/license-GPLv3-red.svg)](LICENSE.md)
 
 ## What is the creepMiner
 
@@ -28,7 +29,10 @@ It is designed multi-threaded to reach the best performance.
 ## Instructions
 
 - [Quickstart](https://github.com/Creepsky/creepMiner/wiki/Quickstart)
-- [Compilation & Installation](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation)
+- Compilation & Installation
+    - [Windows](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Windows)
+    - [Linux](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Linux)
+    - [MacOS](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-macOS)
 - [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Forwarding](https://github.com/Creepsky/creepMiner/wiki/Forwarding)
 - [Solo mining](https://github.com/Creepsky/creepMiner/wiki/Solo-mining)
