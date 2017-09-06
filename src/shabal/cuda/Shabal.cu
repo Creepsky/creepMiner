@@ -34,8 +34,9 @@
 
 #include "shabal/sphlib/sph_shabal.h"
 #include "Shabal.hpp"
-#include <iostream>
 #include <string>
+#include <thrust/device_ptr.h>
+#include <thrust/extrema.h>
 
 using namespace Burst;
 
@@ -586,7 +587,8 @@ void cuda_shabal_close(void *cc, unsigned ub, unsigned n, void *dst)
 }
 
 __global__
-void cuda_calculate_shabal(Burst::ScoopData* buffer, Poco::UInt64 len, const GensigData* gensig, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
+void cuda_calculate_shabal(Burst::ScoopData* buffer, Poco::UInt64* deadlines, Poco::UInt64 len,
+	const GensigData* gensig, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
 {
 	int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -612,8 +614,9 @@ void cuda_calculate_shabal(Burst::ScoopData* buffer, Poco::UInt64 len, const Gen
 	Poco::UInt64 targetResult = 0;
 	memcpy(&targetResult, &target[0], sizeof(Poco::UInt64));
 
-	auto buffer_deadline = (Poco::UInt64*)(buffer + tid);
-	*buffer_deadline = targetResult / baseTarget;
+	//auto buffer_deadline = (Poco::UInt64*)(buffer + tid);
+	//*buffer_deadline = targetResult / baseTarget;
+	deadlines[tid] = targetResult / baseTarget;
 }
 
 void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize)
@@ -678,7 +681,7 @@ Poco::UInt64 cuda_calc_memory_size(MemoryType memType, Poco::UInt64 size)
 	return size;
 }
 
-bool cuda_calculate_shabal_host_preallocated(ScoopData* buffer, Poco::UInt64 bufferSize, const GensigData* gensig,
+bool cuda_calculate_shabal_host_preallocated(ScoopData* buffer, Poco::UInt64* deadlines, Poco::UInt64 bufferSize, const GensigData* gensig,
 	Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, std::string& errorString)
 {
 	auto blockSize = 0;
@@ -688,14 +691,26 @@ bool cuda_calculate_shabal_host_preallocated(ScoopData* buffer, Poco::UInt64 buf
 
 	int gridSize = (bufferSize + blockSize - 1) / blockSize;
 
-	cuda_calculate_shabal<<<gridSize, blockSize>>>(buffer, bufferSize, gensig, nonceStart, baseTarget);
+	cuda_calculate_shabal<<<gridSize, blockSize>>>(buffer, deadlines, bufferSize, gensig, nonceStart, baseTarget);
 	
+	return !cuda_get_error(errorString);
+}
+
+bool cuda_reduce_best_deadline(Poco::UInt64* deadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& index, std::string& errorString)
+{
+	thrust::device_ptr<Poco::UInt64> deadlinesPtr(deadlines);
+	auto pos = thrust::min_element(deadlinesPtr, deadlinesPtr + size);
+	index = thrust::distance(deadlinesPtr, pos);
+
+	if (!cuda_copy_memory(MemoryType::Bytes, sizeof(Poco::UInt64), &deadlines[index], &minDeadline, MemoryCopyDirection::ToHost))
+		return false;
+
 	return !cuda_get_error(errorString);
 }
 
 bool cuda_get_error(std::string& errorString)
 {
-	auto err = cudaPeekAtLastError();
+	const auto err = cudaPeekAtLastError();
 
 	if (err != cudaSuccess)
 	{

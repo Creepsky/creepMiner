@@ -1,3 +1,24 @@
+// ==========================================================================
+// 
+// creepMiner - Burstcoin cryptocurrency CPU and GPU miner
+// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+// 
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301  USA
+// 
+// ==========================================================================
+
 #pragma once
 
 #if MINING_CUDA
@@ -77,8 +98,8 @@ namespace Burst
 		/**
 		 * \brief Searches for the best deadline in a memory block.
 		 * \tparam Args Variadic template types.
-		 * \param args The arguments that are needed the verify the deadlines.
-		 * \return A pair<nonce, deadline> that is the best deadline found.
+		 * \param args The arguments that are needed to verify the deadlines.
+		 * \return true, when there was an error, false otherwise.
 		 */
 		template <typename ...Args>
 		static bool verify(Args&&... args)
@@ -87,11 +108,23 @@ namespace Burst
 		}
 
 		/**
+		 * \brief Searches for the best deadline in an array of deadlines.
+		 * \tparam Args Variadic template types. 
+		 * \param args The arguments that are needed to search for the best deadline.
+		 * \return true, when there was no error, false otherwise.
+		 */
+		template <typename ...Args>
+		static bool getMinDeadline(Args&&... args)
+		{
+			return TImpl::getMinDeadline(std::forward<Args&&>(args)...);
+		}
+
+		/**
 		 * \brief Runs an algorithm to search for the best deadline in a memory block.
 		 * \tparam TAlgorithm The type of the algorithm that is used.
 		 * \tparam Args Variadic template types.
 		 * \param args The arguments that are needed for the search of deadlines.
-		 * \return 
+		 * \return true, when there was no error, false otherwise.
 		 */
 		template <typename TAlgorithm, typename ...Args>
 		static bool run(Args&&... args)
