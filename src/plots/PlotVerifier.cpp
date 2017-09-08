@@ -39,6 +39,115 @@ Burst::PlotVerifier::PlotVerifier(Miner &miner, Poco::NotificationQueue& queue, 
 	: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}, progress_{progress}
 {}
 
+template <typename TShabal, typename TUpdateFunction, typename TCloseFunction>
+auto verifyHelper(TShabal&& shabal, std::vector<Burst::ScoopData>& buffer, Poco::UInt64 nonceRead,
+	Poco::UInt64 nonceStart, size_t offset,
+	const Burst::GensigData& gensig, Poco::UInt64 baseTarget,
+	TUpdateFunction& updateFunction, TCloseFunction& closeFunction)
+{
+	constexpr auto HashSize = TShabal::HashSize;
+
+	std::vector<Burst::HashData> targets(HashSize);
+	std::vector<Poco::UInt64> results(HashSize);
+
+	// these are the buffer overflow prove arrays 
+	// instead of directly working with the raw arrays  
+	// we create an additional level of indirection 
+	std::vector<const unsigned char*> scoopPtr(HashSize);
+	std::vector<unsigned char*> targetPtr(HashSize);
+
+	// we init the buffer overflow guardians
+	for (auto i = 0u; i < HashSize; ++i)
+	{
+		const auto overflow = i + offset >= buffer.size();
+
+		// if the index would cause a buffer overflow, we init it 
+		// with a nullptr, otherwise with the value
+		scoopPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(buffer.data() + offset + i);
+		targetPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(targets[i].data());
+	}
+
+	// hash the gensig according to the cpu instruction level
+	shabal.update(gensig.data(), Burst::Settings::HashSize);
+
+	// hash the scoop according to the cpu instruction level
+	updateFunction(shabal, scoopPtr);
+
+	// digest the hash
+	closeFunction(shabal, targetPtr);
+
+	for (auto i = 0u; i < HashSize; ++i)
+		memcpy(&results[i], targets[i].data(), sizeof(Poco::UInt64));
+
+	// for every calculated deadline we create a pair of {nonce->deadline}
+	std::vector<Burst::PlotVerifier::DeadlineTuple> pairs(HashSize);
+
+	for (auto i = 0u; i < HashSize; ++i)
+		// only set the pair if it was calculated
+		if (i + offset < buffer.size())
+			pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
+
+	return pairs;
+}
+
+template <typename TShabal>
+void updateFunction8(TShabal& shabal, std::vector<const unsigned char*>& scoopPtr)
+{
+	shabal.update(scoopPtr[0], scoopPtr[1], scoopPtr[2], scoopPtr[3],
+		scoopPtr[4], scoopPtr[5], scoopPtr[6], scoopPtr[7], Burst::Settings::ScoopSize);
+}
+
+template <typename TShabal>
+void closeFunction8(TShabal& shabal, std::vector<unsigned char*>& targetPtr)
+{
+	shabal.close(targetPtr[0], targetPtr[1], targetPtr[2], targetPtr[3],
+		targetPtr[4], targetPtr[5], targetPtr[6], targetPtr[7]);
+}
+
+template <typename TShabal>
+void updateFunction4(TShabal& shabal, std::vector<const unsigned char*>& scoopPtr)
+{
+	shabal.update(scoopPtr[0], scoopPtr[1], scoopPtr[2], scoopPtr[3], Burst::Settings::ScoopSize);
+}
+
+template <typename TShabal>
+void closeFunction4(TShabal& shabal, std::vector<unsigned char*>& targetPtr)
+{
+	shabal.close(targetPtr[0], targetPtr[1], targetPtr[2], targetPtr[3]);
+}
+
+template <typename TShabal>
+void updateFunction1(TShabal& shabal, std::vector<const unsigned char*>& scoopPtr)
+{
+	shabal.update(scoopPtr[0], Burst::Settings::ScoopSize);
+}
+
+template <typename TShabal>
+void closeFunction1(TShabal& shabal, std::vector<unsigned char*>& targetPtr)
+{
+	shabal.close(targetPtr[0]);
+}
+
+auto Burst::PlotVerifier::verify(const std::string& cpuInstructionSet,
+	std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
+	const GensigData& gensig, Poco::UInt64 baseTarget)
+{
+	if (cpuInstructionSet == "SSE4")
+		return verifyHelper(Shabal256_SSE4{}, buffer, nonceRead, nonceStart, offset, gensig, baseTarget,
+							updateFunction4<Shabal256_SSE4>, closeFunction4<Shabal256_SSE4>);
+
+	if (cpuInstructionSet == "AVX")
+		return verifyHelper(Shabal256_AVX{}, buffer, nonceRead, nonceStart, offset, gensig, baseTarget,
+							updateFunction4<Shabal256_AVX>, closeFunction4<Shabal256_AVX>);
+
+	if (cpuInstructionSet == "AVX2")
+		return verifyHelper(Shabal256_AVX2{}, buffer, nonceRead, nonceStart, offset, gensig, baseTarget,
+							updateFunction8<Shabal256_AVX2>, closeFunction8<Shabal256_AVX2>);
+
+	return verifyHelper(Shabal256_SSE2{}, buffer, nonceRead, nonceStart, offset, gensig, baseTarget,
+						updateFunction1<Shabal256_SSE2>, closeFunction1<Shabal256_SSE2>);
+}
+
 void Burst::PlotVerifier::runTask()
 {
 #if defined MINING_CUDA
@@ -53,6 +162,25 @@ void Burst::PlotVerifier::runTask()
 	//if (!alloc_memory_cuda(MemoryType::Gensig, 0, reinterpret_cast<void**>(&cudaGensig)))
 		//log_error(MinerLogger::plotVerifier, "Could not allocate memmory for gensig on CUDA GPU!");
 #endif
+	
+	const auto HashSize = []()
+	{
+		if (MinerConfig::getConfig().getCpuInstructionSet() == "SSE2")
+			return Shabal256_SSE2::HashSize;
+		
+		if (MinerConfig::getConfig().getCpuInstructionSet() == "SSE4")
+			return Shabal256_SSE4::HashSize;
+		
+		if (MinerConfig::getConfig().getCpuInstructionSet() == "AVX")
+			return Shabal256_AVX::HashSize;
+
+		if (MinerConfig::getConfig().getCpuInstructionSet() == "AVX2")
+			return Shabal256_AVX2::HashSize;
+
+		return size_t();
+	}();
+
+	auto cpuInstructionSet = MinerConfig::getConfig().getCpuInstructionSet();
 
 	while (!isCancelled())
 	{
@@ -83,9 +211,10 @@ void Burst::PlotVerifier::runTask()
 			i < verifyNotification->buffer.size() &&
 			!isCancelled() &&
 			verifyNotification->block == miner_->getBlockheight();
-			i += Shabal256::HashSize)
+			i += HashSize)
 		{
-			auto result = verify(verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
+			auto result = verify(cpuInstructionSet,
+				verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
 				verifyNotification->gensig,
 				verifyNotification->baseTarget);
 
@@ -119,101 +248,4 @@ void Burst::PlotVerifier::runTask()
 	}
 
 	log_debug(MinerLogger::plotVerifier, "Verifier stopped");
-}
-
-template <size_t size, typename ...T>
-void close(Burst::Shabal256& hash, T... args)
-{
-	hash.close(std::forward<T>(args)...);
-}
-
-std::array<Burst::PlotVerifier::DeadlineTuple, Burst::Shabal256::HashSize> Burst::PlotVerifier::verify(
-	std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
-	Poco::UInt64 nonceStart, size_t offset,
-	const GensigData& gensig, Poco::UInt64 baseTarget)
-{
-	HashData targets[Shabal256::HashSize];
-	Poco::UInt64 results[Shabal256::HashSize];
-	Shabal256 hash;
-
-	// these are the buffer overflow prove arrays
-	// instead of directly working with the raw arrays 
-	// we create an additional level of indirection
-	const unsigned char* gensigPtr[Shabal256::HashSize];
-	const ScoopData* scoopPtr[Shabal256::HashSize];
-	unsigned char* targetPtr[Shabal256::HashSize];
-
-	// we init the buffer overflow guardians
-	for (auto i = 0u; i < Shabal256::HashSize; ++i)
-	{
-		auto overflow = i + offset >= buffer.size();
-
-		// if the index would cause a buffer overflow, we init it
-		// with a nullptr, otherwise with the value
-		gensigPtr[i] = overflow ? nullptr : gensig.data();
-		scoopPtr[i] = overflow ? nullptr : buffer.data() + offset + i;
-		targetPtr[i] = overflow ? nullptr : targets[i].data();
-	}
-
-	// these constants are workarounds for some gcc versions
-	constexpr auto hashSize = Settings::HashSize;
-	constexpr auto scoopSize = Settings::ScoopSize;
-
-	// hash the gensig according to the cpu instruction level
-	hash.update(gensigPtr[0],
-#if USE_AVX || USE_AVX2 || USE_SSE4
-				gensigPtr[1],
-				gensigPtr[2],
-				gensigPtr[3],
-#endif
-#if USE_AVX2
-				gensigPtr[4],
-				gensigPtr[5],
-				gensigPtr[6],
-				gensigPtr[7],
-#endif
-		hashSize);
-
-	// hash the scoop according to the cpu instruction level
-	hash.update(scoopPtr[0],
-#if USE_AVX || USE_AVX2 || USE_SSE4
-				scoopPtr[1],
-				scoopPtr[2],
-				scoopPtr[3],
-#endif
-#if USE_AVX2
-				scoopPtr[4],
-				scoopPtr[5],
-				scoopPtr[6],
-				scoopPtr[7],
-#endif
-	            scoopSize);
-
-	// digest the hash
-	hash.close(targetPtr[0]
-#if USE_AVX || USE_AVX2 || USE_SSE4
-			   ,targetPtr[1],
-				targetPtr[2],
-				targetPtr[3]
-#endif
-#if USE_AVX2
-	           ,targetPtr[4],
-				targetPtr[5],
-				targetPtr[6],
-				targetPtr[7]
-#endif
-	);
-
-	for (auto i = 0u; i < Shabal256::HashSize; ++i)
-		memcpy(&results[i], targets[i].data(), sizeof(Poco::UInt64));
-	
-	// for every calculated deadline we create a pair of {nonce->deadline}
-	std::array<DeadlineTuple, Shabal256::HashSize> pairs;
-
-	for (auto i = 0u; i < Shabal256::HashSize; ++i)
-		// only set the pair if it was calculated
-		if (i + offset < buffer.size())
-			pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
-
-	return pairs;
 }

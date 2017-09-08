@@ -2,7 +2,7 @@
 # Project and CMake settings
 ##################################################################
 cmake_minimum_required(VERSION 3.0.2)
-project(creepMiner VERSION 1.6.0)
+project(creepMiner VERSION 1.6.4)
 set(CMAKE_CXX_STANDARD 14)
 
 ##################################################################
@@ -25,40 +25,6 @@ option(RUN_BENCHMARK "If yes, a benchmark will be run" OFF)
 
 if (RUN_BENCHMARK)
 	add_definitions(-DRUN_BENCHMARK)
-endif ()
-
-##################################################################
-# CPU instruction set
-##################################################################
-set(CPU_INSTRUCTION_SET "NONE" CACHE STRING "Additional CPU instruction set")
-set_property(CACHE CPU_INSTRUCTION_SET PROPERTY STRINGS NONE SSE2 SSE4 AVX AVX2)
-
-if (CPU_INSTRUCTION_SET STREQUAL "AVX2")
-	add_definitions(-DUSE_AVX2)
-	if (MSVC)
-		add_definitions(/arch:AVX2)
-	else ()
-		add_definitions(-mavx2)
-	endif ()
-elseif (CPU_INSTRUCTION_SET STREQUAL "AVX")
-	add_definitions(-DUSE_AVX)
-	if (MSVC)
-		add_definitions(/arch:AVX)
-	else ()
-		add_definitions(-mavx)
-	endif ()
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
-	if (MSVC)
-		add_definitions(/arch:SSE2)
-	else ()
-		add_definitions(-msse2)
-	endif ()
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
-	add_definitions(-DUSE_SSE4)
-	if (MSVC)
-	else ()
-		add_definitions(-msse4)
-	endif ()
 endif ()
 
 ##################################################################
@@ -224,6 +190,10 @@ set(SOURCE_FILES
 	src/plots/PlotReader.cpp
 	src/plots/PlotSizes.cpp
 	src/plots/PlotVerifier.cpp
+	src/shabal/mshabal/mshabal_avx1.cpp
+	src/shabal/mshabal/mshabal_avx2.cpp
+	src/shabal/mshabal/mshabal_sse4.cpp
+	src/shabal/MinerShabal.cpp
 	src/wallet/Account.cpp
 	src/wallet/Wallet.cpp
 	src/shabal/sphlib/sph_shabal.cpp
@@ -233,6 +203,15 @@ set(SOURCE_FILES
 	src/main.cpp
 	src/MinerUtil.cpp
 	src/logging/Performance.cpp)
+
+if (UNIX OR APPLE)
+	set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS -mavx)
+	set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS -mavx2)
+	set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse4)
+elseif (MSVC)
+	set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS /arch:AVX)
+	set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS /arch:AVX2)
+endif ()
 
 ##################################################################
 # GPU acceleration source files
@@ -249,23 +228,6 @@ if (GPU_ACCELERATION STREQUAL "CUDA")
 		${SOURCE_FILES}
 		src/gpu/impl/gpu_cuda_impl.cpp
 		src/shabal/cuda/Shabal.cu)
-endif ()
-
-##################################################################
-# CPU instruction set source files
-##################################################################
-if (CPU_INSTRUCTION_SET STREQUAL "AVX")
-	set(SOURCE_FILES
-		${SOURCE_FILES}
-		src/shabal/mshabal/mshabal_avx1.cpp)
-elseif (CPU_INSTRUCTION_SET STREQUAL "AVX2")
-	set(SOURCE_FILES
-		${SOURCE_FILES}
-		src/shabal/mshabal/mshabal_avx2.cpp)
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
-	set(SOURCE_FILES
-		${SOURCE_FILES}
-		src/shabal/mshabal/mshabal_sse4.cpp)
 endif ()
 
 ##################################################################
@@ -319,16 +281,6 @@ endif ()
 ##################################################################
 # Naming
 ##################################################################
-if (CPU_INSTRUCTION_SET STREQUAL "AVX2")
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-avx2)
-elseif (CPU_INSTRUCTION_SET STREQUAL "AVX")
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-avx)
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse2)
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse4)
-endif ()
-
 if (RUN_BENCHMARK)
 	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-b)
 endif ()

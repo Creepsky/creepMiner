@@ -90,6 +90,7 @@ void Burst::MinerConfig::printConsole() const
 	printConsolePlots();
 
 	log_system(MinerLogger::config, "Get mining info interval : %z seconds", MinerConfig::getConfig().getMiningInfoInterval());
+	log_system(MinerLogger::config, "CPU instruction set : %s", MinerConfig::getConfig().getCpuInstructionSet());
 }
 
 void Burst::MinerConfig::printConsolePlots() const
@@ -374,7 +375,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		
 		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
 		wakeUpTime_ = getOrAdd(miningObj, "wakeUpTime", 0);
-
+		
+		cpuInstructionSet_ = getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2"));
+		
 		// urls
 		{
 			Poco::JSON::Object::Ptr urlsObj;
@@ -1033,6 +1036,11 @@ size_t Burst::MinerConfig::getWakeUpTime() const
 	return wakeUpTime_;
 }
 
+const std::string& Burst::MinerConfig::getCpuInstructionSet() const
+{
+	return cpuInstructionSet_;
+}
+
 void Burst::MinerConfig::printTargetDeadline() const
 {
 	if (getTargetDeadline() > 0)
@@ -1137,6 +1145,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		mining.set("bufferChunkCount", getBufferChunkCount());
 
 		mining.set("wakeUpTime", getWakeUpTime());
+
+		mining.set("cpuInstructionSet", getCpuInstructionSet());
 
 		// passphrase
 		{
