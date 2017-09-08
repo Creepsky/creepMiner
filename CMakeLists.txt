@@ -42,26 +42,19 @@ endif ()
 ##################################################################
 # GPU acceleration
 ##################################################################
-set(GPU_ACCELERATION "NONE" CACHE STRING "GPU acceleration")
-set_property(CACHE GPU_ACCELERATION PROPERTY STRINGS NONE CUDA) 
-
-if (GPU_ACCELERATION STREQUAL "CUDA")
-	find_package(CUDA REQUIRED)
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-cuda)
-	set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
-	set(CUDA_NVCC_FLAGS
-		${CUDA_NVCC_FLAGS}
-		-std=c++11
-		-arch=${GPU_CUDA_ARCH}
-		-gencode=arch=compute_30,code=sm_30
-		-gencode=arch=compute_50,code=sm_50
-		-gencode=arch=compute_52,code=sm_52
-		-gencode=arch=compute_52,code=compute_52
-		-gencode=arch=compute_60,code=sm_60
-		-gencode=arch=compute_61,code=sm_61
-		-gencode=arch=compute_62,code=sm_62)
-	add_definitions(-DMINING_CUDA)
-endif ()
+find_package(CUDA REQUIRED)
+set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
+set(CUDA_NVCC_FLAGS
+	${CUDA_NVCC_FLAGS}
+	-arch=${GPU_CUDA_ARCH}
+	-gencode=arch=compute_30,code=sm_30
+	-gencode=arch=compute_50,code=sm_50
+	-gencode=arch=compute_52,code=sm_52
+	-gencode=arch=compute_52,code=compute_52
+	-gencode=arch=compute_60,code=sm_60
+	-gencode=arch=compute_61,code=sm_61
+	-gencode=arch=compute_62,code=sm_62
+	-gencode=arch=compute_70,code=sm_70)
 
 ##################################################################
 # Additional options
@@ -129,6 +122,11 @@ endif ()
 # Header files
 ##################################################################
 set(HEADER_FILES
+	src/gpu/algorithm/gpu_algorithm_atomic.hpp
+	src/gpu/impl/gpu_cuda_impl.hpp
+	src/gpu/gpu_algorithm_shell.hpp
+	src/gpu/gpu_declarations.hpp
+	src/gpu/gpu_shell.hpp
 	src/logging/channels/ColoredPriorityConsoleChannel.hpp
 	src/logging/channels/MinerDataChannel.hpp
 	src/logging/Console.hpp
@@ -170,6 +168,7 @@ set(HEADER_FILES
 # Source files
 ##################################################################
 set(SOURCE_FILES
+	src/gpu/impl/gpu_cuda_impl.cpp
 	src/logging/channels/ColoredPriorityConsoleChannel.cpp
 	src/logging/channels/MinerDataChannel.cpp
 	src/logging/Console.cpp
@@ -190,6 +189,7 @@ set(SOURCE_FILES
 	src/plots/PlotReader.cpp
 	src/plots/PlotSizes.cpp
 	src/plots/PlotVerifier.cpp
+	src/shabal/cuda/Shabal.cu
 	src/shabal/mshabal/mshabal_avx1.cpp
 	src/shabal/mshabal/mshabal_avx2.cpp
 	src/shabal/mshabal/mshabal_sse4.cpp
@@ -214,30 +214,9 @@ elseif (MSVC)
 endif ()
 
 ##################################################################
-# GPU acceleration source files
-##################################################################
-if (GPU_ACCELERATION STREQUAL "CUDA")
-	set(HEADER_FILES
-		${HEADER_FILES}
-		src/gpu/algorithm/gpu_algorithm_atomic.hpp
-		src/gpu/impl/gpu_cuda_impl.hpp
-		src/gpu/gpu_algorithm_shell.hpp
-		src/gpu/gpu_declarations.hpp
-		src/gpu/gpu_shell.hpp)
-	set(SOURCE_FILES
-		${SOURCE_FILES}
-		src/gpu/impl/gpu_cuda_impl.cpp
-		src/shabal/cuda/Shabal.cu)
-endif ()
-
-##################################################################
 # Executable
 ##################################################################
-if (GPU_ACCELERATION STREQUAL "CUDA")
-	cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
-else ()
-	add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
-endif ()
+cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
 
 ##################################################################
 # Libraries
@@ -276,22 +255,6 @@ elseif (MSVC)
 
 	configure_file(${OPENSSL_ROOT}/bin/${lib-crypto} ${CMAKE_CURRENT_BINARY_DIR}/bin/${lib-crypto} COPYONLY)
 	configure_file(${OPENSSL_ROOT}/bin/${lib-ssl} ${CMAKE_CURRENT_BINARY_DIR}/bin/${lib-ssl} COPYONLY)
-endif ()
-
-##################################################################
-# Naming
-##################################################################
-if (RUN_BENCHMARK)
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-b)
-endif ()
-
-set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX ${CREEPMINER_POSTFIX}-d)
-
-if (NOT ${CREEPMINER_POSTFIX} STREQUAL "")
-	set_target_properties(creepMiner PROPERTIES
-		RELEASE_POSTFIX ${CREEPMINER_POSTFIX}
-		MINSIZEREL_POSTFIX ${CREEPMINER_POSTFIX}
-		RELWITHDEBINFO_POSTFIX ${CREEPMINER_POSTFIX})
 endif ()
 
 ##################################################################
