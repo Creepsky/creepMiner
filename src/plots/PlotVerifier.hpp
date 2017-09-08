@@ -59,9 +59,12 @@ namespace Burst
 
 		PlotVerifier(Miner &miner, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress);
 		void runTask() override;
-		
-		static std::array<DeadlineTuple, Shabal256::HashSize> verify(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
-		                       const GensigData& gensig, Poco::UInt64 baseTarget);
+
+		static auto verify(const std::string& cpuInstructionSet,
+						   std::vector<ScoopData>& buffer,
+						   Poco::UInt64 nonceRead,
+						   Poco::UInt64 nonceStart, size_t offset,
+						   const GensigData& gensig, Poco::UInt64 baseTarget);
 
 	private:
 		Miner* miner_;

@@ -44,9 +44,9 @@ Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, s
 		genSig_[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 16));
 	}
 
-	Shabal256 hash;
+	Shabal256_SSE2 hash;
 	GensigData newGenSig;
-
+	
 	hash.update(&genSig_[0], genSig_.size());
 	hash.update(blockHeight);
 	hash.close(&newGenSig[0]);
