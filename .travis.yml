@@ -10,7 +10,7 @@ cache:
   directories:
   - $TRAVIS_BUILD_DIR/poco-1.7.6-all
 before_install:
-- if [ "$(ls -A poco-1.7.6-all)" ]; then cd poco-1.7.6-all && sudo ldconfig && sudo make install; else ./install-poco.sh; fi
+- if [ "$(ls -A poco-1.7.8p3-all)" ]; then cd poco-1.7.8p3-all && sudo ldconfig && sudo make install; else ./install-poco.sh; fi
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 addons:
@@ -21,5 +21,5 @@ addons:
     - g++-5
 script: 
 - cd $TRAVIS_BUILD_DIR/
-- cmake CMakeLists.txt -DCPU_INSTRUCTION_SET=AVX -DCMAKE_BUILD_TYPE=Release
+- cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release
 - make
