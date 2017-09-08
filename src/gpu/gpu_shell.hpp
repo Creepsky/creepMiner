@@ -1,10 +1,7 @@
 #pragma once
 
-#if MINING_CUDA
 #include "impl/gpu_cuda_impl.hpp"
-#elif MINING_OPENCL
-#include "impl/gpu_opencl_impl.hpp"
-#endif
+//#include "impl/gpu_opencl_impl.hpp"
 
 namespace Burst
 {
@@ -112,9 +109,6 @@ namespace Burst
 		}
 	};
 
-#if MINING_CUDA
-	using Gpu = Gpu_Shell<Gpu_Cuda_Impl>;
-#elif MINING_OPENCL
-	using Gpu = Gpu_Shell<Gpu_Opencl_Impl>;
-#endif
+	using GpuCuda = Gpu_Shell<Gpu_Cuda_Impl>;
+	//using GpuOpenCL = Gpu_Shell<Gpu_Opencl_Impl>;
 }

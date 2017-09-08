@@ -28,12 +28,9 @@
 #include "Declarations.hpp"
 #include "logging/Performance.hpp"
 #include <Poco/Nullable.h>
-
-#if MINING_CUDA || MINING_OPENCL
 #include "gpu/gpu_declarations.hpp"
-#include "gpu/gpu_shell.hpp"
 #include "gpu/algorithm/gpu_algorithm_atomic.hpp"
-#endif
+#include "gpu/gpu_shell.hpp"
 
 Burst::PlotVerifier::PlotVerifier(Miner &miner, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress)
 	: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}, progress_{progress}
@@ -150,18 +147,11 @@ auto Burst::PlotVerifier::verify(const std::string& cpuInstructionSet,
 
 void Burst::PlotVerifier::runTask()
 {
-#if defined MINING_CUDA
-	std::vector<CalculatedDeadline> calculatedDeadlines;
-	ScoopData* cudaBuffer = nullptr;
-	GensigData* cudaGensig = nullptr;
-	CalculatedDeadline* cudaDeadlines = nullptr;
-	auto blockSize = 0;
-	auto gridSize = 0;
-	std::string errorString;
+	const auto processorType = MinerConfig::getConfig().getProcessorType();
+	const auto cpuInstructionSet = MinerConfig::getConfig().getCpuInstructionSet();
 
 	//if (!alloc_memory_cuda(MemoryType::Gensig, 0, reinterpret_cast<void**>(&cudaGensig)))
 		//log_error(MinerLogger::plotVerifier, "Could not allocate memmory for gensig on CUDA GPU!");
-#endif
 	
 	const auto HashSize = []()
 	{
@@ -180,8 +170,6 @@ void Burst::PlotVerifier::runTask()
 		return size_t();
 	}();
 
-	auto cpuInstructionSet = MinerConfig::getConfig().getCpuInstructionSet();
-
 	while (!isCancelled())
 	{
 		Poco::Notification::Ptr notification(queue_->waitDequeueNotification());
@@ -195,37 +183,41 @@ void Burst::PlotVerifier::runTask()
 		Poco::Nullable<DeadlineTuple> bestResult;
 
 		START_PROBE("PlotVerifier.SearchDeadline")
-#if MINING_CUDA || MINING_OPENCL
-		DeadlineTuple bestDeadline;
-		bestDeadline.first = 0;
-		bestDeadline.second = 0;
-		Gpu::run<Gpu_Algorithm_Atomic>(
-			verifyNotification->buffer,
-			verifyNotification->gensig,
-			verifyNotification->nonceStart + verifyNotification->nonceRead,
-			verifyNotification->baseTarget,
-			bestDeadline);
-		bestResult = bestDeadline;
-#else
-		for (size_t i = 0;
-			i < verifyNotification->buffer.size() &&
-			!isCancelled() &&
-			verifyNotification->block == miner_->getBlockheight();
-			i += HashSize)
-		{
-			auto result = verify(cpuInstructionSet,
-				verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
-				verifyNotification->gensig,
-				verifyNotification->baseTarget);
 
-			for (auto& pair : result)
-				// make sure the nonce->deadline pair is valid...
-				if (pair.first > 0 && pair.second > 0)
-					// ..and better than the others
-					if (bestResult.isNull() || pair.second < bestResult.value().second)
-						bestResult = pair;
+		if (processorType == "CUDA")
+		{
+			DeadlineTuple bestDeadline;
+			bestDeadline.first = 0;
+			bestDeadline.second = 0;
+			GpuCuda::run<Gpu_Algorithm_Atomic>(
+				verifyNotification->buffer,
+				verifyNotification->gensig,
+				verifyNotification->nonceStart + verifyNotification->nonceRead,
+				verifyNotification->baseTarget,
+				bestDeadline);
+			bestResult = bestDeadline;
 		}
-#endif
+		else
+		{
+			for (size_t i = 0;
+				i < verifyNotification->buffer.size() &&
+				!isCancelled() &&
+				verifyNotification->block == miner_->getBlockheight();
+				i += HashSize)
+			{
+				auto result = verify(cpuInstructionSet,
+					verifyNotification->buffer, verifyNotification->nonceRead, verifyNotification->nonceStart, i,
+					verifyNotification->gensig,
+					verifyNotification->baseTarget);
+
+				for (auto& pair : result)
+					// make sure the nonce->deadline pair is valid...
+					if (pair.first > 0 && pair.second > 0)
+						// ..and better than the others
+						if (bestResult.isNull() || pair.second < bestResult.value().second)
+							bestResult = pair;
+			}
+		}
 		TAKE_PROBE("PlotVerifier.SearchDeadline")
 		
 		if (!bestResult.isNull())
