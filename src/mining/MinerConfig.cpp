@@ -85,19 +85,22 @@ void Burst::MinerConfig::printConsole() const
 	printTargetDeadline();
 
 	if (isLogfileUsed())
-		log_system(MinerLogger::config, "Log path : %s", MinerConfig::getConfig().getPathLogfile().toString());
+		log_system(MinerLogger::config, "Log path : %s", getConfig().getPathLogfile().toString());
 
 	printConsolePlots();
 
-	log_system(MinerLogger::config, "Get mining info interval : %z seconds", MinerConfig::getConfig().getMiningInfoInterval());
-	log_system(MinerLogger::config, "CPU instruction set : %s", MinerConfig::getConfig().getCpuInstructionSet());
-	log_system(MinerLogger::config, "Processor type : %s", MinerConfig::getConfig().getProcessorType());
+	log_system(MinerLogger::config, "Get mining info interval : %z seconds", getConfig().getMiningInfoInterval());
+	log_system(MinerLogger::config, "CPU instruction set : %s", getConfig().getCpuInstructionSet());
+	log_system(MinerLogger::config, "Processor type : %s", getConfig().getProcessorType());
+	
+	if (getConfig().isBenchmark())
+		log_warning(MinerLogger::config, "Benchmark mode activated!", );
 }
 
 void Burst::MinerConfig::printConsolePlots() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	log_system(MinerLogger::config, "Total plots size: %s", memToString(MinerConfig::getConfig().getTotalPlotsize(), 2));
+	log_system(MinerLogger::config, "Total plots size: %s", memToString(getConfig().getTotalPlotsize(), 2));
 	log_system(MinerLogger::config, "Mining intensity : %z", getMiningIntensity());
 	log_system(MinerLogger::config, "Max plot readers : %z", getMaxPlotReaders());
 }
@@ -379,6 +382,21 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		
 		cpuInstructionSet_ = getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2"));
 		processorType_ = getOrAdd(miningObj, "processorType", std::string("CPU"));
+
+		// benchmark
+		{
+			Poco::JSON::Object::Ptr benchmarkObj;
+
+			if (miningObj->has("benchmark"))
+				benchmarkObj = miningObj->get("benchmark").extract<Poco::JSON::Object::Ptr>();
+			else
+				benchmarkObj = new Poco::JSON::Object;
+
+			benchmark_ = getOrAdd(benchmarkObj, "active", false);
+			benchmarkInterval_ = getOrAdd(benchmarkObj, "interval", 60l);
+
+			miningObj->set("benchmark", benchmarkObj);
+		}
 
 		// urls
 		{
@@ -1048,6 +1066,16 @@ const std::string& Burst::MinerConfig::getProcessorType() const
 	return processorType_;
 }
 
+bool Burst::MinerConfig::isBenchmark() const
+{
+	return benchmark_;
+}
+
+long Burst::MinerConfig::getBenchmarkInterval() const
+{
+	return benchmarkInterval_;
+}
+
 void Burst::MinerConfig::printTargetDeadline() const
 {
 	if (getTargetDeadline() > 0)
@@ -1155,7 +1183,14 @@ bool Burst::MinerConfig::save(const std::string& path) const
 
 		mining.set("cpuInstructionSet", getCpuInstructionSet());
 
-		mining.set("processorType", getProcessorType());
+		mining.set("processorType", getProcessorType());		
+
+		// benchmark
+		{
+			Poco::JSON::Object benchmark;
+			benchmark.set("active", isBenchmark());
+			benchmark.set("interval", getBenchmarkInterval());
+		}
 
 		// passphrase
 		{

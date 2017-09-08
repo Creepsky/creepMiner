@@ -19,15 +19,6 @@ if (MSVC)
 endif ()
 
 ##################################################################
-# BENCHMARK
-##################################################################
-option(RUN_BENCHMARK "If yes, a benchmark will be run" OFF)
-
-if (RUN_BENCHMARK)
-	add_definitions(-DRUN_BENCHMARK)
-endif ()
-
-##################################################################
 # CPU architecture (only for Unix/Mac)
 ##################################################################
 if (UNIX OR APPLE)

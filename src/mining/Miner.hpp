@@ -88,6 +88,7 @@ namespace Burst
 		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);
 		void on_wake_up(Poco::Timer& timer);
+		void onBenchmark(Poco::Timer& timer);
 
 		bool running_ = false;
 		MinerData data_;
@@ -99,7 +100,7 @@ namespace Burst
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
 		std::unique_ptr<Poco::ThreadPool> verifier_pool_, plot_reader_pool_;
-		Poco::Timer wake_up_timer_;
+		Poco::Timer wake_up_timer_, benchmark_timer_;
 		mutable Poco::Mutex worker_mutex_;
 	};
 }

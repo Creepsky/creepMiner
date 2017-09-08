@@ -108,9 +108,17 @@ void Burst::Miner::run()
 		wake_up_timer_.start(callback);
 	}
 
-#ifdef RUN_BENCHMARK
-	auto lastBenchmark = std::chrono::system_clock::now();
-#endif
+	const auto lastBenchmark = std::chrono::system_clock::now();
+	const auto benchmark = MinerConfig::getConfig().isBenchmark();
+	const auto benchmarkInterval = MinerConfig::getConfig().getBenchmarkInterval();
+
+	if (benchmark)
+	{
+		Poco::TimerCallback<Miner> callback(*this, &Miner::onBenchmark);
+		benchmark_timer_.setPeriodicInterval(benchmarkInterval * 1000u);
+		benchmark_timer_.start(callback);
+	}
+
 	running_ = true;
 
 	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
@@ -138,25 +146,6 @@ void Burst::Miner::run()
 			log_error(MinerLogger::miner, "Could not get block infos!");
 			errors = 0;
 		}
-
-
-#ifdef RUN_BENCHMARK
-		if (std::chrono::system_clock::now() - lastBenchmark > std::chrono::minutes(1))
-		{
-			try
-			{
-				Poco::FileStream perfLogStream{ "benchmark.csv", std::ios_base::out | std::ios::trunc };
-				perfLogStream << Performance::instance();
-				log_success(MinerLogger::miner, "Wrote benchmark data into benchmark.csv");
-			}
-			catch (...)
-			{
-				log_error(MinerLogger::miner, "Could not write benchmark data into benchmark.csv! Please close it.");
-			}
-
-			lastBenchmark = std::chrono::system_clock::now();
-		}
-#endif
 
 		std::this_thread::sleep_for(std::chrono::seconds(MinerConfig::getConfig().getMiningInfoInterval()));
 	}
@@ -521,6 +510,20 @@ void Burst::Miner::progressChanged(float &progress)
 void Burst::Miner::on_wake_up(Poco::Timer& timer)
 {
 	addPlotReadNotifications(true);
+}
+
+void Burst::Miner::onBenchmark(Poco::Timer& timer)
+{
+	try
+	{
+		Poco::FileStream perfLogStream{ "benchmark.csv", std::ios_base::out | std::ios::trunc };
+		perfLogStream << Performance::instance();
+		log_success(MinerLogger::miner, "Wrote benchmark data into benchmark.csv");
+	}
+	catch (...)
+	{
+		log_error(MinerLogger::miner, "Could not write benchmark data into benchmark.csv! Please close it.");
+	}
 }
 
 Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data)
