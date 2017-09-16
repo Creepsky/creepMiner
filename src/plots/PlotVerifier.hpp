@@ -57,39 +57,34 @@ namespace Burst
 	
 	using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
 
-	template <typename TShabal, typename TShabalOperations>
+	template <typename TShabal, typename TVerificationAlgorithm>
 	class PlotVerifier : public Poco::Task
 	{
 	public:
 		PlotVerifier(Miner &miner, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress);
 		~PlotVerifier() override;
-
 		void runTask() override;
 		
-	private:
-		std::vector<DeadlineTuple> verify(TShabal shabalCopy, std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
-										  Poco::UInt64 nonceStart, size_t offset, Poco::UInt64 baseTarget);
-
 	private:
 		Miner* miner_;
 		Poco::NotificationQueue* queue_;
 		std::shared_ptr<PlotReadProgress> progress_;
 	};
 
-	template <typename TShabal, typename TShabalOperations>
-	PlotVerifier<TShabal, TShabalOperations>::PlotVerifier(Miner& miner, Poco::NotificationQueue& queue,
+	template <typename TShabal, typename TVerificationAlgorithm>
+	PlotVerifier<TShabal, TVerificationAlgorithm>::PlotVerifier(Miner& miner, Poco::NotificationQueue& queue,
 		std::shared_ptr<PlotReadProgress> progress)
 		: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}, progress_{progress}
 	{
 	}
 
-	template <typename TShabal, typename TShabalOperations>
-	PlotVerifier<TShabal, TShabalOperations>::~PlotVerifier()
+	template <typename TShabal, typename TVerificationAlgorithm>
+	PlotVerifier<TShabal, TVerificationAlgorithm>::~PlotVerifier()
 	{
 	}
 
-	template <typename TShabal, typename TShabalOperations>
-	void PlotVerifier<TShabal, TShabalOperations>::runTask()
+	template <typename TShabal, typename TVerificationAlgorithm>
+	void PlotVerifier<TShabal, TVerificationAlgorithm>::runTask()
 	{
 		while (!isCancelled())
 		{
@@ -101,37 +96,23 @@ namespace Burst
 			else
 				break;
 
-			Poco::Nullable<DeadlineTuple> bestResult;
-			
-			TShabal shabal;
-
-			// hash the gensig according to the cpu instruction level
-			shabal.update(verifyNotification->gensig.data(), Settings::HashSize);
+			const auto stopFunction = [this, &verifyNotification]()
+			{
+				return isCancelled() || verifyNotification->block != miner_->getBlockheight();
+			};
 
 			START_PROBE("PlotVerifier.SearchDeadline");
-			for (size_t i = 0;
-				i < verifyNotification->buffer.size() && !isCancelled() && verifyNotification->block == miner_->getBlockheight();
-				i += TShabal::HashSize)
-			{
-				auto result = verify(shabal, verifyNotification->buffer, verifyNotification->nonceRead,
-									 verifyNotification->nonceStart, i, verifyNotification->baseTarget);
-
-				for (auto& pair : result)
-					// make sure the nonce->deadline pair is valid...
-					if (pair.first > 0 && pair.second > 0)
-						// ..and better than the others
-						if (bestResult.isNull() || pair.second < bestResult.value().second)
-							bestResult = pair;
-			}
-				
+			auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer, verifyNotification->nonceRead,
+														  verifyNotification->nonceStart, verifyNotification->baseTarget, verifyNotification->gensig,
+														  stopFunction);
 			TAKE_PROBE("PlotVerifier.SearchDeadline");
 
-			if (!bestResult.isNull())
+			if (bestResult.first != 0 && bestResult.second != 0)
 			{
 				START_PROBE("PlotVerifier.Submit");
-				miner_->submitNonce(bestResult.value().first,
+				miner_->submitNonce(bestResult.first,
 					verifyNotification->accountId,
-					bestResult.value().second,
+					bestResult.second,
 					verifyNotification->block,
 					verifyNotification->inputPath);
 				TAKE_PROBE("PlotVerifier.Submit");
@@ -146,54 +127,6 @@ namespace Burst
 		}
 
 		log_debug(MinerLogger::plotVerifier, "Verifier stopped");
-	}
-
-	template <typename TShabal, typename TShabalOperations>
-	std::vector<DeadlineTuple> PlotVerifier<TShabal, TShabalOperations>::verify(
-		TShabal shabalCopy, std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart, size_t offset,
-		Poco::UInt64 baseTarget)
-	{
-		constexpr auto HashSize = TShabal::HashSize;
-		TShabal shabal = shabalCopy;
-
-		std::array<HashData, HashSize> targets;
-		std::array<Poco::UInt64, HashSize> results;
-
-		// these are the buffer overflow prove arrays 
-		// instead of directly working with the raw arrays  
-		// we create an additional level of indirection 
-		std::array<const unsigned char*, HashSize> scoopPtr;
-		std::array<unsigned char*, HashSize> targetPtr;
-
-		// we init the buffer overflow guardians
-		for (auto i = 0u; i < HashSize; ++i)
-		{
-			const auto overflow = i + offset >= buffer.size();
-
-			// if the index would cause a buffer overflow, we init it 
-			// with a nullptr, otherwise with the value
-			scoopPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(buffer.data() + offset + i);
-			targetPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(targets[i].data());
-		}
-
-		// hash the scoop according to the cpu instruction level
-		TShabalOperations::updateScoops(shabal, scoopPtr);
-
-		// digest the hash
-		TShabalOperations::close(shabal, targetPtr);
-
-		for (auto i = 0u; i < HashSize; ++i)
-			memcpy(&results[i], targets[i].data(), sizeof(Poco::UInt64));
-
-		// for every calculated deadline we create a pair of {nonce->deadline}
-		std::vector<DeadlineTuple> pairs(HashSize);
-
-		for (auto i = 0u; i < HashSize; ++i)
-			// only set the pair if it was calculated
-			if (i + offset < buffer.size())
-				pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
-
-		return pairs;
 	}
 
 	template <typename TShabal>
@@ -246,8 +179,101 @@ namespace Burst
 		}
 	};
 
-	using PlotVerifier_sse2 = PlotVerifier<Shabal256_SSE2, PlotVerifierOperations_1<Shabal256_SSE2>>;
-	using PlotVerifier_sse4 = PlotVerifier<Shabal256_SSE4, PlotVerifierOperations_4<Shabal256_SSE4>>;
-	using PlotVerifier_avx = PlotVerifier<Shabal256_AVX, PlotVerifierOperations_4<Shabal256_AVX>>;
-	using PlotVerifier_avx2 = PlotVerifier<Shabal256_AVX2, PlotVerifierOperations_8<Shabal256_AVX2>>;
+	template <typename TShabal, typename TShabalOperations>
+	struct PlotVerifierAlgorithm_cpu
+	{
+		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
+						Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, const GensigData& gensig,
+						std::function<bool()> stop)
+		{
+			DeadlineTuple bestResult = {0, 0};
+			TShabal shabal;
+
+			// hash the gensig according to the cpu instruction level
+			shabal.update(gensig.data(), Settings::HashSize);
+
+			for (size_t i = 0;
+				i < buffer.size() && !stop();
+				i += TShabal::HashSize)
+			{
+				auto result = verify(shabal, buffer, nonceRead, nonceStart, i, baseTarget);
+
+				for (auto& pair : result)
+					// make sure the nonce->deadline pair is valid...
+					if (pair.first > 0 && pair.second > 0)
+						// ..and better than the others
+						if (bestResult.second == 0 || pair.second < bestResult.second)
+							bestResult = pair;
+			}
+
+			return bestResult;
+		}
+
+		static std::vector<DeadlineTuple> verify(const TShabal& shabalCopy, std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
+										  Poco::UInt64 nonceStart, size_t offset, Poco::UInt64 baseTarget)
+		{
+			constexpr auto HashSize = TShabal::HashSize;
+			TShabal shabal = shabalCopy;
+
+			std::array<HashData, HashSize> targets;
+			std::array<Poco::UInt64, HashSize> results;
+
+			// these are the buffer overflow prove arrays 
+			// instead of directly working with the raw arrays  
+			// we create an additional level of indirection 
+			std::array<const unsigned char*, HashSize> scoopPtr;
+			std::array<unsigned char*, HashSize> targetPtr;
+
+			// we init the buffer overflow guardians
+			for (auto i = 0u; i < HashSize; ++i)
+			{
+				const auto overflow = i + offset >= buffer.size();
+
+				// if the index would cause a buffer overflow, we init it 
+				// with a nullptr, otherwise with the value
+				scoopPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(buffer.data() + offset + i);
+				targetPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(targets[i].data());
+			}
+
+			// hash the scoop according to the cpu instruction level
+			TShabalOperations::updateScoops(shabal, scoopPtr);
+
+			// digest the hash
+			TShabalOperations::close(shabal, targetPtr);
+
+			for (auto i = 0u; i < HashSize; ++i)
+				memcpy(&results[i], targets[i].data(), sizeof(Poco::UInt64));
+
+			// for every calculated deadline we create a pair of {nonce->deadline}
+			std::vector<DeadlineTuple> pairs(HashSize);
+
+			for (auto i = 0u; i < HashSize; ++i)
+				// only set the pair if it was calculated
+				if (i + offset < buffer.size())
+					pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
+
+			return pairs;
+		}
+	};
+
+	struct PlotVerifierAlgorithm_gpu
+	{
+		static void run(Poco::Nullable<DeadlineTuple>& bestDeadline)
+		{}
+	};
+
+	using PlotVerifierOperation_sse2 = PlotVerifierOperations_1<Shabal256_SSE2>;
+	using PlotVerifierOperation_sse4 = PlotVerifierOperations_4<Shabal256_SSE4>;
+	using PlotVerifierOperation_avx = PlotVerifierOperations_4<Shabal256_AVX>;
+	using PlotVerifierOperation_avx2 = PlotVerifierOperations_8<Shabal256_AVX2>;
+
+	using PlotVerifierAlgorithm_sse2 = PlotVerifierAlgorithm_cpu<Shabal256_SSE2, PlotVerifierOperation_sse2>;
+	using PlotVerifierAlgorithm_sse4 = PlotVerifierAlgorithm_cpu<Shabal256_SSE4, PlotVerifierOperation_sse4>;
+	using PlotVerifierAlgorithm_avx = PlotVerifierAlgorithm_cpu<Shabal256_AVX, PlotVerifierOperation_avx>;
+	using PlotVerifierAlgorithm_avx2 = PlotVerifierAlgorithm_cpu<Shabal256_AVX2, PlotVerifierOperation_avx2>;
+
+	using PlotVerifier_sse2 = PlotVerifier<Shabal256_SSE2, PlotVerifierAlgorithm_sse2>;
+	using PlotVerifier_sse4 = PlotVerifier<Shabal256_SSE4, PlotVerifierAlgorithm_sse4>;
+	using PlotVerifier_avx = PlotVerifier<Shabal256_AVX, PlotVerifierAlgorithm_avx>;
+	using PlotVerifier_avx2 = PlotVerifier<Shabal256_AVX2, PlotVerifierAlgorithm_avx2>;
 }
