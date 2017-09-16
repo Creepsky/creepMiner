@@ -14,7 +14,8 @@ namespace Burst
 	{
 		Buffer,
 		Gensig,
-		Deadlines
+		Deadlines,
+		Bytes
 	};
 
 	enum class MemoryCopyDirection

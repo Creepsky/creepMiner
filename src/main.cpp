@@ -68,8 +68,14 @@ int main(int argc, const char* argv[])
 	std::string mode = "Debug";
 #endif
 
+#ifdef USE_CUDA
+	std::string cuda = ", compiled with CUDA SDK";
+#else
+	std::string cuda = "";
+#endif
+
 	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
-	log_information(general, "%s mode", mode);
+	log_information(general, "%s mode%s", mode, cuda);
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");

@@ -172,6 +172,10 @@ namespace Burst
 		size_t getWalletRequestTries() const;
 		size_t getWalletRequestRetryWaitTime() const;
 		size_t getWakeUpTime() const;
+		const std::string& getCpuInstructionSet() const;
+		const std::string& getProcessorType() const;
+		bool isBenchmark() const;
+		long getBenchmarkInterval() const;
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(uint64_t bufferSize);
@@ -256,6 +260,10 @@ namespace Burst
 		bool steadyProgressBar_ = true;
 		bool fancyProgressBar_ = true;
 		size_t wakeUpTime_ = 0;
+		std::string cpuInstructionSet_ = "SSE2";
+		std::string processorType_ = "CPU";
+		bool benchmark_ = false;
+		long benchmarkInterval_ = 60;
 		mutable Poco::Mutex mutex_;
 	};
 }
