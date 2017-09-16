@@ -599,18 +599,26 @@ void Burst::Miner::createPlotVerifiers()
 {
 	const auto& config = MinerConfig::getConfig();
 
-	if (config.getCpuInstructionSet() == "SSE2")
-		MinerHelper::create_worker<PlotVerifier_sse2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+	if (config.getProcessorType() == "CPU")
+	{
+		if (config.getCpuInstructionSet() == "SSE2")
+			MinerHelper::create_worker<PlotVerifier_sse2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+				*this, verificationQueue_, progressVerify_);
+		else if (config.getCpuInstructionSet() == "SSE4")
+			MinerHelper::create_worker<PlotVerifier_sse4>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+				*this, verificationQueue_, progressVerify_);
+		else if (config.getCpuInstructionSet() == "AVX")
+			MinerHelper::create_worker<PlotVerifier_avx>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+				*this, verificationQueue_, progressVerify_);
+		else if (config.getCpuInstructionSet() == "AVX2")
+			MinerHelper::create_worker<PlotVerifier_avx2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+				*this, verificationQueue_, progressVerify_);
+	}
+	else if (config.getProcessorType() == "CUDA")
+	{
+		MinerHelper::create_worker<PlotVerifier_cuda>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 			*this, verificationQueue_, progressVerify_);
-	else if (config.getCpuInstructionSet() == "SSE4")
-		MinerHelper::create_worker<PlotVerifier_sse4>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
-			*this, verificationQueue_, progressVerify_);
-	else if (config.getCpuInstructionSet() == "AVX")
-		MinerHelper::create_worker<PlotVerifier_avx>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
-			*this, verificationQueue_, progressVerify_);
-	else if (config.getCpuInstructionSet() == "AVX2")
-		MinerHelper::create_worker<PlotVerifier_avx2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
-			*this, verificationQueue_, progressVerify_);
+	}
 }
 
 void Burst::Miner::setMiningIntensity(Poco::UInt32 intensity)

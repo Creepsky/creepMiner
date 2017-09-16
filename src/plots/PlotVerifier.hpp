@@ -34,6 +34,8 @@
 #include "logging/Message.hpp"
 #include "logging/MinerLogger.hpp"
 #include "PlotReader.hpp"
+#include "gpu/gpu_shell.hpp"
+#include "gpu/algorithm/gpu_algorithm_atomic.hpp"
 
 namespace Burst
 {
@@ -57,7 +59,7 @@ namespace Burst
 	
 	using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
 
-	template <typename TShabal, typename TVerificationAlgorithm>
+	template <typename TVerificationAlgorithm>
 	class PlotVerifier : public Poco::Task
 	{
 	public:
@@ -71,20 +73,20 @@ namespace Burst
 		std::shared_ptr<PlotReadProgress> progress_;
 	};
 
-	template <typename TShabal, typename TVerificationAlgorithm>
-	PlotVerifier<TShabal, TVerificationAlgorithm>::PlotVerifier(Miner& miner, Poco::NotificationQueue& queue,
+	template <typename TVerificationAlgorithm>
+	PlotVerifier<TVerificationAlgorithm>::PlotVerifier(Miner& miner, Poco::NotificationQueue& queue,
 		std::shared_ptr<PlotReadProgress> progress)
 		: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}, progress_{progress}
 	{
 	}
 
-	template <typename TShabal, typename TVerificationAlgorithm>
-	PlotVerifier<TShabal, TVerificationAlgorithm>::~PlotVerifier()
+	template <typename TVerificationAlgorithm>
+	PlotVerifier<TVerificationAlgorithm>::~PlotVerifier()
 	{
 	}
 
-	template <typename TShabal, typename TVerificationAlgorithm>
-	void PlotVerifier<TShabal, TVerificationAlgorithm>::runTask()
+	template <typename TVerificationAlgorithm>
+	void PlotVerifier<TVerificationAlgorithm>::runTask()
 	{
 		while (!isCancelled())
 		{
@@ -258,8 +260,19 @@ namespace Burst
 
 	struct PlotVerifierAlgorithm_gpu
 	{
-		static void run(Poco::Nullable<DeadlineTuple>& bestDeadline)
-		{}
+		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
+			Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, const GensigData& gensig,
+			std::function<bool()> stop)
+		{
+			DeadlineTuple bestDeadline{0, 0};
+			GpuCuda::run<Gpu_Algorithm_Atomic>(
+				buffer,
+				gensig,
+				nonceStart + nonceRead,
+				baseTarget,
+				bestDeadline);
+			return bestDeadline;
+		}
 	};
 
 	using PlotVerifierOperation_sse2 = PlotVerifierOperations_1<Shabal256_SSE2>;
@@ -272,8 +285,10 @@ namespace Burst
 	using PlotVerifierAlgorithm_avx = PlotVerifierAlgorithm_cpu<Shabal256_AVX, PlotVerifierOperation_avx>;
 	using PlotVerifierAlgorithm_avx2 = PlotVerifierAlgorithm_cpu<Shabal256_AVX2, PlotVerifierOperation_avx2>;
 
-	using PlotVerifier_sse2 = PlotVerifier<Shabal256_SSE2, PlotVerifierAlgorithm_sse2>;
-	using PlotVerifier_sse4 = PlotVerifier<Shabal256_SSE4, PlotVerifierAlgorithm_sse4>;
-	using PlotVerifier_avx = PlotVerifier<Shabal256_AVX, PlotVerifierAlgorithm_avx>;
-	using PlotVerifier_avx2 = PlotVerifier<Shabal256_AVX2, PlotVerifierAlgorithm_avx2>;
+	using PlotVerifier_sse2 = PlotVerifier<PlotVerifierAlgorithm_sse2>;
+	using PlotVerifier_sse4 = PlotVerifier<PlotVerifierAlgorithm_sse4>;
+	using PlotVerifier_avx = PlotVerifier<PlotVerifierAlgorithm_avx>;
+	using PlotVerifier_avx2 = PlotVerifier<PlotVerifierAlgorithm_avx2>;
+	using PlotVerifier_cuda = PlotVerifier<PlotVerifierAlgorithm_gpu>;
 }
+
