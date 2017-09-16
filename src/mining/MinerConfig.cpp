@@ -94,7 +94,7 @@ void Burst::MinerConfig::printConsole() const
 	log_system(MinerLogger::config, "Processor type : %s", getConfig().getProcessorType());
 	
 	if (getConfig().isBenchmark())
-		log_warning(MinerLogger::config, "Benchmark mode activated!", );
+		log_warning(MinerLogger::config, "Benchmark mode activated!");
 }
 
 void Burst::MinerConfig::printConsolePlots() const
