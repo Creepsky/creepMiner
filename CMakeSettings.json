@@ -35,6 +35,10 @@
         {
           "name": "CUDA_NVCC_FLAGS",
           "value": "--cl-version=2017"
+        },
+        {
+          "name": "GPU_CUDA_ARCH",
+          "value": "sm_61"
         }
       ]
     }
