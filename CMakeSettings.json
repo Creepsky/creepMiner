@@ -1,46 +1,52 @@
 {
-  "configurations": [
-    {
-      "name": "x64-Debug",
-      "generator": "Visual Studio 15 2017 Win64",
-      "configurationType": "Debug",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": "",
-      "variables": [
-        {
-          "name": "CUDA_HOST_COMPILER",
-          "value": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Tools\\MSVC\\14.11.25503\\bin\\HostX64\\x64\\cl.exe"
-        },
-        {
-          "name": "CUDA_NVCC_FLAGS",
-          "value": "--cl-version=2017"
-        }
-      ]
-    },
-    {
-      "name": "x64-Release",
-      "generator": "Visual Studio 15 2017 Win64",
-      "configurationType": "Release",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": "",
-      "variables": [
-        {
-          "name": "CUDA_HOST_COMPILER",
-          "value": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Tools\\MSVC\\14.11.25503\\bin\\HostX64\\x64\\cl.exe"
-        },
-        {
-          "name": "CUDA_NVCC_FLAGS",
-          "value": "--cl-version=2017"
-        },
-        {
-          "name": "GPU_CUDA_ARCH",
-          "value": "sm_61"
-        }
-      ]
-    }
-  ]
+	"configurations": [
+		{ 			"buildCommandArgs": "-m -v:minimal", 			"buildRoot": "${workspaceRoot}\\bin\\build\\${name}", 			"cmakeCommandArgs": "",
+			"configurationType": "Debug",
+			"ctestCommandArgs": "",
+			"generator": "Visual Studio 15 2017 Win64",
+			"name": "x64-Debug",
+			"variables": [
+				{
+					"name": "CUDA_HOST_COMPILER",
+					"value": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Tools\\MSVC\\14.11.25503\\bin\\HostX64\\x64\\cl.exe"
+				},
+				{
+					"name": "CUDA_NVCC_FLAGS",
+					"value": "--cl-version=2017"
+				},
+				{
+					"name": "USE_CUDA",
+					"value": "true"
+				}
+			]
+		},
+		{
+			"name": "x64-Release",
+			"generator": "Visual Studio 15 2017 Win64",
+			"configurationType": "Release",
+			"buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": "-m -v:minimal",
+			"ctestCommandArgs": "",
+			"variables": [
+				{
+					"name": "CUDA_HOST_COMPILER",
+					"value":
+						"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Tools\\MSVC\\14.11.25503\\bin\\HostX64\\x64\\cl.exe"
+				},
+				{
+					"name": "CUDA_NVCC_FLAGS",
+					"value": "--cl-version=2017"
+				},
+				{
+					"name": "GPU_CUDA_ARCH",
+					"value": "sm_61"
+				},
+				{
+					"name": "USE_CUDA",
+					"value": "true"
+				}
+			]
+		}
+	]
 }
