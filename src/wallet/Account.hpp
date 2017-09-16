@@ -27,10 +27,13 @@
 #include <Poco/Activity.h>
 #include <Poco/ActiveMethod.h>
 #include <Poco/JSON/Object.h>
+#include <vector>
 
 namespace Burst
 {
 	class Wallet;
+
+	using Block = Poco::UInt64;
 
 	class Account
 	{
@@ -43,24 +46,30 @@ namespace Burst
 
 		AccountId getId() const;
 		std::string getName();
-		Poco::ActiveResult<std::string> getNameAsync(bool reset = false);
-		AccountId getRewardRecipient();
-		Poco::ActiveResult<AccountId> getRewardRecipientAsync(bool reset = false);
 		std::string getAddress() const;
+		AccountId getRewardRecipient();
+		std::vector<Block> getBlocks();
+		
+		Poco::ActiveResult<std::string> getNameAsync(bool reset = false);
+		Poco::ActiveResult<AccountId> getRewardRecipientAsync(bool reset = false);
+		Poco::ActiveResult<std::vector<Block>> getAccountBlocksAsync(bool reset = false);
 
 		Poco::JSON::Object::Ptr toJSON() const;
 
 	protected:
 		std::string runGetName(const bool& reset);
 		AccountId runGetRewardRecipient(const bool& reset);
+		std::vector<Block> runGetAccountBlocks(const bool& reset);
 
 	private:
 		AccountId id_;
 		Poco::Nullable<std::string> name_;
 		Poco::Nullable<AccountId> rewardRecipient_;
+		Poco::Nullable<std::vector<Block>> blocks_;
 		const Wallet* wallet_;
 		Poco::ActiveMethod<std::string, bool, Account> getName_;
 		Poco::ActiveMethod<AccountId, bool, Account> getRewardRecipient_;
+		Poco::ActiveMethod<std::vector<Block>, bool, Account> getAccountBlocks_;
 		mutable Poco::Mutex mutex_;
 	};
 
@@ -69,6 +78,7 @@ namespace Burst
 	public:
 		std::shared_ptr<Account> getAccount(AccountId id, Wallet& wallet, bool persistent);
 		bool isLoaded(AccountId id) const;
+		std::vector<std::shared_ptr<Account>> getAccounts() const;
 
 	private:
 		std::unordered_map<AccountId, std::shared_ptr<Account>> accounts_;

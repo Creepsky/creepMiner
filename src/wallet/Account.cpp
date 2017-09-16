@@ -35,19 +35,22 @@ Burst::Account::Account(AccountId id)
 	: id_{id},
 	  wallet_{nullptr},
 	  getName_{this, &Account::runGetName},
-	  getRewardRecipient_ {this, &Account::runGetRewardRecipient}
+	  getRewardRecipient_{this, &Account::runGetRewardRecipient},
+	  getAccountBlocks_{ this, &Account::runGetAccountBlocks }
 {}
 
 Burst::Account::Account(const Wallet& wallet, AccountId id, bool fetchAll)
 	: id_{id},
 	  wallet_{&wallet},
 	  getName_{this, &Account::runGetName},
-	  getRewardRecipient_ {this, &Account::runGetRewardRecipient}
+	  getRewardRecipient_{this, &Account::runGetRewardRecipient},
+	  getAccountBlocks_{this, &Account::runGetAccountBlocks}
 {
 	if (fetchAll)
 	{
 		getNameAsync(true);
-		getRewardRecipientAsync();
+		getRewardRecipientAsync(true);
+		getAccountBlocksAsync(true);
 	}
 }
 
@@ -133,9 +136,24 @@ Burst::AccountId Burst::Account::getRewardRecipient()
 	return rewardRecipient_.value(0);
 }
 
+std::vector<Burst::Block> Burst::Account::getBlocks()
+{
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
+
+	if (blocks_.isNull() && wallet_ != nullptr && wallet_->isActive())
+		getAccountBlocksAsync();
+
+	return blocks_.value({});
+}
+
 Poco::ActiveResult<Burst::AccountId> Burst::Account::getRewardRecipientAsync(bool reset)
 {
 	return getRewardRecipient_(reset);
+}
+
+Poco::ActiveResult<std::vector<Burst::Block>> Burst::Account::getAccountBlocksAsync(bool reset)
+{
+	return getAccountBlocks_(reset);
 }
 
 std::string Burst::Account::getAddress() const
@@ -156,6 +174,15 @@ Poco::JSON::Object::Ptr Burst::Account::toJSON() const
 
 	if (!name.empty())
 		json->set("name", name);
+
+	auto blocks = blocks_.value({});
+
+	Poco::JSON::Array::Ptr jsonBlocks(new Poco::JSON::Array);
+	
+	for (auto block : blocks)
+		jsonBlocks->add(block);
+
+	json->set("blocks", jsonBlocks);
 
 	return json;
 }
@@ -179,6 +206,17 @@ Burst::AccountId Burst::Account::runGetRewardRecipient(const bool& reset)
 	return getHelper<AccountId>(rewardRecipient_, reset, mutex_, [this](AccountId& recipient)
 	{
 		return wallet_->getRewardRecipientOfAccount(id_, recipient);
+	});
+}
+
+std::vector<Burst::Block> Burst::Account::runGetAccountBlocks(const bool& reset)
+{
+	if (wallet_ != nullptr && !wallet_->isActive())
+		return {};
+
+	return getHelper<std::vector<Block>>(blocks_, reset, mutex_, [this](std::vector<Block>& blocks)
+	{
+		return wallet_->getAccountBlocks(id_, blocks);
 	});
 }
 
@@ -208,4 +246,16 @@ bool Burst::Accounts::isLoaded(AccountId id) const
 {
 	Poco::FastMutex::ScopedLock lock{ mutex_ };
 	return accounts_.find(id) != accounts_.end();
+}
+
+std::vector<std::shared_ptr<Burst::Account>> Burst::Accounts::getAccounts() const
+{
+	Poco::FastMutex::ScopedLock lock{ mutex_ };
+
+	std::vector<std::shared_ptr<Account>> accounts;
+
+	for (auto& account : accounts_)
+		accounts.emplace_back(account.second);
+
+	return accounts;
 }

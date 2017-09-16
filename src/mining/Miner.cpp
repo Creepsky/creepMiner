@@ -183,6 +183,10 @@ void Burst::Miner::addPlotReadNotifications(bool wakeUpCall)
 		notification->baseTarget = getBaseTarget();
 		notification->type = plotDir.getType();
 		notification->wakeUpCall = wakeUpCall;
+
+		for (const auto& plotFile : plotDir.getPlotfiles(true))
+			accounts_.getAccount(plotFile->getAccountId(), wallet_, true);
+
 		return notification;
 	};
 
@@ -244,12 +248,6 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 	// setup new block-data
 	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr);
 
-	// why we start a new thread to gather the last winner:
-	// it could be slow and is not necessary for the whole process
-	// so show it when it's done
-	if (blockHeight > 0 && wallet_.isActive())
-		block->getLastWinnerAsync(wallet_, accounts_);
-
 	// printing block info and transfer it to local server
 	{
 		log_notice(MinerLogger::miner, std::string(50, '-') + "\n"
@@ -274,6 +272,14 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
 
 	addPlotReadNotifications();
+
+	data_.getWonBlocksAsync(wallet_, accounts_);
+
+	// why we start a new thread to gather the last winner:
+	// it could be slow and is not necessary for the whole process
+	// so show it when it's done
+	if (blockHeight > 0 && wallet_.isActive())
+		block->getLastWinnerAsync(wallet_, accounts_);
 
 	TAKE_PROBE("Miner.StartNewBlock")
 }

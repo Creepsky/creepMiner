@@ -41,6 +41,8 @@ namespace Burst
 	class Account;
 	class Url;
 
+	using Block = Poco::UInt64;
+
 	class Wallet
 	{
 	public:
@@ -55,6 +57,7 @@ namespace Burst
 		bool getRewardRecipientOfAccount(AccountId account, AccountId& rewardRecipient) const;
 		bool getLastBlock(Poco::UInt64& block) const;
 		void getAccount(AccountId id, Account& account) const;
+		bool getAccountBlocks(AccountId id, std::vector<Block>& blocks) const;
 
 		bool isActive() const;
 

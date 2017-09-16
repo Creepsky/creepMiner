@@ -39,7 +39,6 @@
 namespace Burst
 {
 	class PlotReadProgress;
-	class Miner;
 
 	struct VerifyNotification : Poco::Notification
 	{

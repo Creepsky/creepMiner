@@ -169,6 +169,49 @@ void Burst::Wallet::getAccount(AccountId id, Account& account) const
 		//account = {*this, id};
 }
 
+bool Burst::Wallet::getAccountBlocks(AccountId id, std::vector<Block>& blocks) const
+{
+	Poco::JSON::Object::Ptr json;
+	blocks.clear();
+
+	if (!isActive())
+		return false;
+
+	Poco::URI uri;
+	uri.setPath("/burst");
+	uri.addQueryParameter("requestType", "getAccountBlockIds");
+	uri.addQueryParameter("account", std::to_string(id));
+
+	if (sendWalletRequest(uri, json))
+	{
+		if (json->has("blockIds"))
+		{
+			auto blockIds = json->getArray("blockIds");
+
+			for (auto block : *blockIds)
+			{
+				try
+				{
+					blocks.emplace_back(block.convert<Poco::UInt64>());
+				}
+				catch (...)
+				{
+					log_debug(MinerLogger::wallet,
+						"Could not convert block-id to number!\n"
+						"\tvalue: %s", block.toString());
+				}
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	log_debug(MinerLogger::wallet, "Could not get account blocks!");
+	return false;
+}
+
 bool Burst::Wallet::isActive() const
 {
 	return !url_.empty();
