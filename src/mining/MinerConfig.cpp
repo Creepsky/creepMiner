@@ -381,6 +381,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		wakeUpTime_ = getOrAdd(miningObj, "wakeUpTime", 0);
 		
 		cpuInstructionSet_ = getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2"));
+		Settings::setCpuInstructionSet(cpuInstructionSet_);
+
 		processorType_ = getOrAdd(miningObj, "processorType", std::string("CPU"));
 
 		// benchmark
