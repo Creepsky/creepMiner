@@ -35,19 +35,23 @@ endif ()
 ##################################################################
 # GPU acceleration
 ##################################################################
-find_package(CUDA REQUIRED)
-set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
-set(CUDA_NVCC_FLAGS
-	${CUDA_NVCC_FLAGS}
-	-arch=${GPU_CUDA_ARCH}
-	-gencode=arch=compute_30,code=sm_30
-	-gencode=arch=compute_50,code=sm_50
-	-gencode=arch=compute_52,code=sm_52
-	-gencode=arch=compute_52,code=compute_52
-	-gencode=arch=compute_60,code=sm_60
-	-gencode=arch=compute_61,code=sm_61
-	-gencode=arch=compute_62,code=sm_62
-	-gencode=arch=compute_70,code=sm_70)
+option(USE_CUDA "If yes, CUDA will be enabled" ON)
+if (USE_CUDA)
+	 find_package(CUDA REQUIRED)
+	 add_definitions(-DUSE_CUDA)
+	 set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
+	 set(CUDA_NVCC_FLAGS
+		 ${CUDA_NVCC_FLAGS}
+		 -arch=${GPU_CUDA_ARCH}
+		 -gencode=arch=compute_30,code=sm_30
+		 -gencode=arch=compute_50,code=sm_50
+		 -gencode=arch=compute_52,code=sm_52
+		 -gencode=arch=compute_52,code=compute_52
+		 -gencode=arch=compute_60,code=sm_60
+		 -gencode=arch=compute_61,code=sm_61
+		 -gencode=arch=compute_62,code=sm_62
+		 -gencode=arch=compute_70,code=sm_70)
+endif()
 
 ##################################################################
 # Additional options
@@ -182,7 +186,6 @@ set(SOURCE_FILES
 	src/plots/PlotReader.cpp
 	src/plots/PlotSizes.cpp
 	src/plots/PlotVerifier.cpp
-	src/shabal/cuda/Shabal.cu
 	src/shabal/mshabal/mshabal_avx1.cpp
 	src/shabal/mshabal/mshabal_avx2.cpp
 	src/shabal/mshabal/mshabal_sse4.cpp
@@ -197,6 +200,10 @@ set(SOURCE_FILES
 	src/MinerUtil.cpp
 	src/logging/Performance.cpp)
 
+if (USE_CUDA)
+	 set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
+endif ()
+
 if (UNIX OR APPLE)
 	set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS -mavx)
 	set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS -mavx2)
@@ -209,7 +216,11 @@ endif ()
 ##################################################################
 # Executable
 ##################################################################
-cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
+if (USE_CUDA)
+	 cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
+else ()
+	 add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
+endif ()
 
 ##################################################################
 # Libraries
