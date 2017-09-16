@@ -93,6 +93,12 @@ void Burst::Miner::run()
 
 		// create the plot verifiers
 		createPlotVerifiers();
+
+#ifndef USE_CUDA
+		if (config.getProcessorType() == "CUDA")
+			log_error(MinerLogger::miner, "You are mining with your CUDA GPU, but the miner is compiled without the CUDA SDK!\n"
+				"You will not see any deadline coming from this miner!");
+#endif
 	}
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
