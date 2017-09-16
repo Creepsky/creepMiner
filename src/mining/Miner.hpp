@@ -74,6 +74,7 @@ namespace Burst
 		//std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
 		std::shared_ptr<Account> getAccount(AccountId id);
+		void createPlotVerifiers();
 
 		void setMiningIntensity(Poco::UInt32 intensity);
 		void setMaxPlotReader(Poco::UInt32 max_reader);
