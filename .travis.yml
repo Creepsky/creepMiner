@@ -21,5 +21,5 @@ addons:
     - g++-5
 script: 
 - cd $TRAVIS_BUILD_DIR/
-- cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release
+- cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF
 - make
