@@ -64,3 +64,35 @@ bool Burst::Gpu_Cuda_Impl::copyMemory(const void* input, void* output, MemoryTyp
 	check(cuda_copy_memory(type, size, input, output, direction));
 	return true;
 }
+
+#ifndef USE_CUDA
+void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize)
+{
+}
+
+bool cuda_alloc_memory(Burst::MemoryType memType, Poco::UInt64 size, void** mem) { return true; }
+bool cuda_realloc_memory(Burst::MemoryType memType, Poco::UInt64 size, void** mem) { return true; }
+
+bool cuda_copy_memory(Burst::MemoryType memType, Poco::UInt64 size, const void* from, void* to,
+	Burst::MemoryCopyDirection copyDirection) {
+	return true;
+}
+
+bool cuda_free_memory(void* mem) { return true; }
+Poco::UInt64 cuda_calc_memory_size(Burst::MemoryType memType, Poco::UInt64 size) { return true; }
+
+bool cuda_calculate_shabal_host_preallocated(Burst::ScoopData* buffer, Poco::UInt64* deadlines, Poco::UInt64 bufferSize,
+	const Burst::GensigData* gensig,
+	Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, std::string& errorString)
+{
+	return true;
+}
+
+bool cuda_reduce_best_deadline(Poco::UInt64* deadlines, size_t size,
+	Poco::UInt64& minDeadline, Poco::UInt64& index, std::string& errorString)
+{
+	return true;
+}
+
+bool cuda_get_error(std::string& errorString) { return false; }
+#endif
