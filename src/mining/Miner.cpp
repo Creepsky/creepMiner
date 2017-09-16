@@ -34,6 +34,7 @@
 #include <fstream>
 #include <Poco/File.h>
 #include <Poco/Delegate.h>
+#include "plots/PlotVerifier.hpp"
 
 namespace Burst
 {

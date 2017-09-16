@@ -29,7 +29,6 @@
 #include <Poco/TaskManager.h>
 #include "MinerData.hpp"
 #include <Poco/NotificationQueue.h>
-#include "plots/PlotVerifier.hpp"
 #include "WorkerList.hpp"
 #include "network/Response.hpp"
 #include <Poco/Timer.h>
