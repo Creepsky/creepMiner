@@ -29,7 +29,6 @@
 #include <Poco/NotificationQueue.h>
 #include "shabal/MinerShabal.hpp"
 #include "logging/Performance.hpp"
-#include <Poco/Nullable.h>
 #include "mining/Miner.hpp"
 #include "logging/Message.hpp"
 #include "logging/MinerLogger.hpp"
