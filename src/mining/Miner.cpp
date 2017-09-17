@@ -271,6 +271,7 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 
 	PlotSizes::nextRound();
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
+	startPoint_ = std::chrono::high_resolution_clock::now();
 
 	addPlotReadNotifications();
 
@@ -507,18 +508,35 @@ namespace Burst
 {
 	std::mutex progressMutex_;
 
-	void showProgress(PlotReadProgress& progressRead, PlotReadProgress& progressVerify, MinerData& data, Poco::UInt64 blockheight)
+	void showProgress(PlotReadProgress& progressRead, PlotReadProgress& progressVerify, MinerData& data, Poco::UInt64 blockheight,
+		std::chrono::high_resolution_clock::time_point& startPoint)
 	{
 		std::lock_guard<std::mutex> lock(progressMutex_);
-		const auto readProgress = progressRead.getProgress();
-		MinerLogger::writeProgress(readProgress, progressVerify.getProgress());
-		data.getBlockData()->setProgress(readProgress, progressVerify.getProgress(), blockheight);
+
+		const auto readProgressPercent = progressRead.getProgress();
+		const auto verifyProgressPercent = progressVerify.getProgress();
+		const auto readProgressValue = progressRead.getValue();
+		const auto verifyProgressValue = progressVerify.getValue();
+
+		const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint;
+		const auto timeDiffSeconds = std::chrono::duration<double>(timeDiff);
+		
+		Progress progress;
+		progress.read = readProgressPercent;
+		progress.verify = verifyProgressPercent;
+		progress.bytesPerSecondRead = readProgressValue / 4096 / timeDiffSeconds.count();
+		progress.bytesPerSecondVerify = verifyProgressValue / 4096 / timeDiffSeconds.count();
+		progress.bytesPerSecondCombined = (readProgressValue + verifyProgressValue) / 4096 / timeDiffSeconds.
+			count();
+
+		MinerLogger::writeProgress(progress);
+		data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
 	}
 }
 
 void Burst::Miner::progressChanged(float &progress)
 {
-	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight());
+	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight(), startPoint_);
 }
 
 void Burst::Miner::on_wake_up(Poco::Timer& timer)

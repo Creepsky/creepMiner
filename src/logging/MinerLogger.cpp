@@ -51,8 +51,7 @@
 std::mutex Burst::MinerLogger::mutex_;
 Burst::TextType Burst::MinerLogger::currentTextType_ = Burst::TextType::Normal;
 bool Burst::MinerLogger::progressFlag_ = false;
-float Burst::MinerLogger::lastProgressRead_ = 0.f;
-float Burst::MinerLogger::lastProgressVerify_ = 0.f;
+Burst::Progress Burst::MinerLogger::lastProgress_;
 size_t Burst::MinerLogger::lastProgressDoneRead_ = 0;
 size_t Burst::MinerLogger::lastProgressDoneVerify_ = 0;
 size_t Burst::MinerLogger::lastPipeCount_ = 0u;
@@ -171,7 +170,7 @@ bool Burst::MinerLogger::setChannelPriority(const std::string& channel, const st
 
 std::string Burst::MinerLogger::getChannelPriority(const std::string& channel)
 {
-	auto iter = channels_.find(channel);
+	const auto iter = channels_.find(channel);
 
 	if (iter != channels_.end())
 		return getPriorityToString(iter->second->getPriority());
@@ -276,13 +275,13 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 
 			if (oldLogfile)
 			{
-				auto fileSize = oldLogfile.tellg();
+				const auto fileSize = oldLogfile.tellg();
 				oldLogfile.seekg(0, std::ios::beg);
 
 				std::vector<char> bytes(fileSize);
 				oldLogfile.read(&bytes[0], fileSize);
 
-                std::string oldContent{&bytes[0], static_cast<size_t>(fileSize)};
+				const std::string oldContent{&bytes[0], static_cast<size_t>(fileSize)};
 
 				oldLogfile.close();
 
@@ -324,7 +323,7 @@ void Burst::MinerLogger::setOutput(Burst::Output id, bool set)
 
 bool Burst::MinerLogger::hasOutput(Burst::Output id)
 {
-	auto iter = output_.find(id);
+	const auto iter = output_.find(id);
 
 	if (iter != output_.end())
 		return iter->second;
@@ -338,7 +337,7 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 
 	auto block = Console::print();
 
-	auto wasProgress = progressFlag_ && MinerConfig::getConfig().isSteadyProgressBar();
+	const auto wasProgress = progressFlag_ && MinerConfig::getConfig().isSteadyProgressBar();
 
 	if (wasProgress)
 		block.clearLine();
@@ -361,45 +360,44 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	if (!progressFlag_)
 		block.nextLine();
 
-	if (wasProgress && (lastProgressRead_ < 100.f || lastProgressVerify_ < 100.f))
+	if (wasProgress && (lastProgress_.read < 100.f || lastProgress_.verify < 100.f))
 	{
-		progressPrinter_.print(lastProgressRead_, lastProgressVerify_);
+		progressPrinter_.print(lastProgress_);
 		progressFlag_ = true;
 	}
 }
 
-void Burst::MinerLogger::writeProgress(float progressRead, float progressVerify)
+void Burst::MinerLogger::writeProgress(const Progress& progress)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
 
 	size_t doneSizeRead, notDoneSize, doneSizeVerified;
 
-	ProgressPrinter::calculateProgressProportions(progressRead, progressVerify,
+	ProgressPrinter::calculateProgressProportions(progress.read, progress.verify,
 		progressPrinter_.totalSize, doneSizeRead, doneSizeVerified, notDoneSize);
 
 	if (MinerConfig::getConfig().isFancyProgressBar())
 	{
-		if (static_cast<size_t>(lastProgressDoneRead_) == static_cast<size_t>(doneSizeRead) &&
-			static_cast<size_t>(lastProgressDoneVerify_) == static_cast<size_t>(doneSizeVerified))
+		if (static_cast<size_t>(lastProgress_.read) == static_cast<size_t>(doneSizeRead) &&
+			static_cast<size_t>(lastProgress_.verify) == static_cast<size_t>(doneSizeVerified))
 			return;
 	}
 	else
 	{
-		if (static_cast<size_t>(progressRead) == static_cast<size_t>(lastProgressRead_) &&
-			static_cast<size_t>(progressVerify) == static_cast<size_t>(lastProgressVerify_))
+		if (static_cast<size_t>(progress.read) == static_cast<size_t>(lastProgress_.read) &&
+			static_cast<size_t>(progress.verify) == static_cast<size_t>(lastProgress_.verify))
 			return;
 	}
 
 	if (progressFlag_)
 		Console::clearLine(false);
 
-	lastProgressRead_ = progressRead;
-	lastProgressVerify_ = progressVerify;
+	lastProgress_ = progress;
 	lastProgressDoneRead_ = doneSizeRead;
 	lastProgressDoneVerify_ = doneSizeVerified;
 	progressFlag_ = MinerConfig::getConfig().isSteadyProgressBar();
 
-	progressPrinter_.print(progressRead, progressVerify);
+	progressPrinter_.print(progress);
 
 	if (!MinerConfig::getConfig().isSteadyProgressBar())
 		Console::nextLine();
@@ -479,7 +477,7 @@ void Burst::MinerLogger::refreshChannels()
 
 Burst::ConsoleColorPair Burst::MinerLogger::getTextTypeColor(TextType type)
 {
-	auto iter = typeColors.find(type);
+	const auto iter = typeColors.find(type);
 
 	if (iter == typeColors.end())
 		return getTextTypeColor(TextType::Normal);

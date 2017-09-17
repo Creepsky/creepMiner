@@ -62,7 +62,7 @@ namespace Burst
 	}
 }
 
-void Burst::ProgressPrinter::print(float progressRead, float progressVerify) const
+void Burst::ProgressPrinter::print(const Progress& progress) const
 {
 	if (MinerConfig::getConfig().getLogOutputType() != LogOutputType::Terminal)
 		return;
@@ -72,28 +72,33 @@ void Burst::ProgressPrinter::print(float progressRead, float progressVerify) con
 		// calculate the progress bar proportions
 		size_t doneSizeRead, notDoneSize, doneSizeVerified;
 
-		calculateProgressProportions(progressRead, progressVerify, totalSize, doneSizeRead, doneSizeVerified, notDoneSize);
+		calculateProgressProportions(progress.read, progress.verify, totalSize, doneSizeRead, doneSizeVerified, notDoneSize);
 
 		auto block = Console::print();
-
+		
 		block << MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
 			<< MinerLogger::getTextTypeColor(delimiterFront.textType) << delimiterFront.character
 			<< MinerLogger::getTextTypeColor(verifiedDoneChar.textType) << repeat(doneSizeVerified, verifiedDoneChar.character)
 			<< MinerLogger::getTextTypeColor(readDoneChar.textType) << repeat(doneSizeRead, readDoneChar.character)
 			<< MinerLogger::getTextTypeColor(readNotDoneChar.textType) << repeat(notDoneSize, readNotDoneChar.character)
 			<< MinerLogger::getTextTypeColor(delimiterEnd.textType) << delimiterEnd.character
-			<< ' ' << toPercentage << (progressRead + progressVerify) / 2 << '%';
+			<< ' ' << toPercentage << (progress.read + progress.verify) / 2 << " % "
+			<< MinerLogger::getTextTypeColor(delimiterEnd.textType) << delimiterEnd.character
+			<< ' ' << memToString(static_cast<Poco::UInt64>(progress.bytesPerSecondRead), 2) << "/s";
 
 		block.flush();
 	}
 	else
 		Console::print()
 			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
-			<< "Read:  " << toPercentage << progressRead << "%    "
-			<< "Verified:  " << toPercentage << progressVerify << "%";
+			<< "Read:  " << toPercentage << progress.read << "% ("
+			<< memToString(static_cast<Poco::UInt64>(progress.bytesPerSecondRead), 2) << "/s)   "
+			<< "Verified:  " << toPercentage << progress.verify << "% ("
+			<< memToString(static_cast<Poco::UInt64>(progress.bytesPerSecondVerify), 2) << "/s)";
 }
 
-void Burst::ProgressPrinter::calculateProgressProportions(float progressRead, float progressVerified, size_t totalSize, size_t& readSize, size_t& verifiedSize, size_t& notDoneSize)
+void Burst::ProgressPrinter::calculateProgressProportions(double progressRead, double progressVerified,
+														  size_t totalSize, size_t& readSize, size_t& verifiedSize, size_t& notDoneSize)
 {
 	readSize = static_cast<size_t>(totalSize * (progressRead / 100));
 	verifiedSize = static_cast<size_t>(totalSize * (progressVerified / 100));

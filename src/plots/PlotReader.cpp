@@ -258,7 +258,7 @@ void Burst::PlotReader::runTask()
 					);
     			}
 
-				const auto nonceBytes = static_cast<float>(plotFile.getNonces() * Settings::ScoopSize);
+				const auto nonceBytes = static_cast<double>(plotFile.getNonces() * Settings::ScoopSize);
 				const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
 
 				log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",

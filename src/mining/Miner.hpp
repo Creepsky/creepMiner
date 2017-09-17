@@ -102,5 +102,6 @@ namespace Burst
 		std::unique_ptr<Poco::ThreadPool> verifier_pool_, plot_reader_pool_;
 		Poco::Timer wake_up_timer_, benchmark_timer_;
 		mutable Poco::Mutex worker_mutex_;
+		std::chrono::high_resolution_clock::time_point startPoint_;
 	};
 }
