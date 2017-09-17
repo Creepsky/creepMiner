@@ -49,8 +49,7 @@ if (USE_CUDA)
 		 -gencode=arch=compute_52,code=compute_52
 		 -gencode=arch=compute_60,code=sm_60
 		 -gencode=arch=compute_61,code=sm_61
-		 -gencode=arch=compute_62,code=sm_62
-		 -gencode=arch=compute_70,code=sm_70)
+		 -gencode=arch=compute_62,code=sm_62)
 endif()
 
 ##################################################################
