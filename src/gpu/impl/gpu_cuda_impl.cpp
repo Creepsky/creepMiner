@@ -24,12 +24,14 @@
 #include "shabal/cuda/Shabal.hpp"
 #include "mining/MinerData.hpp"
 #include "Declarations.hpp"
+#include "gpu/gpu_shell.hpp"
 
 #define check(x) if (!x) { log_critical(MinerLogger::plotVerifier, "Error on %s", std::string(#x)); return false; }
 
 bool Burst::Gpu_Cuda_Impl::allocateMemory(void** memory, MemoryType type, size_t size)
 {
-	check(cuda_alloc_memory(type, size, memory));
+	size = Gpu_Helper::calcMemorySize(type, size);
+	check(cuda_alloc_memory(size, memory));
 	return true;
 }
 
@@ -61,7 +63,8 @@ bool Burst::Gpu_Cuda_Impl::getError(std::string& errorString)
 
 bool Burst::Gpu_Cuda_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction)
 {
-	check(cuda_copy_memory(type, size, input, output, direction));
+	size = Gpu_Helper::calcMemorySize(type, size);
+	check(cuda_copy_memory(size, input, output, direction));
 	return true;
 }
 

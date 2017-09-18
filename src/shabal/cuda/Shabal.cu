@@ -628,33 +628,16 @@ void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize)
 	gridSize = (bufferSize + blockSize - 1) / blockSize;
 }
 
-bool cuda_alloc_memory(MemoryType memType, Poco::UInt64 size, void** mem)
+bool cuda_alloc_memory(Poco::UInt64 size, void** mem)
 {
-	size = cuda_calc_memory_size(memType, size);
-
 	if (size <= 0)
 		return false;
 
 	return cudaMalloc((void**)&*mem, size) == cudaSuccess;
 }
 
-bool cuda_realloc_memory(MemoryType memType, Poco::UInt64 size,  void** mem)
+bool cuda_copy_memory(Poco::UInt64 size, const void* from, void* to, MemoryCopyDirection copyDirection)
 {
-	size = cuda_calc_memory_size(memType, size);
-
-	if (size <= 0)
-		return false;
-
-	if (*mem != nullptr)
-		cuda_free_memory(*mem);
-
-	return cudaMalloc((void**)&*mem, size) == cudaSuccess;
-}
-
-bool cuda_copy_memory(MemoryType memType, Poco::UInt64 size, const void* from, void* to, MemoryCopyDirection copyDirection)
-{
-	size = cuda_calc_memory_size(memType, size);
-
 	if (size <= 0)
 		return false;
 
@@ -667,18 +650,6 @@ bool cuda_free_memory(void* mem)
 		return false;
 
 	return cudaFree(mem) == cudaSuccess;
-}
-
-Poco::UInt64 cuda_calc_memory_size(MemoryType memType, Poco::UInt64 size)
-{
-	if (memType == MemoryType::Buffer)
-		size *= sizeof(Poco::UInt8) * Burst::Settings::ScoopSize;
-	else if (memType == MemoryType::Gensig)
-		size = sizeof(Poco::UInt8) * Burst::Settings::HashSize;
-	else if (memType == MemoryType::Deadlines)
-		size *= sizeof(CalculatedDeadline);
-
-	return size;
 }
 
 bool cuda_calculate_shabal_host_preallocated(ScoopData* buffer, Poco::UInt64* deadlines, Poco::UInt64 bufferSize, const GensigData* gensig,
@@ -702,7 +673,7 @@ bool cuda_reduce_best_deadline(Poco::UInt64* deadlines, size_t size, Poco::UInt6
 	auto pos = thrust::min_element(deadlinesPtr, deadlinesPtr + size);
 	index = thrust::distance(deadlinesPtr, pos);
 
-	if (!cuda_copy_memory(MemoryType::Bytes, sizeof(Poco::UInt64), &deadlines[index], &minDeadline, MemoryCopyDirection::ToHost))
+	if (!cuda_copy_memory(sizeof(Poco::UInt64), &deadlines[index], &minDeadline, MemoryCopyDirection::ToHost))
 		return false;
 
 	return !cuda_get_error(errorString);

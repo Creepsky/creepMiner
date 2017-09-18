@@ -27,11 +27,9 @@
 #include <string>
 
 extern "C" void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize);
-extern "C" bool cuda_alloc_memory(Burst::MemoryType memType, Poco::UInt64 size,  void** mem);
-extern "C" bool cuda_realloc_memory(Burst::MemoryType memType, Poco::UInt64 size,  void** mem);
-extern "C" bool cuda_copy_memory(Burst::MemoryType memType, Poco::UInt64 size, const void* from, void* to, Burst::MemoryCopyDirection copyDirection);
+extern "C" bool cuda_alloc_memory(Poco::UInt64 size,  void** mem);
+extern "C" bool cuda_copy_memory(Poco::UInt64 size, const void* from, void* to, Burst::MemoryCopyDirection copyDirection);
 extern "C" bool cuda_free_memory(void* mem);
-extern "C" Poco::UInt64 cuda_calc_memory_size(Burst::MemoryType memType, Poco::UInt64 size);
 
 extern "C" bool cuda_calculate_shabal_host_preallocated(Burst::ScoopData* buffer, Poco::UInt64* deadlines, Poco::UInt64 bufferSize,
 	const Burst::GensigData* gensig,
