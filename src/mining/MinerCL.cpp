@@ -1,5 +1,29 @@
 #include "MinerCL.hpp"
 #include "logging/MinerLogger.hpp"
+#include <sstream>
+
+namespace Burst
+{
+	struct MinerCLHelper
+	{
+		template <typename TSubject, typename TInfoFunc, typename TArg>
+		static auto infoHelperFunc(const TSubject& subject, std::string& info, TInfoFunc infoFunc, TArg arg)
+		{
+			info = std::string(255, '\0');
+			size_t size = 0;
+
+			if (infoFunc(subject, arg, info.size(), &info[0], &size) != CL_SUCCESS)
+				return false;
+
+			// cut away the \0
+			if (size > 0)
+				--size;
+
+			info.resize(size);
+			return true;
+		};
+	};
+}
 
 bool Burst::MinerCL::create()
 {
@@ -43,7 +67,7 @@ bool Burst::MinerCL::create()
 		{
 			info = std::string(255, '\0');
 			size_t size = 0;
-
+			
 			if (clGetPlatformInfo(platform, type, info.size(), &info[0], &size) != CL_SUCCESS)
 				return false;
 
@@ -56,23 +80,29 @@ bool Burst::MinerCL::create()
 			return true;
 		};
 
-		log_system(MinerLogger::miner, "Available platforms:");
+		std::stringstream sstream;
+		sstream << "Available OpenCL platforms:";
 
 		// print platform infos
-		for (auto platform : platforms)
+		for (auto i = 0u; i < platforms.size(); ++i)
 		{
+			sstream << std::endl;
 			std::string name;
 			std::string version;
 
-			if (!infoHelperFunc(platform, CL_PLATFORM_NAME, name) ||
-				!infoHelperFunc(platform, CL_PLATFORM_VERSION, version))
+			const auto& platform = platforms[i];
+			
+			if (!MinerCLHelper::infoHelperFunc(platform, name, clGetPlatformInfo, CL_PLATFORM_NAME) ||
+				!MinerCLHelper::infoHelperFunc(platform, version, clGetPlatformInfo, CL_PLATFORM_VERSION))
 			{
-				log_error(MinerLogger::miner, "Could not get all infos of a OpenCL platform... skipping it!");
+				sstream << '\t' << "Could not get all infos of a OpenCL platform... skipping it!" << std::endl;
 				continue;
 			}
 
-			log_system(MinerLogger::miner, "Platform: %s, Version: %s", name, version);
+			sstream << '\t' << "Platform[" << i << "]: " << name << ", Version: " << version;
 		}
+
+		log_system(MinerLogger::miner, sstream.str());
 	}
 
 	// get the devices of the desired platform 
@@ -90,7 +120,7 @@ bool Burst::MinerCL::create()
 			return false;
 		}
 
-		auto platform = platforms[platformIdx];
+		const auto platform = platforms[platformIdx];
 		cl_uint sizeDevices = 0;
 
 		if (clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 0, nullptr, &sizeDevices) != CL_SUCCESS)
@@ -106,6 +136,28 @@ bool Burst::MinerCL::create()
 			log_fatal(MinerLogger::miner, "Could not detect the number of valid OpenCL devices!");
 			return false;
 		}
+
+		std::stringstream sstream;
+		sstream << "Available OpenCL devices on platform[" << platformIdx << "]:";
+
+		// print platform infos
+		for (auto i = 0u; i < devices.size(); ++i)
+		{
+			sstream << std::endl;
+			std::string name;
+
+			const auto& device = devices[i];
+
+			if (!MinerCLHelper::infoHelperFunc(device, name, clGetDeviceInfo, CL_DEVICE_NAME))
+			{
+				sstream << '\t' << "Could not get all infos of a OpenCL device... skipping it!" << std::endl;
+				continue;
+			}
+
+			sstream << '\t' << "Device[" << i << "]: " << name;
+		}
+
+		log_system(MinerLogger::miner, sstream.str());
 	}
 
 	// create the context 
@@ -120,7 +172,7 @@ bool Burst::MinerCL::create()
 			return false;
 		}
 
-
+		log_system(MinerLogger::miner, "Successfully created OpenCL context");
 	}
 
 	return true;
