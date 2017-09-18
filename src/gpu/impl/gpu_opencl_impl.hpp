@@ -25,6 +25,7 @@
 #include <Poco/Types.h>
 #include "gpu/gpu_declarations.hpp"
 #include "mining/MinerData.hpp"
+#include <CL/cl.h>
 
 namespace Burst
 {
@@ -39,5 +40,8 @@ namespace Burst
 		static bool getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex);
 		static bool freeMemory(void* memory);
 		static bool getError(std::string& errorString);
+
+	private:
+		static cl_int lastError_;
 	};
 }

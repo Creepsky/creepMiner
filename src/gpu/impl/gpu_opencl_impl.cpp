@@ -21,6 +21,7 @@
 
 #include "gpu_opencl_impl.hpp"
 #include <CL/cl.h>
+cl_int Burst::Gpu_Opencl_Impl::lastError_ = 0;
 
 bool Burst::Gpu_Opencl_Impl::allocateMemory(void** memory, MemoryType type, size_t size)
 {
