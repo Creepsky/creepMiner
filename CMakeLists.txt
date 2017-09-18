@@ -46,7 +46,6 @@ if (USE_CUDA)
 		 ${CUDA_NVCC_FLAGS}
 		 -arch=${GPU_CUDA_ARCH}
 		 -std=c++11
-		 -O3
 		 -gencode=arch=compute_30,code=sm_30
 		 -gencode=arch=compute_50,code=sm_50
 		 -gencode=arch=compute_52,code=sm_52
