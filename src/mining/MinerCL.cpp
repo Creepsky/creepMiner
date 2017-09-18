@@ -236,10 +236,12 @@ bool Burst::MinerCL::create(size_t platformIdx, size_t deviceIdx)
 	{
 		cl_int retCreate;
 		auto size = miningKernel.size();
-		program_ = clCreateProgramWithSource(context_, 1, reinterpret_cast<const char**>(&miningKernel),
+		auto miningKernel_Cstr = miningKernel.c_str();
+
+		program_ = clCreateProgramWithSource(context_, 1, reinterpret_cast<const char**>(&miningKernel_Cstr),
 		                                     reinterpret_cast<const size_t*>(&size), &retCreate);
 
-		const auto retBuild = retCreate && clBuildProgram(program_, 1, &devices[deviceIdx], nullptr, nullptr, nullptr);
+		const auto retBuild = clBuildProgram(program_, 1, &devices[deviceIdx], nullptr, nullptr, nullptr);
 
 		if (retCreate != CL_SUCCESS || retBuild != CL_SUCCESS)
 		{
