@@ -35,6 +35,10 @@
 #include "network/Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
 
+#ifdef USE_OPENCL 
+#include "mining/MinerCL.hpp" 
+#endif
+
 class SSLInitializer
 {
 public:
@@ -150,6 +154,10 @@ int main(int argc, const char* argv[])
 
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 		{
+#ifdef USE_OPENCL 
+			Burst::MinerCL::getCL().create();
+#endif 
+
 			Burst::Miner miner;
 			Burst::MinerServer server{miner};
 

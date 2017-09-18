@@ -36,6 +36,8 @@ endif ()
 # GPU acceleration
 ##################################################################
 option(USE_CUDA "If yes, CUDA will be enabled" ON)
+option(USE_OPENCL "If yes, OpenCL will be enabled" ON)
+
 if (USE_CUDA)
 	 find_package(CUDA REQUIRED)
 	 add_definitions(-DUSE_CUDA)
@@ -44,6 +46,7 @@ if (USE_CUDA)
 		 ${CUDA_NVCC_FLAGS}
 		 -arch=${GPU_CUDA_ARCH}
 		 -std=c++11
+		 -O3
 		 -gencode=arch=compute_30,code=sm_30
 		 -gencode=arch=compute_50,code=sm_50
 		 -gencode=arch=compute_52,code=sm_52
@@ -52,6 +55,11 @@ if (USE_CUDA)
 		 -gencode=arch=compute_61,code=sm_61
 		 -gencode=arch=compute_62,code=sm_62)
 endif()
+
+if (USE_OPENCL)
+	 find_package(OpenCL REQUIRED)
+	 add_definitions(-DUSE_OPENCL)
+endif ()
 
 ##################################################################
 # Additional options
@@ -121,6 +129,7 @@ endif ()
 set(HEADER_FILES
 	src/gpu/algorithm/gpu_algorithm_atomic.hpp
 	src/gpu/impl/gpu_cuda_impl.hpp
+	src/gpu/impl/gpu_opencl_impl.hpp
 	src/gpu/gpu_algorithm_shell.hpp
 	src/gpu/gpu_declarations.hpp
 	src/gpu/gpu_shell.hpp
@@ -166,6 +175,7 @@ set(HEADER_FILES
 ##################################################################
 set(SOURCE_FILES
 	src/gpu/impl/gpu_cuda_impl.cpp
+	src/gpu/impl/gpu_opencl_impl.cpp
 	src/logging/channels/ColoredPriorityConsoleChannel.cpp
 	src/logging/channels/MinerDataChannel.cpp
 	src/logging/Console.cpp
@@ -236,6 +246,11 @@ if (USE_CUDA)
 	 set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
 endif ()
 
+if (USE_OPENCL)
+	 set(HEADER_FILES ${HEADER_FILES} src/mining/MinerCL.hpp)
+	 set(SOURCE_FILES ${SOURCE_FILES} src/mining/MinerCL.cpp)
+endif ()
+
 ##################################################################
 # Executable
 ##################################################################
@@ -269,6 +284,10 @@ elseif (MSVC)
 		iphlpapi
 		libcrypto
 		libssl)
+
+	 if (USE_OPENCL)
+		  target_link_libraries(creepMiner OpenCL::OpenCL)
+	 endif ()
 
 	# 64 bit
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
