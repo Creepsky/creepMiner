@@ -25,7 +25,7 @@ namespace Burst
 	};
 }
 
-bool Burst::MinerCL::create()
+bool Burst::MinerCL::create(size_t platformIdx, size_t deviceIdx)
 {
 	std::vector<cl_platform_id> platforms;
 	std::vector<cl_device_id> devices;
@@ -107,8 +107,6 @@ bool Burst::MinerCL::create()
 
 	// get the devices of the desired platform 
 	{
-		size_t platformIdx = 0;
-
 		if (platformIdx < platforms.size())
 		{
 			log_system(MinerLogger::miner, "Using platform[%z]", platformIdx);
@@ -158,11 +156,22 @@ bool Burst::MinerCL::create()
 		}
 
 		log_system(MinerLogger::miner, sstream.str());
+
+		if (deviceIdx < devices.size())
+		{
+			log_system(MinerLogger::miner, "Using device[%z]", deviceIdx);
+		}
+		else
+		{
+			log_fatal(MinerLogger::miner, "Device index is out of bounds (%z, max: %z)",
+				deviceIdx, devices.size() - 1);
+			return false;
+		}
 	}
 
 	// create the context 
 	{
-		cl_int err = 0;
+		auto err = 0;
 
 		context_ = clCreateContext(nullptr, devices.size(), devices.data(), nullptr, nullptr, &err);
 
@@ -172,20 +181,32 @@ bool Burst::MinerCL::create()
 			return false;
 		}
 
-		log_system(MinerLogger::miner, "Successfully created OpenCL context");
 	}
 
+	// create the command queue
+	{
+		auto ret = 0;
+		command_queue_ = clCreateCommandQueue(context_, devices[deviceIdx], 0, &ret);
+
+		if (ret != CL_SUCCESS)
+		{
+			log_fatal(MinerLogger::miner, "Could not create an OpenCL command queue!");
+			return false;
+		}
+	}
+
+	log_system(MinerLogger::miner, "Successfully initialized OpenCL!");
 	return true;
 }
 
-cl_context& Burst::MinerCL::getContext()
+cl_context Burst::MinerCL::getContext() const
 {
 	return context_;
 }
 
-const cl_context& Burst::MinerCL::getContext() const
+cl_command_queue Burst::MinerCL::getCommandQueue() const
 {
-	return context_;
+	return command_queue_;
 }
 
 Burst::MinerCL& Burst::MinerCL::getCL()
