@@ -245,7 +245,15 @@ bool Burst::MinerCL::create(size_t platformIdx, size_t deviceIdx)
 
 		if (retCreate != CL_SUCCESS || retBuild != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not create the OpenCL program (mining.cl)!");
+			size_t logSize;
+			clGetProgramBuildInfo(program_, devices[deviceIdx], CL_PROGRAM_BUILD_LOG, 0, nullptr, &logSize);
+			
+			std::string log;
+			log.resize(logSize);
+
+			clGetProgramBuildInfo(program_, devices[deviceIdx], CL_PROGRAM_BUILD_LOG, logSize, &log[0], nullptr);
+
+			log_fatal(MinerLogger::miner, "Could not create the OpenCL program (mining.cl)!\n%s", log);
 			return false;
 		}
 	}
