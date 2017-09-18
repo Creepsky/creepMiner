@@ -35,6 +35,7 @@
 #include <Poco/File.h>
 #include <Poco/Delegate.h>
 #include "plots/PlotVerifier.hpp"
+#include "MinerCL.hpp"
 
 namespace Burst
 {
@@ -629,6 +630,9 @@ std::shared_ptr<Burst::Account> Burst::Miner::getAccount(AccountId id)
 void Burst::Miner::createPlotVerifiers()
 {
 	const auto& config = MinerConfig::getConfig();
+	// if true, SSE2 is chosen instead of whatever the user has in his config
+	// this is mostly done as a fallback strategy, because most CPUs have SSE2
+	auto forceCpu = false;
 
 	const auto& processorType = config.getProcessorType();
 	const auto& cpuInstructionSet = config.getCpuInstructionSet();

@@ -41,6 +41,8 @@ namespace Burst
 		cl_command_queue getCommandQueue() const;
 		cl_kernel getKernel() const;
 
+		bool initialized() const;
+
 		static MinerCL& getCL();
 
 	private:
@@ -48,5 +50,6 @@ namespace Burst
 		cl_command_queue command_queue_ = nullptr;
 		cl_program program_ = nullptr;
 		cl_kernel kernel_ = nullptr;
+		bool initialized_ = false;
 	};
 }

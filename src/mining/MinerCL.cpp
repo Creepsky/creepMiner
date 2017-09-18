@@ -263,6 +263,8 @@ bool Burst::MinerCL::create(size_t platformIdx, size_t deviceIdx)
 	}
 
 	log_system(MinerLogger::miner, "Successfully initialized OpenCL!");
+	initialized_ = true;
+
 	return true;
 }
 
@@ -279,6 +281,11 @@ cl_command_queue Burst::MinerCL::getCommandQueue() const
 cl_kernel Burst::MinerCL::getKernel() const
 {
 	return kernel_;
+}
+
+bool Burst::MinerCL::initialized() const
+{
+	return initialized_;
 }
 
 Burst::MinerCL& Burst::MinerCL::getCL()
