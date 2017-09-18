@@ -35,7 +35,7 @@ bool Burst::Gpu_Opencl_Impl::allocateMemory(void** memory, MemoryType type, size
 	if (size <= 0)
 		return false;
 
-	auto allocated = clCreateBuffer(MinerCL::getCL().getContext(), CL_MEM_READ_WRITE, size, nullptr, &ret);
+	const auto allocated = clCreateBuffer(MinerCL::getCL().getContext(), CL_MEM_READ_WRITE, size, nullptr, &ret);
 
 	if (lastError_ == CL_SUCCESS)
 	{
@@ -154,12 +154,26 @@ bool Burst::Gpu_Opencl_Impl::copyMemory(const void* input, void* output, MemoryT
 {
 	if (direction == MemoryCopyDirection::ToDevice)
 	{
-		return true;
+		const auto ret = clEnqueueWriteBuffer(MinerCL::getCL().getCommandQueue(), cl_mem(output), CL_TRUE, 0, size, input, 0,
+		                                      nullptr, nullptr);
+
+		if (ret == CL_SUCCESS)
+			return true;
+
+		lastError_ = ret;
+		return false;
 	}
 
 	if (direction == MemoryCopyDirection::ToDevice)
 	{
-		return true;
+		const auto ret = clEnqueueWriteBuffer(MinerCL::getCL().getCommandQueue(), cl_mem(output), CL_TRUE, 0, size, input, 0,
+		                                      nullptr, nullptr);
+
+		if (ret == CL_SUCCESS)
+			return true;
+
+		lastError_ = ret;
+		return false;
 	}
 
 	return false;
