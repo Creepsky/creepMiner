@@ -653,6 +653,11 @@ void Burst::Miner::createPlotVerifiers()
 		MinerHelper::create_worker<PlotVerifier_cuda>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 			*this, verificationQueue_, progressVerify_);
 	}
+	else if (config.getProcessorType() == "OPENCL")
+	{
+		MinerHelper::create_worker<PlotVerifier_opencl>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+			*this, verificationQueue_, progressVerify_);
+	}
 	else
 		forceSse2 = true;
 	

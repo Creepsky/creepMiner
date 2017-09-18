@@ -22,7 +22,7 @@
 #pragma once
 
 #include "impl/gpu_cuda_impl.hpp"
-//#include "impl/gpu_opencl_impl.hpp"
+#include "impl/gpu_opencl_impl.hpp"
 
 namespace Burst
 {
@@ -143,5 +143,5 @@ namespace Burst
 	};
 
 	using GpuCuda = Gpu_Shell<Gpu_Cuda_Impl>;
-	//using GpuOpenCL = Gpu_Shell<Gpu_Opencl_Impl>;
+	using GpuOpenCL = Gpu_Shell<Gpu_Opencl_Impl>;
 }

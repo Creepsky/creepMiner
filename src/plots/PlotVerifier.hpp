@@ -256,6 +256,7 @@ namespace Burst
 		}
 	};
 
+	template <typename TGpu, typename TAlgorithm>
 	struct PlotVerifierAlgorithm_gpu
 	{
 		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
@@ -263,7 +264,7 @@ namespace Burst
 			std::function<bool()> stop)
 		{
 			DeadlineTuple bestDeadline{0, 0};
-			GpuCuda::run<Gpu_Algorithm_Atomic>(
+			TGpu::template run<TAlgorithm>(
 				buffer,
 				gensig,
 				nonceStart + nonceRead,
@@ -287,6 +288,11 @@ namespace Burst
 	using PlotVerifier_sse4 = PlotVerifier<PlotVerifierAlgorithm_sse4>;
 	using PlotVerifier_avx = PlotVerifier<PlotVerifierAlgorithm_avx>;
 	using PlotVerifier_avx2 = PlotVerifier<PlotVerifierAlgorithm_avx2>;
-	using PlotVerifier_cuda = PlotVerifier<PlotVerifierAlgorithm_gpu>;
+
+	using PlotVerifierAlgorithm_cuda = PlotVerifierAlgorithm_gpu<GpuCuda, Gpu_Algorithm_Atomic>;
+	using PlotVerifierAlgorithm_opencl = PlotVerifierAlgorithm_gpu<GpuOpenCL, Gpu_Algorithm_Atomic>;
+
+	using PlotVerifier_cuda = PlotVerifier<PlotVerifierAlgorithm_cuda>;
+	using PlotVerifier_opencl = PlotVerifier<PlotVerifierAlgorithm_opencl>;
 }
 
