@@ -50,11 +50,48 @@ bool Burst::Gpu_Opencl_Impl::allocateMemory(void** memory, MemoryType type, size
 bool Burst::Gpu_Opencl_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuScoops, Poco::UInt64* gpuDeadlines,
 	size_t nonces, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
 {
+	auto ret = clSetKernelArg(MinerCL::getCL().getKernel(), 0, sizeof(cl_mem), reinterpret_cast<const unsigned char*>(&gpuGensig));
+
+	if (ret == CL_SUCCESS)
+		ret = clSetKernelArg(MinerCL::getCL().getKernel(), 1, sizeof(cl_mem), reinterpret_cast<unsigned char*>(&gpuScoops));
+
+	if (ret == CL_SUCCESS)
+		ret = clSetKernelArg(MinerCL::getCL().getKernel(), 2, sizeof(cl_mem), reinterpret_cast<unsigned long*>(&gpuDeadlines));
+
+	if (ret == CL_SUCCESS)
+		ret = clSetKernelArg(MinerCL::getCL().getKernel(), 3, sizeof(cl_ulong), reinterpret_cast<const void*>(&nonces));
+	
+	if (ret == CL_SUCCESS)
+		ret = clSetKernelArg(MinerCL::getCL().getKernel(), 4, sizeof(cl_ulong), reinterpret_cast<const void*>(&baseTarget));
+
+	if (ret != CL_SUCCESS)
+		return false;
+
+	size_t globalWorkSize[3] = { nonces, 0, 0 };
+	size_t localWorkSize[3] = { 512, 0, 0 };
+	
+	ret = clEnqueueNDRangeKernel(MinerCL::getCL().getCommandQueue(), MinerCL::getCL().getKernel(), 1, nullptr,
+	                             globalWorkSize, localWorkSize, 0, nullptr, nullptr);
+
+	if (ret != CL_SUCCESS)
+		return false;
+
 	return true;
 }
 
 bool Burst::Gpu_Opencl_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex)
 {
+	std::vector<Poco::UInt64> deadlines;
+	deadlines.resize(size);
+
+	if (!copyMemory(gpuDeadlines, deadlines.data(), MemoryType::Bytes, sizeof(Poco::UInt64) * size, MemoryCopyDirection::ToHost))
+		return false;
+
+	const auto minIter = std::min_element(deadlines.begin(), deadlines.end());
+
+	minDeadline = *minIter;
+	minDeadlineIndex = std::distance(deadlines.begin(), minIter);
+
 	return true;
 }
 
