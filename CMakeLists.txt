@@ -141,6 +141,7 @@ set(HEADER_FILES
 	src/logging/ProgressPrinter.hpp
 	src/mining/Deadline.hpp
 	src/mining/Miner.hpp
+	src/mining/MinerCL.hpp
 	src/mining/MinerConfig.hpp
 	src/mining/MinerData.hpp
 	src/network/NonceSubmitter.hpp
@@ -184,6 +185,7 @@ set(SOURCE_FILES
 	src/logging/ProgressPrinter.cpp
 	src/mining/Deadline.cpp
 	src/mining/Miner.cpp
+	src/mining/MinerCL.cpp
 	src/mining/MinerConfig.cpp
 	src/mining/MinerData.cpp
 	src/network/NonceSubmitter.cpp
@@ -243,11 +245,6 @@ endif ()
 
 if (USE_CUDA)
 	 set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
-endif ()
-
-if (USE_OPENCL)
-	 set(HEADER_FILES ${HEADER_FILES} src/mining/MinerCL.hpp)
-	 set(SOURCE_FILES ${SOURCE_FILES} src/mining/MinerCL.cpp)
 endif ()
 
 ##################################################################
