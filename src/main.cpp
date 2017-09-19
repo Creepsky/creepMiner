@@ -160,9 +160,8 @@ int main(int argc, const char* argv[])
 
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 		{
-#ifdef USE_OPENCL 
-			Burst::MinerCL::getCL().create();
-#endif 
+			if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
+				Burst::MinerCL::getCL().create();
 
 			Burst::Miner miner;
 			Burst::MinerServer server{miner};
