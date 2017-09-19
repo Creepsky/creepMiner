@@ -644,7 +644,8 @@ void Burst::Miner::createPlotVerifiers()
 		else if (cpuInstructionSet == "AVX2" && Settings::Avx2)
 			MinerHelper::create_worker<PlotVerifier_avx2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 				*this, verificationQueue_, progressVerify_);
-		else
+		else if (cpuInstructionSet == "SSE2"); // do nothing
+        else
 			forceSse2 = true;
 	}
 	else if (processorType == "CUDA" && Settings::Cuda)
@@ -660,7 +661,7 @@ void Burst::Miner::createPlotVerifiers()
 	else
 		forceSse2 = true;
 	
-	if (forceSse2)
+	if (forceSse2 || (processorType == "CPU" && cpuInstructionSet == "SSE2"))
 	{
 		MinerHelper::create_worker<PlotVerifier_sse2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 			*this, verificationQueue_, progressVerify_);
