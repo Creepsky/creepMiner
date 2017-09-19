@@ -75,10 +75,16 @@ int main(int argc, const char* argv[])
 	using Burst::Settings;
 
 	std::stringstream sstream;
-	sstream << ' ' << (Settings::Cuda ? '+' : '-') << "CUDA";
-	sstream << ' ' << (Settings::Sse4 ? '+' : '-') << "SSE4";
-	sstream << ' ' << (Settings::Avx ? '+' : '-') << "AVX";
-	sstream << ' ' << (Settings::Avx2 ? '+' : '-') << "AVX2";
+
+	const auto checkAndPrint = [&](bool flag, const std::string& text) {
+		sstream << ' ' << (flag ? '+' : '-') << text;
+	};
+
+	checkAndPrint(Settings::Cuda, "CUDA");
+	checkAndPrint(Settings::OpenCl, "OpenCL");
+	checkAndPrint(Settings::Sse4, "SSE4");
+	checkAndPrint(Settings::Avx, "AVX");
+	checkAndPrint(Settings::Avx2, "AVX2");
 
 	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
 	log_information(general, "%s mode%s", mode, sstream.str());
