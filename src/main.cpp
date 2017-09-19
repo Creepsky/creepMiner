@@ -34,10 +34,7 @@
 #include <Poco/Logger.h>
 #include "network/Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
-
-#ifdef USE_OPENCL 
 #include "mining/MinerCL.hpp" 
-#endif
 
 class SSLInitializer
 {
