@@ -629,16 +629,11 @@ std::shared_ptr<Burst::Account> Burst::Miner::getAccount(AccountId id)
 
 void Burst::Miner::createPlotVerifiers()
 {
-	const auto& config = MinerConfig::getConfig();
-	// if true, SSE2 is chosen instead of whatever the user has in his config
-	// this is mostly done as a fallback strategy, because most CPUs have SSE2
-	auto forceCpu = false;
-
-	const auto& processorType = config.getProcessorType();
-	const auto& cpuInstructionSet = config.getCpuInstructionSet();
+	const auto& processorType = MinerConfig::getConfig().getProcessorType();
+	const auto& cpuInstructionSet = MinerConfig::getConfig().getCpuInstructionSet();
 	auto forceSse2 = false;
 
-	if (processorType == "CPU" && !forceSse2)
+	if (processorType == "CPU")
 	{
 		if (cpuInstructionSet == "SSE4" && Settings::Sse4)
 			MinerHelper::create_worker<PlotVerifier_sse4>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
@@ -657,7 +652,7 @@ void Burst::Miner::createPlotVerifiers()
 		MinerHelper::create_worker<PlotVerifier_cuda>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 			*this, verificationQueue_, progressVerify_);
 	}
-	else if (config.getProcessorType() == "OPENCL")
+	else if (processorType == "OPENCL" && Settings::OpenCl)
 	{
 		MinerHelper::create_worker<PlotVerifier_opencl>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 			*this, verificationQueue_, progressVerify_);
