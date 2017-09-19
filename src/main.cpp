@@ -68,14 +68,16 @@ int main(int argc, const char* argv[])
 	std::string mode = "Debug";
 #endif
 
-#ifdef USE_CUDA
-	std::string cuda = ", compiled with CUDA SDK";
-#else
-	std::string cuda = "";
-#endif
+	using Burst::Settings;
+
+	std::stringstream sstream;
+	sstream << ' ' << (Settings::Cuda ? '+' : '-') << "CUDA";
+	sstream << ' ' << (Settings::Sse4 ? '+' : '-') << "SSE4";
+	sstream << ' ' << (Settings::Avx ? '+' : '-') << "AVX";
+	sstream << ' ' << (Settings::Avx2 ? '+' : '-') << "AVX2";
 
 	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
-	log_information(general, "%s mode%s", mode, cuda);
+	log_information(general, "%s mode%s", mode, sstream.str());
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
