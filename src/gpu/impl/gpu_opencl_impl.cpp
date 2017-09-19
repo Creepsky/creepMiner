@@ -20,14 +20,14 @@
 // ==========================================================================
 
 #include "gpu_opencl_impl.hpp"
-#include <CL/cl.h>
 #include "mining/MinerCL.hpp"
 #include "gpu/gpu_shell.hpp"
 
-cl_int Burst::Gpu_Opencl_Impl::lastError_ = 0;
+int Burst::Gpu_Opencl_Impl::lastError_ = 0;
 
 bool Burst::Gpu_Opencl_Impl::allocateMemory(void** memory, MemoryType type, size_t size)
 {
+#ifdef USE_OPENCL
 	cl_int ret;
 
 	size = Gpu_Helper::calcMemorySize(type, size);
@@ -45,11 +45,15 @@ bool Burst::Gpu_Opencl_Impl::allocateMemory(void** memory, MemoryType type, size
 
 	lastError_ = ret;
 	return false;
+#else
+	return true;
+#endif
 }
 
 bool Burst::Gpu_Opencl_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuScoops, Poco::UInt64* gpuDeadlines,
 	size_t nonces, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
 {
+#ifdef USE_OPENCL
 	auto ret = clSetKernelArg(MinerCL::getCL().getKernel(), 0, sizeof(cl_mem), reinterpret_cast<const unsigned char*>(&gpuGensig));
 
 	if (ret == CL_SUCCESS)
@@ -75,12 +79,13 @@ bool Burst::Gpu_Opencl_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuS
 
 	if (ret != CL_SUCCESS)
 		return false;
-
+#endif
 	return true;
 }
 
 bool Burst::Gpu_Opencl_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex)
 {
+#ifdef USE_OPENCL
 	std::vector<Poco::UInt64> deadlines;
 	deadlines.resize(size);
 
@@ -91,12 +96,13 @@ bool Burst::Gpu_Opencl_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t s
 
 	minDeadline = *minIter;
 	minDeadlineIndex = std::distance(deadlines.begin(), minIter);
-
+#endif
 	return true;
 }
 
 bool Burst::Gpu_Opencl_Impl::freeMemory(void* memory)
 {
+#ifdef USE_OPENCL
 	const auto ret = clReleaseMemObject(static_cast<cl_mem>(memory));
 
 	if (ret == CL_SUCCESS)
@@ -104,10 +110,14 @@ bool Burst::Gpu_Opencl_Impl::freeMemory(void* memory)
 
 	lastError_ = ret;
 	return false;
+#else
+	return true;
+#endif
 }
 
 bool Burst::Gpu_Opencl_Impl::getError(std::string& errorString)
 {
+#ifdef USE_OPENCL
 	const auto getErrorString = [&]() {
 		switch (lastError_)
 		{
@@ -185,10 +195,14 @@ bool Burst::Gpu_Opencl_Impl::getError(std::string& errorString)
 
 	errorString = getErrorString();
 	return true;
+#else
+	return false;
+#endif
 }
 
 bool Burst::Gpu_Opencl_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction)
 {
+#ifdef USE_OPENCL
 	size = Gpu_Helper::calcMemorySize(type, size);
 
 	if (direction == MemoryCopyDirection::ToDevice)
@@ -216,4 +230,7 @@ bool Burst::Gpu_Opencl_Impl::copyMemory(const void* input, void* output, MemoryT
 	}
 
 	return false;
+#else
+	return true;
+#endif
 }

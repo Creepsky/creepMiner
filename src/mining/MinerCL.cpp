@@ -23,10 +23,10 @@
 #include "logging/MinerLogger.hpp"
 #include <sstream>
 #include <fstream>
-#include <thrust/execution_policy.h>
 
 namespace Burst
 {
+#ifdef USE_OPENCL
 	struct MinerCLHelper
 	{
 		template <typename TSubject, typename TInfoFunc, typename TArg>
@@ -46,10 +46,12 @@ namespace Burst
 			return true;
 		};
 	};
+#endif
 }
 
 Burst::MinerCL::~MinerCL()
 {
+#ifdef USE_OPENCL
 	if (command_queue_ != nullptr)
 		clFlush(command_queue_);
 
@@ -67,10 +69,12 @@ Burst::MinerCL::~MinerCL()
 
 	if (context_ != nullptr)
 		clReleaseContext(context_);
+#endif
 }
 
 bool Burst::MinerCL::create(size_t platformIdx, size_t deviceIdx)
 {
+#ifdef USE_OPENCL
 	std::vector<cl_platform_id> platforms;
 	std::vector<cl_device_id> devices;
 
@@ -271,6 +275,8 @@ bool Burst::MinerCL::create(size_t platformIdx, size_t deviceIdx)
 	}
 
 	log_system(MinerLogger::miner, "Successfully initialized OpenCL!");
+#endif
+
 	initialized_ = true;
 
 	return true;

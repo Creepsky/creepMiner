@@ -25,7 +25,6 @@
 #include <Poco/Types.h>
 #include "gpu/gpu_declarations.hpp"
 #include "mining/MinerData.hpp"
-#include <CL/cl.h>
 
 namespace Burst
 {
@@ -42,6 +41,6 @@ namespace Burst
 		static bool getError(std::string& errorString);
 
 	private:
-		static cl_int lastError_;
+		static int lastError_;
 	};
 }

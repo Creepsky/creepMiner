@@ -24,7 +24,14 @@
 /*
  * OpenCL relevant classes and functions.
  */
+#ifdef USE_OPENCL
 #include <CL/cl.h>
+#else
+using cl_context = int*;
+using cl_command_queue = int*;
+using cl_kernel = int*;
+using cl_program = int*;
+#endif
 
 namespace Burst
 {
