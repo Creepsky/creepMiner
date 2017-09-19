@@ -152,6 +152,8 @@ bool Burst::Gpu_Opencl_Impl::getError(std::string& errorString)
 
 bool Burst::Gpu_Opencl_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction)
 {
+	size = Gpu_Helper::calcMemorySize(type, size);
+
 	if (direction == MemoryCopyDirection::ToDevice)
 	{
 		const auto ret = clEnqueueWriteBuffer(MinerCL::getCL().getCommandQueue(), cl_mem(output), CL_TRUE, 0, size, input, 0,
