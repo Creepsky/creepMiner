@@ -64,3 +64,14 @@ namespace Burst
 		}
 	};
 }
+
+#ifndef USE_AVX2
+inline void avx2_mshabal_init(mshabal256_context* sc, unsigned out_size) {}
+
+inline void avx2_mshabal(mshabal256_context* sc, const void* data0, const void* data1, const void* data2, const void* data3,
+                  const void* data4, const void* data5, const void* data6, const void* data7, size_t len) {}
+
+inline void avx2_mshabal_close(mshabal256_context* sc, unsigned ub0, unsigned ub1, unsigned ub2, unsigned ub3, unsigned ub4,
+                        unsigned ub5, unsigned ub6, unsigned ub7, unsigned n, void* dst0, void* dst1, void* dst2,
+                        void* dst3, void* dst4, void* dst5, void* dst6, void* dst7) {}
+#endif
