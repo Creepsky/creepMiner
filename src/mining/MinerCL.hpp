@@ -42,7 +42,7 @@ namespace Burst
 	{
 	public:
 		~MinerCL();
-		bool create(size_t platformIdx = 0, size_t deviceIdx = 0);
+		bool create(unsigned platformIdx = 0, unsigned deviceIdx = 0);
 
 		cl_context getContext() const;
 		cl_command_queue getCommandQueue() const;

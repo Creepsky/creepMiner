@@ -72,7 +72,7 @@ Burst::MinerCL::~MinerCL()
 #endif
 }
 
-bool Burst::MinerCL::create(size_t platformIdx, size_t deviceIdx)
+bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 {
 #ifdef USE_OPENCL
 	std::vector<cl_platform_id> platforms;
