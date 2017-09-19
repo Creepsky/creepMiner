@@ -94,6 +94,8 @@ namespace Burst
 		static const Version ProjectVersion;
 		static ProjectData Project;
 
+		static const bool Sse4, Avx, Avx2, Cuda;
+
 		static void setCpuInstructionSet(std::string cpuInstructionSet);
 	};
 
