@@ -164,10 +164,10 @@ bool Burst::Gpu_Opencl_Impl::copyMemory(const void* input, void* output, MemoryT
 		return false;
 	}
 
-	if (direction == MemoryCopyDirection::ToDevice)
+	if (direction == MemoryCopyDirection::ToHost)
 	{
-		const auto ret = clEnqueueWriteBuffer(MinerCL::getCL().getCommandQueue(), cl_mem(output), CL_TRUE, 0, size, input, 0,
-		                                      nullptr, nullptr);
+		const auto ret = clEnqueueReadBuffer(MinerCL::getCL().getCommandQueue(), cl_mem(input), CL_TRUE, 0, size, output, 0,
+		                                     nullptr, nullptr);
 
 		if (ret == CL_SUCCESS)
 			return true;
