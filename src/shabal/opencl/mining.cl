@@ -1,492 +1,500 @@
 /*
-GPU plot generator for Burst coin.
-Author: Cryo
-Bitcoin: 138gMBhCrNkbaiTCmUhP9HLU9xwn5QKZgD
-Burst: BURST-YA29-QCEW-QXC3-BKXDL
-Based on the code of the official miner and dcct's plotgen.
-https://github.com/bhamon/gpuPlotGenerator/blob/master/kernel/shabal.cl
+* The MIT License (MIT)
+*
+* Copyright (c) 2016 by luxe - https://github.com/de-luxe - BURST-LUXE-RED2-G6JW-H4HG5
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+* and associated documentation files (the "Software"), to deal in the Software without restriction,
+* including without limitation the rights to use, copy, modify, merge, publish, distribute,
+* sublicense, and/or sell copies of the Software, and to permit persons to whom the Software
+* is furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all copies
+* or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+* BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+* NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+* DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*
 */
 
-#ifndef SHABAL_CL
-#define SHABAL_CL
+// the source code for this file by luxe can be found here:
+// https://github.com/de-luxe/burstcoin-jminer/blob/master/src/main/java/burstcoin/jminer/core/checker/util/calcdeadlines.cl
 
-#define SHABAL_C32(x)		((unsigned int)(x ## U))
-#define SHABAL_T32(x)		(as_uint(x))
+typedef unsigned int sph_u32;
 
-#define SHABAL_INPUT_BLOCK_ADD   do { \
-		p_context->B0 = SHABAL_T32(p_context->B0 + M0); \
-		p_context->B1 = SHABAL_T32(p_context->B1 + M1); \
-		p_context->B2 = SHABAL_T32(p_context->B2 + M2); \
-		p_context->B3 = SHABAL_T32(p_context->B3 + M3); \
-		p_context->B4 = SHABAL_T32(p_context->B4 + M4); \
-		p_context->B5 = SHABAL_T32(p_context->B5 + M5); \
-		p_context->B6 = SHABAL_T32(p_context->B6 + M6); \
-		p_context->B7 = SHABAL_T32(p_context->B7 + M7); \
-		p_context->B8 = SHABAL_T32(p_context->B8 + M8); \
-		p_context->B9 = SHABAL_T32(p_context->B9 + M9); \
-		p_context->BA = SHABAL_T32(p_context->BA + MA); \
-		p_context->BB = SHABAL_T32(p_context->BB + MB); \
-		p_context->BC = SHABAL_T32(p_context->BC + MC); \
-		p_context->BD = SHABAL_T32(p_context->BD + MD); \
-		p_context->BE = SHABAL_T32(p_context->BE + ME); \
-		p_context->BF = SHABAL_T32(p_context->BF + MF); \
-	} while(0)
+#define SPH_C32(x)    ((sph_u32)(x ## U))
+#define SPH_T32(x) (as_uint(x))
+#define SPH_ROTL32(x, n) rotate(as_uint(x), as_uint(n))
+#define SPH_ROTR32(x, n)   SPH_ROTL32(x, (32 - (n)))
 
-#define SHABAL_INPUT_BLOCK_SUB   do { \
-		p_context->C0 = SHABAL_T32(p_context->C0 - M0); \
-		p_context->C1 = SHABAL_T32(p_context->C1 - M1); \
-		p_context->C2 = SHABAL_T32(p_context->C2 - M2); \
-		p_context->C3 = SHABAL_T32(p_context->C3 - M3); \
-		p_context->C4 = SHABAL_T32(p_context->C4 - M4); \
-		p_context->C5 = SHABAL_T32(p_context->C5 - M5); \
-		p_context->C6 = SHABAL_T32(p_context->C6 - M6); \
-		p_context->C7 = SHABAL_T32(p_context->C7 - M7); \
-		p_context->C8 = SHABAL_T32(p_context->C8 - M8); \
-		p_context->C9 = SHABAL_T32(p_context->C9 - M9); \
-		p_context->CA = SHABAL_T32(p_context->CA - MA); \
-		p_context->CB = SHABAL_T32(p_context->CB - MB); \
-		p_context->CC = SHABAL_T32(p_context->CC - MC); \
-		p_context->CD = SHABAL_T32(p_context->CD - MD); \
-		p_context->CE = SHABAL_T32(p_context->CE - ME); \
-		p_context->CF = SHABAL_T32(p_context->CF - MF); \
-	} while(0)
+#define SPH_C64(x)    ((sph_u64)(x ## UL))
+#define SPH_T64(x) (as_ulong(x))
+#define SPH_ROTL64(x, n) rotate(as_ulong(x), (n) & 0xFFFFFFFFFFFFFFFFUL)
+#define SPH_ROTR64(x, n)   SPH_ROTL64(x, (64 - (n)))
 
-#define SHABAL_XOR_W   do { \
-		p_context->A0 ^= p_context->Wlow; \
-		p_context->A1 ^= p_context->Whigh; \
-	} while(0)
+/* $Id: shabal.c 175 2010-05-07 16:03:20Z tp $ */
+/*
+* Shabal implementation.
+*
+* ==========================(LICENSE BEGIN)============================
+*
+* Copyright (c) 2007-2010  Projet RNRT SAPHIR
+*
+* Permission is hereby granted, free of charge, to any person obtaining
+* a copy of this software and associated documentation files (the
+* "Software"), to deal in the Software without restriction, including
+* without limitation the rights to use, copy, modify, merge, publish,
+* distribute, sublicense, and/or sell copies of the Software, and to
+* permit persons to whom the Software is furnished to do so, subject to
+* the following conditions:
+*
+* The above copyright notice and this permission notice shall be
+* included in all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*
+* ===========================(LICENSE END)=============================
+*
+* @author   Thomas Pornin <thomas.pornin@cryptolog.com>
+*/
 
-#define SHABAL_SWAP(v1, v2)   do { \
-		unsigned int tmp = (v1); \
+/*
+* Part of this code was automatically generated (the part between
+* the "BEGIN" and "END" markers).
+*/
+
+#define sM    16
+
+#define C32   SPH_C32
+#define T32   SPH_T32
+
+#define O1   13
+#define O2    9
+#define O3    6
+
+/*
+* We copy the state into local variables, so that the compiler knows
+* that it can optimize them at will.
+*/
+
+/* BEGIN -- automatically generated code. */
+
+#define INPUT_BLOCK_ADD   do { \
+		B0 = T32(B0 + M0); \
+		B1 = T32(B1 + M1); \
+		B2 = T32(B2 + M2); \
+		B3 = T32(B3 + M3); \
+		B4 = T32(B4 + M4); \
+		B5 = T32(B5 + M5); \
+		B6 = T32(B6 + M6); \
+		B7 = T32(B7 + M7); \
+		B8 = T32(B8 + M8); \
+		B9 = T32(B9 + M9); \
+		BA = T32(BA + MA); \
+		BB = T32(BB + MB); \
+		BC = T32(BC + MC); \
+		BD = T32(BD + MD); \
+		BE = T32(BE + ME); \
+		BF = T32(BF + MF); \
+	} while (0)
+
+#define INPUT_BLOCK_SUB   do { \
+		C0 = T32(C0 - M0); \
+		C1 = T32(C1 - M1); \
+		C2 = T32(C2 - M2); \
+		C3 = T32(C3 - M3); \
+		C4 = T32(C4 - M4); \
+		C5 = T32(C5 - M5); \
+		C6 = T32(C6 - M6); \
+		C7 = T32(C7 - M7); \
+		C8 = T32(C8 - M8); \
+		C9 = T32(C9 - M9); \
+		CA = T32(CA - MA); \
+		CB = T32(CB - MB); \
+		CC = T32(CC - MC); \
+		CD = T32(CD - MD); \
+		CE = T32(CE - ME); \
+		CF = T32(CF - MF); \
+	} while (0)
+
+#define XOR_W   do { \
+		A00 ^= Wlow; \
+		A01 ^= Whigh; \
+	} while (0)
+
+#define SWAP(v1, v2)   do { \
+		sph_u32 tmp = (v1); \
 		(v1) = (v2); \
 		(v2) = tmp; \
-	} while(0)
+	} while (0)
 
-#define SHABAL_SWAP_BC   do { \
-		SHABAL_SWAP(p_context->B0, p_context->C0); \
-		SHABAL_SWAP(p_context->B1, p_context->C1); \
-		SHABAL_SWAP(p_context->B2, p_context->C2); \
-		SHABAL_SWAP(p_context->B3, p_context->C3); \
-		SHABAL_SWAP(p_context->B4, p_context->C4); \
-		SHABAL_SWAP(p_context->B5, p_context->C5); \
-		SHABAL_SWAP(p_context->B6, p_context->C6); \
-		SHABAL_SWAP(p_context->B7, p_context->C7); \
-		SHABAL_SWAP(p_context->B8, p_context->C8); \
-		SHABAL_SWAP(p_context->B9, p_context->C9); \
-		SHABAL_SWAP(p_context->BA, p_context->CA); \
-		SHABAL_SWAP(p_context->BB, p_context->CB); \
-		SHABAL_SWAP(p_context->BC, p_context->CC); \
-		SHABAL_SWAP(p_context->BD, p_context->CD); \
-		SHABAL_SWAP(p_context->BE, p_context->CE); \
-		SHABAL_SWAP(p_context->BF, p_context->CF); \
-	} while(0)
+#define SWAP_BC   do { \
+		SWAP(B0, C0); \
+		SWAP(B1, C1); \
+		SWAP(B2, C2); \
+		SWAP(B3, C3); \
+		SWAP(B4, C4); \
+		SWAP(B5, C5); \
+		SWAP(B6, C6); \
+		SWAP(B7, C7); \
+		SWAP(B8, C8); \
+		SWAP(B9, C9); \
+		SWAP(BA, CA); \
+		SWAP(BB, CB); \
+		SWAP(BC, CC); \
+		SWAP(BD, CD); \
+		SWAP(BE, CE); \
+		SWAP(BF, CF); \
+	} while (0)
 
-#define SHABAL_PERM_ELT(xa0, xa1, xb0, xb1, xb2, xb3, xc, xm)   do { \
-		xa0 = SHABAL_T32((xa0 \
+#define PERM_ELT(xa0, xa1, xb0, xb1, xb2, xb3, xc, xm)   do { \
+		xa0 = T32((xa0 \
 			^ (((xa1 << 15) | (xa1 >> 17)) * 5U) \
 			^ xc) * 3U) \
 			^ xb1 ^ (xb2 & ~xb3) ^ xm; \
-		xb0 = SHABAL_T32(~(((xb0 << 1) | (xb0 >> 31)) ^ xa0)); \
-	} while(0)
+		xb0 = T32(~(((xb0 << 1) | (xb0 >> 31)) ^ xa0)); \
+	} while (0)
 
-#define SHABAL_PERM_STEP_0   do { \
-		SHABAL_PERM_ELT(p_context->A0, p_context->AB, p_context->B0, p_context->BD, p_context->B9, p_context->B6, p_context->C8, M0); \
-		SHABAL_PERM_ELT(p_context->A1, p_context->A0, p_context->B1, p_context->BE, p_context->BA, p_context->B7, p_context->C7, M1); \
-		SHABAL_PERM_ELT(p_context->A2, p_context->A1, p_context->B2, p_context->BF, p_context->BB, p_context->B8, p_context->C6, M2); \
-		SHABAL_PERM_ELT(p_context->A3, p_context->A2, p_context->B3, p_context->B0, p_context->BC, p_context->B9, p_context->C5, M3); \
-		SHABAL_PERM_ELT(p_context->A4, p_context->A3, p_context->B4, p_context->B1, p_context->BD, p_context->BA, p_context->C4, M4); \
-		SHABAL_PERM_ELT(p_context->A5, p_context->A4, p_context->B5, p_context->B2, p_context->BE, p_context->BB, p_context->C3, M5); \
-		SHABAL_PERM_ELT(p_context->A6, p_context->A5, p_context->B6, p_context->B3, p_context->BF, p_context->BC, p_context->C2, M6); \
-		SHABAL_PERM_ELT(p_context->A7, p_context->A6, p_context->B7, p_context->B4, p_context->B0, p_context->BD, p_context->C1, M7); \
-		SHABAL_PERM_ELT(p_context->A8, p_context->A7, p_context->B8, p_context->B5, p_context->B1, p_context->BE, p_context->C0, M8); \
-		SHABAL_PERM_ELT(p_context->A9, p_context->A8, p_context->B9, p_context->B6, p_context->B2, p_context->BF, p_context->CF, M9); \
-		SHABAL_PERM_ELT(p_context->AA, p_context->A9, p_context->BA, p_context->B7, p_context->B3, p_context->B0, p_context->CE, MA); \
-		SHABAL_PERM_ELT(p_context->AB, p_context->AA, p_context->BB, p_context->B8, p_context->B4, p_context->B1, p_context->CD, MB); \
-		SHABAL_PERM_ELT(p_context->A0, p_context->AB, p_context->BC, p_context->B9, p_context->B5, p_context->B2, p_context->CC, MC); \
-		SHABAL_PERM_ELT(p_context->A1, p_context->A0, p_context->BD, p_context->BA, p_context->B6, p_context->B3, p_context->CB, MD); \
-		SHABAL_PERM_ELT(p_context->A2, p_context->A1, p_context->BE, p_context->BB, p_context->B7, p_context->B4, p_context->CA, ME); \
-		SHABAL_PERM_ELT(p_context->A3, p_context->A2, p_context->BF, p_context->BC, p_context->B8, p_context->B5, p_context->C9, MF); \
-	} while(0)
+#define PERM_STEP_0   do { \
+		PERM_ELT(A00, A0B, B0, BD, B9, B6, C8, M0); \
+		PERM_ELT(A01, A00, B1, BE, BA, B7, C7, M1); \
+		PERM_ELT(A02, A01, B2, BF, BB, B8, C6, M2); \
+		PERM_ELT(A03, A02, B3, B0, BC, B9, C5, M3); \
+		PERM_ELT(A04, A03, B4, B1, BD, BA, C4, M4); \
+		PERM_ELT(A05, A04, B5, B2, BE, BB, C3, M5); \
+		PERM_ELT(A06, A05, B6, B3, BF, BC, C2, M6); \
+		PERM_ELT(A07, A06, B7, B4, B0, BD, C1, M7); \
+		PERM_ELT(A08, A07, B8, B5, B1, BE, C0, M8); \
+		PERM_ELT(A09, A08, B9, B6, B2, BF, CF, M9); \
+		PERM_ELT(A0A, A09, BA, B7, B3, B0, CE, MA); \
+		PERM_ELT(A0B, A0A, BB, B8, B4, B1, CD, MB); \
+		PERM_ELT(A00, A0B, BC, B9, B5, B2, CC, MC); \
+		PERM_ELT(A01, A00, BD, BA, B6, B3, CB, MD); \
+		PERM_ELT(A02, A01, BE, BB, B7, B4, CA, ME); \
+		PERM_ELT(A03, A02, BF, BC, B8, B5, C9, MF); \
+	} while (0)
 
-#define SHABAL_PERM_STEP_1   do { \
-		SHABAL_PERM_ELT(p_context->A4, p_context->A3, p_context->B0, p_context->BD, p_context->B9, p_context->B6, p_context->C8, M0); \
-		SHABAL_PERM_ELT(p_context->A5, p_context->A4, p_context->B1, p_context->BE, p_context->BA, p_context->B7, p_context->C7, M1); \
-		SHABAL_PERM_ELT(p_context->A6, p_context->A5, p_context->B2, p_context->BF, p_context->BB, p_context->B8, p_context->C6, M2); \
-		SHABAL_PERM_ELT(p_context->A7, p_context->A6, p_context->B3, p_context->B0, p_context->BC, p_context->B9, p_context->C5, M3); \
-		SHABAL_PERM_ELT(p_context->A8, p_context->A7, p_context->B4, p_context->B1, p_context->BD, p_context->BA, p_context->C4, M4); \
-		SHABAL_PERM_ELT(p_context->A9, p_context->A8, p_context->B5, p_context->B2, p_context->BE, p_context->BB, p_context->C3, M5); \
-		SHABAL_PERM_ELT(p_context->AA, p_context->A9, p_context->B6, p_context->B3, p_context->BF, p_context->BC, p_context->C2, M6); \
-		SHABAL_PERM_ELT(p_context->AB, p_context->AA, p_context->B7, p_context->B4, p_context->B0, p_context->BD, p_context->C1, M7); \
-		SHABAL_PERM_ELT(p_context->A0, p_context->AB, p_context->B8, p_context->B5, p_context->B1, p_context->BE, p_context->C0, M8); \
-		SHABAL_PERM_ELT(p_context->A1, p_context->A0, p_context->B9, p_context->B6, p_context->B2, p_context->BF, p_context->CF, M9); \
-		SHABAL_PERM_ELT(p_context->A2, p_context->A1, p_context->BA, p_context->B7, p_context->B3, p_context->B0, p_context->CE, MA); \
-		SHABAL_PERM_ELT(p_context->A3, p_context->A2, p_context->BB, p_context->B8, p_context->B4, p_context->B1, p_context->CD, MB); \
-		SHABAL_PERM_ELT(p_context->A4, p_context->A3, p_context->BC, p_context->B9, p_context->B5, p_context->B2, p_context->CC, MC); \
-		SHABAL_PERM_ELT(p_context->A5, p_context->A4, p_context->BD, p_context->BA, p_context->B6, p_context->B3, p_context->CB, MD); \
-		SHABAL_PERM_ELT(p_context->A6, p_context->A5, p_context->BE, p_context->BB, p_context->B7, p_context->B4, p_context->CA, ME); \
-		SHABAL_PERM_ELT(p_context->A7, p_context->A6, p_context->BF, p_context->BC, p_context->B8, p_context->B5, p_context->C9, MF); \
-	} while(0)
+#define PERM_STEP_1   do { \
+		PERM_ELT(A04, A03, B0, BD, B9, B6, C8, M0); \
+		PERM_ELT(A05, A04, B1, BE, BA, B7, C7, M1); \
+		PERM_ELT(A06, A05, B2, BF, BB, B8, C6, M2); \
+		PERM_ELT(A07, A06, B3, B0, BC, B9, C5, M3); \
+		PERM_ELT(A08, A07, B4, B1, BD, BA, C4, M4); \
+		PERM_ELT(A09, A08, B5, B2, BE, BB, C3, M5); \
+		PERM_ELT(A0A, A09, B6, B3, BF, BC, C2, M6); \
+		PERM_ELT(A0B, A0A, B7, B4, B0, BD, C1, M7); \
+		PERM_ELT(A00, A0B, B8, B5, B1, BE, C0, M8); \
+		PERM_ELT(A01, A00, B9, B6, B2, BF, CF, M9); \
+		PERM_ELT(A02, A01, BA, B7, B3, B0, CE, MA); \
+		PERM_ELT(A03, A02, BB, B8, B4, B1, CD, MB); \
+		PERM_ELT(A04, A03, BC, B9, B5, B2, CC, MC); \
+		PERM_ELT(A05, A04, BD, BA, B6, B3, CB, MD); \
+		PERM_ELT(A06, A05, BE, BB, B7, B4, CA, ME); \
+		PERM_ELT(A07, A06, BF, BC, B8, B5, C9, MF); \
+	} while (0)
 
-#define SHABAL_PERM_STEP_2   do { \
-		SHABAL_PERM_ELT(p_context->A8, p_context->A7, p_context->B0, p_context->BD, p_context->B9, p_context->B6, p_context->C8, M0); \
-		SHABAL_PERM_ELT(p_context->A9, p_context->A8, p_context->B1, p_context->BE, p_context->BA, p_context->B7, p_context->C7, M1); \
-		SHABAL_PERM_ELT(p_context->AA, p_context->A9, p_context->B2, p_context->BF, p_context->BB, p_context->B8, p_context->C6, M2); \
-		SHABAL_PERM_ELT(p_context->AB, p_context->AA, p_context->B3, p_context->B0, p_context->BC, p_context->B9, p_context->C5, M3); \
-		SHABAL_PERM_ELT(p_context->A0, p_context->AB, p_context->B4, p_context->B1, p_context->BD, p_context->BA, p_context->C4, M4); \
-		SHABAL_PERM_ELT(p_context->A1, p_context->A0, p_context->B5, p_context->B2, p_context->BE, p_context->BB, p_context->C3, M5); \
-		SHABAL_PERM_ELT(p_context->A2, p_context->A1, p_context->B6, p_context->B3, p_context->BF, p_context->BC, p_context->C2, M6); \
-		SHABAL_PERM_ELT(p_context->A3, p_context->A2, p_context->B7, p_context->B4, p_context->B0, p_context->BD, p_context->C1, M7); \
-		SHABAL_PERM_ELT(p_context->A4, p_context->A3, p_context->B8, p_context->B5, p_context->B1, p_context->BE, p_context->C0, M8); \
-		SHABAL_PERM_ELT(p_context->A5, p_context->A4, p_context->B9, p_context->B6, p_context->B2, p_context->BF, p_context->CF, M9); \
-		SHABAL_PERM_ELT(p_context->A6, p_context->A5, p_context->BA, p_context->B7, p_context->B3, p_context->B0, p_context->CE, MA); \
-		SHABAL_PERM_ELT(p_context->A7, p_context->A6, p_context->BB, p_context->B8, p_context->B4, p_context->B1, p_context->CD, MB); \
-		SHABAL_PERM_ELT(p_context->A8, p_context->A7, p_context->BC, p_context->B9, p_context->B5, p_context->B2, p_context->CC, MC); \
-		SHABAL_PERM_ELT(p_context->A9, p_context->A8, p_context->BD, p_context->BA, p_context->B6, p_context->B3, p_context->CB, MD); \
-		SHABAL_PERM_ELT(p_context->AA, p_context->A9, p_context->BE, p_context->BB, p_context->B7, p_context->B4, p_context->CA, ME); \
-		SHABAL_PERM_ELT(p_context->AB, p_context->AA, p_context->BF, p_context->BC, p_context->B8, p_context->B5, p_context->C9, MF); \
-	} while(0)
+#define PERM_STEP_2   do { \
+		PERM_ELT(A08, A07, B0, BD, B9, B6, C8, M0); \
+		PERM_ELT(A09, A08, B1, BE, BA, B7, C7, M1); \
+		PERM_ELT(A0A, A09, B2, BF, BB, B8, C6, M2); \
+		PERM_ELT(A0B, A0A, B3, B0, BC, B9, C5, M3); \
+		PERM_ELT(A00, A0B, B4, B1, BD, BA, C4, M4); \
+		PERM_ELT(A01, A00, B5, B2, BE, BB, C3, M5); \
+		PERM_ELT(A02, A01, B6, B3, BF, BC, C2, M6); \
+		PERM_ELT(A03, A02, B7, B4, B0, BD, C1, M7); \
+		PERM_ELT(A04, A03, B8, B5, B1, BE, C0, M8); \
+		PERM_ELT(A05, A04, B9, B6, B2, BF, CF, M9); \
+		PERM_ELT(A06, A05, BA, B7, B3, B0, CE, MA); \
+		PERM_ELT(A07, A06, BB, B8, B4, B1, CD, MB); \
+		PERM_ELT(A08, A07, BC, B9, B5, B2, CC, MC); \
+		PERM_ELT(A09, A08, BD, BA, B6, B3, CB, MD); \
+		PERM_ELT(A0A, A09, BE, BB, B7, B4, CA, ME); \
+		PERM_ELT(A0B, A0A, BF, BC, B8, B5, C9, MF); \
+	} while (0)
 
-#define SHABAL_APPLY_P   do { \
-		p_context->B0 = SHABAL_T32(p_context->B0 << 17) | (p_context->B0 >> 15); \
-		p_context->B1 = SHABAL_T32(p_context->B1 << 17) | (p_context->B1 >> 15); \
-		p_context->B2 = SHABAL_T32(p_context->B2 << 17) | (p_context->B2 >> 15); \
-		p_context->B3 = SHABAL_T32(p_context->B3 << 17) | (p_context->B3 >> 15); \
-		p_context->B4 = SHABAL_T32(p_context->B4 << 17) | (p_context->B4 >> 15); \
-		p_context->B5 = SHABAL_T32(p_context->B5 << 17) | (p_context->B5 >> 15); \
-		p_context->B6 = SHABAL_T32(p_context->B6 << 17) | (p_context->B6 >> 15); \
-		p_context->B7 = SHABAL_T32(p_context->B7 << 17) | (p_context->B7 >> 15); \
-		p_context->B8 = SHABAL_T32(p_context->B8 << 17) | (p_context->B8 >> 15); \
-		p_context->B9 = SHABAL_T32(p_context->B9 << 17) | (p_context->B9 >> 15); \
-		p_context->BA = SHABAL_T32(p_context->BA << 17) | (p_context->BA >> 15); \
-		p_context->BB = SHABAL_T32(p_context->BB << 17) | (p_context->BB >> 15); \
-		p_context->BC = SHABAL_T32(p_context->BC << 17) | (p_context->BC >> 15); \
-		p_context->BD = SHABAL_T32(p_context->BD << 17) | (p_context->BD >> 15); \
-		p_context->BE = SHABAL_T32(p_context->BE << 17) | (p_context->BE >> 15); \
-		p_context->BF = SHABAL_T32(p_context->BF << 17) | (p_context->BF >> 15); \
-		SHABAL_PERM_STEP_0; \
-		SHABAL_PERM_STEP_1; \
-		SHABAL_PERM_STEP_2; \
-		p_context->AB = SHABAL_T32(p_context->AB + p_context->C6); \
-		p_context->AA = SHABAL_T32(p_context->AA + p_context->C5); \
-		p_context->A9 = SHABAL_T32(p_context->A9 + p_context->C4); \
-		p_context->A8 = SHABAL_T32(p_context->A8 + p_context->C3); \
-		p_context->A7 = SHABAL_T32(p_context->A7 + p_context->C2); \
-		p_context->A6 = SHABAL_T32(p_context->A6 + p_context->C1); \
-		p_context->A5 = SHABAL_T32(p_context->A5 + p_context->C0); \
-		p_context->A4 = SHABAL_T32(p_context->A4 + p_context->CF); \
-		p_context->A3 = SHABAL_T32(p_context->A3 + p_context->CE); \
-		p_context->A2 = SHABAL_T32(p_context->A2 + p_context->CD); \
-		p_context->A1 = SHABAL_T32(p_context->A1 + p_context->CC); \
-		p_context->A0 = SHABAL_T32(p_context->A0 + p_context->CB); \
-		p_context->AB = SHABAL_T32(p_context->AB + p_context->CA); \
-		p_context->AA = SHABAL_T32(p_context->AA + p_context->C9); \
-		p_context->A9 = SHABAL_T32(p_context->A9 + p_context->C8); \
-		p_context->A8 = SHABAL_T32(p_context->A8 + p_context->C7); \
-		p_context->A7 = SHABAL_T32(p_context->A7 + p_context->C6); \
-		p_context->A6 = SHABAL_T32(p_context->A6 + p_context->C5); \
-		p_context->A5 = SHABAL_T32(p_context->A5 + p_context->C4); \
-		p_context->A4 = SHABAL_T32(p_context->A4 + p_context->C3); \
-		p_context->A3 = SHABAL_T32(p_context->A3 + p_context->C2); \
-		p_context->A2 = SHABAL_T32(p_context->A2 + p_context->C1); \
-		p_context->A1 = SHABAL_T32(p_context->A1 + p_context->C0); \
-		p_context->A0 = SHABAL_T32(p_context->A0 + p_context->CF); \
-		p_context->AB = SHABAL_T32(p_context->AB + p_context->CE); \
-		p_context->AA = SHABAL_T32(p_context->AA + p_context->CD); \
-		p_context->A9 = SHABAL_T32(p_context->A9 + p_context->CC); \
-		p_context->A8 = SHABAL_T32(p_context->A8 + p_context->CB); \
-		p_context->A7 = SHABAL_T32(p_context->A7 + p_context->CA); \
-		p_context->A6 = SHABAL_T32(p_context->A6 + p_context->C9); \
-		p_context->A5 = SHABAL_T32(p_context->A5 + p_context->C8); \
-		p_context->A4 = SHABAL_T32(p_context->A4 + p_context->C7); \
-		p_context->A3 = SHABAL_T32(p_context->A3 + p_context->C6); \
-		p_context->A2 = SHABAL_T32(p_context->A2 + p_context->C5); \
-		p_context->A1 = SHABAL_T32(p_context->A1 + p_context->C4); \
-		p_context->A0 = SHABAL_T32(p_context->A0 + p_context->C3); \
-	} while(0)
+#define APPLY_P   do { \
+		B0 = T32(B0 << 17) | (B0 >> 15); \
+		B1 = T32(B1 << 17) | (B1 >> 15); \
+		B2 = T32(B2 << 17) | (B2 >> 15); \
+		B3 = T32(B3 << 17) | (B3 >> 15); \
+		B4 = T32(B4 << 17) | (B4 >> 15); \
+		B5 = T32(B5 << 17) | (B5 >> 15); \
+		B6 = T32(B6 << 17) | (B6 >> 15); \
+		B7 = T32(B7 << 17) | (B7 >> 15); \
+		B8 = T32(B8 << 17) | (B8 >> 15); \
+		B9 = T32(B9 << 17) | (B9 >> 15); \
+		BA = T32(BA << 17) | (BA >> 15); \
+		BB = T32(BB << 17) | (BB >> 15); \
+		BC = T32(BC << 17) | (BC >> 15); \
+		BD = T32(BD << 17) | (BD >> 15); \
+		BE = T32(BE << 17) | (BE >> 15); \
+		BF = T32(BF << 17) | (BF >> 15); \
+		PERM_STEP_0; \
+		PERM_STEP_1; \
+		PERM_STEP_2; \
+		A0B = T32(A0B + C6); \
+		A0A = T32(A0A + C5); \
+		A09 = T32(A09 + C4); \
+		A08 = T32(A08 + C3); \
+		A07 = T32(A07 + C2); \
+		A06 = T32(A06 + C1); \
+		A05 = T32(A05 + C0); \
+		A04 = T32(A04 + CF); \
+		A03 = T32(A03 + CE); \
+		A02 = T32(A02 + CD); \
+		A01 = T32(A01 + CC); \
+		A00 = T32(A00 + CB); \
+		A0B = T32(A0B + CA); \
+		A0A = T32(A0A + C9); \
+		A09 = T32(A09 + C8); \
+		A08 = T32(A08 + C7); \
+		A07 = T32(A07 + C6); \
+		A06 = T32(A06 + C5); \
+		A05 = T32(A05 + C4); \
+		A04 = T32(A04 + C3); \
+		A03 = T32(A03 + C2); \
+		A02 = T32(A02 + C1); \
+		A01 = T32(A01 + C0); \
+		A00 = T32(A00 + CF); \
+		A0B = T32(A0B + CE); \
+		A0A = T32(A0A + CD); \
+		A09 = T32(A09 + CC); \
+		A08 = T32(A08 + CB); \
+		A07 = T32(A07 + CA); \
+		A06 = T32(A06 + C9); \
+		A05 = T32(A05 + C8); \
+		A04 = T32(A04 + C7); \
+		A03 = T32(A03 + C6); \
+		A02 = T32(A02 + C5); \
+		A01 = T32(A01 + C4); \
+		A00 = T32(A00 + C3); \
+	} while (0)
 
-#define SHABAL_INCR_W   do { \
-		if ((p_context->Wlow = SHABAL_T32(p_context->Wlow + 1)) == 0) \
-			p_context->Whigh = SHABAL_T32(p_context->Whigh + 1); \
-	} while(0)
+#define INCR_W   do { \
+		if ((Wlow = T32(Wlow + 1)) == 0) \
+			Whigh = T32(Whigh + 1); \
+	} while (0)
 
-typedef struct {
-	unsigned int A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, AA, AB;
-	unsigned int B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, BA, BB, BC, BD, BE, BF;
-	unsigned int C0, C1, C2, C3, C4, C5, C6, C7, C8, C9, CA, CB, CC, CD, CE, CF;
-	unsigned int Wlow, Whigh;
-} shabal_context_t;
+__constant static const sph_u32 A_init_192[] = {
+	C32(0xFD749ED4), C32(0xB798E530), C32(0x33904B6F), C32(0x46BDA85E),
+	C32(0x076934B4), C32(0x454B4058), C32(0x77F74527), C32(0xFB4CF465),
+	C32(0x62931DA9), C32(0xE778C8DB), C32(0x22B3998E), C32(0xAC15CFB9)
+};
 
-void shabal_init(shabal_context_t* p_context) {
-	p_context->A0 = 0x52f84552;
-	p_context->A1 = 0xe54b7999;
-	p_context->A2 = 0x2d8ee3ec;
-	p_context->A3 = 0xb9645191;
-	p_context->A4 = 0xe0078b86;
-	p_context->A5 = 0xbb7c44c9;
-	p_context->A6 = 0xd2b5c1ca;
-	p_context->A7 = 0xb0d2eb8c;
-	p_context->A8 = 0x14ce5a45;
-	p_context->A9 = 0x22af50dc;
-	p_context->AA = 0xeffdbc6b;
-	p_context->AB = 0xeb21b74a;
+__constant static const sph_u32 B_init_192[] = {
+	C32(0x58BCBAC4), C32(0xEC47A08E), C32(0xAEE933B2), C32(0xDFCBC824),
+	C32(0xA7944804), C32(0xBF65BDB0), C32(0x5A9D4502), C32(0x59979AF7),
+	C32(0xC5CEA54E), C32(0x4B6B8150), C32(0x16E71909), C32(0x7D632319),
+	C32(0x930573A0), C32(0xF34C63D1), C32(0xCAF914B4), C32(0xFDD6612C)
+};
 
-	p_context->B0 = 0xb555c6ee;
-	p_context->B1 = 0x3e710596;
-	p_context->B2 = 0xa72a652f;
-	p_context->B3 = 0x9301515f;
-	p_context->B4 = 0xda28c1fa;
-	p_context->B5 = 0x696fd868;
-	p_context->B6 = 0x9cb6bf72;
-	p_context->B7 = 0x0afe4002;
-	p_context->B8 = 0xa6e03615;
-	p_context->B9 = 0x5138c1d4;
-	p_context->BA = 0xbe216306;
-	p_context->BB = 0xb38b8890;
-	p_context->BC = 0x3ea8b96b;
-	p_context->BD = 0x3299ace4;
-	p_context->BE = 0x30924dd4;
-	p_context->BF = 0x55cb34a5;
+__constant static const sph_u32 C_init_192[] = {
+	C32(0x61550878), C32(0x89EF2B75), C32(0xA1660C46), C32(0x7EF3855B),
+	C32(0x7297B58C), C32(0x1BC67793), C32(0x7FB1C723), C32(0xB66FC640),
+	C32(0x1A48B71C), C32(0xF0976D17), C32(0x088CE80A), C32(0xA454EDF3),
+	C32(0x1C096BF4), C32(0xAC76224B), C32(0x5215781C), C32(0xCD5D2669)
+};
 
-	p_context->C0 = 0xb405f031;
-	p_context->C1 = 0xc4233eba;
-	p_context->C2 = 0xb3733979;
-	p_context->C3 = 0xc0dd9d55;
-	p_context->C4 = 0xc51c28ae;
-	p_context->C5 = 0xa327b8e1;
-	p_context->C6 = 0x56c56167;
-	p_context->C7 = 0xed614433;
-	p_context->C8 = 0x88b59d60;
-	p_context->C9 = 0x60e2ceba;
-	p_context->CA = 0x758b4b8b;
-	p_context->CB = 0x83e82a7f;
-	p_context->CC = 0xbc968828;
-	p_context->CD = 0xe6e00bf7;
-	p_context->CE = 0xba839e55;
-	p_context->CF = 0x9b491c60;
+__constant static const sph_u32 A_init_224[] = {
+	C32(0xA5201467), C32(0xA9B8D94A), C32(0xD4CED997), C32(0x68379D7B),
+	C32(0xA7FC73BA), C32(0xF1A2546B), C32(0x606782BF), C32(0xE0BCFD0F),
+	C32(0x2F25374E), C32(0x069A149F), C32(0x5E2DFF25), C32(0xFAECF061)
+};
 
-	p_context->Wlow = 1;
-	p_context->Whigh = 0;
-}
+__constant static const sph_u32 B_init_224[] = {
+	C32(0xEC9905D8), C32(0xF21850CF), C32(0xC0A746C8), C32(0x21DAD498),
+	C32(0x35156EEB), C32(0x088C97F2), C32(0x26303E40), C32(0x8A2D4FB5),
+	C32(0xFEEE44B6), C32(0x8A1E9573), C32(0x7B81111A), C32(0xCBC139F0),
+	C32(0xA3513861), C32(0x1D2C362E), C32(0x918C580E), C32(0xB58E1B9C)
+};
 
-void shabal_update(shabal_context_t* p_context, __global unsigned char* p_data, unsigned int p_offset, unsigned int p_length) {
-	__global unsigned int* dataView = (__global unsigned int*)p_data;
-	unsigned int M0, M1, M2, M3, M4, M5, M6, M7, M8, M9, MA, MB, MC, MD, ME, MF;
-	unsigned int numFullRounds = p_length >> 6;
-	unsigned int numRemaining = p_length & 63;
+__constant static const sph_u32 C_init_224[] = {
+	C32(0xE4B573A1), C32(0x4C1A0880), C32(0x1E907C51), C32(0x04807EFD),
+	C32(0x3AD8CDE5), C32(0x16B21302), C32(0x02512C53), C32(0x2204CB18),
+	C32(0x99405F2D), C32(0xE5B648A1), C32(0x70AB1D43), C32(0xA10C25C2),
+	C32(0x16F1AC05), C32(0x38BBEB56), C32(0x9B01DC60), C32(0xB1096D83)
+};
 
-	for (unsigned int i = 0; i < numFullRounds; ++i) {
-		unsigned long base = (p_offset >> 2) + (i << 4);
-		M0 = dataView[base];
-		M1 = dataView[base + 1];
-		M2 = dataView[base + 2];
-		M3 = dataView[base + 3];
-		M4 = dataView[base + 4];
-		M5 = dataView[base + 5];
-		M6 = dataView[base + 6];
-		M7 = dataView[base + 7];
-		M8 = dataView[base + 8];
-		M9 = dataView[base + 9];
-		MA = dataView[base + 10];
-		MB = dataView[base + 11];
-		MC = dataView[base + 12];
-		MD = dataView[base + 13];
-		ME = dataView[base + 14];
-		MF = dataView[base + 15];
+__constant static const sph_u32 A_init_256[] = {
+	C32(0x52F84552), C32(0xE54B7999), C32(0x2D8EE3EC), C32(0xB9645191),
+	C32(0xE0078B86), C32(0xBB7C44C9), C32(0xD2B5C1CA), C32(0xB0D2EB8C),
+	C32(0x14CE5A45), C32(0x22AF50DC), C32(0xEFFDBC6B), C32(0xEB21B74A)
+};
 
-		SHABAL_INPUT_BLOCK_ADD;
-		SHABAL_XOR_W;
-		SHABAL_APPLY_P;
-		SHABAL_INPUT_BLOCK_SUB;
-		SHABAL_SWAP_BC;
-		SHABAL_INCR_W;
+__constant static const sph_u32 B_init_256[] = {
+	C32(0xB555C6EE), C32(0x3E710596), C32(0xA72A652F), C32(0x9301515F),
+	C32(0xDA28C1FA), C32(0x696FD868), C32(0x9CB6BF72), C32(0x0AFE4002),
+	C32(0xA6E03615), C32(0x5138C1D4), C32(0xBE216306), C32(0xB38B8890),
+	C32(0x3EA8B96B), C32(0x3299ACE4), C32(0x30924DD4), C32(0x55CB34A5)
+};
+
+__constant static const sph_u32 C_init_256[] = {
+	C32(0xB405F031), C32(0xC4233EBA), C32(0xB3733979), C32(0xC0DD9D55),
+	C32(0xC51C28AE), C32(0xA327B8E1), C32(0x56C56167), C32(0xED614433),
+	C32(0x88B59D60), C32(0x60E2CEBA), C32(0x758B4B8B), C32(0x83E82A7F),
+	C32(0xBC968828), C32(0xE6E00BF7), C32(0xBA839E55), C32(0x9B491C60)
+};
+
+__constant static const sph_u32 A_init_384[] = {
+	C32(0xC8FCA331), C32(0xE55C504E), C32(0x003EBF26), C32(0xBB6B8D83),
+	C32(0x7B0448C1), C32(0x41B82789), C32(0x0A7C9601), C32(0x8D659CFF),
+	C32(0xB6E2673E), C32(0xCA54C77B), C32(0x1460FD7E), C32(0x3FCB8F2D)
+};
+
+__constant static const sph_u32 B_init_384[] = {
+	C32(0x527291FC), C32(0x2A16455F), C32(0x78E627E5), C32(0x944F169F),
+	C32(0x1CA6F016), C32(0xA854EA25), C32(0x8DB98ABE), C32(0xF2C62641),
+	C32(0x30117DCB), C32(0xCF5C4309), C32(0x93711A25), C32(0xF9F671B8),
+	C32(0xB01D2116), C32(0x333F4B89), C32(0xB285D165), C32(0x86829B36)
+};
+
+__constant static const sph_u32 C_init_384[] = {
+	C32(0xF764B11A), C32(0x76172146), C32(0xCEF6934D), C32(0xC6D28399),
+	C32(0xFE095F61), C32(0x5E6018B4), C32(0x5048ECF5), C32(0x51353261),
+	C32(0x6E6E36DC), C32(0x63130DAD), C32(0xA9C69BD6), C32(0x1E90EA0C),
+	C32(0x7C35073B), C32(0x28D95E6D), C32(0xAA340E0D), C32(0xCB3DEE70)
+};
+
+__constant static const sph_u32 A_init_512[] = {
+	C32(0x20728DFD), C32(0x46C0BD53), C32(0xE782B699), C32(0x55304632),
+	C32(0x71B4EF90), C32(0x0EA9E82C), C32(0xDBB930F1), C32(0xFAD06B8B),
+	C32(0xBE0CAE40), C32(0x8BD14410), C32(0x76D2ADAC), C32(0x28ACAB7F)
+};
+
+__constant static const sph_u32 B_init_512[] = {
+	C32(0xC1099CB7), C32(0x07B385F3), C32(0xE7442C26), C32(0xCC8AD640),
+	C32(0xEB6F56C7), C32(0x1EA81AA9), C32(0x73B9D314), C32(0x1DE85D08),
+	C32(0x48910A5A), C32(0x893B22DB), C32(0xC5A0DF44), C32(0xBBC4324E),
+	C32(0x72D2F240), C32(0x75941D99), C32(0x6D8BDE82), C32(0xA1A7502B)
+};
+
+__constant static const sph_u32 C_init_512[] = {
+	C32(0xD9BF68D1), C32(0x58BAD750), C32(0x56028CB2), C32(0x8134F359),
+	C32(0xB5D469D8), C32(0x941A8CC2), C32(0x418B2A6E), C32(0x04052780),
+	C32(0x7F07D787), C32(0x5194358F), C32(0x3C60D665), C32(0xBE97D79A),
+	C32(0x950C3434), C32(0xAED9A06D), C32(0x2537DC8D), C32(0x7CDB5969)
+};
+
+/* END -- automatically generated code. */
+
+#define HASH_SIZE			32
+#define HASHES_PER_SCOOP	2
+#define SCOOP_SIZE			(HASHES_PER_SCOOP * HASH_SIZE)
+#define SCOOPS_PER_PLOT		4096
+#define PLOT_SIZE			(SCOOPS_PER_PLOT * SCOOP_SIZE)
+#define HASH_CAP			4096
+#define GEN_SIZE			(PLOT_SIZE + 16)
+
+__kernel void calculate_deadlines(__global unsigned char* gen_sig, __global unsigned char* plot_data, __global unsigned long* deadlines,
+	unsigned long nonces, unsigned long baseTarget) {
+	int gid = get_global_id(0);
+
+	if (gid >= nonces)
+		return;
+
+	sph_u32 A00 = A_init_256[0], A01 = A_init_256[1], A02 = A_init_256[2], A03 = A_init_256[3], A04 = A_init_256[4], A05 = A_init_256[5], A06 = A_init_256[6], A07 = A_init_256[7],
+		A08 = A_init_256[8], A09 = A_init_256[9], A0A = A_init_256[10], A0B = A_init_256[11];
+	sph_u32 B0 = B_init_256[0], B1 = B_init_256[1], B2 = B_init_256[2], B3 = B_init_256[3], B4 = B_init_256[4], B5 = B_init_256[5], B6 = B_init_256[6], B7 = B_init_256[7],
+		B8 = B_init_256[8], B9 = B_init_256[9], BA = B_init_256[10], BB = B_init_256[11], BC = B_init_256[12], BD = B_init_256[13], BE = B_init_256[14], BF = B_init_256[15];
+	sph_u32 C0 = C_init_256[0], C1 = C_init_256[1], C2 = C_init_256[2], C3 = C_init_256[3], C4 = C_init_256[4], C5 = C_init_256[5], C6 = C_init_256[6], C7 = C_init_256[7],
+		C8 = C_init_256[8], C9 = C_init_256[9], CA = C_init_256[10], CB = C_init_256[11], CC = C_init_256[12], CD = C_init_256[13], CE = C_init_256[14], CF = C_init_256[15];
+	sph_u32 M0, M1, M2, M3, M4, M5, M6, M7, M8, M9, MA, MB, MC, MD, ME, MF;
+	sph_u32 Wlow = 1, Whigh = 0;
+
+	M0 = ((__global unsigned int*)gen_sig)[0];
+	M1 = ((__global unsigned int*)gen_sig)[1];
+	M2 = ((__global unsigned int*)gen_sig)[2];
+	M3 = ((__global unsigned int*)gen_sig)[3];
+	M4 = ((__global unsigned int*)gen_sig)[4];
+	M5 = ((__global unsigned int*)gen_sig)[5];
+	M6 = ((__global unsigned int*)gen_sig)[6];
+	M7 = ((__global unsigned int*)gen_sig)[7];
+
+	M8 = ((__global unsigned int*)plot_data)[gid * 16];
+	M9 = ((__global unsigned int*)plot_data)[gid * 16 + 1];
+	MA = ((__global unsigned int*)plot_data)[gid * 16 + 2];
+	MB = ((__global unsigned int*)plot_data)[gid * 16 + 3];
+	MC = ((__global unsigned int*)plot_data)[gid * 16 + 4];
+	MD = ((__global unsigned int*)plot_data)[gid * 16 + 5];
+	ME = ((__global unsigned int*)plot_data)[gid * 16 + 6];
+	MF = ((__global unsigned int*)plot_data)[gid * 16 + 7];
+
+	INPUT_BLOCK_ADD;
+	XOR_W;
+	APPLY_P;
+	INPUT_BLOCK_SUB;
+	SWAP_BC;
+	INCR_W;
+
+	M0 = ((__global unsigned int*)plot_data)[gid * 16 + 8];
+	M1 = ((__global unsigned int*)plot_data)[gid * 16 + 9];
+	M2 = ((__global unsigned int*)plot_data)[gid * 16 + 10];
+	M3 = ((__global unsigned int*)plot_data)[gid * 16 + 11];
+	M4 = ((__global unsigned int*)plot_data)[gid * 16 + 12];
+	M5 = ((__global unsigned int*)plot_data)[gid * 16 + 13];
+	M6 = ((__global unsigned int*)plot_data)[gid * 16 + 14];
+	M7 = ((__global unsigned int*)plot_data)[gid * 16 + 15];
+
+	M8 = 0x80;
+	M9 = MA = MB = MC = MD = ME = MF = 0;
+	INPUT_BLOCK_ADD;
+	XOR_W;
+	APPLY_P;
+
+	for (unsigned i = 0; i < 3; i++) {
+		SWAP_BC;
+		XOR_W;
+		APPLY_P;
 	}
 
-	if (numRemaining == 0) {
-		M0 = 0x80;
-		M1 = M2 = M3 = M4 = M5 = M6 = M7 = M8 = M9 = MA = MB = MC = MD = ME = MF = 0;
+	unsigned int out[2];
+	out[0] = B8;
+	out[1] = B9;
 
-		SHABAL_INPUT_BLOCK_ADD;
-		SHABAL_XOR_W;
-		SHABAL_APPLY_P;
+	deadlines[gid] = *((unsigned long*)out) / baseTarget;
+}
 
-		for (unsigned int i = 0; i < 3; ++i) {
-			SHABAL_SWAP_BC;
-			SHABAL_XOR_W;
-			SHABAL_APPLY_P;
+__kernel void reduce_best(__global unsigned long* deadlines, unsigned int length, __local unsigned int* best_pos, __local unsigned long* best_deadline, __global unsigned int* best) {
+	int gid = get_global_id(0);
+	int gsize = get_global_size(0);
+
+	unsigned int bpos = 0;
+	unsigned long bdeadline = 0xFFFFFFFFFFFFFFFFL;
+	for (int i = gid; i < length; i += gsize) {
+		unsigned long d = deadlines[i];
+		if (d < bdeadline) {
+			bpos = i;
+			bdeadline = d;
 		}
 	}
-	else if (numRemaining == 16) {
-		unsigned long base = (p_offset >> 2) + (numFullRounds << 4);
-		M0 = dataView[base];
-		M1 = dataView[base + 1];
-		M2 = dataView[base + 2];
-		M3 = dataView[base + 3];
-		M4 = 0x80;
-		M5 = M6 = M7 = M8 = M9 = MA = MB = MC = MD = ME = MF = 0;
 
-		SHABAL_INPUT_BLOCK_ADD;
-		SHABAL_XOR_W;
-		SHABAL_APPLY_P;
+	int lid = get_local_id(0);
+	int lsize = get_local_size(0);
 
-		for (unsigned int i = 0; i < 3; ++i) {
-			SHABAL_SWAP_BC;
-			SHABAL_XOR_W;
-			SHABAL_APPLY_P;
+	best_pos[lid] = bpos;
+	best_deadline[lid] = bdeadline;
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	for (int offset = lsize / 2; offset > 0; offset >>= 1) {
+		if (lid < offset) {
+			if (best_deadline[lid + offset] < best_deadline[lid]) {
+				best_pos[lid] = best_pos[lid + offset];
+				best_deadline[lid] = best_deadline[lid + offset];
+			}
 		}
+		barrier(CLK_LOCAL_MEM_FENCE);
 	}
-	else {
-		unsigned long base = (p_offset >> 2) + (numFullRounds << 4);
-		M0 = dataView[base];
-		M1 = dataView[base + 1];
-		M2 = dataView[base + 2];
-		M3 = dataView[base + 3];
-		M4 = dataView[base + 4];
-		M5 = dataView[base + 5];
-		M6 = dataView[base + 6];
-		M7 = dataView[base + 7];
-		M8 = dataView[base + 8];
-		M9 = dataView[base + 9];
-		MA = dataView[base + 10];
-		MB = dataView[base + 11];
-		MC = 0x80;
-		MD = ME = MF = 0;
 
-		SHABAL_INPUT_BLOCK_ADD;
-		SHABAL_XOR_W;
-		SHABAL_APPLY_P;
-
-		for (unsigned int i = 0; i < 3; ++i) {
-			SHABAL_SWAP_BC;
-			SHABAL_XOR_W;
-			SHABAL_APPLY_P;
-		}
+	if (lid == 0) {
+		best[get_group_id(0)] = best_pos[0];
 	}
 }
-
-void shabal_digest(shabal_context_t* p_context, unsigned char* p_out, unsigned int p_offset) {
-	unsigned int* outView = (unsigned int*)p_out;
-	unsigned int base = p_offset >> 2;
-	outView[base + 0] = p_context->B8;
-	outView[base + 1] = p_context->B9;
-	outView[base + 2] = p_context->BA;
-	outView[base + 3] = p_context->BB;
-	outView[base + 4] = p_context->BC;
-	outView[base + 5] = p_context->BD;
-	outView[base + 6] = p_context->BE;
-	outView[base + 7] = p_context->BF;
-}
-
-void memcpy(unsigned char* p_from, unsigned int p_fromOffset, unsigned char* p_to, unsigned int p_toOffset, unsigned int p_length) {
-	for (unsigned int i = 0; i < p_length; ++i) {
-		p_to[p_toOffset + i] = p_from[p_fromOffset + i];
-	}
-}
-
-void memcpyFromGlobal(__global unsigned char* p_from, unsigned int p_fromOffset, unsigned char* p_to, unsigned int p_toOffset, unsigned int p_length) {
-	for (unsigned int i = 0; i < p_length; ++i) {
-		p_to[p_toOffset + i] = p_from[p_fromOffset + i];
-	}
-}
-
-void memcpyToGlobal(unsigned char* p_from, unsigned int p_fromOffset, __global unsigned char* p_to, unsigned int p_toOffset, unsigned int p_length) {
-	for (unsigned int i = 0; i < p_length; ++i) {
-		p_to[p_toOffset + i] = p_from[p_fromOffset + i];
-	}
-}
-
-void memcpyGlobal(__global unsigned char* p_from, unsigned int p_fromOffset, __global unsigned char* p_to, unsigned int p_toOffset, unsigned int p_length) {
-	for (unsigned int i = 0; i < p_length; ++i) {
-		p_to[p_toOffset + i] = p_from[p_fromOffset + i];
-	}
-}
-
-unsigned int decodeIntLE(unsigned char* p_buffer, unsigned int p_offset) {
-	return
-		p_buffer[p_offset] |
-		(p_buffer[p_offset + 1] << 8) |
-		(p_buffer[p_offset + 2] << 16) |
-		(p_buffer[p_offset + 3] << 24);
-}
-
-void encodeIntLE(unsigned char* p_buffer, unsigned int p_offset, unsigned int p_value) {
-	p_buffer[p_offset] = p_value & 0x0ff;
-	p_buffer[p_offset + 1] = (p_value >> 8) & 0x0ff;
-	p_buffer[p_offset + 2] = (p_value >> 16) & 0x0ff;
-	p_buffer[p_offset + 3] = (p_value >> 24) & 0x0ff;
-}
-
-unsigned long decodeLongLE(unsigned char* p_buffer, unsigned int p_offset) {
-	return
-		p_buffer[p_offset] |
-		((unsigned long)p_buffer[p_offset + 1] << 8) |
-		((unsigned long)p_buffer[p_offset + 2] << 16) |
-		((unsigned long)p_buffer[p_offset + 3] << 24) |
-		((unsigned long)p_buffer[p_offset + 4] << 32) |
-		((unsigned long)p_buffer[p_offset + 5] << 40) |
-		((unsigned long)p_buffer[p_offset + 6] << 48) |
-		((unsigned long)p_buffer[p_offset + 7] << 56);
-}
-
-void encodeLongLE(unsigned char* p_buffer, unsigned int p_offset, unsigned long p_value) {
-	p_buffer[p_offset] = p_value & 0x0ff;
-	p_buffer[p_offset + 1] = (p_value >> 8) & 0x0ff;
-	p_buffer[p_offset + 2] = (p_value >> 16) & 0x0ff;
-	p_buffer[p_offset + 3] = (p_value >> 24) & 0x0ff;
-	p_buffer[p_offset + 4] = (p_value >> 32) & 0x0ff;
-	p_buffer[p_offset + 5] = (p_value >> 40) & 0x0ff;
-	p_buffer[p_offset + 6] = (p_value >> 48) & 0x0ff;
-	p_buffer[p_offset + 7] = (p_value >> 56) & 0x0ff;
-}
-
-unsigned long decodeIntBEGlobal(__global unsigned char* p_buffer, unsigned int p_offset) {
-	return
-		(p_buffer[p_offset] << 24) |
-		(p_buffer[p_offset + 1] << 16) |
-		(p_buffer[p_offset + 2] << 8) |
-		p_buffer[p_offset + 3];
-}
-
-void encodeIntBEGlobal(__global unsigned char* p_buffer, unsigned int p_offset, unsigned long p_value) {
-	p_buffer[p_offset] = (p_value >> 24) & 0x0ff;
-	p_buffer[p_offset + 1] = (p_value >> 16) & 0x0ff;
-	p_buffer[p_offset + 2] = (p_value >> 8) & 0x0ff;
-	p_buffer[p_offset + 3] = p_value & 0x0ff;
-}
-
-unsigned long decodeLongBE(unsigned char* p_buffer, unsigned int p_offset) {
-	return
-		((unsigned long)p_buffer[p_offset] << 56) |
-		((unsigned long)p_buffer[p_offset + 1] << 48) |
-		((unsigned long)p_buffer[p_offset + 2] << 40) |
-		((unsigned long)p_buffer[p_offset + 3] << 32) |
-		((unsigned long)p_buffer[p_offset + 4] << 24) |
-		((unsigned long)p_buffer[p_offset + 5] << 16) |
-		((unsigned long)p_buffer[p_offset + 6] << 8) |
-		p_buffer[p_offset + 7];
-}
-
-void encodeLongBE(unsigned char* p_buffer, unsigned int p_offset, unsigned long p_value) {
-	p_buffer[p_offset] = (p_value >> 56) & 0x0ff;
-	p_buffer[p_offset + 1] = (p_value >> 48) & 0x0ff;
-	p_buffer[p_offset + 2] = (p_value >> 40) & 0x0ff;
-	p_buffer[p_offset + 3] = (p_value >> 32) & 0x0ff;
-	p_buffer[p_offset + 4] = (p_value >> 24) & 0x0ff;
-	p_buffer[p_offset + 5] = (p_value >> 16) & 0x0ff;
-	p_buffer[p_offset + 6] = (p_value >> 8) & 0x0ff;
-	p_buffer[p_offset + 7] = p_value & 0x0ff;
-}
-
-void encodeLongBEGlobal(__global unsigned char* p_buffer, unsigned int p_offset, unsigned long p_value) {
-	p_buffer[p_offset] = (p_value >> 56) & 0x0ff;
-	p_buffer[p_offset + 1] = (p_value >> 48) & 0x0ff;
-	p_buffer[p_offset + 2] = (p_value >> 40) & 0x0ff;
-	p_buffer[p_offset + 3] = (p_value >> 32) & 0x0ff;
-	p_buffer[p_offset + 4] = (p_value >> 24) & 0x0ff;
-	p_buffer[p_offset + 5] = (p_value >> 16) & 0x0ff;
-	p_buffer[p_offset + 6] = (p_value >> 8) & 0x0ff;
-	p_buffer[p_offset + 7] = p_value & 0x0ff;
-}
-
-
-
-#endif
