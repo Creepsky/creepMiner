@@ -90,8 +90,11 @@ void Burst::MinerConfig::printConsole() const
 	printConsolePlots();
 
 	log_system(MinerLogger::config, "Get mining info interval : %z seconds", getConfig().getMiningInfoInterval());
-	log_system(MinerLogger::config, "CPU instruction set : %s", getConfig().getCpuInstructionSet());
+
 	log_system(MinerLogger::config, "Processor type : %s", getConfig().getProcessorType());
+
+	if (getConfig().getProcessorType() == "CPU")
+		log_system(MinerLogger::config, "CPU instruction set : %s", getConfig().getCpuInstructionSet());
 	
 	if (getConfig().isBenchmark())
 		log_warning(MinerLogger::config, "Benchmark mode activated!");
