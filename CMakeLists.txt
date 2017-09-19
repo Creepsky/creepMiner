@@ -186,9 +186,6 @@ set(SOURCE_FILES
 	src/plots/PlotReader.cpp
 	src/plots/PlotSizes.cpp
 	src/plots/PlotVerifier.cpp
-	src/shabal/mshabal/mshabal_avx1.cpp
-	src/shabal/mshabal/mshabal_avx2.cpp
-	src/shabal/mshabal/mshabal_sse4.cpp
 	src/shabal/MinerShabal.cpp
 	src/wallet/Account.cpp
 	src/wallet/Wallet.cpp
@@ -200,17 +197,43 @@ set(SOURCE_FILES
 	src/MinerUtil.cpp
 	src/logging/Performance.cpp)
 
-if (USE_CUDA)
-	 set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
+##################################################################
+# Special files and settings
+##################################################################
+option(USE_SSE4 "If yes, SSE4 will be enabled" ON)
+option(USE_AVX "If yes, AVX will be enabled" ON)
+option(USE_AVX2 "If yes, AVX2 will be enabled" ON)
+
+if (USE_SSE4)
+	add_definitions(-DUSE_SSE4)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_sse4.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse4)
+	endif ()
 endif ()
 
-if (UNIX OR APPLE)
-	set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS -mavx)
-	set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS -mavx2)
-	set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse4)
-elseif (MSVC)
-	set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS /arch:AVX)
-	set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS /arch:AVX2)
+if (USE_AVX)
+	add_definitions(-DUSE_AVX)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_avx1.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS -mavx)
+	elseif (MSVC)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS /arch:AVX)
+	endif ()
+endif ()
+
+if (USE_AVX2)
+	add_definitions(-DUSE_AVX2)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_avx2.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS -mavx2)
+	elseif (MSVC)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS /arch:AVX2)
+	endif ()
+endif ()
+
+if (USE_CUDA)
+	 set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
 endif ()
 
 ##################################################################
