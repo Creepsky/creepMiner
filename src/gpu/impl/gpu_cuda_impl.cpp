@@ -73,10 +73,10 @@ void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize)
 {
 }
 
-bool cuda_alloc_memory(Burst::MemoryType memType, Poco::UInt64 size, void** mem) { return true; }
-bool cuda_realloc_memory(Burst::MemoryType memType, Poco::UInt64 size, void** mem) { return true; }
+bool cuda_alloc_memory(Poco::UInt64 size, void** mem) { return true; }
+bool cuda_realloc_memory(Poco::UInt64 size, void** mem) { return true; }
 
-bool cuda_copy_memory(Burst::MemoryType memType, Poco::UInt64 size, const void* from, void* to,
+bool cuda_copy_memory(Poco::UInt64 size, const void* from, void* to,
 	Burst::MemoryCopyDirection copyDirection) {
 	return true;
 }
