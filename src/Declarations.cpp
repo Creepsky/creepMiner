@@ -54,6 +54,12 @@ const bool Burst::Settings::Cuda = true;
 const bool Burst::Settings::Cuda = false;
 #endif
 
+#ifdef USE_OPENCL
+const bool Burst::Settings::OpenCl = true;
+#else
+const bool Burst::Settings::OpenCl = false;
+#endif
+
 void Burst::Version::updateLiterals()
 {
 	literal = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(build);
