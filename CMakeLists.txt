@@ -12,6 +12,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
+option(MINIMAL_BUILD "If yes, the miner will be build without any extras like CUDA, CPU instructions..." OFF)
+option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
+
 ##################################################################
 # Environment variables
 ##################################################################
@@ -38,7 +41,7 @@ endif ()
 option(USE_CUDA "If yes, CUDA will be enabled" ON)
 option(USE_OPENCL "If yes, OpenCL will be enabled" ON)
 
-if (USE_CUDA)
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 	 find_package(CUDA REQUIRED)
 	 add_definitions(-DUSE_CUDA)
 	 set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
@@ -55,7 +58,7 @@ if (USE_CUDA)
 		 -gencode=arch=compute_62,code=sm_62)
 endif()
 
-if (USE_OPENCL)
+if (USE_OPENCL AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 	 find_package(OpenCL REQUIRED)
 	 add_definitions(-DUSE_OPENCL)
 endif ()
@@ -215,7 +218,7 @@ option(USE_SSE4 "If yes, SSE4 will be enabled" ON)
 option(USE_AVX "If yes, AVX will be enabled" ON)
 option(USE_AVX2 "If yes, AVX2 will be enabled" ON)
 
-if (USE_SSE4)
+if (USE_SSE4 AND NOT MINIMAL_BUILD)
 	add_definitions(-DUSE_SSE4)
 	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_sse4.cpp)
 	if (UNIX OR APPLE)
@@ -223,7 +226,7 @@ if (USE_SSE4)
 	endif ()
 endif ()
 
-if (USE_AVX)
+if (USE_AVX AND NOT MINIMAL_BUILD)
 	add_definitions(-DUSE_AVX)
 	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_avx1.cpp)
 	if (UNIX OR APPLE)
@@ -233,7 +236,7 @@ if (USE_AVX)
 	endif ()
 endif ()
 
-if (USE_AVX2)
+if (USE_AVX2 AND NOT MINIMAL_BUILD)
 	add_definitions(-DUSE_AVX2)
 	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_avx2.cpp)
 	if (UNIX OR APPLE)
@@ -243,14 +246,14 @@ if (USE_AVX2)
 	endif ()
 endif ()
 
-if (USE_CUDA)
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 	 set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
 endif ()
 
 ##################################################################
 # Executable
 ##################################################################
-if (USE_CUDA)
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 	 cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
 else ()
 	 add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
