@@ -37,7 +37,7 @@ bool Burst::Gpu_Opencl_Impl::allocateMemory(void** memory, MemoryType type, size
 
 	const auto allocated = clCreateBuffer(MinerCL::getCL().getContext(), CL_MEM_READ_WRITE, size, nullptr, &ret);
 
-	if (lastError_ == CL_SUCCESS)
+	if (ret == CL_SUCCESS)
 	{
 		*memory = allocated;
 		return true;
