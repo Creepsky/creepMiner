@@ -147,6 +147,7 @@ set(HEADER_FILES
 	src/network/Url.hpp
 	src/nxt/nxt_address.h
 	src/plots/Plot.hpp
+	src/plots/PlotGenerator.hpp
 	src/plots/PlotReader.hpp
 	src/plots/PlotSizes.hpp
 	src/plots/PlotVerifier.hpp
@@ -191,6 +192,7 @@ set(SOURCE_FILES
 	src/network/Url.cpp
 	src/nxt/nxt_address.cpp
 	src/plots/Plot.cpp
+	src/plots/PlotGenerator.cpp
 	src/plots/PlotReader.cpp
 	src/plots/PlotSizes.cpp
 	src/plots/PlotVerifier.cpp
