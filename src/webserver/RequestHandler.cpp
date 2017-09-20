@@ -39,6 +39,7 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/StringTokenizer.h>
 #include <Poco/Net/HTMLForm.h>
+#include "plots/PlotGenerator.hpp"
 
 const std::string COOKIE_USER_NAME = "creepminer-webserver-user";
 const std::string COOKIE_PASS_NAME = "creepminer-webserver-pass";
@@ -447,6 +448,21 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		{
 			auto plotfileEncoded = request.get(X_Plotfile);
 			Poco::URI::decode(plotfileEncoded, plotfile);
+		}
+
+		auto miningInfoOk = false;
+
+		while (!miningInfoOk)
+		{
+			try
+			{
+				miner.getGensig();
+				miningInfoOk = true;
+			}
+			catch (...)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			}
 		}
 
 		if (request.has(X_Deadline))
