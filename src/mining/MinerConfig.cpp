@@ -388,6 +388,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		processorType_ = getOrAdd(miningObj, "processorType", std::string("CPU"));
 
+		clPlatform_ = getOrAdd(miningObj, "clPlatform", 0u);
+		clDevice_ = getOrAdd(miningObj, "clDevice", 0u);
+
 		// benchmark
 		{
 			Poco::JSON::Object::Ptr benchmarkObj;
@@ -1079,6 +1082,16 @@ bool Burst::MinerConfig::isBenchmark() const
 long Burst::MinerConfig::getBenchmarkInterval() const
 {
 	return benchmarkInterval_;
+}
+
+unsigned Burst::MinerConfig::getClPlatform() const
+{
+	return clPlatform_;
+}
+
+unsigned Burst::MinerConfig::getClDevice() const
+{
+	return clDevice_;
 }
 
 void Burst::MinerConfig::printTargetDeadline() const
