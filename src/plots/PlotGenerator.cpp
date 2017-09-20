@@ -23,6 +23,7 @@
 #include "Declarations.hpp"
 #include "shabal/MinerShabal.hpp"
 #include "mining/Miner.hpp"
+#include "PlotVerifier.hpp"
 
 Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner)
 {
@@ -39,24 +40,22 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	for (auto j = 0u; j <= 7; ++j)
 		gendata[Settings::PlotSize + 8 + j] = xv[7 - j];
 
-	sph_shabal256_context x;
-
 	for (auto i = Settings::PlotSize; i > 0; i -= Settings::HashSize)
 	{
-		sph_shabal256_init(&x);
+		Shabal256_SSE2 x;
 
 		auto len = Settings::PlotSize + 16 - i;
 
 		if (len > Settings::ScoopPerPlot)
 			len = Settings::ScoopPerPlot;
 
-		sph_shabal256(&x, &gendata[i], len);
-		sph_shabal256_close(&x, &gendata[i - Settings::HashSize]);
+		x.update(&gendata[i], len);
+		x.close(&gendata[i - Settings::HashSize]);
 	}
 
-	sph_shabal256_init(&x);
-	sph_shabal256(&x, gendata, 16 + Settings::PlotSize);
-	sph_shabal256_close(&x, final);
+	Shabal256_SSE2 x;
+	x.update(&gendata[0], 16 + Settings::PlotSize);
+	x.close(&final[0]);
 
 	// XOR with final
 	for (auto i = 0; i < Settings::PlotSize; i++)
@@ -69,10 +68,10 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	const auto scoop = miner.getScoopNum();
 	const auto basetarget = miner.getBaseTarget();
 
-	sph_shabal256_init(&x);
-	sph_shabal256(&x, generationSignature.data(), Settings::HashSize);
-	sph_shabal256(&x, &gendata[scoop * Settings::ScoopSize], Settings::ScoopSize);
-	sph_shabal256_close(&x, target.data());
+	Shabal256_SSE2 y;
+	y.update(generationSignature.data(), Settings::HashSize);
+	y.update(&gendata[scoop * Settings::ScoopSize], Settings::ScoopSize);
+	y.close(target.data());
 
 	memcpy(&result, target.data(), sizeof(Poco::UInt64));
 
