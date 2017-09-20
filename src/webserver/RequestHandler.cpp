@@ -451,6 +451,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (request.has(X_Deadline))
 			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
+		else
+			deadline = PlotGenerator::generateAndCheck(accountId, nonce, miner);
 
 		auto account = miner.getAccount(accountId);
 
@@ -471,12 +473,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
-			auto future = miner.submitNonceAsync(std::make_tuple(nonce, accountId, deadline,
-				miner.getBlockheight(), plotfile));
-
-			future.wait();
-
-			auto forwardResult = future.data();
+			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline,
+				miner.getBlockheight(), plotfile);
 
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setChunkedTransferEncoding(true);
