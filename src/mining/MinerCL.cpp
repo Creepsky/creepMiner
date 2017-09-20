@@ -150,11 +150,11 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 	{
 		if (platformIdx < platforms.size())
 		{
-			log_system(MinerLogger::miner, "Using platform[%z]", platformIdx);
+			log_system(MinerLogger::miner, "Using platform[%u]", platformIdx);
 		}
 		else
 		{
-			log_fatal(MinerLogger::miner, "Platform index is out of bounds (%z, max: %z)",
+			log_fatal(MinerLogger::miner, "Platform index is out of bounds (%u, max: %z)",
 				platformIdx, platforms.size() - 1);
 			return false;
 		}
@@ -200,11 +200,11 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 		if (deviceIdx < devices.size())
 		{
-			log_system(MinerLogger::miner, "Using device[%z]", deviceIdx);
+			log_system(MinerLogger::miner, "Using device[%u]", deviceIdx);
 		}
 		else
 		{
-			log_fatal(MinerLogger::miner, "Device index is out of bounds (%z, max: %z)",
+			log_fatal(MinerLogger::miner, "Device index is out of bounds (%u, max: %z)",
 				deviceIdx, devices.size() - 1);
 			return false;
 		}
@@ -265,7 +265,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 	// create kernel
 	{
 		cl_int ret;
-		kernel_ = clCreateKernel(program_, "verify", &ret);
+		kernel_ = clCreateKernel(program_, "calculate_deadlines", &ret);
 
 		if (ret != CL_SUCCESS)
 		{
