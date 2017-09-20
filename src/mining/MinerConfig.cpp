@@ -657,6 +657,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		startServer_ = getOrAdd(webserverObj, "start", true);
 		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", startServer_);
+		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 100u);
+		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 16u);
 
 		// credentials
 		{
@@ -1305,6 +1307,16 @@ bool Burst::MinerConfig::save(const std::string& path, const Poco::JSON::Object&
 		log_error(MinerLogger::config, "Exception: %s", std::string(exc.what()));
 		return false;
 	}
+}
+
+unsigned Burst::MinerConfig::getMaxConnectionsQueued() const
+{
+	return maxConnectionsQueued_;
+}
+
+unsigned Burst::MinerConfig::getMaxConnectionsActive() const
+{
+	return maxConnectionsActive_;
 }
 
 bool Burst::MinerConfig::addPlotDir(std::shared_ptr<PlotDir> plotDir)

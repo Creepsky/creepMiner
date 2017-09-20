@@ -84,10 +84,13 @@ void Burst::MinerServer::run(uint16_t port)
 
 	auto params = new HTTPServerParams;
 
-	params->setMaxQueued(100);
-	params->setMaxThreads(16);
+
+	params->setMaxQueued(MinerConfig::getConfig().getMaxConnectionsQueued());
+	params->setMaxThreads(MinerConfig::getConfig().getMaxConnectionsActive());
 	params->setServerName(Settings::Project.name);
 	params->setSoftwareVersion(Settings::Project.nameAndVersion);
+
+	threadPool_.addCapacity(MinerConfig::getConfig().getMaxConnectionsActive());
 
 	if (server_ != nullptr)
 		server_->stopAll(true);
