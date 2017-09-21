@@ -95,6 +95,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 	uri.addQueryParameter("requestType", "submitNonce");
 	uri.addQueryParameter("nonce", std::to_string(deadline.getNonce()));
 	uri.addQueryParameter("accountId", std::to_string(deadline.getAccountId()));
+	uri.addQueryParameter("blockheight", std::to_string(deadline.getBlock()));
 	
 	if (!MinerConfig::getConfig().getPassphrase().empty())
 		uri.addQueryParameter("secretPhrase", MinerConfig::getConfig().getPassphrase());
