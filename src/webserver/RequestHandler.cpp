@@ -40,6 +40,7 @@
 #include <Poco/StringTokenizer.h>
 #include <Poco/Net/HTMLForm.h>
 #include "plots/PlotGenerator.hpp"
+#include <regex>
 
 const std::string COOKIE_USER_NAME = "creepminer-webserver-user";
 const std::string COOKIE_PASS_NAME = "creepminer-webserver-pass";
@@ -263,12 +264,31 @@ void Burst::RequestHandler::redirect(Poco::Net::HTTPServerRequest& request, Poco
 
 void Burst::RequestHandler::forward(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, HostType hostType)
 {
+	auto forward = MinerConfig::getConfig().isForwardingEverything();
+
+	if (!forward)
+	{
+		const Poco::URI uri(request.getURI());
+		const auto pathAndQuery = uri.getPathAndQuery();
+
+		const auto& whitelist = MinerConfig::getConfig().getForwardingWhitelist();
+
+		for (auto i = whitelist.begin(); i != whitelist.end() && !forward; ++i)
+			forward = regex_match(pathAndQuery, std::regex(*i));
+
+		if (!forward)
+		{
+			log_information(MinerLogger::server, "Filtered bad request: %s", pathAndQuery);
+			return RequestHandler::badRequest(request, response);
+		}
+	}
+
 	auto session = MinerConfig::getConfig().createSession(hostType);
 
 	if (session == nullptr)
 		return;
 
-	log_information(MinerLogger::server, "Forwarding request\n\t%s", request.getURI());
+	log_information(MinerLogger::server, "Forwarding request:\n\t%s", request.getURI());
 
 	try
 	{
