@@ -180,6 +180,8 @@ namespace Burst
 		unsigned getClDevice() const;
 		unsigned getMaxConnectionsQueued() const;
 		unsigned getMaxConnectionsActive() const;
+		bool isForwardingEverything() const;
+		const std::vector<std::string>& getForwardingWhitelist() const;
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(uint64_t bufferSize);
@@ -271,6 +273,7 @@ namespace Burst
 		unsigned clPlatform_ = 0, clDevice_ = 0;
 		bool checkForwardDeadlines_ = false;
 		unsigned maxConnectionsQueued_ = 100, maxConnectionsActive_ = 16;
+		std::vector<std::string> forwardingWhitelist_;
 		mutable Poco::Mutex mutex_;
 	};
 }

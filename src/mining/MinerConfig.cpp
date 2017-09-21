@@ -158,7 +158,10 @@ T getOrAddExtract(Poco::JSON::Object::Ptr object, const std::string& key, T defa
 	auto json = object->get(key);
 
 	if (json.isEmpty())
+	{
 		object->set(key, defaultValue);
+		return defaultValue;
+	}
 
 	return json.extract<T>();
 }
@@ -205,6 +208,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	Poco::JSON::Parser parser;
 	Poco::JSON::Object::Ptr config;
+	
+	parser.setAllowComments(true);
 	
 	std::string jsonStr((std::istreambuf_iterator<char>(inputFileStream)),
 		std::istreambuf_iterator<char>());
@@ -707,6 +712,26 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			if (!pass.empty())
 				serverPass_ = getOrHash(pass, HASH_DELIMITER, passId, credentials, WebserverPassPassphrase);
+		}
+
+
+		// forwarding
+		{
+			Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
+			auto forwardUrls = getOrAddExtract(webserverObj, "forwardUrls", arr);
+
+			for (const auto& url : *forwardUrls)
+			{
+				try
+				{
+					forwardingWhitelist_.emplace_back(url.extract<std::string>());
+				}
+				catch (...)
+				{
+					log_error(MinerLogger::config, "Invalid forwarding rule in config: %s", url.toString());
+				}
+			}
+
 		}
 
 		config->set("webserver", webserverObj);
@@ -1307,6 +1332,16 @@ bool Burst::MinerConfig::save(const std::string& path, const Poco::JSON::Object&
 		log_error(MinerLogger::config, "Exception: %s", std::string(exc.what()));
 		return false;
 	}
+}
+
+bool Burst::MinerConfig::isForwardingEverything() const
+{
+	return forwardingWhitelist_.empty();
+}
+
+const std::vector<std::string>& Burst::MinerConfig::getForwardingWhitelist() const
+{
+	return forwardingWhitelist_;
 }
 
 unsigned Burst::MinerConfig::getMaxConnectionsQueued() const
