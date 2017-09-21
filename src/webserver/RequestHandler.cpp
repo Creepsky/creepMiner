@@ -462,6 +462,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 				accountId = Poco::NumberParser::parseUnsigned64(param.second);
 			else if (param.first == "nonce")
 				nonce = Poco::NumberParser::parseUnsigned64(param.second);
+			else if (param.first == "deadline")
+				deadline = Poco::NumberParser::parseUnsigned64(param.second) / miner.getBaseTarget();
 		}
 
 		if (request.has(X_Plotfile))
@@ -487,8 +489,6 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (request.has(X_Deadline))
 			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
-		else if (request.has("deadline"))
-			deadline = Poco::NumberParser::parseUnsigned64(request.get("deadline")) / miner.getBaseTarget();
 		else
 			deadline = PlotGenerator::generateAndCheck(accountId, nonce, miner);
 
