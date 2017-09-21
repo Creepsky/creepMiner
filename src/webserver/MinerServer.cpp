@@ -267,7 +267,16 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 			RequestHandler::addWebsocket(req, res, *server_);
 		});
 
+	std::stringstream sstream;
+	sstream << "Request: " << request.getURI() << std::endl;
+	sstream << "Ip: " << request.clientAddress().toString() << std::endl;
+	sstream << "Method: " << request.getMethod() << std::endl;
+	
+	for (const auto& header : request)
+		sstream << header.first << ':' << header.second << std::endl;
+	
 	log_debug(MinerLogger::server, "Request: %s", request.getURI());
+	log_file_only(MinerLogger::server, Poco::Message::PRIO_INFORMATION, TextType::Information, sstream.str());
 
 	try
 	{
