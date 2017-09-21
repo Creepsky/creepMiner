@@ -394,7 +394,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UIn
 
 	NonceConfirmation nonceConfirmation;
 	nonceConfirmation.deadline = 0;
-	nonceConfirmation.json = Poco::format(R"({ "result" : "success", "deadline" : %Lu })", deadline);
+	nonceConfirmation.json = Poco::format(R"({ "result" : "success", "deadline" : %Lu, "deadlineText" : "%s" })", deadline, deadlineFormat(deadline));
 	nonceConfirmation.errorCode = result;
 
 	return nonceConfirmation;
@@ -473,10 +473,7 @@ bool Burst::Miner::getMiningInfo()
 								deadlineFormat(target_deadline_pool_before),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Pool)),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Local)),
-								deadlineFormat(data_.getTargetDeadline()))
-
-
-;
+								deadlineFormat(data_.getTargetDeadline()));
 					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));
