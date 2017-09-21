@@ -379,7 +379,8 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	return SubmitResponse::Error;
 }
 
-Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile)
+Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile,
+	const std::string& minerName, Poco::UInt64 plotsize)
 {
 	std::shared_ptr<Deadline> newDeadline;
 
@@ -388,6 +389,12 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UIn
 	// is the new nonce better then the best one we already have?
 	if (result == SubmitResponse::Found)
 	{
+		if (!minerName.empty())
+			newDeadline->setMiner(minerName);
+
+		if (plotsize > 0)
+			newDeadline->setTotalPlotsize(plotsize);
+
 		newDeadline->onTheWay();
 		return NonceSubmitter{ *this, newDeadline }.submit();
 	}

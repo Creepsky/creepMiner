@@ -664,6 +664,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", startServer_);
 		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 100u);
 		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 16u);
+		cumulatePlotsizes_ = getOrAdd(webserverObj, "cumulatePlotsizes", true);
+		minerNameForwarding_ = getOrAdd(webserverObj, "forwardMinerNames", true);
 
 		// credentials
 		{
@@ -1344,6 +1346,11 @@ const std::vector<std::string>& Burst::MinerConfig::getForwardingWhitelist() con
 	return forwardingWhitelist_;
 }
 
+bool Burst::MinerConfig::isCumulatingPlotsizes() const
+{
+	return cumulatePlotsizes_;
+}
+
 unsigned Burst::MinerConfig::getMaxConnectionsQueued() const
 {
 	return maxConnectionsQueued_;
@@ -1509,4 +1516,9 @@ void Burst::MinerConfig::useLogfile(bool use)
 	// refresh the log channels
 	// because we need to open or close the filechannel
 	MinerLogger::refreshChannels();
+}
+
+bool Burst::MinerConfig::isForwardingMinerName() const
+{
+	return minerNameForwarding_;
 }

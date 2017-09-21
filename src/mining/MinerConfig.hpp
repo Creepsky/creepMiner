@@ -182,6 +182,8 @@ namespace Burst
 		unsigned getMaxConnectionsActive() const;
 		bool isForwardingEverything() const;
 		const std::vector<std::string>& getForwardingWhitelist() const;
+		bool isCumulatingPlotsizes() const;
+		bool isForwardingMinerName() const;
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(uint64_t bufferSize);
@@ -274,6 +276,8 @@ namespace Burst
 		bool checkForwardDeadlines_ = false;
 		unsigned maxConnectionsQueued_ = 100, maxConnectionsActive_ = 16;
 		std::vector<std::string> forwardingWhitelist_;
+		bool cumulatePlotsizes_ = true;
+		bool minerNameForwarding_ = true;
 		mutable Poco::Mutex mutex_;
 	};
 }

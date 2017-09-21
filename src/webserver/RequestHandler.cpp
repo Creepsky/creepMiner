@@ -431,17 +431,25 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 	try
 	{
 		std::string plotsHash = "";
+		Poco::UInt64 capacity = 0;
+
+		if (request.has(X_Capacity))
+			capacity = Poco::NumberParser::parseUnsigned64(request.get(X_Capacity));
 
 		try
 		{
 			if (request.has(X_PlotsHash))
 			{
-				auto plotsHashEncoded = request.get(X_PlotsHash);
-				Poco::URI::decode(plotsHashEncoded, plotsHash);
-				PlotSizes::set(plotsHash, Poco::NumberParser::parseUnsigned64(request.get(X_Capacity)));
+				if (MinerConfig::getConfig().isCumulatingPlotsizes())
+				{
+					const auto plotsHashEncoded = request.get(X_PlotsHash);
+					Poco::URI::decode(plotsHashEncoded, plotsHash);
 
-				// send new settings to websockets
-				server.sendToWebsockets(createJsonConfig());
+					PlotSizes::set(plotsHash, capacity);
+					
+					// send new settings to websockets
+					server.sendToWebsockets(createJsonConfig());
+				}
 			}
 		}
 		catch (Poco::Exception&)
@@ -456,6 +464,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		Poco::UInt64 deadline = 0;
 		std::string plotfile = "";
 		Poco::UInt64 blockheight = 0;
+		std::string minerName = "";
 
 		for (const auto& param : uri.getQueryParameters())
 		{
@@ -471,7 +480,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (request.has(X_Plotfile))
 		{
-			auto plotfileEncoded = request.get(X_Plotfile);
+			const auto plotfileEncoded = request.get(X_Plotfile);
 			Poco::URI::decode(plotfileEncoded, plotfile);
 		}
 
@@ -507,6 +516,9 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		if (deadline == 0 && blockheight == miner.getBlockheight())
 			deadline = PlotGenerator::generateAndCheck(accountId, nonce, miner);
 
+		if (request.has(X_Miner) && MinerConfig::getConfig().isForwardingMinerName())
+			minerName = request.get(X_Miner);
+
 		log_information(MinerLogger::server, "Got nonce forward request (%s)\n"
 			"\tnonce:   %Lu\n"
 			"\taccount: %s\n"
@@ -530,7 +542,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		else if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
 			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline,
-				miner.getBlockheight(), plotfile);
+				miner.getBlockheight(), plotfile, minerName, capacity);
 
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setChunkedTransferEncoding(true);
