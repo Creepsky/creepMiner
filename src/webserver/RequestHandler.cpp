@@ -455,6 +455,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		Poco::UInt64 nonce = 0;
 		Poco::UInt64 deadline = 0;
 		std::string plotfile = "";
+		Poco::UInt64 blockheight = 0;
 
 		for (const auto& param : uri.getQueryParameters())
 		{
@@ -462,6 +463,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 				accountId = Poco::NumberParser::parseUnsigned64(param.second);
 			else if (param.first == "nonce")
 				nonce = Poco::NumberParser::parseUnsigned64(param.second);
+			else if (param.first == "blockheight")
+				blockheight = Poco::NumberParser::parseUnsigned64(param.second);
 			else if (param.first == "deadline")
 				deadline = Poco::NumberParser::parseUnsigned64(param.second) / miner.getBaseTarget();
 		}
@@ -489,8 +492,6 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (request.has(X_Deadline))
 			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
-		else
-			deadline = PlotGenerator::generateAndCheck(accountId, nonce, miner);
 
 		auto account = miner.getAccount(accountId);
 
@@ -499,17 +500,34 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (plotfile.empty())
 			plotfile = !plotsHash.empty() ? plotsHash : "unknown";
+		
+		if (blockheight == 0)
+			blockheight = miner.getBlockheight();
+
+		if (deadline == 0 && blockheight == miner.getBlockheight())
+			deadline = PlotGenerator::generateAndCheck(accountId, nonce, miner);
 
 		log_information(MinerLogger::server, "Got nonce forward request (%s)\n"
-			"\tnonce: %Lu\n"
+			"\tnonce:   %Lu\n"
 			"\taccount: %s\n"
-			"\tin: %s",
-			deadlineFormat(deadline), nonce,
-			account->getName().empty() ? account->getAddress() : account->getName(),
-			plotfile
+			"\theight:  %Lu\n"
+			"\tin:      %s",
+			blockheight == miner.getBlockheight() ? deadlineFormat(deadline) : "for last block!",
+			nonce, account->getName().empty() ? account->getAddress() : account->getName(),
+			blockheight, plotfile
 		);
 
-		if (accountId != 0 && nonce != 0 && deadline != 0)
+		if (blockheight != miner.getBlockheight())
+		{
+			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+			response.setChunkedTransferEncoding(true);
+			auto& responseData = response.send();
+
+			responseData << Poco::format(
+				R"({ "result" : "Your submitted deadline is for another block!", "nonce" : %Lu, "blockheight" : %Lu, "currentBlockheight" : %Lu })",
+				nonce, blockheight, miner.getBlockheight());
+		}
+		else if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
 			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline,
 				miner.getBlockheight(), plotfile);
