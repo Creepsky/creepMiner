@@ -1,7 +1,7 @@
 ##################################################################
 # Project and CMake settings
 ##################################################################
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.1)
 project(creepMiner VERSION 1.7.0)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_BUILD_TYPE RELEASE)
@@ -280,10 +280,6 @@ elseif (MSVC)
 		libcrypto
 		libssl)
 
-	 if (USE_OPENCL)
-		  target_link_libraries(creepMiner OpenCL::OpenCL)
-	 endif ()
-
 	# 64 bit
 	if (CMAKE_SIZEOF_VOID_P EQUAL 8)
 		set(lib-crypto libcrypto-1_1-x64.dll)
@@ -296,6 +292,10 @@ elseif (MSVC)
 
 	configure_file(${OPENSSL_ROOT}/bin/${lib-crypto} ${CMAKE_CURRENT_BINARY_DIR}/bin/${lib-crypto} COPYONLY)
 	configure_file(${OPENSSL_ROOT}/bin/${lib-ssl} ${CMAKE_CURRENT_BINARY_DIR}/bin/${lib-ssl} COPYONLY)
+endif ()
+
+if (USE_OPENCL)
+	target_link_libraries(creepMiner ${OpenCL_LIBRARY})
 	configure_file(${CMAKE_SOURCE_DIR}/src/shabal/opencl/mining.cl ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.cl COPYONLY)
 endif ()
 
