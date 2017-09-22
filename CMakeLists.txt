@@ -60,8 +60,8 @@ if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 endif()
 
 if (USE_OPENCL AND NOT MINIMAL_BUILD AND NOT NO_GPU)
-	 find_package(OpenCL REQUIRED)
-	 add_definitions(-DUSE_OPENCL)
+	find_package(OpenCL REQUIRED)
+	add_definitions(-DUSE_OPENCL)
 endif ()
 
 ##################################################################
@@ -248,7 +248,7 @@ if (USE_AVX2 AND NOT MINIMAL_BUILD)
 endif ()
 
 if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
-	 set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
 endif ()
 
 ##################################################################
