@@ -28,7 +28,7 @@ endif ()
 # CPU architecture (only for Unix/Mac)
 ##################################################################
 if (UNIX OR APPLE)
-	set(CPU_ARCH "X32 X64" CACHE STRING "CPU architecture")
+	set(CPU_ARCH "X64" CACHE STRING "CPU architecture")
 	set_property(CACHE CPU_ARCH PROPERTY STRINGS X32 X64)
 	
 	if (CPU_ARCH STREQUAL "X32")
