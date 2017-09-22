@@ -244,6 +244,8 @@ if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
 endif ()
 
+configure_file(${CMAKE_SOURCE_DIR}/bin/mining.conf ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.conf COPYONLY)
+
 ##################################################################
 # Executable
 ##################################################################
@@ -305,9 +307,22 @@ set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
 ##################################################################
 # Installing
 ##################################################################
-install(TARGETS creepMiner RUNTIME DESTINATION .)
+install(TARGETS	creepMiner RUNTIME DESTINATION .)
+install(FILES src/shabal/opencl/mining.cl DESTINATION .)
 install(DIRECTORY bin/public DESTINATION .)
 
 if (OVERWRITE_MINING_CONF)
 	install(FILES bin/mining.conf DESTINATION .)
 endif  ()
+
+if (MSVC)
+	install(FILES
+		${OPENSSL_ROOT}/bin/${lib-crypto}
+		${OPENSSL_ROOT}/bin/${lib-ssl}
+		DESTINATION .)
+else ()
+	install(FILES
+		bin/run.sh
+		icon.png
+		DESTINATION .)
+endif ()
