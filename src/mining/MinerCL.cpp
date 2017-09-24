@@ -23,6 +23,7 @@
 #include "logging/MinerLogger.hpp"
 #include <sstream>
 #include <fstream>
+#include "gpu/impl/gpu_opencl_impl.hpp"
 
 namespace Burst
 {
@@ -30,12 +31,14 @@ namespace Burst
 	struct MinerCLHelper
 	{
 		template <typename TSubject, typename TInfoFunc, typename TArg>
-		static auto infoHelperFunc(const TSubject& subject, std::string& info, TInfoFunc infoFunc, TArg arg)
+		static auto infoHelperFunc(const TSubject& subject, std::string& info, TInfoFunc infoFunc, TArg arg, int& ret)
 		{
 			info = std::string(255, '\0');
 			size_t size = 0;
 
-			if (infoFunc(subject, arg, info.size(), &info[0], &size) != CL_SUCCESS)
+			ret = infoFunc(subject, arg, info.size(), &info[0], &size);
+
+			if (ret != CL_SUCCESS)
 				return false;
 
 			// cut away the \0
@@ -99,10 +102,12 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 	{
 		cl_uint sizePlatforms;
 
+		auto ret = clGetPlatformIDs(0, nullptr, &sizePlatforms);
+
 		// get the number of valid opencl platforms 
-		if (clGetPlatformIDs(0, nullptr, &sizePlatforms) != CL_SUCCESS)
+		if (ret != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not detect the number of valid OpenCL platforms!");
+			log_fatal(MinerLogger::miner, "Could not detect the number of valid OpenCL platforms!\n\tError-code:\t%d", ret);
 			return false;
 		}
 
@@ -115,9 +120,11 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 		// get all valid opencl platforms 
 		platforms.resize(sizePlatforms);
 
-		if (clGetPlatformIDs(sizePlatforms, platforms.data(), nullptr) != CL_SUCCESS)
+		ret = clGetPlatformIDs(sizePlatforms, platforms.data(), nullptr);
+
+		if (ret != CL_SUCCESS)
 		{
-			log_critical(MinerLogger::miner, "Could not get a list of valid OpenCL platforms!");
+			log_critical(MinerLogger::miner, "Could not get a list of valid OpenCL platforms!\n\tError-code:\t%d", ret);
 			return false;
 		}
 
@@ -132,11 +139,18 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 			std::string version;
 
 			const auto& platform = platforms[i];
+			cl_int ret_platform, ret_version;
 			
-			if (!MinerCLHelper::infoHelperFunc(platform, name, clGetPlatformInfo, CL_PLATFORM_NAME) ||
-				!MinerCLHelper::infoHelperFunc(platform, version, clGetPlatformInfo, CL_PLATFORM_VERSION))
+			if (!MinerCLHelper::infoHelperFunc(platform, name, clGetPlatformInfo, CL_PLATFORM_NAME, ret_platform) ||
+				!MinerCLHelper::infoHelperFunc(platform, version, clGetPlatformInfo, CL_PLATFORM_VERSION, ret_version))
 			{
-				sstream << '\t' << "Could not get all infos of a OpenCL platform... skipping it!" << std::endl;
+				if (ret_platform != CL_SUCCESS)
+					sstream << '\t' << "Could not get OpenCL platform name\n\tError-code:\t%d" << std::endl;
+
+				if (ret_version != CL_SUCCESS)
+					sstream << '\t' << "Could not get OpenCL platform version\n\tError-code:\t%d" << std::endl;
+
+				sstream << '\t' << "Skipping it!" << std::endl;
 				continue;
 			}
 
@@ -162,17 +176,21 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 		const auto platform = platforms[platformIdx];
 		cl_uint sizeDevices = 0;
 
-		if (clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 0, nullptr, &sizeDevices) != CL_SUCCESS)
+		auto ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 0, nullptr, &sizeDevices);
+
+		if (ret != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not detect the number of valid OpenCL devices!");
+			log_fatal(MinerLogger::miner, "Could not detect the number of valid OpenCL devices!\n\tError-code:\t%d", ret);
 			return false;
 		}
 
 		devices.resize(sizeDevices);
 
-		if (clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, sizeDevices, devices.data(), nullptr) != CL_SUCCESS)
+		ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, sizeDevices, devices.data(), nullptr);
+
+		if (ret != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not detect the number of valid OpenCL devices!");
+			log_fatal(MinerLogger::miner, "Could not detect the number of valid OpenCL devices!\n\tError-code:\t%d", ret);
 			return false;
 		}
 
@@ -186,10 +204,12 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 			std::string name;
 
 			const auto& device = devices[i];
+			cl_int ret_device_name;
 
-			if (!MinerCLHelper::infoHelperFunc(device, name, clGetDeviceInfo, CL_DEVICE_NAME))
+			if (!MinerCLHelper::infoHelperFunc(device, name, clGetDeviceInfo, CL_DEVICE_NAME, ret_device_name))
 			{
-				sstream << '\t' << "Could not get all infos of a OpenCL device... skipping it!" << std::endl;
+				sstream << '\t' << "Could not get all infos of a OpenCL device (Error-code: " << ret_device_name <<
+					")... skipping it!" << std::endl;
 				continue;
 			}
 
@@ -218,7 +238,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 		if (err != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not create an OpenCL context!");
+			log_fatal(MinerLogger::miner, "Could not create an OpenCL context!\n\tError-code:\t%d", err);
 			return false;
 		}
 
@@ -231,7 +251,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 		if (ret != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not create an OpenCL command queue!");
+			log_fatal(MinerLogger::miner, "Could not create an OpenCL command queue!\n\tError-code:\t%d", ret);
 			return false;
 		}
 	}
@@ -269,7 +289,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 		if (ret != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not create the OpenCL kernel!");
+			log_fatal(MinerLogger::miner, "Could not create the OpenCL kernel!\n\tError-code:\t%d", ret);
 			return false;
 		}
 	}
