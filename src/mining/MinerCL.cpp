@@ -176,7 +176,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 		const auto platform = platforms[platformIdx];
 		cl_uint sizeDevices = 0;
 
-		auto ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 0, nullptr, &sizeDevices);
+		auto ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, nullptr, &sizeDevices);
 
 		if (ret != CL_SUCCESS)
 		{
