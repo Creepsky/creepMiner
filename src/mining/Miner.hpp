@@ -65,15 +65,19 @@ namespace Burst
 		const std::string& getGensigStr() const;
 		void updateGensig(const std::string gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
 
-		NonceConfirmation submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile,
-			const std::string& minerName = "", Poco::UInt64 plotsize = 0);
-		Poco::ActiveMethod<NonceConfirmation, std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>, Miner> submitNonceAsync;
+		NonceConfirmation submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
+		                              Poco::UInt64 blockheight, std::string plotFile,
+		                              bool ownAccount, const std::string& minerName = "", Poco::UInt64 plotsize = 0);
+
+		Poco::ActiveMethod<NonceConfirmation,
+		                   std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>,
+		                   Miner> submitNonceAsync;
 
 		std::shared_ptr<Deadline> getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
 		std::shared_ptr<Deadline> getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
 		//std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
-		std::shared_ptr<Account> getAccount(AccountId id);
+		std::shared_ptr<Account> getAccount(AccountId id, bool persistent = false);
 		void createPlotVerifiers();
 
 		void setMiningIntensity(Poco::UInt32 intensity);
@@ -83,10 +87,13 @@ namespace Burst
 
 	private:
 		bool getMiningInfo();
-		NonceConfirmation submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data);
-		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile,
-			 std::shared_ptr<Deadline>& newDeadline);
-		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const;
+		NonceConfirmation submitNonceAsyncImpl(
+			const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>& data);
+		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
+		                              Poco::UInt64 blockheight, std::string plotFile,
+		                              bool ownAccount, std::shared_ptr<Deadline>& newDeadline);
+		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager,
+		                      Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);
 		void on_wake_up(Poco::Timer& timer);
 		void onBenchmark(Poco::Timer& timer);

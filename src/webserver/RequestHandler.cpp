@@ -525,7 +525,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			"\theight:  %Lu\n"
 			"\tin:      %s",
 			blockheight == miner.getBlockheight() ? deadlineFormat(deadline) : "for last block!",
-			nonce, account->getName().empty() ? account->getAddress() : account->getName(),
+			nonce,
+			account->getAddress(),
 			blockheight, plotfile
 		);
 
@@ -542,7 +543,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		else if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
 			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline,
-				miner.getBlockheight(), plotfile, minerName, capacity);
+				miner.getBlockheight(), plotfile, false, minerName, capacity);
 
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setChunkedTransferEncoding(true);
