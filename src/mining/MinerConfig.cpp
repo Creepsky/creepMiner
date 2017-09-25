@@ -90,8 +90,11 @@ void Burst::MinerConfig::printConsole() const
 	printConsolePlots();
 
 	log_system(MinerLogger::config, "Get mining info interval : %z seconds", getConfig().getMiningInfoInterval());
-	log_system(MinerLogger::config, "CPU instruction set : %s", getConfig().getCpuInstructionSet());
+
 	log_system(MinerLogger::config, "Processor type : %s", getConfig().getProcessorType());
+
+	if (getConfig().getProcessorType() == "CPU")
+		log_system(MinerLogger::config, "CPU instruction set : %s", getConfig().getCpuInstructionSet());
 	
 	if (getConfig().isBenchmark())
 		log_warning(MinerLogger::config, "Benchmark mode activated!");
@@ -384,6 +387,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		Settings::setCpuInstructionSet(cpuInstructionSet_);
 
 		processorType_ = getOrAdd(miningObj, "processorType", std::string("CPU"));
+
+		clPlatform_ = getOrAdd(miningObj, "clPlatform", 0u);
+		clDevice_ = getOrAdd(miningObj, "clDevice", 0u);
 
 		// benchmark
 		{
@@ -1076,6 +1082,16 @@ bool Burst::MinerConfig::isBenchmark() const
 long Burst::MinerConfig::getBenchmarkInterval() const
 {
 	return benchmarkInterval_;
+}
+
+unsigned Burst::MinerConfig::getClPlatform() const
+{
+	return clPlatform_;
+}
+
+unsigned Burst::MinerConfig::getClDevice() const
+{
+	return clDevice_;
 }
 
 void Burst::MinerConfig::printTargetDeadline() const

@@ -35,6 +35,7 @@
 #include <Poco/File.h>
 #include <Poco/Delegate.h>
 #include "plots/PlotVerifier.hpp"
+#include "MinerCL.hpp"
 
 namespace Burst
 {
@@ -628,27 +629,47 @@ std::shared_ptr<Burst::Account> Burst::Miner::getAccount(AccountId id)
 
 void Burst::Miner::createPlotVerifiers()
 {
-	const auto& config = MinerConfig::getConfig();
+	const auto& processorType = MinerConfig::getConfig().getProcessorType();
+	const auto& cpuInstructionSet = MinerConfig::getConfig().getCpuInstructionSet();
+	auto forceSse2 = false;
 
-	if (config.getProcessorType() == "CPU")
+	if (processorType == "CPU")
 	{
-		if (config.getCpuInstructionSet() == "SSE2")
-			MinerHelper::create_worker<PlotVerifier_sse2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
-				*this, verificationQueue_, progressVerify_);
-		else if (config.getCpuInstructionSet() == "SSE4")
+		if (cpuInstructionSet == "SSE4" && Settings::Sse4)
 			MinerHelper::create_worker<PlotVerifier_sse4>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 				*this, verificationQueue_, progressVerify_);
-		else if (config.getCpuInstructionSet() == "AVX")
+		else if (cpuInstructionSet == "AVX" && Settings::Avx)
 			MinerHelper::create_worker<PlotVerifier_avx>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 				*this, verificationQueue_, progressVerify_);
-		else if (config.getCpuInstructionSet() == "AVX2")
+		else if (cpuInstructionSet == "AVX2" && Settings::Avx2)
 			MinerHelper::create_worker<PlotVerifier_avx2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 				*this, verificationQueue_, progressVerify_);
+		else if (cpuInstructionSet == "SSE2"); // do nothing
+        else
+			forceSse2 = true;
 	}
-	else if (config.getProcessorType() == "CUDA")
+	else if (processorType == "CUDA" && Settings::Cuda)
 	{
 		MinerHelper::create_worker<PlotVerifier_cuda>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
 			*this, verificationQueue_, progressVerify_);
+	}
+	else if (processorType == "OPENCL" && Settings::OpenCl)
+	{
+		MinerHelper::create_worker<PlotVerifier_opencl>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+			*this, verificationQueue_, progressVerify_);
+	}
+	else
+		forceSse2 = true;
+	
+	if (forceSse2 || (processorType == "CPU" && cpuInstructionSet == "SSE2"))
+	{
+		MinerHelper::create_worker<PlotVerifier_sse2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+			*this, verificationQueue_, progressVerify_);
+	
+		if (forceSse2)
+			log_warning(MinerLogger::miner, "You are using the processor type %s with the instruction set %s,\n"
+				"but your miner is compiled without that feature!\n"
+				"As a fallback solution CPU with SSE2 is used.", processorType, cpuInstructionSet);
 	}
 }
 

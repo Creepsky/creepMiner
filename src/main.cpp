@@ -34,6 +34,7 @@
 #include <Poco/Logger.h>
 #include "network/Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
+#include "mining/MinerCL.hpp" 
 
 class SSLInitializer
 {
@@ -68,14 +69,22 @@ int main(int argc, const char* argv[])
 	std::string mode = "Debug";
 #endif
 
-#ifdef USE_CUDA
-	std::string cuda = ", compiled with CUDA SDK";
-#else
-	std::string cuda = "";
-#endif
+	using Burst::Settings;
+
+	std::stringstream sstream;
+
+	const auto checkAndPrint = [&](bool flag, const std::string& text) {
+		sstream << ' ' << (flag ? '+' : '-') << text;
+	};
+
+	checkAndPrint(Settings::Cuda, "CUDA");
+	checkAndPrint(Settings::OpenCl, "OpenCL");
+	checkAndPrint(Settings::Sse4, "SSE4");
+	checkAndPrint(Settings::Avx, "AVX");
+	checkAndPrint(Settings::Avx2, "AVX2");
 
 	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
-	log_information(general, "%s mode%s", mode, cuda);
+	log_information(general, "%s mode%s", mode, sstream.str());
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
@@ -148,6 +157,10 @@ int main(int argc, const char* argv[])
 
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 		{
+			if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
+				Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getClPlatform(),
+					Burst::MinerConfig::getConfig().getClDevice());
+
 			Burst::Miner miner;
 			Burst::MinerServer server{miner};
 

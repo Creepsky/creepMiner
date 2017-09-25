@@ -21,21 +21,42 @@
 
 #pragma once
 
-#include "Declarations.hpp"
-#include <Poco/Types.h>
-#include "gpu/gpu_declarations.hpp"
-#include <string>
+/*
+ * OpenCL relevant classes and functions.
+ */
+#ifdef USE_OPENCL
+#include <CL/cl.h>
+#else
+using cl_context = int*;
+using cl_command_queue = int*;
+using cl_kernel = int*;
+using cl_program = int*;
+#endif
 
-extern "C" void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize);
-extern "C" bool cuda_alloc_memory(Poco::UInt64 size,  void** mem);
-extern "C" bool cuda_copy_memory(Poco::UInt64 size, const void* from, void* to, Burst::MemoryCopyDirection copyDirection);
-extern "C" bool cuda_free_memory(void* mem);
+namespace Burst
+{
+	/**
+	 * \brief A OpenCL context.
+	 */
+	class MinerCL
+	{
+	public:
+		~MinerCL();
+		bool create(unsigned platformIdx = 0, unsigned deviceIdx = 0);
 
-extern "C" bool cuda_calculate_shabal_host_preallocated(Burst::ScoopData* buffer, Poco::UInt64* deadlines, Poco::UInt64 bufferSize,
-	const Burst::GensigData* gensig,
-	Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, std::string& errorString);
+		cl_context getContext() const;
+		cl_command_queue getCommandQueue() const;
+		cl_kernel getKernel() const;
 
-extern "C" bool cuda_reduce_best_deadline(Poco::UInt64* deadlines, size_t size,
-	Poco::UInt64& minDeadline, Poco::UInt64& index, std::string& errorString);
+		bool initialized() const;
 
-extern "C" bool cuda_get_error(std::string& errorString);
+		static MinerCL& getCL();
+
+	private:
+		cl_context context_ = nullptr;
+		cl_command_queue command_queue_ = nullptr;
+		cl_program program_ = nullptr;
+		cl_kernel kernel_ = nullptr;
+		bool initialized_ = false;
+	};
+}

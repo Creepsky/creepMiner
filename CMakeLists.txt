@@ -1,9 +1,10 @@
 ##################################################################
 # Project and CMake settings
 ##################################################################
-cmake_minimum_required(VERSION 3.0.2)
-project(creepMiner VERSION 1.6.4)
+cmake_minimum_required(VERSION 3.1)
+project(creepMiner VERSION 1.7.0)
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_BUILD_TYPE RELEASE)
 
 ##################################################################
 # Configuration types
@@ -11,6 +12,9 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+
+option(MINIMAL_BUILD "If yes, the miner will be build without any extras like CUDA, CPU instructions..." OFF)
+option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
 
 ##################################################################
 # Environment variables
@@ -24,7 +28,7 @@ endif ()
 # CPU architecture (only for Unix/Mac)
 ##################################################################
 if (UNIX OR APPLE)
-	set(CPU_ARCH "X32 X64" CACHE STRING "CPU architecture")
+	set(CPU_ARCH "X64" CACHE STRING "CPU architecture")
 	set_property(CACHE CPU_ARCH PROPERTY STRINGS X32 X64)
 	
 	if (CPU_ARCH STREQUAL "X32")
@@ -36,7 +40,9 @@ endif ()
 # GPU acceleration
 ##################################################################
 option(USE_CUDA "If yes, CUDA will be enabled" ON)
-if (USE_CUDA)
+option(USE_OPENCL "If yes, OpenCL will be enabled" ON)
+
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 	 find_package(CUDA REQUIRED)
 	 add_definitions(-DUSE_CUDA)
 	 set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
@@ -53,6 +59,11 @@ if (USE_CUDA)
 		 -gencode=arch=compute_62,code=sm_62)
 endif()
 
+if (USE_OPENCL AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	find_package(OpenCL REQUIRED)
+	add_definitions(-DUSE_OPENCL)
+endif ()
+
 ##################################################################
 # Additional options
 ##################################################################
@@ -61,14 +72,8 @@ option(OVERWRITE_MINING_CONF "If yes, on install the mining.conf will be overwri
 ##################################################################
 # UNIX / BSD specific
 ##################################################################
-if (UNIX OR APPLE)
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${LOG_OUTPUT_FLAG}")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} -O3")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${LOG_OUTPUT_FLAG} -O3")
-	set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${LOG_OUTPUT_FLAG} -O3")
-	 
+if (UNIX OR APPLE)	 
 	add_definitions(
-		${LOG_OUTPUT_FLAG}
 		-D_REENTRANT
 		-Wall
 		-march=native
@@ -84,7 +89,6 @@ if (UNIX OR APPLE)
 elseif (MSVC)
 	add_definitions(
 		-DPOCO_STATIC
-		${LOG_OUTPUT_FLAG}
 		-DUNICODE
 		-D_UNICODE)
 
@@ -121,6 +125,7 @@ endif ()
 set(HEADER_FILES
 	src/gpu/algorithm/gpu_algorithm_atomic.hpp
 	src/gpu/impl/gpu_cuda_impl.hpp
+	src/gpu/impl/gpu_opencl_impl.hpp
 	src/gpu/gpu_algorithm_shell.hpp
 	src/gpu/gpu_declarations.hpp
 	src/gpu/gpu_shell.hpp
@@ -133,6 +138,7 @@ set(HEADER_FILES
 	src/logging/ProgressPrinter.hpp
 	src/mining/Deadline.hpp
 	src/mining/Miner.hpp
+	src/mining/MinerCL.hpp
 	src/mining/MinerConfig.hpp
 	src/mining/MinerData.hpp
 	src/network/NonceSubmitter.hpp
@@ -166,6 +172,7 @@ set(HEADER_FILES
 ##################################################################
 set(SOURCE_FILES
 	src/gpu/impl/gpu_cuda_impl.cpp
+	src/gpu/impl/gpu_opencl_impl.cpp
 	src/logging/channels/ColoredPriorityConsoleChannel.cpp
 	src/logging/channels/MinerDataChannel.cpp
 	src/logging/Console.cpp
@@ -175,6 +182,7 @@ set(SOURCE_FILES
 	src/logging/ProgressPrinter.cpp
 	src/mining/Deadline.cpp
 	src/mining/Miner.cpp
+	src/mining/MinerCL.cpp
 	src/mining/MinerConfig.cpp
 	src/mining/MinerData.cpp
 	src/network/NonceSubmitter.cpp
@@ -186,9 +194,6 @@ set(SOURCE_FILES
 	src/plots/PlotReader.cpp
 	src/plots/PlotSizes.cpp
 	src/plots/PlotVerifier.cpp
-	src/shabal/mshabal/mshabal_avx1.cpp
-	src/shabal/mshabal/mshabal_avx2.cpp
-	src/shabal/mshabal/mshabal_sse4.cpp
 	src/shabal/MinerShabal.cpp
 	src/wallet/Account.cpp
 	src/wallet/Wallet.cpp
@@ -200,23 +205,51 @@ set(SOURCE_FILES
 	src/MinerUtil.cpp
 	src/logging/Performance.cpp)
 
-if (USE_CUDA)
-	 set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
+##################################################################
+# Special files and settings
+##################################################################
+option(USE_SSE4 "If yes, SSE4 will be enabled" ON)
+option(USE_AVX "If yes, AVX will be enabled" ON)
+option(USE_AVX2 "If yes, AVX2 will be enabled" ON)
+
+if (USE_SSE4 AND NOT MINIMAL_BUILD)
+	add_definitions(-DUSE_SSE4)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_sse4.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse4)
+	endif ()
 endif ()
 
-if (UNIX OR APPLE)
-	set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS -mavx)
-	set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS -mavx2)
-	set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse4)
-elseif (MSVC)
-	set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS /arch:AVX)
-	set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS /arch:AVX2)
+if (USE_AVX AND NOT MINIMAL_BUILD)
+	add_definitions(-DUSE_AVX)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_avx1.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS -mavx)
+	elseif (MSVC)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS /arch:AVX)
+	endif ()
 endif ()
+
+if (USE_AVX2 AND NOT MINIMAL_BUILD)
+	add_definitions(-DUSE_AVX2)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_avx2.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS -mavx2)
+	elseif (MSVC)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS /arch:AVX2)
+	endif ()
+endif ()
+
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
+endif ()
+
+configure_file(${CMAKE_SOURCE_DIR}/bin/mining.conf ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.conf COPYONLY)
 
 ##################################################################
 # Executable
 ##################################################################
-if (USE_CUDA)
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 	 cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
 else ()
 	 add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
@@ -261,6 +294,11 @@ elseif (MSVC)
 	configure_file(${OPENSSL_ROOT}/bin/${lib-ssl} ${CMAKE_CURRENT_BINARY_DIR}/bin/${lib-ssl} COPYONLY)
 endif ()
 
+if (USE_OPENCL)
+	target_link_libraries(creepMiner ${OpenCL_LIBRARY})
+	configure_file(${CMAKE_SOURCE_DIR}/src/shabal/opencl/mining.cl ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.cl COPYONLY)
+endif ()
+
 ##################################################################
 # Naming
 ##################################################################
@@ -269,9 +307,22 @@ set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
 ##################################################################
 # Installing
 ##################################################################
-install(TARGETS creepMiner RUNTIME DESTINATION .)
+install(TARGETS	creepMiner RUNTIME DESTINATION .)
+install(FILES src/shabal/opencl/mining.cl DESTINATION .)
 install(DIRECTORY bin/public DESTINATION .)
 
 if (OVERWRITE_MINING_CONF)
 	install(FILES bin/mining.conf DESTINATION .)
 endif  ()
+
+if (MSVC)
+	install(FILES
+		${OPENSSL_ROOT}/bin/${lib-crypto}
+		${OPENSSL_ROOT}/bin/${lib-ssl}
+		DESTINATION .)
+else ()
+	install(FILES
+		bin/run.sh
+		icon.png
+		DESTINATION .)
+endif ()

@@ -176,6 +176,8 @@ namespace Burst
 		const std::string& getProcessorType() const;
 		bool isBenchmark() const;
 		long getBenchmarkInterval() const;
+		unsigned getClPlatform() const;
+		unsigned getClDevice() const;
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(uint64_t bufferSize);
@@ -264,6 +266,7 @@ namespace Burst
 		std::string processorType_ = "CPU";
 		bool benchmark_ = false;
 		long benchmarkInterval_ = 60;
+		unsigned clPlatform_ = 0, clDevice_ = 0;
 		mutable Poco::Mutex mutex_;
 	};
 }

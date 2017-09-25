@@ -22,7 +22,7 @@
 #pragma once
 
 #include "impl/gpu_cuda_impl.hpp"
-//#include "impl/gpu_opencl_impl.hpp"
+#include "impl/gpu_opencl_impl.hpp"
 
 namespace Burst
 {
@@ -142,6 +142,39 @@ namespace Burst
 		}
 	};
 
+	struct Gpu_Helper
+	{
+		/**
+		 * \brief Calculates the byte size a structure type.
+		 * \param memType The type of the structure.
+		 * \param size The amount of structures.
+		 * \return The size of all structures in bytes.
+		 */
+		static Poco::UInt64 calcMemorySize(MemoryType memType, Poco::UInt64 size)
+		{
+			if (memType == MemoryType::Buffer)
+				size *= sizeof(Poco::UInt8) * Burst::Settings::ScoopSize;
+			else if (memType == MemoryType::Gensig)
+				size = sizeof(Poco::UInt8) * Burst::Settings::HashSize;
+			else if (memType == MemoryType::Deadlines)
+				size *= sizeof(CalculatedDeadline);
+
+			return size;
+		}
+
+		/**
+		 * \brief Calculates the bytes for a type.
+		 * \tparam T The type.
+		 * \param size The amount of types.
+		 * \return The size of all types in bytes.
+		 */
+		template <typename T>
+		static Poco::UInt64 calcMemorySize(Poco::UInt64 size)
+		{
+			return size * sizeof(T);
+		}
+	};
+
 	using GpuCuda = Gpu_Shell<Gpu_Cuda_Impl>;
-	//using GpuOpenCL = Gpu_Shell<Gpu_Opencl_Impl>;
+	using GpuOpenCL = Gpu_Shell<Gpu_Opencl_Impl>;
 }

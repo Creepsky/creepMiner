@@ -26,9 +26,39 @@
 #include <Poco/NumberParser.h>
 #include "logging/MinerLogger.hpp"
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 5, 0 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 7, 0, 0 };
 std::string Burst::Settings::Cpu_Instruction_Set = "";
 Burst::ProjectData Burst::Settings::Project = { "creepMiner", ProjectVersion };
+
+#ifdef USE_SSE4
+const bool Burst::Settings::Sse4 = true;
+#else
+const bool Burst::Settings::Sse4 = false;
+#endif
+
+#ifdef USE_AVX
+const bool Burst::Settings::Avx = true;
+#else
+const bool Burst::Settings::Avx = false;
+#endif
+
+#ifdef USE_AVX2
+const bool Burst::Settings::Avx2 = true;
+#else
+const bool Burst::Settings::Avx2 = false;
+#endif
+
+#ifdef USE_CUDA
+const bool Burst::Settings::Cuda = true;
+#else
+const bool Burst::Settings::Cuda = false;
+#endif
+
+#ifdef USE_OPENCL
+const bool Burst::Settings::OpenCl = true;
+#else
+const bool Burst::Settings::OpenCl = false;
+#endif
 
 void Burst::Version::updateLiterals()
 {
