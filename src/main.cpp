@@ -22,7 +22,6 @@
 #include "mining/Miner.hpp"
 #include "logging/MinerLogger.hpp"
 #include "mining/MinerConfig.hpp"
-#include "MinerUtil.hpp"
 #include <Poco/Net/SSLManager.h>
 #include "Poco/Net/ConsoleCertificateHandler.h"
 #include "Poco/Net/HTTPSStreamFactory.h"
@@ -34,7 +33,12 @@
 #include <Poco/Logger.h>
 #include "network/Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
-#include "mining/MinerCL.hpp" 
+#include "mining/MinerCL.hpp"
+#include "gpu/impl/gpu_cuda_impl.hpp"
+
+#ifdef USE_CUDA
+#include <cuda_runtime_api.h>
+#endif
 
 class SSLInitializer
 {
@@ -160,6 +164,11 @@ int main(int argc, const char* argv[])
 			if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
 				Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
 					Burst::MinerConfig::getConfig().getGpuDevice());
+			else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
+			{
+				Burst::Gpu_Cuda_Impl::listDevices();
+				Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
+			}
 
 			Burst::Miner miner;
 			Burst::MinerServer server{miner};

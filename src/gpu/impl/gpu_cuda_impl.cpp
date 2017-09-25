@@ -25,6 +25,7 @@
 #include "mining/MinerData.hpp"
 #include "Declarations.hpp"
 #include "gpu/gpu_shell.hpp"
+#include "mining/MinerConfig.hpp"
 
 #define check(x) if (!x) { log_critical(MinerLogger::plotVerifier, "Error on %s", std::string(#x)); return false; }
 
@@ -38,6 +39,7 @@ bool Burst::Gpu_Cuda_Impl::allocateMemory(void** memory, MemoryType type, size_t
 bool Burst::Gpu_Cuda_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuScoops, Poco::UInt64* gpuDeadlines,
 	size_t nonces, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
 {
+	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	std::string errorString;
 	check(cuda_calculate_shabal_host_preallocated(gpuScoops, gpuDeadlines, nonces, gpuGensig, nonceStart, baseTarget, errorString));
 	return true;
@@ -45,6 +47,7 @@ bool Burst::Gpu_Cuda_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuSco
 
 bool Burst::Gpu_Cuda_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex)
 {
+	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	std::string errorString;
 	check(cuda_reduce_best_deadline(gpuDeadlines, size, minDeadline, minDeadlineIndex, errorString));
 	return true;
@@ -59,6 +62,35 @@ bool Burst::Gpu_Cuda_Impl::freeMemory(void* memory)
 bool Burst::Gpu_Cuda_Impl::getError(std::string& errorString)
 {
 	return cuda_get_error(errorString);
+}
+
+bool Burst::Gpu_Cuda_Impl::listDevices()
+{
+	std::vector<std::string> devices;
+	
+	cuda_get_devices(devices);
+
+	if (devices.empty())
+		return true;
+
+	log_system(MinerLogger::general, "CUDA devices:");
+
+	for (auto i = 0u; i < devices.size(); ++i)
+		log_system(MinerLogger::general, "\tDevice[%u]: %s", i, devices[i]);
+
+	return true;
+}
+
+bool Burst::Gpu_Cuda_Impl::useDevice(unsigned device)
+{
+	if (cuda_set_device(device))
+	{
+		log_system(MinerLogger::general, "Using device[%u]", device);
+		return true;
+	}
+
+	log_fatal(MinerLogger::general, "Could not set device!");
+	return false;
 }
 
 bool Burst::Gpu_Cuda_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction)
@@ -98,4 +130,6 @@ bool cuda_reduce_best_deadline(Poco::UInt64* deadlines, size_t size,
 }
 
 bool cuda_get_error(std::string& errorString) { return false; }
+bool cuda_get_devices(std::vector<std::string>& devices) { return true; }
+bool cuda_set_device(unsigned index) { return true; }
 #endif

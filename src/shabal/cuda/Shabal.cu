@@ -691,3 +691,30 @@ bool cuda_get_error(std::string& errorString)
 
 	return false;
 }
+
+bool cuda_get_devices(std::vector<std::string>& devices)
+{
+	auto count = 0;
+
+	if (cudaGetDeviceCount(&count) != cudaSuccess)
+		return false;
+
+	devices.clear();
+	
+	for (auto i = 0; i < count; ++i)
+	{
+		cudaDeviceProp prop;
+		
+		if (cudaGetDeviceProperties(&prop, i) != cudaSuccess)
+			continue;
+
+		devices.emplace_back(prop.name);
+	}
+
+	return true;
+}
+
+bool cuda_set_device(unsigned index)
+{
+	return cudaSetDevice(static_cast<int>(index)) == cudaSuccess;
+}

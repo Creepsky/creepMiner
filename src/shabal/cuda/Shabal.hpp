@@ -25,6 +25,7 @@
 #include <Poco/Types.h>
 #include "gpu/gpu_declarations.hpp"
 #include <string>
+#include <vector>
 
 extern "C" void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize);
 extern "C" bool cuda_alloc_memory(Poco::UInt64 size,  void** mem);
@@ -39,3 +40,6 @@ extern "C" bool cuda_reduce_best_deadline(Poco::UInt64* deadlines, size_t size,
 	Poco::UInt64& minDeadline, Poco::UInt64& index, std::string& errorString);
 
 extern "C" bool cuda_get_error(std::string& errorString);
+
+extern "C" bool cuda_get_devices(std::vector<std::string>& devices);
+extern "C" bool cuda_set_device(unsigned index);

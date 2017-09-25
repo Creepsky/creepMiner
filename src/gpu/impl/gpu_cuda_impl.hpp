@@ -16,5 +16,7 @@ namespace Burst
 		static bool getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex);
 		static bool freeMemory(void* memory);
 		static bool getError(std::string& errorString);
+		static bool listDevices();
+		static bool useDevice(unsigned device);
 	};
 }
