@@ -113,19 +113,19 @@ const T& getHelper(Poco::Nullable<T>& val, const Burst::Wallet* wallet, bool res
 const std::string& Burst::Account::getName() const
 {
 	Poco::Mutex::ScopedLock lock{ mutex_ };
-	return name_.value("");
+	return name_.value(DefaultValueHolder<std::string>::value);
 }
 
 Burst::AccountId Burst::Account::getRewardRecipient()
 {
 	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
-	return rewardRecipient_.value(0);
+	return rewardRecipient_.value(DefaultValueHolder<AccountId>::value);
 }
 
 const std::vector<Burst::Block>& Burst::Account::getBlocks()
 {
 	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
-	return blocks_.value({});
+	return blocks_.value(DefaultValueHolder<std::vector<Block>>::value);
 }
 
 Poco::ActiveResult<std::string> Burst::Account::getOrLoadName(bool reset)
