@@ -176,8 +176,8 @@ namespace Burst
 		const std::string& getProcessorType() const;
 		bool isBenchmark() const;
 		long getBenchmarkInterval() const;
-		unsigned getClPlatform() const;
-		unsigned getClDevice() const;
+		unsigned getGpuPlatform() const;
+		unsigned getGpuDevice() const;
 		unsigned getMaxConnectionsQueued() const;
 		unsigned getMaxConnectionsActive() const;
 		bool isForwardingEverything() const;
@@ -272,7 +272,7 @@ namespace Burst
 		std::string processorType_ = "CPU";
 		bool benchmark_ = false;
 		long benchmarkInterval_ = 60;
-		unsigned clPlatform_ = 0, clDevice_ = 0;
+		unsigned gpuPlatform_ = 0, gpuDevice_ = 0;
 		bool checkForwardDeadlines_ = false;
 		unsigned maxConnectionsQueued_ = 100, maxConnectionsActive_ = 16;
 		std::vector<std::string> forwardingWhitelist_;

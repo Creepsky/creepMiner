@@ -158,8 +158,8 @@ int main(int argc, const char* argv[])
 		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
 		{
 			if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
-				Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getClPlatform(),
-					Burst::MinerConfig::getConfig().getClDevice());
+				Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
+					Burst::MinerConfig::getConfig().getGpuDevice());
 
 			Burst::Miner miner;
 			Burst::MinerServer server{miner};

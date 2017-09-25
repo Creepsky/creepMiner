@@ -393,8 +393,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		processorType_ = getOrAdd(miningObj, "processorType", std::string("CPU"));
 
-		clPlatform_ = getOrAdd(miningObj, "clPlatform", 0u);
-		clDevice_ = getOrAdd(miningObj, "clDevice", 0u);
+		gpuPlatform_ = getOrAdd(miningObj, "gpuPlatform", 0u);
+		gpuDevice_ = getOrAdd(miningObj, "gpuDevice", 0u);
 
 		// benchmark
 		{
@@ -1113,14 +1113,14 @@ long Burst::MinerConfig::getBenchmarkInterval() const
 	return benchmarkInterval_;
 }
 
-unsigned Burst::MinerConfig::getClPlatform() const
+unsigned Burst::MinerConfig::getGpuPlatform() const
 {
-	return clPlatform_;
+	return gpuPlatform_;
 }
 
-unsigned Burst::MinerConfig::getClDevice() const
+unsigned Burst::MinerConfig::getGpuDevice() const
 {
-	return clDevice_;
+	return gpuDevice_;
 }
 
 void Burst::MinerConfig::printTargetDeadline() const
