@@ -25,6 +25,7 @@
 #include "nxt/nxt_address.h"
 #include "wallet/Account.hpp"
 #include "MinerData.hpp"
+#include "plots/PlotSizes.hpp"
 
 Burst::Deadline::Deadline(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile,
                           Deadlines* parent)
@@ -90,12 +91,32 @@ const std::string& Burst::Deadline::getPlotFile() const
 	return plotFile_;
 }
 
+std::string Burst::Deadline::getMiner() const
+{
+	return minerName_.empty() ? Settings::Project.nameAndVersionVerbose : minerName_;
+}
+
+Poco::UInt64 Burst::Deadline::getTotalPlotsize() const
+{
+	return plotsize_ == 0 ? PlotSizes::getTotal() : plotsize_;
+}
+
 void Burst::Deadline::setDeadline(Poco::UInt64 deadline)
 {
 	deadline_ = deadline;
 
 	if (parent_ != nullptr)
 		parent_->resort();
+}
+
+void Burst::Deadline::setMiner(const std::string& miner)
+{
+	minerName_ = miner;
+}
+
+void Burst::Deadline::setTotalPlotsize(Poco::UInt64 plotsize)
+{
+	plotsize_ = plotsize;
 }
 
 bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const

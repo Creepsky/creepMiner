@@ -110,11 +110,12 @@ namespace Burst
 			if (bestResult.first != 0 && bestResult.second != 0)
 			{
 				START_PROBE("PlotVerifier.Submit");
-				miner_->submitNonce(bestResult.first,
+				miner_->submitNonceAsync(std::make_tuple(bestResult.first,
 					verifyNotification->accountId,
 					bestResult.second,
 					verifyNotification->block,
-					verifyNotification->inputPath);
+					verifyNotification->inputPath,
+					true));
 				TAKE_PROBE("PlotVerifier.Submit");
 			}
 

@@ -52,11 +52,17 @@ namespace Burst
 		AccountId getAccountId() const;
 		std::string getAccountName() const;
 		Poco::UInt64 getBlock() const;
+		const std::string& getPlotFile() const;
+		std::string getMiner() const;
+		Poco::UInt64 getTotalPlotsize() const;
+
 		bool isOnTheWay() const;
 		bool isSent() const;
 		bool isConfirmed() const;
-		const std::string& getPlotFile() const;
+
 		void setDeadline(Poco::UInt64 deadline);
+		void setMiner(const std::string& miner);
+		void setTotalPlotsize(Poco::UInt64 plotsize);
 
 		bool operator<(const Deadline& rhs) const;
 		bool operator()(const Deadline& lhs, const Deadline& rhs) const;
@@ -70,6 +76,8 @@ namespace Burst
 		std::atomic<bool> onTheWay_;
 		std::atomic<bool> sent_;
 		std::atomic<bool> confirmed_;
+		std::string minerName_ = "";
+		Poco::UInt64 plotsize_ = 0;
 		Deadlines* parent_;
 		mutable Poco::FastMutex mutex_;
 	};
