@@ -628,17 +628,17 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 				else if (key == "plot-readers")
 					miner.setMaxPlotReader(np::parseUnsigned(value));
 				else if (key == "submission-max-retry")
-					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned64(value));
+					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned(value));
 				else if (key == "target-deadline")
 					MinerConfig::getConfig().setTargetDeadline(value);
 				else if (key == "timeout")
 					MinerConfig::getConfig().setTimeout(static_cast<float>(np::parseFloat(value)));
 				else if (key == "log-dir")
 					MinerConfig::getConfig().setLogDir(value);
-				else if (Poco::icompare(key, 4, std::string("cmb_")) == 0)
+				else if (Poco::icompare(key, std::string("cmb_").size(), std::string("cmb_")) == 0)
 				{
-					auto logger_name = Poco::replace(key, "cmb_", "");
-					auto logger_priority = static_cast<Poco::Message::Priority>(np::parse(value));
+					const auto logger_name = Poco::replace(key, "cmb_", "");
+					const auto logger_priority = static_cast<Poco::Message::Priority>(np::parse(value));
 					MinerLogger::setChannelPriority(logger_name, logger_priority);
 				}
 				else

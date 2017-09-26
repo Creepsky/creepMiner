@@ -127,7 +127,7 @@ namespace Burst
 		std::string genSigStr_ = "";
 		std::shared_ptr<std::vector<Poco::JSON::Object>> entries_;
 		std::shared_ptr<Account> lastWinner_ = nullptr;
-		std::unordered_map<AccountId, Deadlines> deadlines_;
+		std::unordered_map<AccountId, std::shared_ptr<Deadlines>> deadlines_;
 		std::shared_ptr<Deadline> bestDeadline_;
 		MinerData* parent_;
 		Poco::JSON::Object::Ptr jsonProgress_;

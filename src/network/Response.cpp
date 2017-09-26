@@ -54,7 +54,6 @@ bool Burst::Response::receive(std::string& data)
 	try
 	{
 		HTTPResponse response;
-		std::stringstream sstream;
 		std::istream* responseStream;
 
 		responseStream = &session_->receiveResponse(response);

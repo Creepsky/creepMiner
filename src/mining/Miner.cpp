@@ -48,7 +48,7 @@ namespace Burst
 			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
 			task_manager = std::make_unique<Poco::TaskManager>(*thread_pool);
 
-			for (auto i = 0u; i < size; ++i)
+			for (size_t i = 0; i < size; ++i)
 				task_manager->start(new T(std::forward<Args>(args)...));
 		}
 	}
@@ -225,7 +225,7 @@ void Burst::Miner::addPlotReadNotifications(bool wakeUpCall)
 	});
 }
 
-void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget)
+void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget)
 {
 	poco_ndc(Miner::updateGensig);
 
@@ -379,7 +379,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	return SubmitResponse::Error;
 }
 
-Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile,
+Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, const std::string& plotFile,
 	bool ownAccount, const std::string& minerName, Poco::UInt64 plotsize)
 {
 	std::shared_ptr<Deadline> newDeadline;
@@ -662,7 +662,7 @@ void Burst::Miner::createPlotVerifiers()
 	}
 }
 
-void Burst::Miner::setMiningIntensity(Poco::UInt32 intensity)
+void Burst::Miner::setMiningIntensity(unsigned intensity)
 {
 	Poco::Mutex::ScopedLock lock(worker_mutex_);
 
@@ -676,7 +676,7 @@ void Burst::Miner::setMiningIntensity(Poco::UInt32 intensity)
 	createPlotVerifiers();
 }
 
-void Burst::Miner::setMaxPlotReader(Poco::UInt32 max_reader)
+void Burst::Miner::setMaxPlotReader(unsigned max_reader)
 {
 	Poco::Mutex::ScopedLock lock(worker_mutex_);
 

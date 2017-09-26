@@ -57,7 +57,7 @@ std::string Burst::getFileNameFromPath(const std::string& strPath)
 {
 	size_t iLastSeparator;
 	return strPath.substr((iLastSeparator = strPath.find_last_of("/\\")) !=
-						  std::string::npos ? iLastSeparator + 1 : 0, strPath.size() - strPath.find_last_of("."));
+						  std::string::npos ? iLastSeparator + 1 : 0, strPath.size() - strPath.find_last_of('.'));
 }
 
 std::vector<std::string> Burst::splitStr(const std::string& s, char delim)

@@ -89,7 +89,7 @@ void Burst::MinerConfig::printConsole() const
 
 	printConsolePlots();
 
-	log_system(MinerLogger::config, "Get mining info interval : %z seconds", getConfig().getMiningInfoInterval());
+	log_system(MinerLogger::config, "Get mining info interval : %u seconds", getConfig().getMiningInfoInterval());
 
 	log_system(MinerLogger::config, "Processor type : %s", getConfig().getProcessorType());
 
@@ -104,8 +104,8 @@ void Burst::MinerConfig::printConsolePlots() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	log_system(MinerLogger::config, "Total plots size: %s", memToString(getConfig().getTotalPlotsize(), 2));
-	log_system(MinerLogger::config, "Mining intensity : %z", getMiningIntensity());
-	log_system(MinerLogger::config, "Max plot readers : %z", getMaxPlotReaders());
+	log_system(MinerLogger::config, "Mining intensity : %u", getMiningIntensity());
+	log_system(MinerLogger::config, "Max plot readers : %u", getMaxPlotReaders());
 }
 
 void Burst::MinerConfig::printUrl(HostType type) const
@@ -831,25 +831,25 @@ Burst::Url Burst::MinerConfig::getWalletUrl() const
 	return urlWallet_;
 }
 
-size_t Burst::MinerConfig::getReceiveMaxRetry() const
+unsigned Burst::MinerConfig::getReceiveMaxRetry() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return receive_max_retry_;
 }
 
-size_t Burst::MinerConfig::getSendMaxRetry() const
+unsigned Burst::MinerConfig::getSendMaxRetry() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return send_max_retry_;
 }
 
-size_t Burst::MinerConfig::getSubmissionMaxRetry() const
+unsigned Burst::MinerConfig::getSubmissionMaxRetry() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return submission_max_retry_;
 }
 
-size_t Burst::MinerConfig::getHttp() const
+unsigned Burst::MinerConfig::getHttp() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return http_;
@@ -931,7 +931,7 @@ Poco::JSON::Object::Ptr Burst::MinerConfig::readOutput(Poco::JSON::Object::Ptr j
 	return json;
 }
 
-size_t Burst::MinerConfig::getMiningIntensity() const
+unsigned Burst::MinerConfig::getMiningIntensity() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return miningIntensity_;
@@ -965,7 +965,7 @@ const std::string& Burst::MinerConfig::getPassphrase() const
 	return passphrase_.decrypted;
 }
 
-size_t Burst::MinerConfig::getMaxPlotReaders(bool real) const
+unsigned Burst::MinerConfig::getMaxPlotReaders(bool real) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
@@ -973,7 +973,7 @@ size_t Burst::MinerConfig::getMaxPlotReaders(bool real) const
 	// the amount of active plot dirs
 	if (maxPlotReaders_ == 0 && real)
 	{
-		size_t notEmptyPlotdirs = 0;
+		unsigned notEmptyPlotdirs = 0;
 
 		// count only the plotdirs that are not empty
 		for (const auto& plotDir : plotDirs_)
@@ -1029,13 +1029,13 @@ void Burst::MinerConfig::setUrl(std::string url, HostType hostType)
 	}
 }
 
-void Burst::MinerConfig::setBufferSize(uint64_t bufferSize)
+void Burst::MinerConfig::setBufferSize(Poco::UInt64 bufferSize)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	maxBufferSizeMB_ = bufferSize;
 }
 
-void Burst::MinerConfig::setMaxSubmissionRetry(uint64_t value)
+void Burst::MinerConfig::setMaxSubmissionRetry(unsigned value)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	submission_max_retry_ = value;
@@ -1053,7 +1053,7 @@ void Burst::MinerConfig::setTargetDeadline(const std::string& target_deadline)
 	setTargetDeadline(formatDeadline(target_deadline));
 }
 
-void Burst::MinerConfig::setTargetDeadline(uint64_t target_deadline)
+void Burst::MinerConfig::setTargetDeadline(Poco::UInt64 target_deadline)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	targetDeadline_ = target_deadline;
@@ -1078,17 +1078,17 @@ void Burst::MinerConfig::setMaxPlotReaders(unsigned max_reader)
 	maxPlotReaders_ = max_reader;
 }
 
-size_t Burst::MinerConfig::getWalletRequestTries() const
+unsigned Burst::MinerConfig::getWalletRequestTries() const
 {
 	return walletRequestTries_;
 }
 
-size_t Burst::MinerConfig::getWalletRequestRetryWaitTime() const
+unsigned Burst::MinerConfig::getWalletRequestRetryWaitTime() const
 {
 	return walletRequestRetryWaitTime_;
 }
 
-size_t Burst::MinerConfig::getWakeUpTime() const
+unsigned Burst::MinerConfig::getWakeUpTime() const
 {
 	return wakeUpTime_;
 }
@@ -1412,13 +1412,13 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 		log_system(MinerLogger::config, "Changed logfile path to\n\t%s", logDirAndFile);
 }
 
-void Burst::MinerConfig::setGetMiningInfoInterval(size_t interval)
+void Burst::MinerConfig::setGetMiningInfoInterval(unsigned interval)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	getMiningInfoInterval_ = interval;
 }
 
-void Burst::MinerConfig::setBufferChunkCount(size_t bufferChunkCount)
+void Burst::MinerConfig::setBufferChunkCount(unsigned bufferChunkCount)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	bufferChunkCount_ = bufferChunkCount;
@@ -1468,7 +1468,7 @@ bool Burst::MinerConfig::isLogfileUsed() const
 	return logfile_;
 }
 
-size_t Burst::MinerConfig::getMiningInfoInterval() const
+unsigned Burst::MinerConfig::getMiningInfoInterval() const
 {
 	return getMiningInfoInterval_;
 }
@@ -1498,7 +1498,7 @@ bool Burst::MinerConfig::isFancyProgressBar() const
 	return fancyProgressBar_;
 }
 
-size_t Burst::MinerConfig::getBufferChunkCount() const
+unsigned Burst::MinerConfig::getBufferChunkCount() const
 {
 	return bufferChunkCount_;
 }

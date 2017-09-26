@@ -226,7 +226,7 @@ namespace Burst
 			std::array<unsigned char*, HashSize> targetPtr;
 
 			// we init the buffer overflow guardians
-			for (auto i = 0u; i < HashSize; ++i)
+			for (size_t i = 0; i < HashSize; ++i)
 			{
 				const auto overflow = i + offset >= buffer.size();
 
@@ -248,7 +248,7 @@ namespace Burst
 			// for every calculated deadline we create a pair of {nonce->deadline}
 			std::vector<DeadlineTuple> pairs(HashSize);
 
-			for (auto i = 0u; i < HashSize; ++i)
+			for (size_t i = 0u; i < HashSize; ++i)
 				// only set the pair if it was calculated
 				if (i + offset < buffer.size())
 					pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);

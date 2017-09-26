@@ -86,7 +86,8 @@ namespace Burst
 	{
 	public:
 		explicit Deadlines(BlockData* parent = nullptr);
-		Deadlines(const Deadlines& rhs);
+		//Deadlines(const Deadlines& rhs);
+		//Deadlines& operator=(const Deadlines& rhs);
 
 		std::shared_ptr<Deadline> add(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile);
 		void clear();

@@ -105,8 +105,6 @@ void Burst::MinerServer::run(uint16_t port)
 		}
 		catch (Poco::Exception& exc)
 		{
-			server_.release();
-
 			log_fatal(MinerLogger::server, "Could not start local server: %s", exc.displayText());
 			log_current_stackframe(MinerLogger::server);
 		}
@@ -164,7 +162,7 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 	}
 
 	if (error)
-		websocket.release();
+		websocket.reset();
 	else
 		websockets_.emplace_back(move(websocket));
 	

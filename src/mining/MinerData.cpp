@@ -67,11 +67,11 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadlineUnlocked(Poco::UIn
 
 	if (iter == deadlines_.end())
 	{
-		deadlines_.insert(std::make_pair(accountId, Deadlines(this)));
-		return deadlines_[accountId].add(nonce, deadline, account, block, plotFile);
+		deadlines_.insert(std::make_pair(accountId, std::make_shared<Deadlines>(this)));
+		return deadlines_[accountId]->add(nonce, deadline, account, block, plotFile);
 	}
 
-	return iter->second.add(nonce, deadline, account, block, plotFile);
+	return iter->second->add(nonce, deadline, account, block, plotFile);
 }
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadline(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile)
@@ -322,11 +322,11 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadlineUnlocked(Poco:
 	switch (searchType)
 	{
 	case DeadlineSearchType::Found:
-		return iter->second.getBestFound();
+		return iter->second->getBestFound();
 	case DeadlineSearchType::Sent:
-		return iter->second.getBestSent();
+		return iter->second->getBestSent();
 	case DeadlineSearchType::Confirmed:
-		return iter->second.getBestConfirmed();
+		return iter->second->getBestConfirmed();
 	default:
 		return nullptr;
 	}

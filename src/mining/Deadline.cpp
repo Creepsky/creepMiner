@@ -165,12 +165,6 @@ Burst::Deadlines::Deadlines(BlockData* parent)
 	: parent_{parent}
 {}
 
-Burst::Deadlines::Deadlines(const Deadlines& rhs)
-{
-	deadlines_ = rhs.deadlines_;
-	parent_ = rhs.parent_;
-}
-
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };

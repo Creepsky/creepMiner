@@ -254,7 +254,7 @@ void Burst::PlotDir::recalculateHash()
 	Poco::SHA1Engine sha;
 	Poco::DigestOutputStream shaStream{sha};
 
-	hash_ = "";
+	hash_.clear();
 
 	for (const auto plotFile : getPlotfiles(true))
 		shaStream << plotFile->getPath();

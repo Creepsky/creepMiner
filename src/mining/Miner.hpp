@@ -63,10 +63,10 @@ namespace Burst
 		Poco::UInt64 getTargetDeadline() const;
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
-		void updateGensig(const std::string gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
+		void updateGensig(const std::string& gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
 
 		NonceConfirmation submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
-		                              Poco::UInt64 blockheight, std::string plotFile,
+		                              Poco::UInt64 blockheight, const std::string& plotFile,
 		                              bool ownAccount, const std::string& minerName = "", Poco::UInt64 plotsize = 0);
 
 		Poco::ActiveMethod<NonceConfirmation,
@@ -80,8 +80,8 @@ namespace Burst
 		std::shared_ptr<Account> getAccount(AccountId id, bool persistent = false);
 		void createPlotVerifiers();
 
-		void setMiningIntensity(Poco::UInt32 intensity);
-		void setMaxPlotReader(Poco::UInt32 max_reader);
+		void setMiningIntensity(unsigned intensity);
+		void setMaxPlotReader(unsigned max_reader);
 		static void setMaxBufferSize(Poco::UInt64 size);
 		void rescanPlotfiles();
 

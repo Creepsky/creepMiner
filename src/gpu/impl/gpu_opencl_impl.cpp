@@ -60,7 +60,7 @@ bool Burst::Gpu_Opencl_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuS
 		ret = clSetKernelArg(MinerCL::getCL().getKernel(), 1, sizeof(cl_mem), reinterpret_cast<unsigned char*>(&gpuScoops));
 
 	if (ret == CL_SUCCESS)
-		ret = clSetKernelArg(MinerCL::getCL().getKernel(), 2, sizeof(cl_mem), reinterpret_cast<unsigned long*>(&gpuDeadlines));
+		ret = clSetKernelArg(MinerCL::getCL().getKernel(), 2, sizeof(cl_mem), &gpuDeadlines);
 
 	if (ret == CL_SUCCESS)
 		ret = clSetKernelArg(MinerCL::getCL().getKernel(), 3, sizeof(cl_ulong), reinterpret_cast<const void*>(&nonces));
