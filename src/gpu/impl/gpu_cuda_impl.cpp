@@ -31,6 +31,7 @@
 
 bool Burst::Gpu_Cuda_Impl::allocateMemory(void** memory, MemoryType type, size_t size)
 {
+	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	size = Gpu_Helper::calcMemorySize(type, size);
 	check(cuda_alloc_memory(size, memory));
 	return true;
@@ -55,12 +56,14 @@ bool Burst::Gpu_Cuda_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t siz
 
 bool Burst::Gpu_Cuda_Impl::freeMemory(void* memory)
 {
+	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	check(cuda_free_memory(memory));
 	return true;
 }
 
 bool Burst::Gpu_Cuda_Impl::getError(std::string& errorString)
 {
+	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	return cuda_get_error(errorString);
 }
 
@@ -83,18 +86,12 @@ bool Burst::Gpu_Cuda_Impl::listDevices()
 
 bool Burst::Gpu_Cuda_Impl::useDevice(unsigned device)
 {
-	if (cuda_set_device(device))
-	{
-		log_system(MinerLogger::general, "Using device[%u]", device);
-		return true;
-	}
-
-	log_fatal(MinerLogger::general, "Could not set device!");
-	return false;
+	return cuda_set_device(device);
 }
 
 bool Burst::Gpu_Cuda_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction)
 {
+	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	size = Gpu_Helper::calcMemorySize(type, size);
 	check(cuda_copy_memory(size, input, output, direction));
 	return true;
