@@ -541,6 +541,9 @@ namespace Burst
 
 		MinerLogger::writeProgress(progress);
 		data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
+
+		if (readProgressPercent == 1.f && verifyProgressPercent == 1.f)
+			log_success(MinerLogger::miner, "Processed block %Lu in %ss", blockheight, std::to_string(timeDiffSeconds.count()));
 	}
 }
 
