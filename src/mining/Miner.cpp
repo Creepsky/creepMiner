@@ -252,6 +252,14 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 
 	// printing block info and transfer it to local server
 	{
+		if (startPoint_.time_since_epoch().count() > 0)
+		{
+			const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint_;
+			const auto timeDiffSeconds = std::chrono::duration_cast<std::chrono::seconds>(timeDiff);
+			log_unimportant(MinerLogger::miner, "Block %s ended in %s", numberToString(blockHeight - 1),
+				deadlineFormat(timeDiffSeconds.count()));
+		}
+
 		log_notice(MinerLogger::miner, std::string(50, '-') + "\n"
 			"block#     \t%s\n"
 			"scoop#     \t%Lu\n"
@@ -545,8 +553,8 @@ namespace Burst
 		data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
 		
 		if (readProgressPercent == 100.f && verifyProgressPercent == 100.f)
-			log_information(MinerLogger::miner, "Processed block %s in %ss", numberToString(blockheight), Poco::NumberFormatter::
-			format(timeDiffSeconds.count(), 3));
+			log_information(MinerLogger::miner, "Processed block %s in %ss", numberToString(blockheight),
+				Poco::NumberFormatter::format(timeDiffSeconds.count(), 3));
 	}
 }
 
