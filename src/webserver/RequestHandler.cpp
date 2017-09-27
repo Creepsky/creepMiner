@@ -457,6 +457,21 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			log_debug(MinerLogger::server, "The X-PlotsHash from the other miner is not a number! %s", request.get(X_PlotsHash));
 		}
 
+		auto miningInfoOk = false;
+
+		while (!miningInfoOk)
+		{
+			try
+			{
+				miner.getGensig();
+				miningInfoOk = true;
+			}
+			catch (...)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			}
+		}
+
 		Poco::URI uri{ request.getURI() };
 
 		Poco::UInt64 accountId = 0;
@@ -484,21 +499,6 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			Poco::URI::decode(plotfileEncoded, plotfile);
 		}
 
-		auto miningInfoOk = false;
-
-		while (!miningInfoOk)
-		{
-			try
-			{
-				miner.getGensig();
-				miningInfoOk = true;
-			}
-			catch (...)
-			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			}
-		}
-
 		if (request.has(X_Deadline))
 			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
 
@@ -513,21 +513,22 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		if (blockheight == 0)
 			blockheight = miner.getBlockheight();
 
-		if (deadline == 0 && blockheight == miner.getBlockheight())
+		if ((deadline == 0 || MinerConfig::getConfig().isCalculatingEveryDeadline()) &&
+			blockheight == miner.getBlockheight())
 			deadline = PlotGenerator::generateAndCheck(accountId, nonce, miner);
 
 		if (request.has(X_Miner) && MinerConfig::getConfig().isForwardingMinerName())
 			minerName = request.get(X_Miner);
 
 		log_information(MinerLogger::server, "Got nonce forward request (%s)\n"
-			"\tnonce:   %Lu\n"
+			"\tnonce:   %s\n"
 			"\taccount: %s\n"
-			"\theight:  %Lu\n"
+			"\theight:  %s\n"
 			"\tin:      %s",
 			blockheight == miner.getBlockheight() ? deadlineFormat(deadline) : "for last block!",
-			nonce,
+			numberToString(nonce),
 			account->getAddress(),
-			blockheight, plotfile
+			numberToString(blockheight), plotfile
 		);
 
 		if (blockheight != miner.getBlockheight())

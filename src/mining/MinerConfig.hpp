@@ -157,6 +157,7 @@ namespace Burst
 		bool isSteadyProgressBar() const;
 		bool isFancyProgressBar() const;
 		unsigned getBufferChunkCount() const;
+		bool isCalculatingEveryDeadline() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -278,6 +279,7 @@ namespace Burst
 		std::vector<std::string> forwardingWhitelist_;
 		bool cumulatePlotsizes_ = true;
 		bool minerNameForwarding_ = true;
+		bool calculateEveryDeadline_ = false;
 		mutable Poco::Mutex mutex_;
 	};
 }

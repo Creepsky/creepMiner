@@ -395,6 +395,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		gpuPlatform_ = getOrAdd(miningObj, "gpuPlatform", 0u);
 		gpuDevice_ = getOrAdd(miningObj, "gpuDevice", 0u);
+		calculateEveryDeadline_ = getOrAdd(miningObj, "calculateEveryDeadline", false);
 
 		// benchmark
 		{
@@ -1334,6 +1335,11 @@ bool Burst::MinerConfig::save(const std::string& path, const Poco::JSON::Object&
 		log_error(MinerLogger::config, "Exception: %s", std::string(exc.what()));
 		return false;
 	}
+}
+
+bool Burst::MinerConfig::isCalculatingEveryDeadline() const
+{
+	return calculateEveryDeadline_;
 }
 
 bool Burst::MinerConfig::isForwardingEverything() const
