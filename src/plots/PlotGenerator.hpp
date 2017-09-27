@@ -37,7 +37,7 @@ namespace Burst
 		static Poco::UInt64 generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner);
 	};
 
-	template <typename TShabal>
+	/*template <typename TShabal>
 	class PlotGeneratorQueue
 	{
 	public:
@@ -147,5 +147,5 @@ namespace Burst
 
 			return result / basetarget;
 		}
-	};
+	};*/
 }
