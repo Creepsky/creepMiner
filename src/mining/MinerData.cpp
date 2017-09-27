@@ -143,12 +143,12 @@ std::shared_ptr<Burst::Account> Burst::BlockData::DataLoader::runGetLastWinner(c
 		std::string rewardRecipient;
 
 		if (winnerAccount->getRewardRecipient() == winnerAccount->getId())
-			rewardRecipient = "                   Solo mining\n";
+			rewardRecipient = "                   Solo mining";
 		else
 		{
 			auto rewardRecipientAccount = accounts.getAccount(winnerAccount->getRewardRecipient(), wallet, false);
 			rewardRecipientAccount->getOrLoadName().wait();
-			rewardRecipient = "Pool               " + rewardRecipientAccount->getName() + "\n";
+			rewardRecipient = "Pool               " + rewardRecipientAccount->getName();
 		}
 
 		log_ok_if(MinerLogger::miner, MinerLogger::hasOutput(LastWinner), std::string(50, '-') + "\n"
@@ -157,11 +157,11 @@ std::shared_ptr<Burst::Account> Burst::BlockData::DataLoader::runGetLastWinner(c
 			"winner-numeric     %Lu\n"
 			"winner-address     %s\n"
 			"%s" +
-			"%s" +
+			"%s\n" +
 			std::string(50, '-'),
 			numberToString(lastBlockheight), lastWinner, winnerAccount->getAddress(),
-			rewardRecipient,
-			winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName())
+			winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName()),
+			rewardRecipient
 		);
 
 		blockdata.setLastWinner(winnerAccount);
