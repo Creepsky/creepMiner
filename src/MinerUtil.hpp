@@ -147,4 +147,6 @@ namespace Burst
 	 * it gets wrapped into a new line.
 	 */
 	std::string createTruncatedString(const std::string& string, size_t padding, size_t size);
+
+	std::string numberToString(Poco::UInt64 number);
 }

@@ -253,12 +253,14 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	// printing block info and transfer it to local server
 	{
 		log_notice(MinerLogger::miner, std::string(50, '-') + "\n"
-			"block#     \t%Lu\n"
+			"block#     \t%s\n"
 			"scoop#     \t%Lu\n"
-			"baseTarget#\t%Lu\n"
-			"gensig     \t%s\n" +
+			"baseTarget#\t%s\n"
+			"gensig     \t%s\n"
+			"difficulty \t%s\n" +
 			std::string(50, '-'),
-			blockHeight, block->getScoop(), baseTarget, createTruncatedString(getGensigStr(), 14, 32)
+			numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
+			numberToString(18325193796 / baseTarget)
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
@@ -366,9 +368,9 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	{
 		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound) || tooHigh,
 			"%s: nonce found (%s)\n"
-			"\tnonce: %Lu\n"
+			"\tnonce: %s\n"
 			"\tin:    %s",
-			newDeadline->getAccountName(), deadlineFormat(deadline), newDeadline->getNonce(), plotFile);
+			newDeadline->getAccountName(), deadlineFormat(deadline), numberToString(newDeadline->getNonce()), plotFile);
 			
 		if (tooHigh)
 			return SubmitResponse::TooHigh;
@@ -473,10 +475,10 @@ bool Burst::Miner::getMiningInfo()
 						if (target_deadline_pool_before != data_.getTargetDeadline(TargetDeadlineType::Pool))
 							log_system(MinerLogger::config,
 								"got new target deadline from pool\n"
-								"\told pool target deadline: %s\n"
-								"\tnew pool target deadline: %s\n"
+								"\told pool target deadline:    %s\n"
+								"\tnew pool target deadline:    %s\n"
 								"\ttarget deadline from config: %s\n"
-								"\tlowest target deadline: %s",
+								"\tlowest target deadline:      %s",
 								deadlineFormat(target_deadline_pool_before),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Pool)),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Local)),
@@ -541,9 +543,10 @@ namespace Burst
 
 		MinerLogger::writeProgress(progress);
 		data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
-
+		
 		if (readProgressPercent == 100.f && verifyProgressPercent == 100.f)
-			log_information(MinerLogger::miner, "Processed block %Lu in %ss", blockheight, std::to_string(timeDiffSeconds.count()));
+			log_information(MinerLogger::miner, "Processed block %s in %ss", numberToString(blockheight), Poco::NumberFormatter::
+			format(timeDiffSeconds.count(), 3));
 	}
 }
 
