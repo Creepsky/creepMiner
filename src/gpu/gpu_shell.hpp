@@ -40,6 +40,18 @@ namespace Burst
 		using impl_t = TImpl;
 
 		/**
+		* \brief Initializes a new stream (queue).
+		* \tparam Args Variadic template types.
+		* \param args The arguments to create the stream.
+		* \return true, when the stream was created, false otherwise.
+		*/
+		template <typename ...Args>
+		static bool initStream(Args&&... args)
+		{
+			return TImpl::initStream(std::forward<Args&&>(args)...);
+		}
+
+		/**
 		 * \brief Allocates memory on the GPU.
 		 * \tparam Args Variadic template types.
 		 * \param args The arguments to create the memory.

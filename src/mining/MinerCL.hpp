@@ -24,6 +24,8 @@
 /*
  * OpenCL relevant classes and functions.
  */
+#include <vector>
+
 #ifdef USE_OPENCL
 #include <CL/cl.h>
 #else
@@ -43,9 +45,9 @@ namespace Burst
 	public:
 		~MinerCL();
 		bool create(unsigned platformIdx = 0, unsigned deviceIdx = 0);
+		cl_command_queue createCommandQueue();
 
 		cl_context getContext() const;
-		cl_command_queue getCommandQueue() const;
 		cl_kernel getKernel() const;
 
 		bool initialized() const;
@@ -54,9 +56,12 @@ namespace Burst
 
 	private:
 		cl_context context_ = nullptr;
-		cl_command_queue command_queue_ = nullptr;
 		cl_program program_ = nullptr;
+		std::vector<cl_command_queue> command_queues_;
 		cl_kernel kernel_ = nullptr;
 		bool initialized_ = false;
+		std::vector<cl_platform_id> platforms_;
+		std::vector<cl_device_id> devices_;
+		unsigned platformIdx_ = 0, deviceIdx_ = 0;
 	};
 }

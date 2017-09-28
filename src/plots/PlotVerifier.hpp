@@ -86,6 +86,15 @@ namespace Burst
 	template <typename TVerificationAlgorithm>
 	void PlotVerifier<TVerificationAlgorithm>::runTask()
 	{
+		void* stream = nullptr;
+		
+		if (!TVerificationAlgorithm::initStream(&stream))
+		{
+			log_critical(MinerLogger::plotVerifier, "Could not create a verification stream!\n"
+				"Shutting down the verifier...");
+			return;
+		}
+
 		while (!isCancelled())
 		{
 			Poco::Notification::Ptr notification(queue_->waitDequeueNotification());
@@ -104,7 +113,7 @@ namespace Burst
 			START_PROBE("PlotVerifier.SearchDeadline");
 			auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer, verifyNotification->nonceRead,
 														  verifyNotification->nonceStart, verifyNotification->baseTarget, verifyNotification->gensig,
-														  stopFunction);
+														  stopFunction, stream);
 			TAKE_PROBE("PlotVerifier.SearchDeadline");
 
 			if (bestResult.first != 0 && bestResult.second != 0)
@@ -183,9 +192,14 @@ namespace Burst
 	template <typename TShabal, typename TShabalOperations>
 	struct PlotVerifierAlgorithm_cpu
 	{
+		static bool initStream(void** stream)
+		{
+			return true;
+		}
+
 		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
 						Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, const GensigData& gensig,
-						std::function<bool()> stop)
+						std::function<bool()> stop, void* stream)
 		{
 			DeadlineTuple bestResult = {0, 0};
 			TShabal shabal;
@@ -260,9 +274,14 @@ namespace Burst
 	template <typename TGpu, typename TAlgorithm>
 	struct PlotVerifierAlgorithm_gpu
 	{
+		static bool initStream(void** stream)
+		{
+			return TGpu::initStream(stream);
+		}
+
 		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
 			Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, const GensigData& gensig,
-			std::function<bool()> stop)
+			std::function<bool()> stop, void* stream)
 		{
 			DeadlineTuple bestDeadline{0, 0};
 			TGpu::template run<TAlgorithm>(
@@ -270,6 +289,7 @@ namespace Burst
 				gensig,
 				nonceStart + nonceRead,
 				baseTarget,
+				stream,
 				bestDeadline);
 			return bestDeadline;
 		}

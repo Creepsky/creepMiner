@@ -25,6 +25,17 @@
 
 int Burst::Gpu_Opencl_Impl::lastError_ = 0;
 
+bool Burst::Gpu_Opencl_Impl::initStream(void** stream)
+{
+	auto queue = MinerCL::getCL().createCommandQueue();
+
+	if (queue == nullptr)
+		return false;
+
+	*stream = queue;
+	return true;
+}
+
 bool Burst::Gpu_Opencl_Impl::allocateMemory(void** memory, MemoryType type, size_t size)
 {
 #ifdef USE_OPENCL
@@ -51,7 +62,7 @@ bool Burst::Gpu_Opencl_Impl::allocateMemory(void** memory, MemoryType type, size
 }
 
 bool Burst::Gpu_Opencl_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuScoops, Poco::UInt64* gpuDeadlines,
-	size_t nonces, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
+	size_t nonces, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, void* stream)
 {
 #ifdef USE_OPENCL
 	auto ret = clSetKernelArg(MinerCL::getCL().getKernel(), 0, sizeof(cl_mem), reinterpret_cast<const unsigned char*>(&gpuGensig));
@@ -74,7 +85,7 @@ bool Burst::Gpu_Opencl_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuS
 	size_t globalWorkSize[3] = { nonces, 0, 0 };
 	size_t localWorkSize[3] = { 64, 0, 0 };
 	
-	ret = clEnqueueNDRangeKernel(MinerCL::getCL().getCommandQueue(), MinerCL::getCL().getKernel(), 1, nullptr,
+	ret = clEnqueueNDRangeKernel(static_cast<cl_command_queue>(stream), MinerCL::getCL().getKernel(), 1, nullptr,
 	                             globalWorkSize, localWorkSize, 0, nullptr, nullptr);
 
 	if (ret != CL_SUCCESS)
@@ -83,13 +94,13 @@ bool Burst::Gpu_Opencl_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuS
 	return true;
 }
 
-bool Burst::Gpu_Opencl_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex)
+bool Burst::Gpu_Opencl_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex, void* stream)
 {
 #ifdef USE_OPENCL
 	std::vector<Poco::UInt64> deadlines;
 	deadlines.resize(size);
 
-	if (!copyMemory(gpuDeadlines, deadlines.data(), MemoryType::Bytes, sizeof(Poco::UInt64) * size, MemoryCopyDirection::ToHost))
+	if (!copyMemory(gpuDeadlines, deadlines.data(), MemoryType::Bytes, sizeof(Poco::UInt64) * size, MemoryCopyDirection::ToHost, stream))
 		return false;
 
 	const auto minIter = std::min_element(deadlines.begin(), deadlines.end());
@@ -200,14 +211,14 @@ bool Burst::Gpu_Opencl_Impl::getError(std::string& errorString)
 #endif
 }
 
-bool Burst::Gpu_Opencl_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction)
+bool Burst::Gpu_Opencl_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction, void* stream)
 {
 #ifdef USE_OPENCL
 	size = Gpu_Helper::calcMemorySize(type, size);
 
 	if (direction == MemoryCopyDirection::ToDevice)
 	{
-		const auto ret = clEnqueueWriteBuffer(MinerCL::getCL().getCommandQueue(), cl_mem(output), CL_TRUE, 0, size, input, 0,
+		const auto ret = clEnqueueWriteBuffer(static_cast<cl_command_queue>(stream), cl_mem(output), CL_TRUE, 0, size, input, 0,
 		                                      nullptr, nullptr);
 
 		if (ret == CL_SUCCESS)
@@ -219,7 +230,7 @@ bool Burst::Gpu_Opencl_Impl::copyMemory(const void* input, void* output, MemoryT
 
 	if (direction == MemoryCopyDirection::ToHost)
 	{
-		const auto ret = clEnqueueReadBuffer(MinerCL::getCL().getCommandQueue(), cl_mem(input), CL_TRUE, 0, size, output, 0,
+		const auto ret = clEnqueueReadBuffer(static_cast<cl_command_queue>(stream), cl_mem(input), CL_TRUE, 0, size, output, 0,
 		                                     nullptr, nullptr);
 
 		if (ret == CL_SUCCESS)

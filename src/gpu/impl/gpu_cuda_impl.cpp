@@ -29,6 +29,11 @@
 
 #define check(x) if (!x) { log_critical(MinerLogger::plotVerifier, "Error on %s", std::string(#x)); return false; }
 
+bool Burst::Gpu_Cuda_Impl::initStream(void** stream)
+{
+	return true;
+}
+
 bool Burst::Gpu_Cuda_Impl::allocateMemory(void** memory, MemoryType type, size_t size)
 {
 	useDevice(MinerConfig::getConfig().getGpuPlatform());
@@ -38,7 +43,7 @@ bool Burst::Gpu_Cuda_Impl::allocateMemory(void** memory, MemoryType type, size_t
 }
 
 bool Burst::Gpu_Cuda_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuScoops, Poco::UInt64* gpuDeadlines,
-	size_t nonces, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget)
+	size_t nonces, Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, void* stream)
 {
 	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	std::string errorString;
@@ -46,7 +51,7 @@ bool Burst::Gpu_Cuda_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuSco
 	return true;
 }
 
-bool Burst::Gpu_Cuda_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex)
+bool Burst::Gpu_Cuda_Impl::getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex, void* stream)
 {
 	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	std::string errorString;
@@ -89,7 +94,7 @@ bool Burst::Gpu_Cuda_Impl::useDevice(unsigned device)
 	return cuda_set_device(device);
 }
 
-bool Burst::Gpu_Cuda_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction)
+bool Burst::Gpu_Cuda_Impl::copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction, void* stream)
 {
 	useDevice(MinerConfig::getConfig().getGpuPlatform());
 	size = Gpu_Helper::calcMemorySize(type, size);

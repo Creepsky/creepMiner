@@ -19,6 +19,8 @@
 // 
 // ==========================================================================
 
+#define CUDA_API_PER_THREAD_DEFAULT_STREAM
+
 #include "mining/Miner.hpp"
 #include "logging/MinerLogger.hpp"
 #include "mining/MinerConfig.hpp"

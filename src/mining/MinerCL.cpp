@@ -55,11 +55,14 @@ namespace Burst
 Burst::MinerCL::~MinerCL()
 {
 #ifdef USE_OPENCL
-	if (command_queue_ != nullptr)
-		clFlush(command_queue_);
-
-	if (command_queue_ != nullptr)
-		clFinish(command_queue_);
+	for (auto command_queue : command_queues_)
+	{
+		if (command_queue != nullptr)
+		{
+			clFlush(command_queue);
+			clFinish(command_queue);
+		}
+	}
 
 	if (kernel_ != nullptr)
 		clReleaseKernel(kernel_);
@@ -67,8 +70,9 @@ Burst::MinerCL::~MinerCL()
 	if (program_ != nullptr)
 		clReleaseProgram(program_);
 
-	if (command_queue_)
-		clReleaseCommandQueue(command_queue_);
+	for (auto command_queue : command_queues_)
+		if (command_queue != nullptr)
+			clReleaseCommandQueue(command_queue);
 
 	if (context_ != nullptr)
 		clReleaseContext(context_);
@@ -77,10 +81,10 @@ Burst::MinerCL::~MinerCL()
 
 bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 {
-#ifdef USE_OPENCL
-	std::vector<cl_platform_id> platforms;
-	std::vector<cl_device_id> devices;
+	deviceIdx_ = deviceIdx;
+	platformIdx_ = platformIdx;
 
+#ifdef USE_OPENCL
 	// try open the kernel file..
 	std::ifstream stream("mining.cl");
 	std::string miningKernel(std::istreambuf_iterator<char>(stream), {});
@@ -118,9 +122,9 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 		}
 
 		// get all valid opencl platforms 
-		platforms.resize(sizePlatforms);
+		platforms_.resize(sizePlatforms);
 
-		ret = clGetPlatformIDs(sizePlatforms, platforms.data(), nullptr);
+		ret = clGetPlatformIDs(sizePlatforms, platforms_.data(), nullptr);
 
 		if (ret != CL_SUCCESS)
 		{
@@ -132,13 +136,13 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 		sstream << "Available OpenCL platforms:";
 
 		// print platform infos
-		for (auto i = 0u; i < platforms.size(); ++i)
+		for (auto i = 0u; i < platforms_.size(); ++i)
 		{
 			sstream << std::endl;
 			std::string name;
 			std::string version;
 
-			const auto& platform = platforms[i];
+			const auto& platform = platforms_[i];
 			cl_int ret_platform, ret_version;
 			
 			if (!MinerCLHelper::infoHelperFunc(platform, name, clGetPlatformInfo, CL_PLATFORM_NAME, ret_platform) ||
@@ -162,18 +166,18 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 	// get the devices of the desired platform 
 	{
-		if (platformIdx < platforms.size())
+		if (platformIdx < platforms_.size())
 		{
 			log_system(MinerLogger::miner, "Using platform[%u]", platformIdx);
 		}
 		else
 		{
 			log_fatal(MinerLogger::miner, "Platform index is out of bounds (%u, max: %z)",
-				platformIdx, platforms.size() - 1);
+				platformIdx, platforms_.size() - 1);
 			return false;
 		}
 
-		const auto platform = platforms[platformIdx];
+		const auto platform = platforms_[platformIdx];
 		cl_uint sizeDevices = 0;
 
 		auto ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 0, nullptr, &sizeDevices);
@@ -184,9 +188,9 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 			return false;
 		}
 
-		devices.resize(sizeDevices);
+		devices_.resize(sizeDevices);
 
-		ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, sizeDevices, devices.data(), nullptr);
+		ret = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, sizeDevices, devices_.data(), nullptr);
 
 		if (ret != CL_SUCCESS)
 		{
@@ -198,12 +202,12 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 		sstream << "Available OpenCL devices on platform[" << platformIdx << "]:";
 
 		// print platform infos
-		for (auto i = 0u; i < devices.size(); ++i)
+		for (auto i = 0u; i < devices_.size(); ++i)
 		{
 			sstream << std::endl;
 			std::string name;
 
-			const auto& device = devices[i];
+			const auto& device = devices_[i];
 			cl_int ret_device_name;
 
 			if (!MinerCLHelper::infoHelperFunc(device, name, clGetDeviceInfo, CL_DEVICE_NAME, ret_device_name))
@@ -218,14 +222,14 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 		log_system(MinerLogger::miner, sstream.str());
 
-		if (deviceIdx < devices.size())
+		if (deviceIdx < devices_.size())
 		{
 			log_system(MinerLogger::miner, "Using device[%u]", deviceIdx);
 		}
 		else
 		{
 			log_fatal(MinerLogger::miner, "Device index is out of bounds (%u, max: %z)",
-				deviceIdx, devices.size() - 1);
+				deviceIdx, devices_.size() - 1);
 			return false;
 		}
 	}
@@ -234,24 +238,11 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 	{
 		auto err = 0;
 
-		context_ = clCreateContext(nullptr, static_cast<cl_uint>(devices.size()), devices.data(), nullptr, nullptr, &err);
+		context_ = clCreateContext(nullptr, static_cast<cl_uint>(devices_.size()), devices_.data(), nullptr, nullptr, &err);
 
 		if (err != CL_SUCCESS)
 		{
 			log_fatal(MinerLogger::miner, "Could not create an OpenCL context!\n\tError-code:\t%d", err);
-			return false;
-		}
-
-	}
-
-	// create the command queue
-	{
-		auto ret = 0;
-		command_queue_ = clCreateCommandQueue(context_, devices[deviceIdx], 0, &ret);
-
-		if (ret != CL_SUCCESS)
-		{
-			log_fatal(MinerLogger::miner, "Could not create an OpenCL command queue!\n\tError-code:\t%d", ret);
 			return false;
 		}
 	}
@@ -265,17 +256,17 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 		program_ = clCreateProgramWithSource(context_, 1, reinterpret_cast<const char**>(&miningKernel_Cstr),
 		                                     reinterpret_cast<const size_t*>(&size), &retCreate);
 
-		const auto retBuild = clBuildProgram(program_, 1, &devices[deviceIdx], nullptr, nullptr, nullptr);
+		const auto retBuild = clBuildProgram(program_, 1, &devices_[deviceIdx], nullptr, nullptr, nullptr);
 
 		if (retCreate != CL_SUCCESS || retBuild != CL_SUCCESS)
 		{
 			size_t logSize;
-			clGetProgramBuildInfo(program_, devices[deviceIdx], CL_PROGRAM_BUILD_LOG, 0, nullptr, &logSize);
+			clGetProgramBuildInfo(program_, devices_[deviceIdx], CL_PROGRAM_BUILD_LOG, 0, nullptr, &logSize);
 			
 			std::string log;
 			log.resize(logSize);
 
-			clGetProgramBuildInfo(program_, devices[deviceIdx], CL_PROGRAM_BUILD_LOG, logSize, &log[0], nullptr);
+			clGetProgramBuildInfo(program_, devices_[deviceIdx], CL_PROGRAM_BUILD_LOG, logSize, &log[0], nullptr);
 
 			log_fatal(MinerLogger::miner, "Could not create the OpenCL program (mining.cl)!\n%s", log);
 			return false;
@@ -302,14 +293,24 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 	return true;
 }
 
+cl_command_queue Burst::MinerCL::createCommandQueue()
+{
+	auto ret = 0;
+	auto command_queue = clCreateCommandQueue(context_, devices_[deviceIdx_], 0, &ret);
+
+	if (ret != CL_SUCCESS)
+	{
+		log_fatal(MinerLogger::miner, "Could not create an OpenCL command queue!\n\tError-code:\t%d", ret);
+		return nullptr;
+	}
+
+	command_queues_.emplace_back(command_queue);
+	return command_queue;
+}
+
 cl_context Burst::MinerCL::getContext() const
 {
 	return context_;
-}
-
-cl_command_queue Burst::MinerCL::getCommandQueue() const
-{
-	return command_queue_;
 }
 
 cl_kernel Burst::MinerCL::getKernel() const
