@@ -27,12 +27,14 @@ int Burst::Gpu_Opencl_Impl::lastError_ = 0;
 
 bool Burst::Gpu_Opencl_Impl::initStream(void** stream)
 {
+#ifdef USE_OPENCL
 	auto queue = MinerCL::getCL().createCommandQueue();
 
 	if (queue == nullptr)
 		return false;
 
 	*stream = queue;
+#endif
 	return true;
 }
 

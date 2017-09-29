@@ -33,6 +33,8 @@ using cl_context = int*;
 using cl_command_queue = int*;
 using cl_kernel = int*;
 using cl_program = int*;
+using cl_platform_id = int*;
+using cl_device_id = int*;
 #endif
 
 namespace Burst

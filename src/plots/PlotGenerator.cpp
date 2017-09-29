@@ -58,7 +58,7 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	x.close(&final[0]);
 
 	// XOR with final
-	for (auto i = 0; i < Settings::PlotSize; i++)
+	for (size_t i = 0; i < Settings::PlotSize; i++)
 		gendata[i] ^= final[i % Settings::HashSize];
 
 	std::array<uint8_t, 32> target;

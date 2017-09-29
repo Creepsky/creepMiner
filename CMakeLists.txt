@@ -1,7 +1,7 @@
 ##################################################################
 # Project and CMake settings
 ##################################################################
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.0.2)
 project(creepMiner VERSION 1.7.0)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_BUILD_TYPE RELEASE)
@@ -50,6 +50,7 @@ if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 		 ${CUDA_NVCC_FLAGS}
 		 -arch=${GPU_CUDA_ARCH}
 		 -std=c++11
+		 -default-stream per-thread
 		 -gencode=arch=compute_30,code=sm_30
 		 -gencode=arch=compute_50,code=sm_50
 		 -gencode=arch=compute_52,code=sm_52

@@ -85,9 +85,7 @@ struct Arguments
 			{
 				std::string name;
 				std::string value;
-
-				auto tmp = argv[i];
-
+				
 				if (optionProcessor.process(argv[i], name, value))
 				{
 					if (!name.empty())

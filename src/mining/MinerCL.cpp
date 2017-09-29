@@ -295,6 +295,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 cl_command_queue Burst::MinerCL::createCommandQueue()
 {
+#ifdef USE_OPENCL
 	auto ret = 0;
 	auto command_queue = clCreateCommandQueue(context_, devices_[deviceIdx_], 0, &ret);
 
@@ -306,6 +307,9 @@ cl_command_queue Burst::MinerCL::createCommandQueue()
 
 	command_queues_.emplace_back(command_queue);
 	return command_queue;
+#else
+	return nullptr;
+#endif
 }
 
 cl_context Burst::MinerCL::getContext() const
