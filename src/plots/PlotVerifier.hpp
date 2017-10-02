@@ -52,7 +52,7 @@ namespace Burst
 		Poco::UInt64 block = 0;
 		GensigData gensig;
 		Poco::UInt64 baseTarget = 0;
-		size_t memorySize = 0;
+		Poco::UInt64 memorySize = 0;
 	};
 	
 	using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
@@ -133,7 +133,8 @@ namespace Burst
 			TAKE_PROBE("PlotVerifier.FreeMemory");
 
 			if (progress_ != nullptr)
-				progress_->add(verifyNotification->buffer.size() * Settings::PlotSize, verifyNotification->block);
+				progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::PlotSize,
+				               verifyNotification->block);
 		}
 
 		log_debug(MinerLogger::plotVerifier, "Verifier stopped");
