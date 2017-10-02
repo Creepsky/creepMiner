@@ -32,7 +32,6 @@ Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, s
 	: blockHeight_ {blockHeight},
 	  baseTarget_ {baseTarget},
 	  genSigStr_ {genSigStr},
-	  activityLastWinner_ {this, &BlockData::runGetLastWinner},
 	  parent_{parent}
 {
 	entries_ = std::make_shared<std::vector<Poco::JSON::Object>>();
@@ -40,13 +39,13 @@ Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, s
 
 	for (auto i = 0; i < 32; ++i)
 	{
-		auto byteStr = genSigStr.substr(i * 2, 2);
+		const auto byteStr = genSigStr.substr(i * 2, 2);
 		genSig_[i] = static_cast<uint8_t>(std::stoi(byteStr, nullptr, 16));
 	}
 
-	Shabal256 hash;
+	Shabal256_SSE2 hash;
 	GensigData newGenSig;
-
+	
 	hash.update(&genSig_[0], genSig_.size());
 	hash.update(blockHeight);
 	hash.close(&newGenSig[0]);
@@ -68,11 +67,11 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadlineUnlocked(Poco::UIn
 
 	if (iter == deadlines_.end())
 	{
-		deadlines_.insert(std::make_pair(accountId, Deadlines(this)));
-		return deadlines_[accountId].add(nonce, deadline, account, block, plotFile);
+		deadlines_.insert(std::make_pair(accountId, std::make_shared<Deadlines>(this)));
+		return deadlines_[accountId]->add(nonce, deadline, account, block, plotFile);
 	}
 
-	return iter->second.add(nonce, deadline, account, block, plotFile);
+	return iter->second->add(nonce, deadline, account, block, plotFile);
 }
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadline(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile)
@@ -108,6 +107,69 @@ void Burst::BlockData::confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline
 		parent_->setBestDeadline(deadline);
 		parent_->addConfirmedDeadline();
 	}
+}
+
+Burst::BlockData::DataLoader::DataLoader()
+	: getLastWinner{this, &DataLoader::runGetLastWinner}
+{}
+
+Burst::BlockData::DataLoader::~DataLoader() {}
+
+Burst::BlockData::DataLoader& Burst::BlockData::DataLoader::getInstance()
+{
+	static DataLoader data_loader;
+	return data_loader;
+}
+
+std::shared_ptr<Burst::Account> Burst::BlockData::DataLoader::runGetLastWinner(const std::tuple<const Wallet&, Accounts&, BlockData&>& args)
+{
+	auto& wallet = std::get<0>(args);
+	auto& accounts = std::get<1>(args);
+	auto& blockdata = std::get<2>(args);
+	
+	AccountId lastWinner;
+	auto lastBlockheight = blockdata.blockHeight_ - 1;
+	
+	if (!wallet.isActive())
+		return nullptr;
+
+	if (wallet.getWinnerOfBlock(lastBlockheight, lastWinner))
+	{
+		auto winnerAccount = accounts.getAccount(lastWinner, wallet, false);
+
+		winnerAccount->getOrLoadName().wait();
+		winnerAccount->getOrLoadRewardRecipient().wait();
+
+		std::string rewardRecipient;
+
+		if (winnerAccount->getRewardRecipient() == winnerAccount->getId())
+			rewardRecipient = "                   Solo mining";
+		else
+		{
+			auto rewardRecipientAccount = accounts.getAccount(winnerAccount->getRewardRecipient(), wallet, false);
+			rewardRecipientAccount->getOrLoadName().wait();
+			rewardRecipient = "Pool               " + rewardRecipientAccount->getName();
+		}
+
+		log_ok_if(MinerLogger::miner, MinerLogger::hasOutput(LastWinner), std::string(50, '-') + "\n"
+			"last block winner: \n"
+			"block#             %s\n"
+			"winner-numeric     %Lu\n"
+			"winner-address     %s\n"
+			"%s" +
+			"%s\n" +
+			std::string(50, '-'),
+			numberToString(lastBlockheight), lastWinner, winnerAccount->getAddress(),
+			winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName()),
+			rewardRecipient
+		);
+
+		blockdata.setLastWinner(winnerAccount);
+
+		return winnerAccount;
+	}
+
+	return nullptr;
 }
 
 void Burst::BlockData::setLastWinner(std::shared_ptr<Account> account)
@@ -199,12 +261,6 @@ std::shared_ptr<Burst::Account> Burst::BlockData::getLastWinner() const
 	return lastWinner_;
 }
  
-Poco::ActiveResult<std::shared_ptr<Burst::Account>> Burst::BlockData::getLastWinnerAsync(const Wallet& wallet, const Accounts& accounts)
-{
-	auto tuple = std::make_pair(&wallet, &accounts);
-	return activityLastWinner_(tuple);
-}
-
 const Burst::GensigData& Burst::BlockData::getGensig() const
 {
 	return genSig_;
@@ -258,7 +314,7 @@ bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)>
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadlineUnlocked(Poco::UInt64 accountId, Burst::BlockData::DeadlineSearchType searchType)
 {
-	auto iter = deadlines_.find(accountId);
+	const auto iter = deadlines_.find(accountId);
 
 	if (iter == deadlines_.end())
 		return nullptr;
@@ -266,11 +322,11 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadlineUnlocked(Poco:
 	switch (searchType)
 	{
 	case DeadlineSearchType::Found:
-		return iter->second.getBestFound();
+		return iter->second->getBestFound();
 	case DeadlineSearchType::Sent:
-		return iter->second.getBestSent();
+		return iter->second->getBestSent();
 	case DeadlineSearchType::Confirmed:
-		return iter->second.getBestConfirmed();
+		return iter->second->getBestConfirmed();
 	default:
 		return nullptr;
 	}
@@ -282,12 +338,17 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(Poco::UInt64 
 	return getBestDeadlineUnlocked(accountId, searchType);
 }
 
+Poco::ActiveResult<std::shared_ptr<Burst::Account>> Burst::BlockData::getLastWinnerAsync(const Wallet& wallet, Accounts& accounts)
+{
+	return DataLoader::getInstance().getLastWinner(make_tuple(std::cref(wallet), std::ref(accounts), std::ref(*this)));
+}
+
 std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadlineIfBest(Poco::UInt64 nonce, Poco::UInt64 deadline,
 	std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile)
 {
 	std::lock_guard<std::mutex> lock{ mutex_ };
 
-	auto bestDeadline = getBestDeadlineUnlocked(account->getId(), DeadlineSearchType::Found);
+	const auto bestDeadline = getBestDeadlineUnlocked(account->getId(), DeadlineSearchType::Found);
 
 	if (bestDeadline == nullptr || bestDeadline->getDeadline() > deadline)
 		return addDeadlineUnlocked(nonce, deadline, account, block, plotFile);
@@ -325,55 +386,16 @@ void Burst::BlockData::clearEntries() const
 	entries_->clear();
 }
 
-std::shared_ptr<Burst::Account> Burst::BlockData::runGetLastWinner(const std::pair<const Wallet*, const Accounts*>& args)
+Burst::MinerData::MinerData()
+	: blocksMined_(0), blocksWon_(0), deadlinesConfirmed_(0),
+	  targetDeadline_(0), currentBlockheight_(0), currentBasetarget_(0), currentScoopNum_(0),
+	  activityWonBlocks_{this, &MinerData::runGetWonBlocks}
 {
-	poco_ndc(Miner::runGetLastWinner);
-
-	AccountId lastWinner;
-	auto lastBlockheight = blockHeight_ - 1;
-	auto& wallet = *args.first;
-	auto& accounts = *args.second;
-
-	if (!wallet.isActive())
-		return nullptr;
-
-	if (wallet.getWinnerOfBlock(lastBlockheight, lastWinner))
-	{
-		// we are the winner :)
-		if (accounts.isLoaded(lastWinner))
-		{
-			parent_->addWonBlock();
-			// we (re)send the good news to the local html server
-			addBlockEntry(createJsonNewBlock(*parent_));
-		}
-
-		auto winnerAccount = std::make_shared<Account>(wallet, lastWinner);
-		auto futureName = winnerAccount->getNameAsync();
-		futureName.wait();
-
-		log_ok_if(MinerLogger::miner, MinerLogger::hasOutput(LastWinner), std::string(50, '-') + "\n"
-			"last block winner: \n"
-			"block#             %Lu\n"
-			"winner-numeric     %Lu\n"
-			"winner-address     %s\n"
-			"%s" +
-			std::string(50, '-'),
-			lastBlockheight, lastWinner, winnerAccount->getAddress(),
-			(winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName()))
-		);
-
-		setLastWinner(winnerAccount);
-
-		return winnerAccount;
-	}
-
-	return nullptr;
 }
 
-Burst::MinerData::MinerData()
-	: blocksMined_(0), blocksWon_(0), deadlinesConfirmed_(0), targetDeadline_(0),
-	currentBlockheight_(0), currentBasetarget_(0), currentScoopNum_(0)
-{}
+Burst::MinerData::~MinerData()
+{
+}
 
 std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig)
 {
@@ -408,6 +430,38 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 	return blockData_;
 }
 
+Poco::UInt64 Burst::MinerData::runGetWonBlocks(const std::pair<const Wallet*, const Accounts*>& args)
+{
+	poco_ndc(BlockData::runGetWonBlocks);
+
+	auto& wallet = *args.first;
+	auto& accounts = *args.second;
+	size_t wonBlocks = 0;
+
+	if (!wallet.isActive())
+		return 0;
+
+	std::vector<Block> blocks;
+
+	for (auto& account : accounts.getAccounts())
+		if (wallet.getAccountBlocks(account->getId(), blocks))
+			wonBlocks += blocks.size();
+
+	auto refresh = false;
+
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		auto before = blocksWon_.load();
+		blocksWon_.store(wonBlocks);
+		refresh = before != wonBlocks;
+	}
+
+	if (blockData_ != nullptr && refresh)
+		blockData_->refreshBlockEntry();
+
+	return wonBlocks;
+}
+
 void Burst::MinerData::addConfirmedDeadline()
 {
 	++deadlinesConfirmed_;
@@ -430,15 +484,10 @@ void Burst::MinerData::setTargetDeadline(Poco::UInt64 deadline)
 
 void Burst::MinerData::addMessage(const Poco::Message& message)
 {
-	auto blockData = getBlockData();
+	const auto blockData = getBlockData();
 
 	if (blockData != nullptr)
 		blockData->addMessage(message);
-}
-
-void Burst::MinerData::addWonBlock()
-{
-	++blocksWon_;
 }
 
 std::shared_ptr<Burst::Deadline> Burst::MinerData::getBestDeadlineOverall() const
@@ -463,7 +512,7 @@ Poco::UInt64 Burst::MinerData::getBlocksMined() const
 
 Poco::UInt64 Burst::MinerData::getBlocksWon() const
 {
-	return blocksWon_;
+	return blocksWon_.load();
 }
 
 std::shared_ptr<Burst::BlockData> Burst::MinerData::getBlockData()
@@ -499,7 +548,7 @@ std::shared_ptr<const Burst::BlockData> Burst::MinerData::getHistoricalBlockData
 
 	std::lock_guard<std::mutex> lock{ mutex_ };
 
-	auto iter = std::find_if(historicalBlocks_.begin(), historicalBlocks_.end(), [wantedBlock](const std::shared_ptr<BlockData>& data)
+	const auto iter = std::find_if(historicalBlocks_.begin(), historicalBlocks_.end(), [wantedBlock](const std::shared_ptr<BlockData>& data)
 	{
 		return data->getBlockheight() == wantedBlock;
 	});
@@ -539,7 +588,7 @@ Poco::UInt64 Burst::MinerData::getTargetDeadline(TargetDeadlineType type) const
 	case TargetDeadlineType::Combined:
 		{
 			auto targetDeadline = targetDeadline_.load();
-			auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
+			const auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
 
 			if (targetDeadline == 0)
 				targetDeadline = manualTargetDeadline;
@@ -599,4 +648,10 @@ Poco::UInt64 Burst::MinerData::getCurrentBasetarget() const
 Poco::UInt64 Burst::MinerData::getCurrentScoopNum() const
 {
 	return currentScoopNum_.load();
+}
+
+Poco::ActiveResult<Poco::UInt64> Burst::MinerData::getWonBlocksAsync(const Wallet& wallet, const Accounts& accounts)
+{
+	const auto tuple = std::make_pair(&wallet, &accounts);
+	return activityWonBlocks_(tuple);
 }

@@ -21,25 +21,27 @@
 
 #pragma once
 
-#include "Declarations.hpp"
+#include <utility>
 #include <Poco/Types.h>
 #include "gpu/gpu_declarations.hpp"
-#include <string>
-#include <vector>
+#include "mining/MinerData.hpp"
 
-extern "C" void cuda_calc_occupancy(int bufferSize, int& gridSize, int& blockSize);
-extern "C" bool cuda_alloc_memory(Poco::UInt64 size,  void** mem);
-extern "C" bool cuda_copy_memory(Poco::UInt64 size, const void* from, void* to, Burst::MemoryCopyDirection copyDirection);
-extern "C" bool cuda_free_memory(void* mem);
+namespace Burst
+{
+	struct CalculatedDeadline;
 
-extern "C" bool cuda_calculate_shabal_host_preallocated(Burst::ScoopData* buffer, Poco::UInt64* deadlines, Poco::UInt64 bufferSize,
-	const Burst::GensigData* gensig,
-	Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, std::string& errorString);
+	struct Gpu_Opencl_Impl
+	{
+		static bool initStream(void** stream);
+		static bool allocateMemory(void** memory, MemoryType type, size_t size);
+		static bool copyMemory(const void* input, void* output, MemoryType type, size_t size, MemoryCopyDirection direction, void* stream);
+		static bool verify(const GensigData* gpuGensig, ScoopData* gpuScoops, Poco::UInt64* gpuDeadlines, size_t nonces,
+			Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, void* stream);
+		static bool getMinDeadline(Poco::UInt64* gpuDeadlines, size_t size, Poco::UInt64& minDeadline, Poco::UInt64& minDeadlineIndex, void* stream);
+		static bool freeMemory(void* memory);
+		static bool getError(std::string& errorString);
 
-extern "C" bool cuda_reduce_best_deadline(Poco::UInt64* deadlines, size_t size,
-	Poco::UInt64& minDeadline, Poco::UInt64& index, std::string& errorString);
-
-extern "C" bool cuda_get_error(std::string& errorString);
-
-extern "C" bool cuda_get_devices(std::vector<std::string>& devices);
-extern "C" bool cuda_set_device(unsigned index);
+	private:
+		static int lastError_;
+	};
+}

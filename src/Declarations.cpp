@@ -26,20 +26,38 @@
 #include <Poco/NumberParser.h>
 #include "logging/MinerLogger.hpp"
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 6, 3, 0 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 7, 0, 0 };
+std::string Burst::Settings::Cpu_Instruction_Set = "";
+Burst::ProjectData Burst::Settings::Project = { "creepMiner", ProjectVersion };
 
-#if USE_AVX
-const std::string Burst::Settings::Cpu_Instruction_Set = "AVX";
-#elif USE_AVX2
-const std::string Burst::Settings::Cpu_Instruction_Set = "AVX2";
+#ifdef USE_SSE4
+const bool Burst::Settings::Sse4 = true;
 #else
-const std::string Burst::Settings::Cpu_Instruction_Set = "";
+const bool Burst::Settings::Sse4 = false;
 #endif
 
-#if defined MINING_CUDA
-const Burst::ProjectData Burst::Settings::Project = { "creepMiner CUDA", ProjectVersion };
+#ifdef USE_AVX
+const bool Burst::Settings::Avx = true;
 #else
-const Burst::ProjectData Burst::Settings::Project = { "creepMiner", ProjectVersion };
+const bool Burst::Settings::Avx = false;
+#endif
+
+#ifdef USE_AVX2
+const bool Burst::Settings::Avx2 = true;
+#else
+const bool Burst::Settings::Avx2 = false;
+#endif
+
+#ifdef USE_CUDA
+const bool Burst::Settings::Cuda = true;
+#else
+const bool Burst::Settings::Cuda = false;
+#endif
+
+#ifdef USE_OPENCL
+const bool Burst::Settings::OpenCl = true;
+#else
+const bool Burst::Settings::OpenCl = false;
 #endif
 
 void Burst::Version::updateLiterals()
@@ -137,8 +155,7 @@ bool Burst::Version::operator>(const Version& rhs) const
 	return false;
 }
 
-Burst::ProjectData::ProjectData(std::string&& name, Version version)
-	: name{std::move(name)}, version{std::move(version)}
+void Burst::ProjectData::refreshNameAndVersion()
 {
 	nameAndVersion = this->name + " " + this->version.literal;
 	nameAndVersionVerbose = this->name + " " +
@@ -147,4 +164,16 @@ Burst::ProjectData::ProjectData(std::string&& name, Version version)
 
 	if (Settings::Cpu_Instruction_Set != "")
 		nameAndVersionVerbose += std::string(" ") + Settings::Cpu_Instruction_Set;
+}
+
+Burst::ProjectData::ProjectData(std::string&& name, Version version)
+	: name{std::move(name)}, version{std::move(version)}
+{
+	refreshNameAndVersion();
+}
+
+void Burst::Settings::setCpuInstructionSet(std::string cpuInstructionSet)
+{
+	Cpu_Instruction_Set = std::move(cpuInstructionSet);
+	Project.refreshNameAndVersion();
 }

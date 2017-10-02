@@ -70,9 +70,9 @@ namespace Burst
 
 		/**
 		 * \brief Writes a simple progress bar into stdcout.
-		 * \param progress The procentual progress value (0-100).
+		 * \param progress The progress.
 		 */
-		static void writeProgress(float progressRead, float progressVerify);
+		static void writeProgress(const Progress& progress);
 
 		/**
 		 * \brief Writes a text of a specifig type and a timestamp into stdout.
@@ -142,7 +142,7 @@ namespace Burst
 		static TextType currentTextType_;
 		static std::map<TextType, ConsoleColorPair> typeColors;
 		static bool progressFlag_;
-		static float lastProgressRead_, lastProgressVerify_;
+		static Progress lastProgress_;
 		static size_t lastProgressDoneRead_, lastProgressDoneVerify_;
 		static size_t lastPipeCount_;
 

@@ -27,10 +27,14 @@
 #include <Poco/Activity.h>
 #include <Poco/ActiveMethod.h>
 #include <Poco/JSON/Object.h>
+#include <vector>
+#include <Poco/ActiveDispatcher.h>
 
 namespace Burst
 {
 	class Wallet;
+
+	using Block = Poco::UInt64;
 
 	class Account
 	{
@@ -42,33 +46,53 @@ namespace Burst
 		void setWallet(const Wallet& wallet);
 
 		AccountId getId() const;
-		std::string getName();
-		Poco::ActiveResult<std::string> getNameAsync(bool reset = false);
-		AccountId getRewardRecipient();
-		Poco::ActiveResult<AccountId> getRewardRecipientAsync(bool reset = false);
+		const std::string& getName() const;
 		std::string getAddress() const;
+		AccountId getRewardRecipient();
+		const std::vector<Block>& getBlocks();
+
+		Poco::ActiveResult<std::string> getOrLoadName(bool reset = false);
+		Poco::ActiveResult<AccountId> getOrLoadRewardRecipient(bool reset = false);
+		Poco::ActiveResult<std::vector<Block>> getOrLoadAccountBlocks(bool reset = false);
 
 		Poco::JSON::Object::Ptr toJSON() const;
+		
+	private:
+		class DataLoader : public Poco::ActiveDispatcher
+		{
+		public:
+			DataLoader();
+			~DataLoader() override;
 
-	protected:
-		std::string runGetName(const bool& reset);
-		AccountId runGetRewardRecipient(const bool& reset);
+			static DataLoader& getInstance();
+
+			using AsyncParameter = std::tuple<Account&, bool>;
+
+			Poco::ActiveMethod<std::string, AsyncParameter, DataLoader, Poco::ActiveStarter<ActiveDispatcher>> getName;
+			Poco::ActiveMethod<AccountId, AsyncParameter, DataLoader, Poco::ActiveStarter<ActiveDispatcher>> getRewardRecipient;
+			Poco::ActiveMethod<std::vector<Block>, AsyncParameter, DataLoader, Poco::ActiveStarter<ActiveDispatcher>> getAccountBlocks;
+
+		private:
+			std::string runGetName(const AsyncParameter& parameter);
+			AccountId runGetRewardRecipient(const AsyncParameter& parameter);
+			std::vector<Block> runGetAccountBlocks(const AsyncParameter& parameter);
+		};
 
 	private:
 		AccountId id_;
 		Poco::Nullable<std::string> name_;
 		Poco::Nullable<AccountId> rewardRecipient_;
+		Poco::Nullable<std::vector<Block>> blocks_;
 		const Wallet* wallet_;
-		Poco::ActiveMethod<std::string, bool, Account> getName_;
-		Poco::ActiveMethod<AccountId, bool, Account> getRewardRecipient_;
 		mutable Poco::Mutex mutex_;
 	};
 
 	class Accounts
 	{
 	public:
-		std::shared_ptr<Account> getAccount(AccountId id, Wallet& wallet, bool persistent);
+		std::shared_ptr<Account> getAccount(AccountId id, const Wallet& wallet, bool persistent);
 		bool isLoaded(AccountId id) const;
+		std::vector<std::shared_ptr<Account>> getAccounts() const;
 
 	private:
 		std::unordered_map<AccountId, std::shared_ptr<Account>> accounts_;

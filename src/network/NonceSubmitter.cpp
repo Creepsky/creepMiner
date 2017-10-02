@@ -48,7 +48,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 	auto accountName = deadline->getAccountName();
 	auto betterDeadlineInPipeline = false;
 
-	auto loopConditionHelper = [this, &betterDeadlineInPipeline](size_t tryCount, size_t maxTryCount, SubmitResponse response)
+	auto loopConditionHelper = [this, &betterDeadlineInPipeline](unsigned tryCount, unsigned maxTryCount, SubmitResponse response)
 	{
 		if ((maxTryCount > 0 && tryCount >= maxTryCount) ||
 			response == SubmitResponse::Error ||
@@ -76,7 +76,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 	//MinerLogger::write("sending nonce from thread, " + deadlineFormat(deadlineValue), TextType::System);
 
 	NonceConfirmation confirmation { 0, SubmitResponse::None };
-	size_t submitTryCount = 0;
+	unsigned submitTryCount = 0;
 	auto firstSendAttempt = true;
 
 	// submit-loop
@@ -102,10 +102,10 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 			deadline->send();
 			confirmation.errorCode = SubmitResponse::Submitted;
 			log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), "%s: nonce submitted (%s)\n"
-				"\tnonce: %Lu\n"
+				"\tnonce: %s\n"
 				"\tin:    %s",
 				accountName, deadlineFormat(deadline->getDeadline()),
-				deadline->getNonce(),
+				numberToString(deadline->getNonce()),
 				deadline->getPlotFile());
 			firstSendAttempt = false;
 		}
@@ -165,18 +165,18 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 			else
 			{
 				auto bestConfirmed = miner.getBestConfirmed(deadline->getAccountId(), deadline->getBlock());
-				auto showConfirmation = true;
+				//auto showConfirmation = true;
 
 				// it is better to show all confirmations...
 					// only show the confirmation, if the confirmed deadline is better then the best already confirmed
 					//if (bestConfirmed != nullptr)
 					//	showConfirmation = bestConfirmed->getDeadline() > deadline->getDeadline();
 
-				if (showConfirmation)
+				//if (showConfirmation)
 					log_success_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceConfirmed), "%s: nonce confirmed (%s)\n"
-						"\tnonce: %Lu\n"
+						"\tnonce: %s\n"
 						"\tin:    %s",
-						accountName, deadlineFormat(deadline->getDeadline()), deadline->getNonce(), deadline->getPlotFile());
+						accountName, deadlineFormat(deadline->getDeadline()), numberToString(deadline->getNonce()), deadline->getPlotFile());
 
 				// we have to confirm it at the very last position
 				// because we work with the best confirmed deadline so far before

@@ -34,6 +34,8 @@
 #include <fstream>
 #include <Poco/File.h>
 #include <Poco/Delegate.h>
+#include "plots/PlotVerifier.hpp"
+#include "MinerCL.hpp"
 
 namespace Burst
 {
@@ -46,7 +48,7 @@ namespace Burst
 			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
 			task_manager = std::make_unique<Poco::TaskManager>(*thread_pool);
 
-			for (auto i = 0u; i < size; ++i)
+			for (size_t i = 0; i < size; ++i)
 				task_manager->start(new T(std::forward<Args>(args)...));
 		}
 	}
@@ -92,25 +94,37 @@ void Burst::Miner::run()
 			*this, progressRead_, verificationQueue_, plotReadQueue_);
 
 		// create the plot verifiers
-		MinerHelper::create_worker<PlotVerifier>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
-			*this, verificationQueue_, progressVerify_);
+		createPlotVerifiers();
+
+#ifndef USE_CUDA
+		if (config.getProcessorType() == "CUDA")
+			log_error(MinerLogger::miner, "You are mining with your CUDA GPU, but the miner is compiled without the CUDA SDK!\n"
+				"You will not see any deadline coming from this miner!");
+#endif
 	}
 
 	wallet_ = MinerConfig::getConfig().getWalletUrl();
 
-	auto wakeUpTime = static_cast<long>(config.getWakeUpTime());
+	const auto wakeUpTime = static_cast<long>(config.getWakeUpTime());
 
 	if (wakeUpTime > 0)
 	{
-		Poco::TimerCallback<Miner> callback(*this, &Miner::on_wake_up);
+		const Poco::TimerCallback<Miner> callback(*this, &Miner::on_wake_up);
 
 		wake_up_timer_.setPeriodicInterval(wakeUpTime * 1000);
 		wake_up_timer_.start(callback);
 	}
 
-#ifdef RUN_BENCHMARK
-	auto lastBenchmark = std::chrono::system_clock::now();
-#endif
+	const auto benchmark = MinerConfig::getConfig().isBenchmark();
+	const auto benchmarkInterval = MinerConfig::getConfig().getBenchmarkInterval();
+
+	if (benchmark)
+	{
+		const Poco::TimerCallback<Miner> callback(*this, &Miner::onBenchmark);
+		benchmark_timer_.setPeriodicInterval(benchmarkInterval * 1000u);
+		benchmark_timer_.start(callback);
+	}
+
 	running_ = true;
 
 	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
@@ -138,25 +152,6 @@ void Burst::Miner::run()
 			log_error(MinerLogger::miner, "Could not get block infos!");
 			errors = 0;
 		}
-
-
-#ifdef RUN_BENCHMARK
-		if (std::chrono::system_clock::now() - lastBenchmark > std::chrono::minutes(1))
-		{
-			try
-			{
-				Poco::FileStream perfLogStream{ "benchmark.csv", std::ios_base::out | std::ios::trunc };
-				perfLogStream << Performance::instance();
-				log_success(MinerLogger::miner, "Wrote benchmark data into benchmark.csv");
-			}
-			catch (...)
-			{
-				log_error(MinerLogger::miner, "Could not write benchmark data into benchmark.csv! Please close it.");
-			}
-
-			lastBenchmark = std::chrono::system_clock::now();
-		}
-#endif
 
 		std::this_thread::sleep_for(std::chrono::seconds(MinerConfig::getConfig().getMiningInfoInterval()));
 	}
@@ -190,6 +185,10 @@ void Burst::Miner::addPlotReadNotifications(bool wakeUpCall)
 		notification->baseTarget = getBaseTarget();
 		notification->type = plotDir.getType();
 		notification->wakeUpCall = wakeUpCall;
+
+		for (const auto& plotFile : plotDir.getPlotfiles(true))
+			accounts_.getAccount(plotFile->getAccountId(), wallet_, true);
+
 		return notification;
 	};
 
@@ -226,7 +225,7 @@ void Burst::Miner::addPlotReadNotifications(bool wakeUpCall)
 	});
 }
 
-void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget)
+void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget)
 {
 	poco_ndc(Miner::updateGensig);
 
@@ -251,21 +250,25 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 	// setup new block-data
 	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr);
 
-	// why we start a new thread to gather the last winner:
-	// it could be slow and is not necessary for the whole process
-	// so show it when it's done
-	if (blockHeight > 0 && wallet_.isActive())
-		block->getLastWinnerAsync(wallet_, accounts_);
-
 	// printing block info and transfer it to local server
 	{
+		if (startPoint_.time_since_epoch().count() > 0)
+		{
+			const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint_;
+			const auto timeDiffSeconds = std::chrono::duration_cast<std::chrono::seconds>(timeDiff);
+			log_unimportant(MinerLogger::miner, "Block %s ended in %s", numberToString(blockHeight - 1),
+				deadlineFormat(timeDiffSeconds.count()));
+		}
+
 		log_notice(MinerLogger::miner, std::string(50, '-') + "\n"
-			"block#     \t%Lu\n"
+			"block#     \t%s\n"
 			"scoop#     \t%Lu\n"
-			"baseTarget#\t%Lu\n"
-			"gensig     \t%s\n" +
+			"baseTarget#\t%s\n"
+			"gensig     \t%s\n"
+			"difficulty \t%s\n" +
 			std::string(50, '-'),
-			blockHeight, block->getScoop(), baseTarget, createTruncatedString(getGensigStr(), 14, 32)
+			numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
+			numberToString(18325193796 / baseTarget)
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
@@ -279,15 +282,24 @@ void Burst::Miner::updateGensig(const std::string gensigStr, Poco::UInt64 blockH
 
 	PlotSizes::nextRound();
 	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
+	startPoint_ = std::chrono::high_resolution_clock::now();
 
 	addPlotReadNotifications();
+
+	data_.getWonBlocksAsync(wallet_, accounts_);
+
+	// why we start a new thread to gather the last winner:
+	// it could be slow and is not necessary for the whole process
+	// so show it when it's done
+	if (blockHeight > 0 && wallet_.isActive())
+		block->getLastWinnerAsync(wallet_, accounts_);
 
 	TAKE_PROBE("Miner.StartNewBlock")
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const
 {
-	auto blockData = data_.getBlockData();
+	const auto blockData = data_.getBlockData();
 
 	if (blockData == nullptr)
 	{
@@ -300,7 +312,7 @@ const Burst::GensigData& Burst::Miner::getGensig() const
 
 const std::string& Burst::Miner::getGensigStr() const
 {
-	auto blockData = data_.getBlockData();
+	const auto blockData = data_.getBlockData();
 
 	if (blockData == nullptr)
 	{
@@ -332,14 +344,14 @@ Poco::UInt64 Burst::Miner::getScoopNum() const
 }
 
 Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight,
-	std::string plotFile, std::shared_ptr<Burst::Deadline>& newDeadline)
+	std::string plotFile, bool ownAccount, std::shared_ptr<Burst::Deadline>& newDeadline)
 {
 	newDeadline = nullptr;
 
 	if (blockheight != getBlockheight())
 		return SubmitResponse::WrongBlock;
 
-	auto targetDeadline = getTargetDeadline();
+	const auto targetDeadline = getTargetDeadline();
 	auto tooHigh = targetDeadline > 0 && deadline > targetDeadline;
 
 	if (tooHigh && !MinerLogger::hasOutput(NonceFoundTooHigh))
@@ -355,7 +367,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	newDeadline = block->addDeadlineIfBest(
 		nonce,
 		deadline,
-		accounts_.getAccount(accountId, wallet_, true),
+		accounts_.getAccount(accountId, wallet_, ownAccount),
 		data_.getBlockData()->getBlockheight(),
 		plotFile
 	);
@@ -364,9 +376,9 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	{
 		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound) || tooHigh,
 			"%s: nonce found (%s)\n"
-			"\tnonce: %Lu\n"
+			"\tnonce: %s\n"
 			"\tin:    %s",
-			newDeadline->getAccountName(), deadlineFormat(deadline), newDeadline->getNonce(), plotFile);
+			newDeadline->getAccountName(), deadlineFormat(deadline), numberToString(newDeadline->getNonce()), plotFile);
 			
 		if (tooHigh)
 			return SubmitResponse::TooHigh;
@@ -377,20 +389,32 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	return SubmitResponse::Error;
 }
 
-void Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile)
+Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, const std::string& plotFile,
+	bool ownAccount, const std::string& minerName, Poco::UInt64 plotsize)
 {
-	poco_ndc(Miner::submitNonce);
-	
 	std::shared_ptr<Deadline> newDeadline;
 
-	auto result = addNewDeadline(nonce, accountId, deadline, blockheight, std::move(plotFile), newDeadline);
+	const auto result = addNewDeadline(nonce, accountId, deadline, blockheight, plotFile, ownAccount, newDeadline);
 
 	// is the new nonce better then the best one we already have?
 	if (result == SubmitResponse::Found)
 	{
+		if (!minerName.empty())
+			newDeadline->setMiner(minerName);
+
+		if (plotsize > 0)
+			newDeadline->setTotalPlotsize(plotsize);
+
 		newDeadline->onTheWay();
-		nonceSubmitterManager_->start(new NonceSubmitter{ *this, newDeadline });
+		return NonceSubmitter{ *this, newDeadline }.submit();
 	}
+
+	NonceConfirmation nonceConfirmation;
+	nonceConfirmation.deadline = 0;
+	nonceConfirmation.json = Poco::format(R"({ "result" : "success", "deadline" : %Lu, "deadlineText" : "%s" })", deadline, deadlineFormat(deadline));
+	nonceConfirmation.errorCode = result;
+
+	return nonceConfirmation;
 }
 
 bool Burst::Miner::getMiningInfo()
@@ -433,8 +457,8 @@ bool Burst::Miner::getMiningInfo()
 
 			if (root->has("height"))
 			{
-				std::string newBlockHeightStr = root->get("height");
-				auto newBlockHeight = std::stoull(newBlockHeightStr);
+				const std::string newBlockHeightStr = root->get("height");
+				const auto newBlockHeight = std::stoull(newBlockHeightStr);
 
 				if (data_.getBlockData() == nullptr ||
 					newBlockHeight > data_.getBlockData()->getBlockheight())
@@ -459,10 +483,10 @@ bool Burst::Miner::getMiningInfo()
 						if (target_deadline_pool_before != data_.getTargetDeadline(TargetDeadlineType::Pool))
 							log_system(MinerLogger::config,
 								"got new target deadline from pool\n"
-								"\told pool target deadline: %s\n"
-								"\tnew pool target deadline: %s\n"
+								"\told pool target deadline:    %s\n"
+								"\tnew pool target deadline:    %s\n"
 								"\ttarget deadline from config: %s\n"
-								"\tlowest target deadline: %s",
+								"\tlowest target deadline:      %s",
 								deadlineFormat(target_deadline_pool_before),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Pool)),
 								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Local)),
@@ -504,18 +528,39 @@ namespace Burst
 {
 	std::mutex progressMutex_;
 
-	void showProgress(PlotReadProgress& progressRead, PlotReadProgress& progressVerify, MinerData& data, Poco::UInt64 blockheight)
+	void showProgress(PlotReadProgress& progressRead, PlotReadProgress& progressVerify, MinerData& data, Poco::UInt64 blockheight,
+		std::chrono::high_resolution_clock::time_point& startPoint)
 	{
 		std::lock_guard<std::mutex> lock(progressMutex_);
-		auto readProgress = progressRead.getProgress();
-		MinerLogger::writeProgress(readProgress, progressVerify.getProgress());
-		data.getBlockData()->setProgress(readProgress, progressVerify.getProgress(), blockheight);
+
+		const auto readProgressPercent = progressRead.getProgress();
+		const auto verifyProgressPercent = progressVerify.getProgress();
+		const auto readProgressValue = progressRead.getValue();
+		const auto verifyProgressValue = progressVerify.getValue();
+
+		const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint;
+		const auto timeDiffSeconds = std::chrono::duration<double>(timeDiff);
+		
+		Progress progress;
+		progress.read = readProgressPercent;
+		progress.verify = verifyProgressPercent;
+		progress.bytesPerSecondRead = readProgressValue / 4096 / timeDiffSeconds.count();
+		progress.bytesPerSecondVerify = verifyProgressValue / 4096 / timeDiffSeconds.count();
+		progress.bytesPerSecondCombined = (readProgressValue + verifyProgressValue) / 4096 / timeDiffSeconds.
+			count();
+
+		MinerLogger::writeProgress(progress);
+		data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
+		
+		if (readProgressPercent == 100.f && verifyProgressPercent == 100.f)
+			log_information(MinerLogger::miner, "Processed block %s in %ss", numberToString(blockheight),
+				Poco::NumberFormatter::format(timeDiffSeconds.count(), 3));
 	}
 }
 
 void Burst::Miner::progressChanged(float &progress)
 {
-	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight());
+	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight(), startPoint_);
 }
 
 void Burst::Miner::on_wake_up(Poco::Timer& timer)
@@ -523,33 +568,30 @@ void Burst::Miner::on_wake_up(Poco::Timer& timer)
 	addPlotReadNotifications(true);
 }
 
-Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data)
+void Burst::Miner::onBenchmark(Poco::Timer& timer)
 {
-	poco_ndc(Miner::submitNonceImpl);
-
-	auto nonce = std::get<0>(data);
-	auto accountId = std::get<1>(data);
-	auto deadline = std::get<2>(data);
-	auto blockheight = std::get<3>(data);
-	const auto& plotFile = std::get<4>(data);
-
-	std::shared_ptr<Deadline> newDeadline;
-
-	auto result = addNewDeadline(nonce, accountId, deadline, blockheight, plotFile, newDeadline);
-
-	// is the new nonce better then the best one we already have?
-	if (result == SubmitResponse::Found)
+	try
 	{
-		newDeadline->onTheWay();
-		return NonceSubmitter{ *this, newDeadline }.submit();
+		Poco::FileStream perfLogStream{ "benchmark.csv", std::ios_base::out | std::ios::trunc };
+		perfLogStream << Performance::instance();
+		log_success(MinerLogger::miner, "Wrote benchmark data into benchmark.csv");
 	}
+	catch (...)
+	{
+		log_error(MinerLogger::miner, "Could not write benchmark data into benchmark.csv! Please close it.");
+	}
+}
 
-	NonceConfirmation nonceConfirmation;
-	nonceConfirmation.deadline = 0;
-	nonceConfirmation.json = Poco::format(R"({ "result" : "success", "deadline" : %Lu })", deadline);
-	nonceConfirmation.errorCode = result;
+Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>& data)
+{
+	const auto nonce = std::get<0>(data);
+	const auto accountId = std::get<1>(data);
+	const auto deadline = std::get<2>(data);
+	const auto blockheight = std::get<3>(data);
+	const auto& plotFile = std::get<4>(data);
+	const auto ownAccount = std::get<5>(data);
 
-	return nonceConfirmation;
+	return submitNonce(nonce, accountId, deadline, blockheight, plotFile, ownAccount);
 }
 
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight)
@@ -583,15 +625,58 @@ Burst::MinerData& Burst::Miner::getData()
 	return data_;
 }
 
-std::shared_ptr<Burst::Account> Burst::Miner::getAccount(AccountId id)
+std::shared_ptr<Burst::Account> Burst::Miner::getAccount(AccountId id, bool persistent)
 {
-	if (!accounts_.isLoaded(id))
-		return nullptr;
-
-	return accounts_.getAccount(id, wallet_, true);
+	return accounts_.getAccount(id, wallet_, persistent);
 }
 
-void Burst::Miner::setMiningIntensity(Poco::UInt32 intensity)
+void Burst::Miner::createPlotVerifiers()
+{
+	const auto& processorType = MinerConfig::getConfig().getProcessorType();
+	const auto& cpuInstructionSet = MinerConfig::getConfig().getCpuInstructionSet();
+	auto forceSse2 = false;
+
+	if (processorType == "CPU")
+	{
+		if (cpuInstructionSet == "SSE4" && Settings::Sse4)
+			MinerHelper::create_worker<PlotVerifier_sse4>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+				*this, verificationQueue_, progressVerify_);
+		else if (cpuInstructionSet == "AVX" && Settings::Avx)
+			MinerHelper::create_worker<PlotVerifier_avx>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+				*this, verificationQueue_, progressVerify_);
+		else if (cpuInstructionSet == "AVX2" && Settings::Avx2)
+			MinerHelper::create_worker<PlotVerifier_avx2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+				*this, verificationQueue_, progressVerify_);
+		else if (cpuInstructionSet == "SSE2"); // do nothing
+        else
+			forceSse2 = true;
+	}
+	else if (processorType == "CUDA" && Settings::Cuda)
+	{
+		MinerHelper::create_worker<PlotVerifier_cuda>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+			*this, verificationQueue_, progressVerify_);
+	}
+	else if (processorType == "OPENCL" && Settings::OpenCl)
+	{
+		MinerHelper::create_worker<PlotVerifier_opencl>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+			*this, verificationQueue_, progressVerify_);
+	}
+	else
+		forceSse2 = true;
+	
+	if (forceSse2 || (processorType == "CPU" && cpuInstructionSet == "SSE2"))
+	{
+		MinerHelper::create_worker<PlotVerifier_sse2>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
+			*this, verificationQueue_, progressVerify_);
+	
+		if (forceSse2)
+			log_warning(MinerLogger::miner, "You are using the processor type %s with the instruction set %s,\n"
+				"but your miner is compiled without that feature!\n"
+				"As a fallback solution CPU with SSE2 is used.", processorType, cpuInstructionSet);
+	}
+}
+
+void Burst::Miner::setMiningIntensity(unsigned intensity)
 {
 	Poco::Mutex::ScopedLock lock(worker_mutex_);
 
@@ -602,11 +687,10 @@ void Burst::Miner::setMiningIntensity(Poco::UInt32 intensity)
 
 	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
 	MinerConfig::getConfig().setMininigIntensity(intensity);
-	MinerHelper::create_worker<PlotVerifier>(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(),
-		*this, verificationQueue_, progressVerify_);
+	createPlotVerifiers();
 }
 
-void Burst::Miner::setMaxPlotReader(Poco::UInt32 max_reader)
+void Burst::Miner::setMaxPlotReader(unsigned max_reader)
 {
 	Poco::Mutex::ScopedLock lock(worker_mutex_);
 

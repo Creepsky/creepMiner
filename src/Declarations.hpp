@@ -53,6 +53,7 @@ namespace Burst
 	struct ProjectData
 	{
 		ProjectData(std::string&& name, Version version);
+		void refreshNameAndVersion();
 
 		std::string name;
 		Version version;
@@ -89,9 +90,13 @@ namespace Burst
 		static constexpr auto Arch = "x32";
 #endif
 
-		static const std::string Cpu_Instruction_Set;
+		static std::string Cpu_Instruction_Set;
 		static const Version ProjectVersion;
-		static const ProjectData Project;
+		static ProjectData Project;
+
+		static const bool Sse4, Avx, Avx2, Cuda, OpenCl;
+
+		static void setCpuInstructionSet(std::string cpuInstructionSet);
 	};
 
 	template <size_t SZ>

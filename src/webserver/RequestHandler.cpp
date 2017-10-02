@@ -39,6 +39,8 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/StringTokenizer.h>
 #include <Poco/Net/HTMLForm.h>
+#include "plots/PlotGenerator.hpp"
+#include <regex>
 
 const std::string COOKIE_USER_NAME = "creepminer-webserver-user";
 const std::string COOKIE_PASS_NAME = "creepminer-webserver-pass";
@@ -262,12 +264,31 @@ void Burst::RequestHandler::redirect(Poco::Net::HTTPServerRequest& request, Poco
 
 void Burst::RequestHandler::forward(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, HostType hostType)
 {
+	auto forward = MinerConfig::getConfig().isForwardingEverything();
+
+	if (!forward)
+	{
+		const Poco::URI uri(request.getURI());
+		const auto pathAndQuery = uri.getPathAndQuery();
+
+		const auto& whitelist = MinerConfig::getConfig().getForwardingWhitelist();
+
+		for (auto i = whitelist.begin(); i != whitelist.end() && !forward; ++i)
+			forward = regex_match(pathAndQuery, std::regex(*i));
+
+		if (!forward)
+		{
+			log_information(MinerLogger::server, "Filtered bad request: %s", pathAndQuery);
+			return RequestHandler::badRequest(request, response);
+		}
+	}
+
 	auto session = MinerConfig::getConfig().createSession(hostType);
 
 	if (session == nullptr)
 		return;
 
-	log_information(MinerLogger::server, "Forwarding request\n\t%s", request.getURI());
+	log_information(MinerLogger::server, "Forwarding request:\n\t%s", request.getURI());
 
 	try
 	{
@@ -410,22 +431,45 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 	try
 	{
 		std::string plotsHash = "";
+		Poco::UInt64 capacity = 0;
+
+		if (request.has(X_Capacity))
+			capacity = Poco::NumberParser::parseUnsigned64(request.get(X_Capacity));
 
 		try
 		{
 			if (request.has(X_PlotsHash))
 			{
-				auto plotsHashEncoded = request.get(X_PlotsHash);
-				Poco::URI::decode(plotsHashEncoded, plotsHash);
-				PlotSizes::set(plotsHash, Poco::NumberParser::parseUnsigned64(request.get(X_Capacity)));
+				if (MinerConfig::getConfig().isCumulatingPlotsizes())
+				{
+					const auto plotsHashEncoded = request.get(X_PlotsHash);
+					Poco::URI::decode(plotsHashEncoded, plotsHash);
 
-				// send new settings to websockets
-				server.sendToWebsockets(createJsonConfig());
+					PlotSizes::set(plotsHash, capacity);
+					
+					// send new settings to websockets
+					server.sendToWebsockets(createJsonConfig());
+				}
 			}
 		}
 		catch (Poco::Exception&)
 		{
 			log_debug(MinerLogger::server, "The X-PlotsHash from the other miner is not a number! %s", request.get(X_PlotsHash));
+		}
+
+		auto miningInfoOk = false;
+
+		while (!miningInfoOk)
+		{
+			try
+			{
+				miner.getGensig();
+				miningInfoOk = true;
+			}
+			catch (...)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			}
 		}
 
 		Poco::URI uri{ request.getURI() };
@@ -434,6 +478,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		Poco::UInt64 nonce = 0;
 		Poco::UInt64 deadline = 0;
 		std::string plotfile = "";
+		Poco::UInt64 blockheight = 0;
+		std::string minerName = "";
 
 		for (const auto& param : uri.getQueryParameters())
 		{
@@ -441,11 +487,15 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 				accountId = Poco::NumberParser::parseUnsigned64(param.second);
 			else if (param.first == "nonce")
 				nonce = Poco::NumberParser::parseUnsigned64(param.second);
+			else if (param.first == "blockheight")
+				blockheight = Poco::NumberParser::parseUnsigned64(param.second);
+			else if (param.first == "deadline")
+				deadline = Poco::NumberParser::parseUnsigned64(param.second) / miner.getBaseTarget();
 		}
 
 		if (request.has(X_Plotfile))
 		{
-			auto plotfileEncoded = request.get(X_Plotfile);
+			const auto plotfileEncoded = request.get(X_Plotfile);
 			Poco::URI::decode(plotfileEncoded, plotfile);
 		}
 
@@ -459,24 +509,42 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (plotfile.empty())
 			plotfile = !plotsHash.empty() ? plotsHash : "unknown";
+		
+		if (blockheight == 0)
+			blockheight = miner.getBlockheight();
+
+		if ((deadline == 0 || MinerConfig::getConfig().isCalculatingEveryDeadline()) &&
+			blockheight == miner.getBlockheight())
+			deadline = PlotGenerator::generateAndCheck(accountId, nonce, miner);
+
+		if (request.has(X_Miner) && MinerConfig::getConfig().isForwardingMinerName())
+			minerName = request.get(X_Miner);
 
 		log_information(MinerLogger::server, "Got nonce forward request (%s)\n"
-			"\tnonce: %Lu\n"
+			"\tnonce:   %s\n"
 			"\taccount: %s\n"
-			"\tin: %s",
-			deadlineFormat(deadline), nonce,
-			account->getName().empty() ? account->getAddress() : account->getName(),
-			plotfile
+			"\theight:  %s\n"
+			"\tin:      %s",
+			blockheight == miner.getBlockheight() ? deadlineFormat(deadline) : "for last block!",
+			numberToString(nonce),
+			account->getAddress(),
+			numberToString(blockheight), plotfile
 		);
 
-		if (accountId != 0 && nonce != 0 && deadline != 0)
+		if (blockheight != miner.getBlockheight())
 		{
-			auto future = miner.submitNonceAsync(std::make_tuple(nonce, accountId, deadline,
-				miner.getBlockheight(), plotfile));
+			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+			response.setChunkedTransferEncoding(true);
+			auto& responseData = response.send();
 
-			future.wait();
-
-			auto forwardResult = future.data();
+			responseData << Poco::format(
+				R"({ "result" : "Your submitted deadline is for another block!", "nonce" : %Lu, "blockheight" : %Lu, "currentBlockheight" : %Lu })",
+				nonce, blockheight, miner.getBlockheight());
+		}
+		else if (accountId != 0 && nonce != 0 && deadline != 0)
+		{
+			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline,
+				miner.getBlockheight(), plotfile, false, minerName, capacity);
 
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setChunkedTransferEncoding(true);
@@ -561,17 +629,17 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 				else if (key == "plot-readers")
 					miner.setMaxPlotReader(np::parseUnsigned(value));
 				else if (key == "submission-max-retry")
-					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned64(value));
+					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned(value));
 				else if (key == "target-deadline")
 					MinerConfig::getConfig().setTargetDeadline(value);
 				else if (key == "timeout")
 					MinerConfig::getConfig().setTimeout(static_cast<float>(np::parseFloat(value)));
 				else if (key == "log-dir")
 					MinerConfig::getConfig().setLogDir(value);
-				else if (Poco::icompare(key, 4, std::string("cmb_")) == 0)
+				else if (Poco::icompare(key, std::string("cmb_").size(), std::string("cmb_")) == 0)
 				{
-					auto logger_name = Poco::replace(key, "cmb_", "");
-					auto logger_priority = static_cast<Poco::Message::Priority>(np::parse(value));
+					const auto logger_name = Poco::replace(key, "cmb_", "");
+					const auto logger_priority = static_cast<Poco::Message::Priority>(np::parse(value));
 					MinerLogger::setChannelPriority(logger_name, logger_priority);
 				}
 				else

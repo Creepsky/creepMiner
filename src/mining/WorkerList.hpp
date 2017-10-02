@@ -38,7 +38,7 @@ namespace Burst
 		template <typename ...Args>
 		WorkerList(Poco::Thread::Priority priority, size_t size, Args&&... args)
 		{
-			for (auto i = 0u; i < size; ++i)
+			for (size_t i = 0; i < size; ++i)
 				create(priority, std::forward<Args>(args)...);
 		}
 

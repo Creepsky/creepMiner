@@ -33,7 +33,6 @@
 #include "plots/PlotSizes.hpp"
 #include <Poco/Net/HTMLForm.h>
 #include "mining/Deadline.hpp"
-#include <Poco/Base64Encoder.h>
 
 using namespace Poco::Net;
 
@@ -95,22 +94,23 @@ Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 	uri.addQueryParameter("requestType", "submitNonce");
 	uri.addQueryParameter("nonce", std::to_string(deadline.getNonce()));
 	uri.addQueryParameter("accountId", std::to_string(deadline.getAccountId()));
+	uri.addQueryParameter("blockheight", std::to_string(deadline.getBlock()));
 	
 	if (!MinerConfig::getConfig().getPassphrase().empty())
 		uri.addQueryParameter("secretPhrase", MinerConfig::getConfig().getPassphrase());
 	
 	std::string plotFileStr, plotsHashStr;
 
-	auto plotFileStrDecoded = deadline.getPlotFile();
-	auto plotsHashStrDecoded = MinerConfig::getConfig().getConfig().getPlotsHash();
+	const auto plotFileStrDecoded = deadline.getPlotFile();
+	const auto plotsHashStrDecoded = MinerConfig::getConfig().getConfig().getPlotsHash();
 
 	Poco::URI::encode(plotFileStrDecoded, "", plotFileStr);
 	Poco::URI::encode(plotsHashStrDecoded, "", plotsHashStr);
 
 	HTTPRequest request{HTTPRequest::HTTP_POST, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
-	request.set(X_Capacity, std::to_string(PlotSizes::getTotal()));
+	request.set(X_Capacity, std::to_string(deadline.getTotalPlotsize()));
 	request.set(X_PlotsHash, plotsHashStr);
-	request.set(X_Miner, Settings::Project.nameAndVersionVerbose);
+	request.set(X_Miner, deadline.getMiner());
 	request.set(X_Deadline, std::to_string(deadline.getDeadline()));
 	request.set(X_Plotfile, plotFileStr);
 	request.setKeepAlive(false);

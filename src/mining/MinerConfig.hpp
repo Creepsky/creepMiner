@@ -136,27 +136,28 @@ namespace Burst
 		Url getMiningInfoUrl() const;
 		Url getWalletUrl() const;
 
-		size_t getReceiveMaxRetry() const;
-		size_t getSendMaxRetry() const;
-		size_t getSubmissionMaxRetry() const;
-		size_t getHttp() const;
+		unsigned getReceiveMaxRetry() const;
+		unsigned getSendMaxRetry() const;
+		unsigned getSubmissionMaxRetry() const;
+		unsigned getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
 		bool getStartServer() const;
 		Url getServerUrl() const;
 		Poco::UInt64 getTargetDeadline() const;
-		size_t getMiningIntensity() const;
+		unsigned getMiningIntensity() const;
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		bool useInsecurePlotfiles() const;
 		bool isLogfileUsed() const;
-		size_t getMiningInfoInterval() const;
+		unsigned getMiningInfoInterval() const;
 		bool isRescanningEveryBlock() const;
 		LogOutputType getLogOutputType() const;
 		bool isUsingLogColors() const;
 		bool isSteadyProgressBar() const;
 		bool isFancyProgressBar() const;
-		size_t getBufferChunkCount() const;
+		unsigned getBufferChunkCount() const;
+		bool isCalculatingEveryDeadline() const;
 
 		/**
 		 * \brief Returns the maximal amount of simultane plot reader.
@@ -164,26 +165,38 @@ namespace Burst
 		 * If false the actual value will be returned.
 		 * \return The maximal amount of simultane plot reader.
 		 */
-		size_t getMaxPlotReaders(bool real = true) const;
+		unsigned getMaxPlotReaders(bool real = true) const;
 		Poco::Path getPathLogfile() const;
 		std::string getLogDir() const;
 		std::string getServerUser() const;
 		std::string getServerPass() const;
-		size_t getWalletRequestTries() const;
-		size_t getWalletRequestRetryWaitTime() const;
-		size_t getWakeUpTime() const;
+		unsigned getWalletRequestTries() const;
+		unsigned getWalletRequestRetryWaitTime() const;
+		unsigned getWakeUpTime() const;
+		const std::string& getCpuInstructionSet() const;
+		const std::string& getProcessorType() const;
+		bool isBenchmark() const;
+		long getBenchmarkInterval() const;
+		unsigned getGpuPlatform() const;
+		unsigned getGpuDevice() const;
+		unsigned getMaxConnectionsQueued() const;
+		unsigned getMaxConnectionsActive() const;
+		bool isForwardingEverything() const;
+		const std::vector<std::string>& getForwardingWhitelist() const;
+		bool isCumulatingPlotsizes() const;
+		bool isForwardingMinerName() const;
 
 		void setUrl(std::string url, HostType hostType);
-		void setBufferSize(uint64_t bufferSize);
-		void setMaxSubmissionRetry(uint64_t value);
+		void setBufferSize(Poco::UInt64 bufferSize);
+		void setMaxSubmissionRetry(unsigned value);
 		void setTimeout(float value);
 		void setTargetDeadline(const std::string& target_deadline);
-		void setTargetDeadline(uint64_t target_deadline);
+		void setTargetDeadline(Poco::UInt64 target_deadline);
 		void setMininigIntensity(unsigned intensity);
 		void setMaxPlotReaders(unsigned max_reader);
 		void setLogDir(const std::string& log_dir);
-		void setGetMiningInfoInterval(size_t interval);
-		void setBufferChunkCount(size_t bufferChunkCount);
+		void setGetMiningInfoInterval(unsigned interval);
+		void setBufferChunkCount(unsigned bufferChunkCount);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.
@@ -226,10 +239,10 @@ namespace Burst
 		std::string configPath_;
 		std::vector<std::shared_ptr<PlotDir>> plotDirs_;
 		float timeout_ = 45.f;
-		size_t send_max_retry_ = 3;
-		size_t receive_max_retry_ = 3;
-		size_t submission_max_retry_ = 3;
-		size_t http_ = 0;
+		unsigned send_max_retry_ = 3;
+		unsigned receive_max_retry_ = 3;
+		unsigned submission_max_retry_ = 3;
+		unsigned http_ = 0;
 		std::string confirmedDeadlinesPath_ = "";
 		Url urlPool_;
 		Url urlMiningInfo_;
@@ -237,25 +250,36 @@ namespace Burst
 		bool startServer_ = false;
 		Url serverUrl_;
 		Poco::UInt64 targetDeadline_ = 0;
-		size_t miningIntensity_ = 1;
+		unsigned miningIntensity_ = 1;
 		std::string plotsHash_;
 		std::string serverUser_, serverPass_;
-		size_t maxPlotReaders_ = 0;
+		unsigned maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
-		size_t maxBufferSizeMB_ = 256;
-		size_t bufferChunkCount_ = 8;
-		size_t walletRequestTries_ = 5;
-		size_t walletRequestRetryWaitTime_ = 3;
-		Passphrase passphrase_;
+		Poco::UInt64 maxBufferSizeMB_ = 256;
+		unsigned bufferChunkCount_ = 8;
+		unsigned walletRequestTries_ = 5;
+		unsigned walletRequestRetryWaitTime_ = 3;
+		Passphrase passphrase_ = {};
 		bool useInsecurePlotfiles_ = false;
 		bool logfile_ = true;
-		size_t getMiningInfoInterval_ = 3;
-		bool rescanEveryBlock_ = true;
+		unsigned getMiningInfoInterval_ = 3;
+		bool rescanEveryBlock_ = false;
 		LogOutputType logOutputType_ = LogOutputType::Terminal;
 		bool logUseColors_ = true;
 		bool steadyProgressBar_ = true;
 		bool fancyProgressBar_ = true;
-		size_t wakeUpTime_ = 0;
+		unsigned wakeUpTime_ = 0;
+		std::string cpuInstructionSet_ = "SSE2";
+		std::string processorType_ = "CPU";
+		bool benchmark_ = false;
+		long benchmarkInterval_ = 60;
+		unsigned gpuPlatform_ = 0, gpuDevice_ = 0;
+		bool checkForwardDeadlines_ = false;
+		unsigned maxConnectionsQueued_ = 100, maxConnectionsActive_ = 16;
+		std::vector<std::string> forwardingWhitelist_;
+		bool cumulatePlotsizes_ = true;
+		bool minerNameForwarding_ = true;
+		bool calculateEveryDeadline_ = false;
 		mutable Poco::Mutex mutex_;
 	};
 }

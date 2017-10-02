@@ -84,10 +84,13 @@ void Burst::MinerServer::run(uint16_t port)
 
 	auto params = new HTTPServerParams;
 
-	params->setMaxQueued(100);
-	params->setMaxThreads(16);
+
+	params->setMaxQueued(MinerConfig::getConfig().getMaxConnectionsQueued());
+	params->setMaxThreads(MinerConfig::getConfig().getMaxConnectionsActive());
 	params->setServerName(Settings::Project.name);
 	params->setSoftwareVersion(Settings::Project.nameAndVersion);
+
+	threadPool_.addCapacity(MinerConfig::getConfig().getMaxConnectionsActive());
 
 	if (server_ != nullptr)
 		server_->stopAll(true);
@@ -102,8 +105,6 @@ void Burst::MinerServer::run(uint16_t port)
 		}
 		catch (Poco::Exception& exc)
 		{
-			server_.release();
-
 			log_fatal(MinerLogger::server, "Could not start local server: %s", exc.displayText());
 			log_current_stackframe(MinerLogger::server);
 		}
@@ -161,7 +162,7 @@ void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> webs
 	}
 
 	if (error)
-		websocket.release();
+		websocket.reset();
 	else
 		websockets_.emplace_back(move(websocket));
 	
@@ -264,7 +265,16 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 			RequestHandler::addWebsocket(req, res, *server_);
 		});
 
+	std::stringstream sstream;
+	sstream << "Request: " << request.getURI() << std::endl;
+	sstream << "Ip: " << request.clientAddress().toString() << std::endl;
+	sstream << "Method: " << request.getMethod() << std::endl;
+	
+	for (const auto& header : request)
+		sstream << header.first << ':' << header.second << std::endl;
+	
 	log_debug(MinerLogger::server, "Request: %s", request.getURI());
+	log_file_only(MinerLogger::server, Poco::Message::PRIO_INFORMATION, TextType::Information, sstream.str());
 
 	try
 	{

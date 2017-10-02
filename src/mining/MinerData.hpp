@@ -49,7 +49,7 @@ namespace Burst
 		Combined
 	};
 
-	class BlockData : public Poco::ActiveDispatcher
+	class BlockData
 	{
 	public:
 		enum class DeadlineSearchType
@@ -77,7 +77,7 @@ namespace Burst
 		Poco::UInt64 getScoop() const;
 		Poco::UInt64 getBasetarget() const;
 		std::shared_ptr<Account> getLastWinner() const;
-		Poco::ActiveResult<std::shared_ptr<Account>> getLastWinnerAsync(const Wallet& wallet, const Accounts& accounts);
+		
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
 		std::shared_ptr<Deadline> getBestDeadline() const;
@@ -85,7 +85,8 @@ namespace Burst
 		bool forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const;
 		//const std::unordered_map<AccountId, Deadlines>& getDeadlines() const;
 		std::shared_ptr<Deadline> getBestDeadline(Poco::UInt64 accountId, DeadlineSearchType searchType);
-		
+		Poco::ActiveResult<std::shared_ptr<Account>> getLastWinnerAsync(const Wallet& wallet, Accounts& accounts);
+
 		std::shared_ptr<Deadline> addDeadlineIfBest(Poco::UInt64 nonce, Poco::UInt64 deadline,
 			std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile);
 
@@ -93,9 +94,25 @@ namespace Burst
 		void clearEntries() const;
 
 	protected:
-		std::shared_ptr<Account> runGetLastWinner(const std::pair<const Wallet*, const Accounts*>& args);
+		
 		void addBlockEntry(Poco::JSON::Object entry) const;
 		void confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline);
+
+	private:
+		class DataLoader : public Poco::ActiveDispatcher
+		{
+		public:
+			DataLoader();
+			~DataLoader() override;
+
+			static DataLoader& getInstance();
+
+			Poco::ActiveMethod<std::shared_ptr<Account>, std::tuple<const Wallet&, Accounts&, BlockData&>, DataLoader,
+			                   Poco::ActiveStarter<ActiveDispatcher>> getLastWinner;
+
+		private:
+			std::shared_ptr<Account> runGetLastWinner(const std::tuple<const Wallet&, Accounts&, BlockData&>& args);
+		};
 
 	private:
 		std::shared_ptr<Burst::Deadline> getBestDeadlineUnlocked(Poco::UInt64 accountId,
@@ -110,10 +127,8 @@ namespace Burst
 		std::string genSigStr_ = "";
 		std::shared_ptr<std::vector<Poco::JSON::Object>> entries_;
 		std::shared_ptr<Account> lastWinner_ = nullptr;
-		std::unordered_map<AccountId, Deadlines> deadlines_;
+		std::unordered_map<AccountId, std::shared_ptr<Deadlines>> deadlines_;
 		std::shared_ptr<Deadline> bestDeadline_;
-		Poco::ActiveMethod<std::shared_ptr<Account>, std::pair<const Wallet*, const Accounts*>, BlockData,
-			Poco::ActiveStarter<ActiveDispatcher>> activityLastWinner_;
 		MinerData* parent_;
 		Poco::JSON::Object::Ptr jsonProgress_;
 		std::unordered_map<std::string, Poco::JSON::Object::Ptr> jsonDirProgress_;
@@ -122,10 +137,11 @@ namespace Burst
 		friend class Deadlines;
 	};
 
-	class MinerData
+	class MinerData : public Poco::ActiveDispatcher
 	{
 	public:
 		MinerData();
+		~MinerData() override;
 		
 		std::shared_ptr<BlockData> startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig);
 		void setTargetDeadline(Poco::UInt64 deadline);
@@ -148,11 +164,14 @@ namespace Burst
 		Poco::UInt64 getCurrentBlockheight() const;
 		Poco::UInt64 getCurrentBasetarget() const;
 		Poco::UInt64 getCurrentScoopNum() const;
+		Poco::ActiveResult<Poco::UInt64> getWonBlocksAsync(const Wallet& wallet, const Accounts& accounts);
 
 		Poco::BasicEvent<const Poco::JSON::Object> blockDataChangedEvent;
 
+	protected:
+		Poco::UInt64 runGetWonBlocks(const std::pair<const Wallet*, const Accounts*>& args);
+
 	private:
-		void addWonBlock();
 		void addConfirmedDeadline();
 		void setBestDeadline(std::shared_ptr<Deadline> deadline);
 
@@ -169,6 +188,9 @@ namespace Burst
 		std::atomic<Poco::UInt64> currentBlockheight_;
 		std::atomic<Poco::UInt64> currentBasetarget_;
 		std::atomic<Poco::UInt64> currentScoopNum_;
+
+		Poco::ActiveMethod<Poco::UInt64, std::pair<const Wallet*, const Accounts*>, MinerData,
+						   Poco::ActiveStarter<MinerData>> activityWonBlocks_;
 
 		friend class BlockData;
 	};

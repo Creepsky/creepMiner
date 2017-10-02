@@ -19,10 +19,11 @@
 // 
 // ==========================================================================
 
+#define CUDA_API_PER_THREAD_DEFAULT_STREAM
+
 #include "mining/Miner.hpp"
 #include "logging/MinerLogger.hpp"
 #include "mining/MinerConfig.hpp"
-#include "MinerUtil.hpp"
 #include <Poco/Net/SSLManager.h>
 #include "Poco/Net/ConsoleCertificateHandler.h"
 #include "Poco/Net/HTTPSStreamFactory.h"
@@ -34,6 +35,12 @@
 #include <Poco/Logger.h>
 #include "network/Request.hpp"
 #include <Poco/Net/HTTPRequest.h>
+#include "mining/MinerCL.hpp"
+#include "gpu/impl/gpu_cuda_impl.hpp"
+#include <Poco/Util/OptionSet.h>
+#include <Poco/Util/OptionProcessor.h>
+#include <Poco/Util/HelpFormatter.h>
+#include <Poco/Util/Validator.h>
 
 class SSLInitializer
 {
@@ -49,9 +56,99 @@ public:
 	}
 };
 
+struct Arguments
+{
+	Arguments()
+	{
+		using Poco::Util::Option;
+
+		options_.addOption(Option("help", "h", "display help information")
+			.required(false)
+			.repeatable(false)
+			.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::displayHelp)));
+
+		options_.addOption(Option("config", "c", "Path to the config file")
+			.required(false)
+			.repeatable(false)
+			.argument("path")
+			.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::setConfPath)));
+	}
+
+	bool process(int argc, const char* argv[])
+	{
+		Poco::Util::OptionProcessor optionProcessor(options_);
+		optionProcessor.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+
+		try
+		{
+			for (auto i = 1; i < argc; ++i)
+			{
+				std::string name;
+				std::string value;
+				
+				if (optionProcessor.process(argv[i], name, value))
+				{
+					if (!name.empty())
+					{
+						const auto& option = options_.getOption(name);
+
+						if (option.validator())
+							option.validator()->validate(option, value);
+
+						if (option.callback())
+							option.callback()->invoke(name, value);
+					}
+				}
+			}
+			
+			optionProcessor.checkRequired();
+			return true;
+		}
+		catch (...)
+		{
+			displayHelp("", "");
+			return false;
+		}
+	}
+
+	bool helpRequested = false;
+	std::string confPath = "mining.conf";
+
+private:
+	void displayHelp(const std::string& name, const std::string& value)
+	{
+		Poco::Util::HelpFormatter helpFormatter(options_);
+		helpFormatter.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+		helpFormatter.setCommand("creepMiner");
+		helpFormatter.setUsage("<options>");
+		helpFormatter.setHeader("Burstcoin cryptocurrency CPU and GPU miner.");
+		helpFormatter.setFooter("Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)");
+		helpFormatter.setAutoIndent();
+		helpFormatter.format(std::cout);
+
+		helpRequested = true;
+	}
+
+	void setConfPath(const std::string& name, const std::string& value)
+	{
+		confPath = value;
+	}
+
+private:
+	Poco::Util::OptionSet options_;
+};
+
 int main(int argc, const char* argv[])
 {
 	poco_ndc(main);
+
+	Arguments arguments;
+
+	if (!arguments.process(argc, argv))
+		return EXIT_FAILURE;
+
+	if (arguments.helpRequested)
+		return EXIT_SUCCESS;
 
 	Burst::MinerLogger::setup();
 	
@@ -68,28 +165,28 @@ int main(int argc, const char* argv[])
 	std::string mode = "Debug";
 #endif
 
+	using Burst::Settings;
+
+	std::stringstream sstream;
+
+	const auto checkAndPrint = [&](bool flag, const std::string& text) {
+		sstream << ' ' << (flag ? '+' : '-') << text;
+	};
+	
+	checkAndPrint(Settings::Cuda, "CUDA");
+	checkAndPrint(Settings::OpenCl, "OpenCL");
+	checkAndPrint(Settings::Sse4, "SSE4");
+	checkAndPrint(Settings::Avx, "AVX");
+	checkAndPrint(Settings::Avx2, "AVX2");
+
 	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
-	log_information(general, "%s mode", mode);
+	log_information(general, "%s mode%s", mode, sstream.str());
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
 	log_information(general, "Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
 	log_information(general, "----------------------------------------------");
-
-	std::string configFile = "mining.conf";
-
-	if (argc > 1)
-	{
-		if (argv[1][0] == '-')
-		{
-			log_information(general, "usage : creepMiner <config-file>");
-			log_information(general, "if no config-file specified, program will look for mining.conf file inside current directory");
-		}
-		configFile = std::string(argv[1]);
-	}
-
-	log_system(general, "using config file %s", configFile);
-	
+		
 	try
 	{
 		using namespace Poco;
@@ -98,8 +195,8 @@ int main(int argc, const char* argv[])
 		SSLInitializer sslInitializer;
 		HTTPSStreamFactory::registerFactory();
 
-		SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
-		Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "", "", "",
+		const SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
+		const Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "", "", "",
 			Context::VERIFY_RELAXED, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
 		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
 
@@ -127,7 +224,7 @@ int main(int argc, const char* argv[])
 				// first we check if the online version begins with the prefix
 				if (Poco::icompare(responseString, 0, versionPrefix.size(), versionPrefix) == 0)
 				{
-					auto onlineVersionStr = responseString.substr(versionPrefix.size());
+					const auto onlineVersionStr = responseString.substr(versionPrefix.size());
 
 					Burst::Version onlineVersion{ onlineVersionStr };
 
@@ -140,8 +237,17 @@ int main(int argc, const char* argv[])
 		catch (...)
 		{ }
 
-		if (Burst::MinerConfig::getConfig().readConfigFile(configFile))
+		if (Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath))
 		{
+			if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
+				Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
+					Burst::MinerConfig::getConfig().getGpuDevice());
+			else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
+			{
+				Burst::Gpu_Cuda_Impl::listDevices();
+				Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
+			}
+
 			Burst::Miner miner;
 			Burst::MinerServer server{miner};
 

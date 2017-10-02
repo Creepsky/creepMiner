@@ -2,13 +2,19 @@
 # Project and CMake settings
 ##################################################################
 cmake_minimum_required(VERSION 3.0.2)
-project(creepMiner VERSION 1.6.0)
+project(creepMiner VERSION 1.7.0)
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_BUILD_TYPE RELEASE)
 
 ##################################################################
 # Configuration types
 ##################################################################
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+
+option(MINIMAL_BUILD "If yes, the miner will be build without any extras like CUDA, CPU instructions..." OFF)
+option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
 
 ##################################################################
 # Environment variables
@@ -19,53 +25,10 @@ if (MSVC)
 endif ()
 
 ##################################################################
-# BENCHMARK
-##################################################################
-option(RUN_BENCHMARK "If yes, a benchmark will be run" OFF)
-
-if (RUN_BENCHMARK)
-	add_definitions(-DRUN_BENCHMARK)
-endif ()
-
-##################################################################
-# CPU instruction set
-##################################################################
-set(CPU_INSTRUCTION_SET "NONE" CACHE STRING "Additional CPU instruction set")
-set_property(CACHE CPU_INSTRUCTION_SET PROPERTY STRINGS NONE SSE2 SSE4 AVX AVX2)
-
-if (CPU_INSTRUCTION_SET STREQUAL "AVX2")
-	add_definitions(-DUSE_AVX2)
-	if (MSVC)
-		add_definitions(/arch:AVX2)
-	else ()
-		add_definitions(-mavx2)
-	endif ()
-elseif (CPU_INSTRUCTION_SET STREQUAL "AVX")
-	add_definitions(-DUSE_AVX)
-	if (MSVC)
-		add_definitions(/arch:AVX)
-	else ()
-		add_definitions(-mavx)
-	endif ()
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
-	if (MSVC)
-		add_definitions(/arch:SSE2)
-	else ()
-		add_definitions(-msse2)
-	endif ()
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
-	add_definitions(-DUSE_SSE4)
-	if (MSVC)
-	else ()
-		add_definitions(-msse4)
-	endif ()
-endif ()
-
-##################################################################
 # CPU architecture (only for Unix/Mac)
 ##################################################################
 if (UNIX OR APPLE)
-	set(CPU_ARCH "X32 X64" CACHE STRING "CPU architecture")
+	set(CPU_ARCH "X64" CACHE STRING "CPU architecture")
 	set_property(CACHE CPU_ARCH PROPERTY STRINGS X32 X64)
 	
 	if (CPU_ARCH STREQUAL "X32")
@@ -76,25 +39,30 @@ endif ()
 ##################################################################
 # GPU acceleration
 ##################################################################
-set(GPU_ACCELERATION "NONE" CACHE STRING "GPU acceleration")
-set_property(CACHE GPU_ACCELERATION PROPERTY STRINGS NONE CUDA) 
+option(USE_CUDA "If yes, CUDA will be enabled" ON)
+option(USE_OPENCL "If yes, OpenCL will be enabled" ON)
 
-if (GPU_ACCELERATION STREQUAL "CUDA")
-	find_package(CUDA REQUIRED)
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-cuda)
-	set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
-	set(CUDA_NVCC_FLAGS
-		${CUDA_NVCC_FLAGS}
-		-std=c++11
-		-arch=${GPU_CUDA_ARCH}
-		-gencode=arch=compute_30,code=sm_30
-		-gencode=arch=compute_50,code=sm_50
-		-gencode=arch=compute_52,code=sm_52
-		-gencode=arch=compute_52,code=compute_52
-		-gencode=arch=compute_60,code=sm_60
-		-gencode=arch=compute_61,code=sm_61
-		-gencode=arch=compute_62,code=sm_62)
-	add_definitions(-DMINING_CUDA)
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	 find_package(CUDA REQUIRED)
+	 add_definitions(-DUSE_CUDA)
+	 set(GPU_CUDA_ARCH "sm_52" CACHE STRING "The CUDA architecture")
+	 set(CUDA_NVCC_FLAGS
+		 ${CUDA_NVCC_FLAGS}
+		 -arch=${GPU_CUDA_ARCH}
+		 -std=c++11
+		 -default-stream per-thread
+		 -gencode=arch=compute_30,code=sm_30
+		 -gencode=arch=compute_50,code=sm_50
+		 -gencode=arch=compute_52,code=sm_52
+		 -gencode=arch=compute_52,code=compute_52
+		 -gencode=arch=compute_60,code=sm_60
+		 -gencode=arch=compute_61,code=sm_61
+		 -gencode=arch=compute_62,code=sm_62)
+endif()
+
+if (USE_OPENCL AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	find_package(OpenCL REQUIRED)
+	add_definitions(-DUSE_OPENCL)
 endif ()
 
 ##################################################################
@@ -105,14 +73,8 @@ option(OVERWRITE_MINING_CONF "If yes, on install the mining.conf will be overwri
 ##################################################################
 # UNIX / BSD specific
 ##################################################################
-if (UNIX OR APPLE)
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${LOG_OUTPUT_FLAG}")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${LOG_OUTPUT_FLAG} -O3")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${LOG_OUTPUT_FLAG} -O3")
-	set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${LOG_OUTPUT_FLAG} -O3")
-	 
+if (UNIX OR APPLE)	 
 	add_definitions(
-		${LOG_OUTPUT_FLAG}
 		-D_REENTRANT
 		-Wall
 		-march=native
@@ -128,7 +90,6 @@ if (UNIX OR APPLE)
 elseif (MSVC)
 	add_definitions(
 		-DPOCO_STATIC
-		${LOG_OUTPUT_FLAG}
 		-DUNICODE
 		-D_UNICODE)
 
@@ -163,6 +124,12 @@ endif ()
 # Header files
 ##################################################################
 set(HEADER_FILES
+	src/gpu/algorithm/gpu_algorithm_atomic.hpp
+	src/gpu/impl/gpu_cuda_impl.hpp
+	src/gpu/impl/gpu_opencl_impl.hpp
+	src/gpu/gpu_algorithm_shell.hpp
+	src/gpu/gpu_declarations.hpp
+	src/gpu/gpu_shell.hpp
 	src/logging/channels/ColoredPriorityConsoleChannel.hpp
 	src/logging/channels/MinerDataChannel.hpp
 	src/logging/Console.hpp
@@ -172,6 +139,7 @@ set(HEADER_FILES
 	src/logging/ProgressPrinter.hpp
 	src/mining/Deadline.hpp
 	src/mining/Miner.hpp
+	src/mining/MinerCL.hpp
 	src/mining/MinerConfig.hpp
 	src/mining/MinerData.hpp
 	src/network/NonceSubmitter.hpp
@@ -180,6 +148,7 @@ set(HEADER_FILES
 	src/network/Url.hpp
 	src/nxt/nxt_address.h
 	src/plots/Plot.hpp
+	src/plots/PlotGenerator.hpp
 	src/plots/PlotReader.hpp
 	src/plots/PlotSizes.hpp
 	src/plots/PlotVerifier.hpp
@@ -204,6 +173,8 @@ set(HEADER_FILES
 # Source files
 ##################################################################
 set(SOURCE_FILES
+	src/gpu/impl/gpu_cuda_impl.cpp
+	src/gpu/impl/gpu_opencl_impl.cpp
 	src/logging/channels/ColoredPriorityConsoleChannel.cpp
 	src/logging/channels/MinerDataChannel.cpp
 	src/logging/Console.cpp
@@ -213,6 +184,7 @@ set(SOURCE_FILES
 	src/logging/ProgressPrinter.cpp
 	src/mining/Deadline.cpp
 	src/mining/Miner.cpp
+	src/mining/MinerCL.cpp
 	src/mining/MinerConfig.cpp
 	src/mining/MinerData.cpp
 	src/network/NonceSubmitter.cpp
@@ -221,9 +193,11 @@ set(SOURCE_FILES
 	src/network/Url.cpp
 	src/nxt/nxt_address.cpp
 	src/plots/Plot.cpp
+	src/plots/PlotGenerator.cpp
 	src/plots/PlotReader.cpp
 	src/plots/PlotSizes.cpp
 	src/plots/PlotVerifier.cpp
+	src/shabal/MinerShabal.cpp
 	src/wallet/Account.cpp
 	src/wallet/Wallet.cpp
 	src/shabal/sphlib/sph_shabal.cpp
@@ -235,46 +209,53 @@ set(SOURCE_FILES
 	src/logging/Performance.cpp)
 
 ##################################################################
-# GPU acceleration source files
+# Special files and settings
 ##################################################################
-if (GPU_ACCELERATION STREQUAL "CUDA")
-	set(HEADER_FILES
-		${HEADER_FILES}
-		src/gpu/algorithm/gpu_algorithm_atomic.hpp
-		src/gpu/impl/gpu_cuda_impl.hpp
-		src/gpu/gpu_algorithm_shell.hpp
-		src/gpu/gpu_declarations.hpp
-		src/gpu/gpu_shell.hpp)
-	set(SOURCE_FILES
-		${SOURCE_FILES}
-		src/gpu/impl/gpu_cuda_impl.cpp
-		src/shabal/cuda/Shabal.cu)
+option(USE_SSE4 "If yes, SSE4 will be enabled" ON)
+option(USE_AVX "If yes, AVX will be enabled" ON)
+option(USE_AVX2 "If yes, AVX2 will be enabled" ON)
+
+if (USE_SSE4 AND NOT MINIMAL_BUILD)
+	add_definitions(-DUSE_SSE4)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_sse4.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse4)
+	endif ()
 endif ()
 
-##################################################################
-# CPU instruction set source files
-##################################################################
-if (CPU_INSTRUCTION_SET STREQUAL "AVX")
-	set(SOURCE_FILES
-		${SOURCE_FILES}
-		src/shabal/mshabal/mshabal_avx1.cpp)
-elseif (CPU_INSTRUCTION_SET STREQUAL "AVX2")
-	set(SOURCE_FILES
-		${SOURCE_FILES}
-		src/shabal/mshabal/mshabal_avx2.cpp)
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
-	set(SOURCE_FILES
-		${SOURCE_FILES}
-		src/shabal/mshabal/mshabal_sse4.cpp)
+if (USE_AVX AND NOT MINIMAL_BUILD)
+	add_definitions(-DUSE_AVX)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_avx1.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS -mavx)
+	elseif (MSVC)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx1.cpp PROPERTIES COMPILE_FLAGS /arch:AVX)
+	endif ()
 endif ()
+
+if (USE_AVX2 AND NOT MINIMAL_BUILD)
+	add_definitions(-DUSE_AVX2)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_avx2.cpp)
+	if (UNIX OR APPLE)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS -mavx2)
+	elseif (MSVC)
+		set_source_files_properties(src/shabal/mshabal/mshabal_avx2.cpp PROPERTIES COMPILE_FLAGS /arch:AVX2)
+	endif ()
+endif ()
+
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
+endif ()
+
+configure_file(${CMAKE_SOURCE_DIR}/bin/mining.conf ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.conf COPYONLY)
 
 ##################################################################
 # Executable
 ##################################################################
-if (GPU_ACCELERATION STREQUAL "CUDA")
-	cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	 cuda_add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
 else ()
-	add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
+	 add_executable(creepMiner ${SOURCE_FILES} ${HEADER_FILES})
 endif ()
 
 ##################################################################
@@ -316,38 +297,35 @@ elseif (MSVC)
 	configure_file(${OPENSSL_ROOT}/bin/${lib-ssl} ${CMAKE_CURRENT_BINARY_DIR}/bin/${lib-ssl} COPYONLY)
 endif ()
 
+if (USE_OPENCL)
+	target_link_libraries(creepMiner ${OpenCL_LIBRARY})
+	configure_file(${CMAKE_SOURCE_DIR}/src/shabal/opencl/mining.cl ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.cl COPYONLY)
+endif ()
+
 ##################################################################
 # Naming
 ##################################################################
-if (CPU_INSTRUCTION_SET STREQUAL "AVX2")
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-avx2)
-elseif (CPU_INSTRUCTION_SET STREQUAL "AVX")
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-avx)
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE2")
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse2)
-elseif (CPU_INSTRUCTION_SET STREQUAL "SSE4")
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-sse4)
-endif ()
-
-if (RUN_BENCHMARK)
-	set(CREEPMINER_POSTFIX ${CREEPMINER_POSTFIX}-b)
-endif ()
-
-set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX ${CREEPMINER_POSTFIX}-d)
-
-if (NOT ${CREEPMINER_POSTFIX} STREQUAL "")
-	set_target_properties(creepMiner PROPERTIES
-		RELEASE_POSTFIX ${CREEPMINER_POSTFIX}
-		MINSIZEREL_POSTFIX ${CREEPMINER_POSTFIX}
-		RELWITHDEBINFO_POSTFIX ${CREEPMINER_POSTFIX})
-endif ()
+set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
 
 ##################################################################
 # Installing
 ##################################################################
-install(TARGETS creepMiner RUNTIME DESTINATION .)
+install(TARGETS	creepMiner RUNTIME DESTINATION .)
+install(FILES src/shabal/opencl/mining.cl DESTINATION .)
 install(DIRECTORY bin/public DESTINATION .)
 
 if (OVERWRITE_MINING_CONF)
 	install(FILES bin/mining.conf DESTINATION .)
 endif  ()
+
+if (MSVC)
+	install(FILES
+		${OPENSSL_ROOT}/bin/${lib-crypto}
+		${OPENSSL_ROOT}/bin/${lib-ssl}
+		DESTINATION .)
+else ()
+	install(FILES
+		bin/run.sh
+		icon.png
+		DESTINATION .)
+endif ()

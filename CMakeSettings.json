@@ -1,110 +1,80 @@
 {
-  "configurations": [
-    {
-      "name": "x86-Release",
-      "generator": "Visual Studio 15 2017",
-      "configurationType": "Release",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": ""
-    },
-    {
-      "name": "x64-Debug",
-      "generator": "Visual Studio 15 2017 Win64",
-      "configurationType": "Debug",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": ""
-    },
-    {
-      "name": "x64-Release",
-      "generator": "Visual Studio 15 2017 Win64",
-      "configurationType": "Release",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": ""
-    },
-    {
-      "name": "x64-Release-SSE4",
-      "generator": "Visual Studio 15 2017 Win64",
-      "configurationType": "Release",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": "",
-      "variables": [
-        {
-          "name": "CPU_INSTRUCTION_SET",
-          "value": "SSE4"
-        }
-      ]
-    },
-    {
-      "name": "x64-Release-AVX",
-      "generator": "Visual Studio 15 2017 Win64",
-      "configurationType": "Release",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": "",
-      "variables": [
-        {
-          "name": "CPU_INSTRUCTION_SET",
-          "value": "AVX"
-        }
-      ]
-    },
-    {
-      "name": "x64-Release-AVX2",
-      "generator": "Visual Studio 15 2017 Win64",
-      "configurationType": "Release",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": "",
-      "variables": [
-        {
-          "name": "CPU_INSTRUCTION_SET",
-          "value": "AVX2"
-        }
-      ]
-    },
-    {
-      "name": "x64-Release-CUDA",
-      "generator": "Visual Studio 15 2017 Win64",
-      "configurationType": "Release",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "buildCommandArgs": "-m -v:minimal",
-      "ctestCommandArgs": "",
-      "variables": [
-        {
-          "name": "GPU_ACCELERATION",
-          "value": "CUDA"
-        }
-      ]
-    },
-    {
-      "buildCommandArgs": "-m -v:minimal",
-      "buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
-      "cmakeCommandArgs": "",
-      "configurationType": "Release",
-      "ctestCommandArgs": "",
-      "generator": "Visual Studio 15 2017 Win64",
-      "name": "x64-Release-AVX-BENCHMARK",
-      "variables": [
-        {
-          "name": "CPU_INSTRUCTION_SET",
-          "value": "AVX"
-        },
-        {
-          "name": "RUN_BENCHMARK",
-          "value": "ON"
-        }
-      ]
-    }
-  ]
+	"configurations": [
+		{ 			"buildCommandArgs": "-m -v:minimal", 			"buildRoot": "${workspaceRoot}\\bin\\build\\${name}", 			"cmakeCommandArgs": "",
+			"configurationType": "Debug",
+			"ctestCommandArgs": "",
+			"generator": "Visual Studio 15 2017 Win64",
+			"name": "x64-Debug",
+			"variables": [
+				{
+					"name": "CUDA_HOST_COMPILER",
+					"value": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Tools\\MSVC\\14.11.25503\\bin\\HostX64\\x64\\cl.exe"
+				},
+				{
+					"name": "CUDA_NVCC_FLAGS",
+					"value": "--cl-version=2017"
+				},
+				{
+					"name": "USE_CUDA",
+					"value": "true"
+				}
+			]
+		},
+		{
+			"name": "x64-Release",
+			"generator": "Visual Studio 15 2017 Win64",
+			"configurationType": "Release",
+			"buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": "-m -v:minimal",
+			"ctestCommandArgs": "",
+			"variables": [
+				{
+					"name": "CUDA_HOST_COMPILER",
+					"value":
+						"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Tools\\MSVC\\14.11.25503\\bin\\HostX64\\x64\\cl.exe"
+				},
+				{
+					"name": "CUDA_NVCC_FLAGS",
+					"value": "--cl-version=2017"
+				},
+				{
+					"name": "GPU_CUDA_ARCH",
+					"value": "sm_61"
+				},
+				{
+					"name": "USE_CUDA",
+					"value": "true"
+				}
+			]
+		},
+		{
+			"name": "x64-Release-Non-GPU",
+			"generator": "Visual Studio 15 2017 Win64",
+			"configurationType": "Release",
+			"buildRoot": "${workspaceRoot}\\bin\\build\\${name}",
+			"cmakeCommandArgs": "",
+			"buildCommandArgs": "-m -v:minimal",
+			"ctestCommandArgs": "",
+			"variables": [
+				{
+					"name": "CUDA_HOST_COMPILER",
+					"value":
+						"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Tools\\MSVC\\14.11.25503\\bin\\HostX64\\x64\\cl.exe"
+				},
+				{
+					"name": "CUDA_NVCC_FLAGS",
+					"value": "--cl-version=2017"
+				},
+				{
+					"name": "GPU_CUDA_ARCH",
+					"value": "sm_61"
+				},
+				{
+					"name": "NO_GPU",
+					"value": "true"
+				}
+			]
+		}
+	]
 }

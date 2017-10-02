@@ -111,13 +111,15 @@ void Burst::PlotReader::runTask()
 		// check, if the incoming plot-read-notification is for the current round
 		auto currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
 
+		auto& plotList = plotReadNotification->plotList;
+
 		// put in all related plot files
 		for (const auto& relatedPlotList : plotReadNotification->relatedPlotLists)
 			for (const auto& relatedPlotFile : relatedPlotList.second)
-				plotReadNotification->plotList.emplace_back(relatedPlotFile);
+				plotList.emplace_back(relatedPlotFile);
 
-		for (auto plotFileIter = plotReadNotification->plotList.begin();
-			plotFileIter != plotReadNotification->plotList.end() &&
+		for (auto plotFileIter = plotList.begin();
+			plotFileIter != plotList.end() &&
 			!isCancelled() &&
 			currentBlock;
 			++plotFileIter)
@@ -258,7 +260,7 @@ void Burst::PlotReader::runTask()
 					);
     			}
 
-				const auto nonceBytes = static_cast<float>(plotFile.getNonces() * Settings::ScoopSize);
+				const auto nonceBytes = static_cast<double>(plotFile.getNonces() * Settings::ScoopSize);
 				const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
 
 				log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",

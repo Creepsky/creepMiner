@@ -31,6 +31,15 @@ namespace Burst
 		TextType textType;
 	};
 
+	struct Progress
+	{
+		double read;
+		double verify;
+		double bytesPerSecondRead;
+		double bytesPerSecondVerify;
+		double bytesPerSecondCombined;
+	};
+
 	struct ProgressPrinter
 	{
 		/**
@@ -71,7 +80,7 @@ namespace Burst
 		/**
 		 * \brief Prints the progress bar.
 		 */
-		void print(float progressRead, float progressVerify) const;
+		void print(const Progress& progress) const;
 
 		/**
 		* \brief Calculates the proportion of the filled and not filled part of a progress bar.
@@ -83,6 +92,7 @@ namespace Burst
 		* \param verifiedSize The proportion of the filled part that was verified.
 		* \param notDoneSize The proportion of the not filled part.
 		*/
-		static void calculateProgressProportions(float progressRead, float progressVerified, size_t totalSize, size_t& readSize, size_t& verifiedSize, size_t& notDoneSize);
+		static void calculateProgressProportions(double progressRead, double progressVerified, size_t totalSize,
+												 size_t& readSize, size_t& verifiedSize, size_t& notDoneSize);
 	};
 }

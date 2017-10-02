@@ -109,26 +109,27 @@ namespace Burst
 	};
 }
 
-#ifdef RUN_BENCHMARK
+#define TEST_PROBE (Burst::MinerConfig::getConfig().isBenchmark())
+
 /**
  * \brief Starts a new probe with a specific name.
  * \param name The name of the probe.
  */
-#define START_PROBE(name) Burst::Performance::instance().reset(name);
+#define START_PROBE(name) if TEST_PROBE Burst::Performance::instance().reset(name);
 
 /**
  * \brief Starts a new probe with a specific name and also a probe for a domain.
  * \param name The name of the probe.
  * \param domain The domain of the probe.
  */
-#define START_PROBE_DOMAIN(name, domain) START_PROBE(name) START_PROBE(std::string(name) + "." + domain)
+#define START_PROBE_DOMAIN(name, domain) if TEST_PROBE START_PROBE(name) START_PROBE(std::string(name) + "." + domain)
 
 /**
  * \brief Takes a probe with a specific name.
  * First, you need to call START_PROBE
  * \param name The name of the probe.
  */
-#define TAKE_PROBE(name) Burst::Performance::instance().takeProbe(name);
+#define TAKE_PROBE(name) if TEST_PROBE Burst::Performance::instance().takeProbe(name);
 
 /**
  * \brief Takes a probe with a specific name and also a probe for a specific domain.
@@ -136,16 +137,9 @@ namespace Burst
  * \param name The name of the probe.
  * \param domain The domain of the probe.
  */
-#define TAKE_PROBE_DOMAIN(name, domain) TAKE_PROBE(name) TAKE_PROBE(std::string(name) + "." + domain);
+#define TAKE_PROBE_DOMAIN(name, domain) if TEST_PROBE { TAKE_PROBE(name) TAKE_PROBE(std::string(name) + "." + domain); }
 
 /**
  * \brief Removes all probes.
  */
-#define CLEAR_PROBES() Burst::Performance::instance().clear();
-#else
-#define START_PROBE(name) void();
-#define START_PROBE_DOMAIN(name, domain) void();
-#define TAKE_PROBE(name) void();
-#define TAKE_PROBE_DOMAIN(name, domain) void();
-#define CLEAR_PROBES() void();
-#endif
+#define CLEAR_PROBES() if TEST_PROBE Burst::Performance::instance().clear();

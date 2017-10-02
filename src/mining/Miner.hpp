@@ -29,7 +29,6 @@
 #include <Poco/TaskManager.h>
 #include "MinerData.hpp"
 #include <Poco/NotificationQueue.h>
-#include "plots/PlotVerifier.hpp"
 #include "WorkerList.hpp"
 #include "network/Response.hpp"
 #include <Poco/Timer.h>
@@ -64,30 +63,40 @@ namespace Burst
 		Poco::UInt64 getTargetDeadline() const;
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
-		void updateGensig(const std::string gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
+		void updateGensig(const std::string& gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
 
-		void submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile);
-		Poco::ActiveMethod<NonceConfirmation, std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>, Miner> submitNonceAsync;
+		NonceConfirmation submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
+		                              Poco::UInt64 blockheight, const std::string& plotFile,
+		                              bool ownAccount, const std::string& minerName = "", Poco::UInt64 plotsize = 0);
+
+		Poco::ActiveMethod<NonceConfirmation,
+		                   std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>,
+		                   Miner> submitNonceAsync;
 
 		std::shared_ptr<Deadline> getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
 		std::shared_ptr<Deadline> getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
 		//std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
-		std::shared_ptr<Account> getAccount(AccountId id);
+		std::shared_ptr<Account> getAccount(AccountId id, bool persistent = false);
+		void createPlotVerifiers();
 
-		void setMiningIntensity(Poco::UInt32 intensity);
-		void setMaxPlotReader(Poco::UInt32 max_reader);
+		void setMiningIntensity(unsigned intensity);
+		void setMaxPlotReader(unsigned max_reader);
 		static void setMaxBufferSize(Poco::UInt64 size);
 		void rescanPlotfiles();
 
 	private:
 		bool getMiningInfo();
-		NonceConfirmation submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string>& data);
-		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, std::string plotFile,
-			 std::shared_ptr<Deadline>& newDeadline);
-		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager, Poco::NotificationQueue& queue) const;
+		NonceConfirmation submitNonceAsyncImpl(
+			const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>& data);
+		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
+		                              Poco::UInt64 blockheight, std::string plotFile,
+		                              bool ownAccount, std::shared_ptr<Deadline>& newDeadline);
+		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager,
+		                      Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);
 		void on_wake_up(Poco::Timer& timer);
+		void onBenchmark(Poco::Timer& timer);
 
 		bool running_ = false;
 		MinerData data_;
@@ -99,7 +108,8 @@ namespace Burst
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
 		std::unique_ptr<Poco::ThreadPool> verifier_pool_, plot_reader_pool_;
-		Poco::Timer wake_up_timer_;
+		Poco::Timer wake_up_timer_, benchmark_timer_;
 		mutable Poco::Mutex worker_mutex_;
+		std::chrono::high_resolution_clock::time_point startPoint_;
 	};
 }
