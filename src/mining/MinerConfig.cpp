@@ -382,12 +382,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			miningObj = new Poco::JSON::Object;
 
 		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 3);
-		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 256);
+		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 0u);
 
 		auto timeout = getOrAdd(miningObj, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
 
-		miningIntensity_ = getOrAdd(miningObj, "intensity", 3);
+		miningIntensity_ = getOrAdd(miningObj, "intensity", 1);
 		maxPlotReaders_ = getOrAdd(miningObj, "maxPlotReaders", 0);
 
 		walletRequestTries_ = getOrAdd(miningObj, "walletRequestTries", 5);
@@ -396,7 +396,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		// use insecure plotfiles
 		useInsecurePlotfiles_ = getOrAdd(miningObj, "useInsecurePlotfiles", false);
 		getMiningInfoInterval_ = getOrAdd(miningObj, "getMiningInfoInterval", 3);
-		rescanEveryBlock_ = getOrAdd(miningObj, "rescanEveryBlock", true);
+		rescanEveryBlock_ = getOrAdd(miningObj, "rescanEveryBlock", false);
 		
 		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
 		wakeUpTime_ = getOrAdd(miningObj, "wakeUpTime", 0);
@@ -408,7 +408,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		gpuPlatform_ = getOrAdd(miningObj, "gpuPlatform", 0u);
 		gpuDevice_ = getOrAdd(miningObj, "gpuDevice", 0u);
-		calculateEveryDeadline_ = getOrAdd(miningObj, "calculateEveryDeadline", false);
 
 		// benchmark
 		{
@@ -434,9 +433,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			else
 				urlsObj = new Poco::JSON::Object;
 
-			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8124, "http://pool.burst-team.us:8124");
-			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8124, "http://pool.burst-team.us:8124");
-			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 8125, "https://wallet.burst-team.us:8128");
+			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8080, "http://pool.burstcoin.ro:8080");
+			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8080, "http://pool.burstcoin.ro:8080");
+			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 443, "https://wallet.burstcoin.ro:443");
 
 			if (urlMiningInfo_.empty() && !urlPool_.empty())
 			{
@@ -675,11 +674,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			webserverObj.assign(new Poco::JSON::Object);
 
 		startServer_ = getOrAdd(webserverObj, "start", true);
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://localhost:8080", startServer_);
-		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 100u);
-		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 16u);
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://192.168.0.101:8080", startServer_);
+		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 30u);
+		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 4u);
 		cumulatePlotsizes_ = getOrAdd(webserverObj, "cumulatePlotsizes", true);
 		minerNameForwarding_ = getOrAdd(webserverObj, "forwardMinerNames", true);
+		calculateEveryDeadline_ = getOrAdd(webserverObj, "calculateEveryDeadline", false);
 
 		// credentials
 		{

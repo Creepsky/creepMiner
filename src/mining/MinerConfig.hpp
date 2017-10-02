@@ -263,7 +263,7 @@ namespace Burst
 		bool useInsecurePlotfiles_ = false;
 		bool logfile_ = true;
 		unsigned getMiningInfoInterval_ = 3;
-		bool rescanEveryBlock_ = true;
+		bool rescanEveryBlock_ = false;
 		LogOutputType logOutputType_ = LogOutputType::Terminal;
 		bool logUseColors_ = true;
 		bool steadyProgressBar_ = true;
