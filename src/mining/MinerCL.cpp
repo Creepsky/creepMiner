@@ -285,6 +285,18 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 		}
 	}
 
+	// get work group size
+	{
+		auto ret = clGetKernelWorkGroupInfo(kernel_, devices_[deviceIdx_], CL_KERNEL_WORK_GROUP_SIZE,
+		                                    sizeof(kernelWorkGroupSize_), &kernelWorkGroupSize_, nullptr);
+
+		if (ret != CL_SUCCESS)
+		{
+			log_fatal(MinerLogger::miner, "Could not get the maximum work group size for the kernel!");
+			return false;
+		}
+	}
+
 	log_system(MinerLogger::miner, "Successfully initialized OpenCL!");
 #endif
 
@@ -320,6 +332,11 @@ cl_context Burst::MinerCL::getContext() const
 cl_kernel Burst::MinerCL::getKernel() const
 {
 	return kernel_;
+}
+
+size_t Burst::MinerCL::getKernelWorkGroupSize() const
+{
+	return kernelWorkGroupSize_;
 }
 
 bool Burst::MinerCL::initialized() const

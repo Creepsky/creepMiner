@@ -51,6 +51,7 @@ namespace Burst
 
 		cl_context getContext() const;
 		cl_kernel getKernel() const;
+		size_t getKernelWorkGroupSize() const;
 
 		bool initialized() const;
 
@@ -65,5 +66,6 @@ namespace Burst
 		std::vector<cl_platform_id> platforms_;
 		std::vector<cl_device_id> devices_;
 		unsigned platformIdx_ = 0, deviceIdx_ = 0;
+		size_t kernelWorkGroupSize_;
 	};
 }

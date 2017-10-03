@@ -84,14 +84,16 @@ bool Burst::Gpu_Opencl_Impl::verify(const GensigData* gpuGensig, ScoopData* gpuS
 	if (ret != CL_SUCCESS)
 		return false;
 
-	size_t globalWorkSize[3] = { nonces, 0, 0 };
-	size_t localWorkSize[3] = { 64, 0, 0 };
+	auto local = MinerCL::getCL().getKernelWorkGroupSize();
 	
 	ret = clEnqueueNDRangeKernel(static_cast<cl_command_queue>(stream), MinerCL::getCL().getKernel(), 1, nullptr,
-	                             globalWorkSize, localWorkSize, 0, nullptr, nullptr);
+	                             &nonces, &local, 0, nullptr, nullptr);
 
 	if (ret != CL_SUCCESS)
+	{
+		lastError_ = ret;
 		return false;
+	}
 #endif
 	return true;
 }
