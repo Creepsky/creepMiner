@@ -25,6 +25,7 @@
  * OpenCL relevant classes and functions.
  */
 #include <vector>
+#include <stdio.h>
 
 #ifdef USE_OPENCL
 #include <CL/cl.h>
