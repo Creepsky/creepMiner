@@ -50,8 +50,12 @@ namespace Burst
 		cl_command_queue createCommandQueue();
 
 		cl_context getContext() const;
-		cl_kernel getKernel() const;
-		size_t getKernelWorkGroupSize() const;
+		cl_kernel getKernel_Calculate() const;
+		cl_kernel getKernel_GetMin() const;
+		size_t getKernelCalculateWorkGroupSize(bool preferred = false) const;
+		size_t getKernelFindBestWorkGroupSize(bool preferred = false) const;
+		size_t getComputeUnits() const;
+		cl_device_id getDevice() const;
 
 		bool initialized() const;
 
@@ -61,11 +65,16 @@ namespace Burst
 		cl_context context_ = nullptr;
 		cl_program program_ = nullptr;
 		std::vector<cl_command_queue> command_queues_;
-		cl_kernel kernel_ = nullptr;
+		cl_kernel kernel_calculate_deadlines_ = nullptr,
+			kernel_best_deadline_ = nullptr;
 		bool initialized_ = false;
 		std::vector<cl_platform_id> platforms_;
 		std::vector<cl_device_id> devices_;
 		unsigned platformIdx_ = 0, deviceIdx_ = 0;
-		size_t kernelWorkGroupSize_;
+		size_t kernel_Calculate_WorkGroupSize_ = 0;
+		size_t kernel_FindBest_WorkGroupSize_ = 0;
+		size_t kernel_Calculate_PrefferedWorkGroupSize_ = 0;
+		size_t kernel_FindBest_PrefferedWorkGroupSize_ = 0;
+		size_t compute_units_ = 0;
 	};
 }

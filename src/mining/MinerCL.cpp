@@ -64,8 +64,8 @@ Burst::MinerCL::~MinerCL()
 		}
 	}
 
-	if (kernel_ != nullptr)
-		clReleaseKernel(kernel_);
+	if (kernel_calculate_deadlines_ != nullptr)
+		clReleaseKernel(kernel_calculate_deadlines_);
 
 	if (program_ != nullptr)
 		clReleaseProgram(program_);
@@ -143,10 +143,10 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 			std::string version;
 
 			const auto& platform = platforms_[i];
-			cl_int ret_platform, ret_version;
+			cl_int ret_platform = MinerCLHelper::infoHelperFunc(platform, name, clGetPlatformInfo, CL_PLATFORM_NAME, ret_platform);
+			cl_int ret_version = MinerCLHelper::infoHelperFunc(platform, version, clGetPlatformInfo, CL_PLATFORM_VERSION, ret_version);
 			
-			if (!MinerCLHelper::infoHelperFunc(platform, name, clGetPlatformInfo, CL_PLATFORM_NAME, ret_platform) ||
-				!MinerCLHelper::infoHelperFunc(platform, version, clGetPlatformInfo, CL_PLATFORM_VERSION, ret_version))
+			if (!ret_platform || !ret_version)
 			{
 				if (ret_platform != CL_SUCCESS)
 					sstream << '\t' << "Could not get OpenCL platform name\n\tError-code:\t%d" << std::endl;
@@ -276,23 +276,67 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 	// create kernel
 	{
 		cl_int ret;
-		kernel_ = clCreateKernel(program_, "calculate_deadlines", &ret);
+		kernel_calculate_deadlines_ = clCreateKernel(program_, "calculate_deadlines", &ret);
 
 		if (ret != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not create the OpenCL kernel!\n\tError-code:\t%d", ret);
+			log_fatal(MinerLogger::miner, "Could not create the OpenCL kernel 'calculate_deadlines'!\n\tError-code:\t%d", ret);
+			return false;
+		}
+
+		kernel_best_deadline_ = clCreateKernel(program_, "reduce_best", &ret);
+
+		if (ret != CL_SUCCESS)
+		{
+			log_fatal(MinerLogger::miner, "Could not create the OpenCL kernel 'reduce_best'!\n\tError-code:\t%d", ret);
 			return false;
 		}
 	}
 
 	// get work group size
 	{
-		auto ret = clGetKernelWorkGroupInfo(kernel_, devices_[deviceIdx_], CL_KERNEL_WORK_GROUP_SIZE,
-		                                    sizeof(kernelWorkGroupSize_), &kernelWorkGroupSize_, nullptr);
+		auto ret = clGetKernelWorkGroupInfo(kernel_calculate_deadlines_, devices_[deviceIdx_],
+		                                    CL_KERNEL_WORK_GROUP_SIZE,
+		                                    sizeof(kernel_Calculate_WorkGroupSize_), &kernel_Calculate_WorkGroupSize_,
+		                                    nullptr);
+
+		if (ret == CL_SUCCESS)
+			ret = clGetKernelWorkGroupInfo(kernel_calculate_deadlines_, devices_[deviceIdx_],
+			                               CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
+			                               sizeof(kernel_Calculate_PrefferedWorkGroupSize_), &kernel_Calculate_PrefferedWorkGroupSize_,
+			                               nullptr);
 
 		if (ret != CL_SUCCESS)
 		{
-			log_fatal(MinerLogger::miner, "Could not get the maximum work group size for the kernel!");
+			log_fatal(MinerLogger::miner, "Could not get the maximum work group size for the kernel calculate deadlines!");
+			return false;
+		}
+
+		ret = clGetKernelWorkGroupInfo(kernel_best_deadline_, devices_[deviceIdx_],
+		                               CL_KERNEL_WORK_GROUP_SIZE,
+		                               sizeof(kernel_FindBest_WorkGroupSize_), &kernel_FindBest_WorkGroupSize_,
+		                               nullptr);
+
+		if (ret == CL_SUCCESS)
+			ret = clGetKernelWorkGroupInfo(kernel_best_deadline_, devices_[deviceIdx_],
+			                               CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
+			                               sizeof(kernel_FindBest_PrefferedWorkGroupSize_), &kernel_FindBest_PrefferedWorkGroupSize_,
+			                               nullptr);
+
+		if (ret != CL_SUCCESS)
+		{
+			log_fatal(MinerLogger::miner, "Could not get the maximum work group size for the kernel find best deadline!");
+			return false;
+		}
+	}
+
+	// compute units
+	{
+		const auto ret = clGetDeviceInfo(getDevice(), CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(size_t), &compute_units_, nullptr);
+
+		if (ret != CL_SUCCESS)
+		{
+			log_fatal(MinerLogger::miner, "Could not get the maximum compute units for the device!");
 			return false;
 		}
 	}
@@ -329,14 +373,34 @@ cl_context Burst::MinerCL::getContext() const
 	return context_;
 }
 
-cl_kernel Burst::MinerCL::getKernel() const
+cl_kernel Burst::MinerCL::getKernel_Calculate() const
 {
-	return kernel_;
+	return kernel_calculate_deadlines_;
 }
 
-size_t Burst::MinerCL::getKernelWorkGroupSize() const
+cl_kernel Burst::MinerCL::getKernel_GetMin() const
 {
-	return kernelWorkGroupSize_;
+	return kernel_best_deadline_;
+}
+
+size_t Burst::MinerCL::getKernelCalculateWorkGroupSize(bool preferred) const
+{
+	return preferred ? kernel_Calculate_PrefferedWorkGroupSize_ : kernel_Calculate_WorkGroupSize_;
+}
+
+size_t Burst::MinerCL::getKernelFindBestWorkGroupSize(bool preferred) const
+{
+	return preferred ? kernel_FindBest_PrefferedWorkGroupSize_ : kernel_FindBest_WorkGroupSize_;
+}
+
+size_t Burst::MinerCL::getComputeUnits() const
+{
+	return compute_units_;
+}
+
+cl_device_id Burst::MinerCL::getDevice() const
+{
+	return devices_[deviceIdx_];
 }
 
 bool Burst::MinerCL::initialized() const
