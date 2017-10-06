@@ -1,6 +1,5 @@
 language: cpp
 sudo: true
-solution: burst-miner.sln
 dist: trusty
 compiler: gcc
 env: CXX=g++-5 CXXFLAGS="-std=c++14"
@@ -8,7 +7,7 @@ os: linux
 group: stable
 cache:
   directories:
-  - $TRAVIS_BUILD_DIR/poco-1.7.6-all
+  - $TRAVIS_BUILD_DIR/poco-1.7.8p3-all
 before_install:
 - if [ "$(ls -A poco-1.7.8p3-all)" ]; then cd poco-1.7.8p3-all && sudo ldconfig && sudo make install; else ./install-poco.sh; fi
 install:
@@ -21,5 +20,5 @@ addons:
     - g++-5
 script: 
 - cd $TRAVIS_BUILD_DIR/
-- cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release -DUSE_CUDA=OFF -DUSE_OPENCL=OFF
+- cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release -DNO_GPU=ON
 - make

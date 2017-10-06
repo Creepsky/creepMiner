@@ -26,7 +26,7 @@
 #include <Poco/NumberParser.h>
 #include "logging/MinerLogger.hpp"
 
-const Burst::Version Burst::Settings::ProjectVersion = { 1, 7, 0, 0 };
+const Burst::Version Burst::Settings::ProjectVersion = { 1, 7, 1, 0 };
 std::string Burst::Settings::Cpu_Instruction_Set = "";
 Burst::ProjectData Burst::Settings::Project = { "creepMiner", ProjectVersion };
 

@@ -675,8 +675,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		startServer_ = getOrAdd(webserverObj, "start", true);
 		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://192.168.0.101:8080", startServer_);
-		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 30u);
-		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 4u);
+		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 64u);
+		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 8u);
 		cumulatePlotsizes_ = getOrAdd(webserverObj, "cumulatePlotsizes", true);
 		minerNameForwarding_ = getOrAdd(webserverObj, "forwardMinerNames", true);
 		calculateEveryDeadline_ = getOrAdd(webserverObj, "calculateEveryDeadline", false);

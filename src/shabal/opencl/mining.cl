@@ -463,7 +463,8 @@ __kernel void calculate_deadlines(__global unsigned char* gen_sig, __global unsi
 	deadlines[gid] = *((unsigned long*)out) / baseTarget;
 }
 
-__kernel void reduce_best(__global unsigned long* deadlines, unsigned int length, __local unsigned int* best_pos, __local unsigned long* best_deadline, __global unsigned int* best) {
+// changed type of parameter best from unsigned int to unsigned long, so we can also save the deadline without truncating it
+__kernel void reduce_best(__global unsigned long* deadlines, unsigned int length, __local unsigned int* best_pos, __local unsigned long* best_deadline, __global unsigned long* best) {
 	int gid = get_global_id(0);
 	int gsize = get_global_size(0);
 
@@ -495,6 +496,10 @@ __kernel void reduce_best(__global unsigned long* deadlines, unsigned int length
 	}
 
 	if (lid == 0) {
-		best[get_group_id(0)] = best_pos[0];
+		// original: best[get_group_id(0)] = best_pos[0];
+		// we save a group of {index=>deadline} instead of only the index
+		best[get_group_id(0) * 2 + 0] = best_pos[0];
+		// the best deadline
+		best[get_group_id(0) * 2 + 1] = best_deadline[0];
 	}
 }

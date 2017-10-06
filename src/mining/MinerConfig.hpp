@@ -275,7 +275,7 @@ namespace Burst
 		long benchmarkInterval_ = 60;
 		unsigned gpuPlatform_ = 0, gpuDevice_ = 0;
 		bool checkForwardDeadlines_ = false;
-		unsigned maxConnectionsQueued_ = 100, maxConnectionsActive_ = 16;
+		unsigned maxConnectionsQueued_ = 64, maxConnectionsActive_ = 8;
 		std::vector<std::string> forwardingWhitelist_;
 		bool cumulatePlotsizes_ = true;
 		bool minerNameForwarding_ = true;
