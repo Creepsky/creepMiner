@@ -23,7 +23,7 @@ function connect(onMessage) {
 		if (websocket)
 			websocket.close();
 
-		websocket = new WebSocket("ws://" + ip + ":" + port);
+		websocket = new WebSocket("ws://" + window.location.host);
 		websocket.onmessage = onMessage;
 	}
 	else {
