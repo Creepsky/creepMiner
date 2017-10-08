@@ -26,7 +26,7 @@
 typedef unsigned int sph_u32;
 
 #define SPH_C32(x)    ((sph_u32)(x ## U))
-#define SPH_T32(x) (as_uint(x))
+#define SPH_T32(x) ((uint)(x))
 #define SPH_ROTL32(x, n) rotate(as_uint(x), as_uint(n))
 #define SPH_ROTR32(x, n)   SPH_ROTL32(x, (32 - (n)))
 
