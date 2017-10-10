@@ -165,7 +165,7 @@ int main(int argc, const char* argv[])
 	std::string mode = "Debug";
 #endif
 
-	using Burst::Settings;
+	using namespace Burst::Settings;
 
 	std::stringstream sstream;
 
@@ -173,11 +173,11 @@ int main(int argc, const char* argv[])
 		sstream << ' ' << (flag ? '+' : '-') << text;
 	};
 	
-	checkAndPrint(Settings::Cuda, "CUDA");
-	checkAndPrint(Settings::OpenCl, "OpenCL");
-	checkAndPrint(Settings::Sse4, "SSE4");
-	checkAndPrint(Settings::Avx, "AVX");
-	checkAndPrint(Settings::Avx2, "AVX2");
+	checkAndPrint(Cuda, "CUDA");
+	checkAndPrint(OpenCl, "OpenCL");
+	checkAndPrint(Sse4, "SSE4");
+	checkAndPrint(Avx, "AVX");
+	checkAndPrint(Avx2, "AVX2");
 
 	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
 	log_information(general, "%s mode%s", mode, sstream.str());

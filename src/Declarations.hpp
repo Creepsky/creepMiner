@@ -62,17 +62,20 @@ namespace Burst
 		std::string nameAndVersionVerbose;
 	};
 
-	class Settings
+	namespace Settings
 	{
-	public:
-		Settings() = delete;
-
-		static const size_t HashSize = 32;
-		static const size_t ScoopPerPlot = 4096;
-		static const size_t HashPerScoop = 2;
-		static const size_t ScoopSize = HashPerScoop * HashSize; // 64 Bytes
-		static const size_t PlotSize = ScoopPerPlot * ScoopSize; // 256KB = 262144 Bytes
-		static const size_t PlotScoopSize = ScoopSize + HashSize; // 64 + 32 bytes
+		// 32 bytes, half of scoop
+		constexpr size_t HashSize = 32;
+		// there are 4096 scoops inside a plot (nonce)
+		constexpr size_t ScoopPerPlot = 4096;
+		// every scoop consists of 2 hashes
+		constexpr size_t HashPerScoop = 2;
+		// 64 bytes, whole scoop, two hashes
+		constexpr size_t ScoopSize = HashSize * HashPerScoop;
+		// 262144 bytes, a nonce, 4096 scoops
+		constexpr size_t PlotSize = ScoopSize * ScoopPerPlot;
+		// 96 bytes, a scoop and the gensig
+		constexpr size_t PlotScoopSize = ScoopSize + HashSize;
 
 #if defined POCO_OS_FAMILY_BSD
 		static constexpr auto OsFamily = "BSD";
@@ -90,13 +93,13 @@ namespace Burst
 		static constexpr auto Arch = "x32";
 #endif
 
-		static std::string Cpu_Instruction_Set;
-		static const Version ProjectVersion;
-		static ProjectData Project;
+		extern std::string Cpu_Instruction_Set;
+		extern const Version ProjectVersion;
+		extern ProjectData Project;
 
-		static const bool Sse4, Avx, Avx2, Cuda, OpenCl;
+		extern const bool Sse4, Avx, Avx2, Cuda, OpenCl;
 
-		static void setCpuInstructionSet(std::string cpuInstructionSet);
+		void setCpuInstructionSet(std::string cpuInstructionSet);
 	};
 
 	template <size_t SZ>
