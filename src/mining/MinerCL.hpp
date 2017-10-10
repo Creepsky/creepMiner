@@ -51,6 +51,7 @@ namespace Burst
 		cl_command_queue createCommandQueue();
 
 		cl_context getContext() const;
+		cl_program getProgram() const;
 		cl_kernel getKernel_Calculate() const;
 		cl_kernel getKernel_GetMin() const;
 		size_t getKernelCalculateWorkGroupSize(bool preferred = false) const;
