@@ -94,7 +94,6 @@ namespace Burst
 #endif
 
 		extern std::string Cpu_Instruction_Set;
-		extern const Version ProjectVersion;
 		extern ProjectData Project;
 
 		extern const bool Sse4, Avx, Avx2, Cuda, OpenCl;

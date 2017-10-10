@@ -228,7 +228,7 @@ int main(int argc, const char* argv[])
 
 					Burst::Version onlineVersion{ onlineVersionStr };
 
-					if (onlineVersion > Burst::Settings::ProjectVersion)
+					if (onlineVersion > Burst::Settings::Project.version)
 						log_system(general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
 				}
 			}
