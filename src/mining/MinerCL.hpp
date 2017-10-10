@@ -28,7 +28,11 @@
 #include <stdio.h>
 
 #ifdef USE_OPENCL
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
 #include <CL/cl.h>
+#endif
 #else
 using cl_context = int*;
 using cl_command_queue = int*;
