@@ -196,8 +196,6 @@ namespace Burst
 		response.addCookie(cookieUser);
 		response.addCookie(cookiePass);
 	}
-
-	const auto COOKIE_MAX_AGE = std::chrono::minutes(10);
 }
 
 bool Burst::RequestHandler::login(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)

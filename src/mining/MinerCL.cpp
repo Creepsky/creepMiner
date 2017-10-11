@@ -413,3 +413,8 @@ Burst::MinerCL& Burst::MinerCL::getCL()
 	static MinerCL minerCL;
 	return minerCL;
 }
+
+cl_program Burst::MinerCL::getProgram() const
+{
+	return program_;
+}

@@ -28,7 +28,11 @@
 #include <stdio.h>
 
 #ifdef USE_OPENCL
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
 #include <CL/cl.h>
+#endif
 #else
 using cl_context = int*;
 using cl_command_queue = int*;
@@ -51,6 +55,7 @@ namespace Burst
 		cl_command_queue createCommandQueue();
 
 		cl_context getContext() const;
+		cl_program getProgram() const;
 		cl_kernel getKernel_Calculate() const;
 		cl_kernel getKernel_GetMin() const;
 		size_t getKernelCalculateWorkGroupSize(bool preferred = false) const;
