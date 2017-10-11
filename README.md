@@ -13,7 +13,7 @@ It is designed multi-threaded to reach the best performance.
 
 ## Features
 
-- Mine with your **CPU** (__SSE2__/__SSE4__/__AVX__/__AVX2__) or your Nvidia **GPU**
+- Mine with your **CPU** (__SSE2__/__SSE4__/__AVX__/__AVX2__) or your **GPU** (__OpenCL__, __CUDA__)
 - Mine **solo** or in a **pool**
 - Filter bad deadlines with the auto target deadline feature
 - Build a network of several miners with the forwarding feature
@@ -26,9 +26,26 @@ It is designed multi-threaded to reach the best performance.
 |   Linux   | [![Build Status](https://travis-ci.org/Creepsky/creepMiner.svg?branch=master)](https://travis-ci.org/Creepsky/creepMiner) | [![Build Status](https://travis-ci.org/Creepsky/creepMiner.svg?branch=development)](https://travis-ci.org/Creepsky/creepMiner) |
 |   Windows   | [![Build status](https://ci.appveyor.com/api/projects/status/8c4pu0t70riqydny/branch/master?svg=true)](https://ci.appveyor.com/project/Creepsky75522/creepminer/branch/master) | [![Build status](https://ci.appveyor.com/api/projects/status/8c4pu0t70riqydny/branch/master?svg=true)](https://ci.appveyor.com/project/Creepsky75522/creepminer/branch/development) |
 
+## Quickstart
+
+- **CPU** (SSE2, SSE4, AVX, AVX2) + **GPU** (OPENCL, CUDA) version:
+```
+cmake CMakeLists.txt
+make
+```
+- **CPU only** (SSE2, SSE4, AVX, AVX2) version:
+```
+cmake CMakeLists.txt -DNO_GPU=ON
+make
+```
+- **CPU only minimal** (SSE2) version (for example for single-board computers):
+```
+cmake CMakeLists.txt -DMINIMAL_BUILD=ON
+make
+```
+
 ## Instructions
 
-- [Quickstart](https://github.com/Creepsky/creepMiner/wiki/Quickstart)
 - Compilation & Installation
     - [Windows](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Windows)
     - [Linux](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Linux)
