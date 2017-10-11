@@ -29,7 +29,7 @@
 
 #ifdef USE_OPENCL
 #ifdef __APPLE__
-#include <OpenCL/opencl.h>
+#include <OpenCL/cl.h>
 #else
 #include <CL/cl.h>
 #endif
