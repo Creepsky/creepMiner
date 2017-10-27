@@ -246,8 +246,8 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	// stop all reading processes if any
 	if (!MinerConfig::getConfig().getPlotFiles().empty())
 	{
-		log_debug(MinerLogger::miner, "Plot-read-queue: %d, verification-queue: %d",
-			plotReadQueue_.size(), verificationQueue_.size());
+		log_debug(MinerLogger::miner, "Plot-read-queue: %d (%d reader), verification-queue: %d (%d verifier)",
+			plotReadQueue_.size(), plot_reader_->count(), verificationQueue_.size(), verifier_->count());
 		log_debug(MinerLogger::miner, "Allocated memory: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
 	
 		START_PROBE("Miner.SetBuffersize")
