@@ -246,8 +246,8 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	// stop all reading processes if any
 	if (!MinerConfig::getConfig().getPlotFiles().empty())
 	{
-		log_debug(MinerLogger::miner, "Plot-read-queue: %d, verification-queue: %d",
-			plotReadQueue_.size(), verificationQueue_.size());
+		log_debug(MinerLogger::miner, "Plot-read-queue: %d (%d reader), verification-queue: %d (%d verifier)",
+			plotReadQueue_.size(), plot_reader_->count(), verificationQueue_.size(), verifier_->count());
 		log_debug(MinerLogger::miner, "Allocated memory: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
 	
 		START_PROBE("Miner.SetBuffersize")
@@ -487,8 +487,15 @@ bool Burst::Miner::getMiningInfo()
 						// remember the current pool target deadline
 						auto target_deadline_pool_before = data_.getTargetDeadline(TargetDeadlineType::Pool);
 
+						// get the target deadline from pool
+						auto target_deadline_pool_json = root->get("targetDeadline");
+						Poco::UInt64 target_deadline_pool = 0;
+						
 						// update the new pool target deadline
-						data_.setTargetDeadline(root->get("targetDeadline").convert<Poco::UInt64>());
+						if (!target_deadline_pool_json.isEmpty())
+							target_deadline_pool = target_deadline_pool_json.convert<Poco::UInt64>();
+
+						data_.setTargetDeadline(target_deadline_pool);
 
 						// if its changed, print it
 						if (target_deadline_pool_before != data_.getTargetDeadline(TargetDeadlineType::Pool))

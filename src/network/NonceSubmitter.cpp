@@ -84,7 +84,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 		MinerConfig::getConfig().getSubmissionMaxRetry(),
 		confirmation.errorCode))
 	{
-		log_debug(MinerLogger::nonceSubmitter, "Submit-loop %z (%s)", submitTryCount + 1, deadline->deadlineToReadableString());
+		log_debug(MinerLogger::nonceSubmitter, "Submit-loop %u (%s)", submitTryCount + 1, deadline->deadlineToReadableString());
 
 		if (submitTryCount)
 		{
