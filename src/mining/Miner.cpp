@@ -487,8 +487,15 @@ bool Burst::Miner::getMiningInfo()
 						// remember the current pool target deadline
 						auto target_deadline_pool_before = data_.getTargetDeadline(TargetDeadlineType::Pool);
 
+						// get the target deadline from pool
+						auto target_deadline_pool_json = root->get("targetDeadline");
+						Poco::UInt64 target_deadline_pool = 0;
+						
 						// update the new pool target deadline
-						data_.setTargetDeadline(root->get("targetDeadline").convert<Poco::UInt64>());
+						if (!target_deadline_pool_json.isEmpty())
+							target_deadline_pool = target_deadline_pool_json.convert<Poco::UInt64>();
+
+						data_.setTargetDeadline(target_deadline_pool);
 
 						// if its changed, print it
 						if (target_deadline_pool_before != data_.getTargetDeadline(TargetDeadlineType::Pool))
