@@ -54,13 +54,9 @@ bool Burst::Response::receive(std::string& data)
 	try
 	{
 		HTTPResponse response;
-		std::istream* responseStream;
-
-		responseStream = &session_->receiveResponse(response);
-		
+		const auto responseStream = &session_->receiveResponse(response);
 		data = {std::istreambuf_iterator<char>(*responseStream), {}};
-
-		return true;
+		return response.getStatus() == HTTPResponse::HTTP_OK;
 	}
 	catch (Poco::Exception& exc)
 	{
