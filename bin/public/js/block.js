@@ -606,6 +606,7 @@ function connectBlock() {
 					newBlock(response);
 					break;
 				case "nonce found":
+				case "nonce found (too high)":
 					nonceFound(response);
 					break;
 				case "nonce confirmed":

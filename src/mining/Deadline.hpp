@@ -42,7 +42,7 @@ namespace Burst
 		Deadline(Deadline&& rhs) = default;
 		~Deadline();
 
-		void found();
+		void found(bool tooHigh = false);
 		void onTheWay();
 		void send();
 		void confirm();

@@ -127,10 +127,10 @@ bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
 Burst::Deadline::~Deadline()
 {}
 
-void Burst::Deadline::found()
+void Burst::Deadline::found(bool tooHigh)
 {
 	if (parent_ != nullptr)
-		parent_->deadlineEvent(this->shared_from_this(), "nonce found");
+		parent_->deadlineEvent(this->shared_from_this(), std::string("nonce found") + (tooHigh ? " (too high)" : + ""));
 }
 
 void Burst::Deadline::onTheWay()
