@@ -289,7 +289,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		if (path_segments.empty())
 			return new LambdaRequestHandler([&](req_t& req, res_t& res)
 			{
-				auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/miner.js'></script>"); } } });
+				auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/block.js'></script>"); } } });
 				RequestHandler::loadSecuredTemplate(req ,res, "index.html", "block.html", variables);
 			});
 
