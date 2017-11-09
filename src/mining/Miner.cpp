@@ -633,7 +633,7 @@ void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 
 	const auto bestDeadline = block->getBestDeadline(BlockData::DeadlineSearchType::Found);
 
-	log_success(MinerLogger::miner, "Processed block %s\n"
+	log_information(MinerLogger::miner, "Processed block %s\n"
 		"\tround time:     %ss\n"
 		"\tbest deadline:  %s",
 		numberToString(block->getBlockheight()),
