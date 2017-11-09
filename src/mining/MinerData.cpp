@@ -669,7 +669,7 @@ Burst::HighscoreValue<Poco::UInt64> Burst::MinerData::getLowestDifficulty() cons
 	return lowestDifficulty_;
 }
 
-Burst::HighscoreValue<unsigned long long> Burst::MinerData::getHighestDifficulty() const
+Burst::HighscoreValue<Poco::UInt64> Burst::MinerData::getHighestDifficulty() const
 {
 	std::lock_guard<std::mutex> lock {mutex_};
 	return highestDifficulty_;
