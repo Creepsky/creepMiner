@@ -422,7 +422,9 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UIn
 
 	NonceConfirmation nonceConfirmation;
 	nonceConfirmation.deadline = 0;
-	nonceConfirmation.json = Poco::format(R"({ "result" : "success", "deadline" : %Lu, "deadlineText" : "%s" })", deadline, deadlineFormat(deadline));
+	nonceConfirmation.json = Poco::format(
+		R"({ "result" : "success", "deadline" : %Lu, "deadlineText" : "%s", "deadlineString" : "%s" })", deadline,
+		deadlineFormat(deadline), deadlineFormat(deadline));
 	nonceConfirmation.errorCode = result;
 
 	return nonceConfirmation;
