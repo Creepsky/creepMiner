@@ -711,12 +711,3 @@ std::string Burst::createTruncatedString(const std::string& string, size_t paddi
 
 	return padded_string;
 }
-
-std::string Burst::numberToString(Poco::UInt64 number)
-{
-	std::stringstream sstream;
-	sstream.imbue(std::locale(""));
-
-	sstream << number;
-	return sstream.str();
-}

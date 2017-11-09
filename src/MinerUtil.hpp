@@ -148,5 +148,13 @@ namespace Burst
 	 */
 	std::string createTruncatedString(const std::string& string, size_t padding, size_t size);
 
-	std::string numberToString(Poco::UInt64 number);
+	template <typename T>
+	std::string numberToString(T number)
+	{
+		std::stringstream sstream;
+		sstream.imbue(std::locale(""));
+
+		sstream << number;
+		return sstream.str();
+	}
 }
