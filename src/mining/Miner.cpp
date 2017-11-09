@@ -271,15 +271,29 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 				deadlineFormat(timeDiffSeconds.count()));
 		}
 
+		const Poco::Int64 difficulty = 18325193796 / baseTarget;
+		const auto lastBlockData = data_.getHistoricalBlockData(1);
+		const Poco::Int64 lastDifficulty = lastBlockData == nullptr ? difficulty : 18325193796 / lastBlockData->getBasetarget();
+		const Poco::Int64 difficultyDifference = difficulty - lastDifficulty;
+		std::string diffiultyDifferenceToString;
+
+		if (difficultyDifference < 0)
+			diffiultyDifferenceToString = numberToString(difficultyDifference);
+		else if (difficultyDifference == 0)
+			diffiultyDifferenceToString = "no change";
+		else
+			diffiultyDifferenceToString = '+' + numberToString(difficultyDifference);
+
 		log_notice(MinerLogger::miner, std::string(50, '-') + "\n"
 			"block#     \t%s\n"
 			"scoop#     \t%Lu\n"
 			"baseTarget#\t%s\n"
 			"gensig     \t%s\n"
-			"difficulty \t%s\n" +
+			"difficulty \t%s (%s)\n" +
 			std::string(50, '-'),
 			numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
-			numberToString(18325193796 / baseTarget)
+			numberToString(difficulty),
+			diffiultyDifferenceToString
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
@@ -619,7 +633,7 @@ void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 
 	const auto bestDeadline = block->getBestDeadline(BlockData::DeadlineSearchType::Found);
 
-	log_information(MinerLogger::miner, "Processed block %s\n"
+	log_success(MinerLogger::miner, "Processed block %s\n"
 		"\tround time:     %ss\n"
 		"\tbest deadline:  %s",
 		numberToString(block->getBlockheight()),
