@@ -271,10 +271,8 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 				deadlineFormat(timeDiffSeconds.count()));
 		}
 
-		const Poco::Int64 difficulty = 18325193796 / baseTarget;
-		const auto lastBlockData = data_.getHistoricalBlockData(1);
-		const Poco::Int64 lastDifficulty = lastBlockData == nullptr ? difficulty : 18325193796 / lastBlockData->getBasetarget();
-		const Poco::Int64 difficultyDifference = difficulty - lastDifficulty;
+		const auto difficulty = block->getDifficulty();
+		const auto difficultyDifference = data_.getDifficultyDifference();
 		std::string diffiultyDifferenceToString;
 
 		if (difficultyDifference < 0)

@@ -76,6 +76,7 @@ namespace Burst
 		Poco::UInt64 getBlockheight() const;
 		Poco::UInt64 getScoop() const;
 		Poco::UInt64 getBasetarget() const;
+		Poco::UInt64 getDifficulty() const;
 		std::shared_ptr<Account> getLastWinner() const;
 		
 		const GensigData& getGensig() const;
@@ -161,6 +162,7 @@ namespace Burst
 		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		bool compareToTargetDeadline(Poco::UInt64 deadline) const;
 		Poco::UInt64 getAverageDeadline() const;
+		Poco::Int64 getDifficultyDifference() const;
 
 		Poco::UInt64 getCurrentBlockheight() const;
 		Poco::UInt64 getCurrentBasetarget() const;

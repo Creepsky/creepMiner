@@ -256,6 +256,11 @@ Poco::UInt64 Burst::BlockData::getBasetarget() const
 	return baseTarget_.load();
 }
 
+Poco::UInt64 Burst::BlockData::getDifficulty() const
+{
+	return 18325193796 / getBasetarget();
+}
+
 std::shared_ptr<Burst::Account> Burst::BlockData::getLastWinner() const
 {
 	return lastWinner_;
@@ -663,6 +668,20 @@ Poco::UInt64 Burst::MinerData::getAverageDeadline() const
 		return 0;
 
 	return avg / size;
+}
+
+Poco::Int64 Burst::MinerData::getDifficultyDifference() const
+{
+	if (blockData_ == nullptr)
+		return 0;
+
+	const Poco::Int64 difficulty = blockData_->getDifficulty();
+	const auto lastBlockData = getHistoricalBlockData(1);
+
+	if (lastBlockData == nullptr)
+		return difficulty;
+	
+	return difficulty - lastBlockData->getDifficulty();
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentBlockheight() const

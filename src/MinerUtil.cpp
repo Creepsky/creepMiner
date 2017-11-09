@@ -470,7 +470,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 		return json;
 
 	auto& block = *blockPtr;
-	auto bestOverall = data.getBestDeadlineOverall();
+	const auto bestOverall = data.getBestDeadlineOverall();
 
 	json.set("type", "new block");
 	json.set("block", std::to_string(block.getBlockheight()));
@@ -502,6 +502,8 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	}
 
 	json.set("bestDeadlines", bestDeadlines);
+	json.set("difficulty", block.getDifficulty());
+	json.set("difficultyDifference", data.getDifficultyDifference());
 
 	return json;
 }
