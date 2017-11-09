@@ -422,8 +422,14 @@ void Burst::BlockData::clearEntries() const
 }
 
 Burst::MinerData::MinerData()
-	: blocksMined_(0), blocksWon_(0), deadlinesConfirmed_(0),
-	  currentBlockheight_(0), currentBasetarget_(0), currentScoopNum_(0),
+	: lowestDifficulty_{{0, 0}},
+	  highestDifficulty_ {{0, 0}},
+	  blocksMined_(0),
+	  blocksWon_(0),
+	  deadlinesConfirmed_(0),
+	  currentBlockheight_(0),
+	  currentBasetarget_(0),
+	  currentScoopNum_(0),
 	  activityWonBlocks_{this, &MinerData::runGetWonBlocks}
 {
 }
@@ -461,6 +467,15 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 	currentBlockheight_ = block;
 	currentBasetarget_ = baseTarget;
 	currentScoopNum_ = blockData_->getScoop();
+	
+	const auto lowestDiff = lowestDifficulty_.load();
+	const auto highestDiff = highestDifficulty_.load();
+
+	if (highestDiff.height == 0 || highestDiff.value < blockData_->getDifficulty())
+		highestDifficulty_.store({blockData_->getBlockheight(), blockData_->getDifficulty()});
+
+	if (lowestDiff.height == 0 || lowestDiff.value > blockData_->getDifficulty())
+		lowestDifficulty_.store({ blockData_->getBlockheight(), blockData_->getDifficulty() });
 
 	return blockData_;
 }
@@ -646,6 +661,16 @@ Poco::Int64 Burst::MinerData::getDifficultyDifference() const
 		return difficulty;
 	
 	return difficulty - lastBlockData->getDifficulty();
+}
+
+Burst::HighscoreValue<Poco::UInt64> Burst::MinerData::getLowestDifficulty() const
+{
+	return lowestDifficulty_.load();
+}
+
+Burst::HighscoreValue<unsigned long long> Burst::MinerData::getHighestDifficulty() const
+{
+	return highestDifficulty_.load();
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentBlockheight() const

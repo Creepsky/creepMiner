@@ -505,6 +505,16 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	json.set("difficulty", block.getDifficulty());
 	json.set("difficultyDifference", data.getDifficultyDifference());
 
+	const auto diffToJson = [&json](const HighscoreValue<Poco::UInt64>& diff, const std::string& id) {
+		Poco::JSON::Object jsonDiff;
+		jsonDiff.set("blockheight", diff.height);
+		jsonDiff.set("value", diff.value);
+		json.set(id, jsonDiff);
+	};
+
+	diffToJson(data.getLowestDifficulty(), "lowestDifficulty");
+	diffToJson(data.getHighestDifficulty(), "highestDifficulty");
+
 	return json;
 }
 

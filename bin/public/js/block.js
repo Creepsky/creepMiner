@@ -81,6 +81,8 @@ var playConfirmationSound = true;
 var iconConfirmationSound;
 var avgDeadline;
 var wonBlocks;
+var lowestDiff;
+var highestDiff;
 var bestDeadlinesChart;
 var plot;
 var deadlinesInfo;
@@ -199,6 +201,8 @@ function newBlock(json) {
 	lastWinnerContainer.hide();
 	avgDeadline.html(json["deadlinesAvg"]);
 	wonBlocks.html(json["blocksWon"]);
+	lowestDiff.html(json["lowestDifficulty"]["value"] + " (block " + json["lowestDifficulty"]["blockheight"] + ")");
+	highestDiff.html(json["highestDifficulty"]["value"] + " (block " + json["highestDifficulty"]["blockheight"] + ")");
 	plot.setData([json["bestDeadlines"]]);
 	plot.setupGrid();
 	plot.draw();
@@ -696,6 +700,8 @@ function initBlock() {
 	avgDeadline = $("#avgDeadline");
 	connectionStatus = $("#connectionStatus");
 	wonBlocks = $("#wonBlocks");
+	lowestDiff = $("#lowestDiff");
+	highestDiff = $("#highestDiff");
 	bestDeadlinesChart = $("#deadlinesChart");
 	deadlinesInfo = $("#deadlinesInfo");
 	settingsDlComboboxes = $("#settingsDlComboboxes");

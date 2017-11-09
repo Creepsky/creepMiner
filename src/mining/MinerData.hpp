@@ -132,6 +132,13 @@ namespace Burst
 		friend class Deadlines;
 	};
 
+	template <typename T>
+	struct HighscoreValue
+	{
+		Poco::UInt64 height;
+		T value;
+	};
+
 	class MinerData : public Poco::ActiveDispatcher
 	{
 	public:
@@ -153,6 +160,8 @@ namespace Burst
 		Poco::UInt64 getConfirmedDeadlines() const;
 		Poco::UInt64 getAverageDeadline() const;
 		Poco::Int64 getDifficultyDifference() const;
+		HighscoreValue<Poco::UInt64> getLowestDifficulty() const;
+		HighscoreValue<Poco::UInt64> getHighestDifficulty() const;
 
 		Poco::UInt64 getCurrentBlockheight() const;
 		Poco::UInt64 getCurrentBasetarget() const;
@@ -170,6 +179,7 @@ namespace Burst
 
 		Poco::Timestamp startTime_ = {};
 		std::shared_ptr<Deadline> bestDeadlineOverall_ = nullptr;
+		std::atomic<HighscoreValue<Poco::UInt64>> lowestDifficulty_, highestDifficulty_;
 		std::atomic<Poco::UInt64> blocksMined_;
 		std::atomic<Poco::UInt64> blocksWon_;
 		std::atomic<Poco::UInt64> deadlinesConfirmed_;
