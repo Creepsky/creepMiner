@@ -127,6 +127,12 @@ bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
 Burst::Deadline::~Deadline()
 {}
 
+void Burst::Deadline::found()
+{
+	if (parent_ != nullptr)
+		parent_->deadlineEvent(this->shared_from_this(), "nonce found");
+}
+
 void Burst::Deadline::onTheWay()
 {
 	onTheWay_ = true;

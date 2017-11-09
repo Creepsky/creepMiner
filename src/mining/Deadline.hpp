@@ -42,6 +42,7 @@ namespace Burst
 		Deadline(Deadline&& rhs) = default;
 		~Deadline();
 
+		void found();
 		void onTheWay();
 		void send();
 		void confirm();

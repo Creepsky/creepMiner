@@ -394,6 +394,8 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 
 	if (newDeadline)
 	{
+		newDeadline->found();
+
 		auto output = MinerLogger::hasOutput(NonceFound) || tooHigh && MinerLogger::hasOutput(NonceFoundTooHigh);
 
 		if (tooHigh)
