@@ -550,7 +550,7 @@ namespace Burst
 	Progress progress_;
 
 	void showProgress(PlotReadProgress& progressRead, PlotReadProgress& progressVerify, MinerData& data, Poco::UInt64 blockheight,
-		std::chrono::high_resolution_clock::time_point& startPoint)
+		std::chrono::high_resolution_clock::time_point& startPoint, std::function<void(Poco::UInt64, double)> blockProcessed)
 	{
 		std::lock_guard<std::mutex> lock(progressMutex_);
 
@@ -580,15 +580,15 @@ namespace Burst
 		MinerLogger::writeProgress(progress_);
 		data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
 		
-		if (readProgressPercent == 100.f && verifyProgressPercent == 100.f)
-			log_information(MinerLogger::miner, "Processed block %s in %ss", numberToString(blockheight),
-				Poco::NumberFormatter::format(timeDiffSeconds.count(), 3));
+		if (readProgressPercent == 100.f && verifyProgressPercent == 100.f && blockProcessed != nullptr)
+			blockProcessed(blockheight, timeDiffSeconds.count());
 	}
 }
 
 void Burst::Miner::progressChanged(float &progress)
 {
-	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight(), startPoint_);
+	showProgress(*progressRead_, *progressVerify_, getData(), getBlockheight(), startPoint_,
+	             [this](Poco::UInt64 blockHeight, double roundTime) { onRoundProcessed(blockHeight, roundTime); });
 }
 
 void Burst::Miner::on_wake_up(Poco::Timer& timer)
@@ -608,6 +608,23 @@ void Burst::Miner::onBenchmark(Poco::Timer& timer)
 	{
 		log_error(MinerLogger::miner, "Could not write benchmark data into benchmark.csv! Please close it.");
 	}
+}
+
+void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
+{
+	const auto block = data_.getBlockData();
+
+	if (block == nullptr || block->getBlockheight() != blockHeight)
+		return;
+
+	const auto bestDeadline = block->getBestDeadline(BlockData::DeadlineSearchType::Found);
+
+	log_information(MinerLogger::miner, "Processed block %s\n"
+		"\tround time:     %ss\n"
+		"\tbest deadline:  %s",
+		numberToString(block->getBlockheight()),
+		Poco::NumberFormatter::format(roundTime, 3),
+		bestDeadline == nullptr ? "none" : deadlineFormat(bestDeadline->getDeadline()));
 }
 
 Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>& data)

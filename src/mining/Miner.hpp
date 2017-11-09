@@ -97,6 +97,7 @@ namespace Burst
 		void progressChanged(float& progress);
 		void on_wake_up(Poco::Timer& timer);
 		void onBenchmark(Poco::Timer& timer);
+		void onRoundProcessed(Poco::UInt64 blockHeight, double roundTime);
 
 		bool running_ = false;
 		MinerData data_;
