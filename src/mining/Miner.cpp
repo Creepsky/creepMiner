@@ -363,17 +363,12 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 		return SubmitResponse::WrongBlock;
 
 	const auto targetDeadline = getTargetDeadline();
-	auto tooHigh = targetDeadline > 0 && deadline > targetDeadline;
-
-	if (tooHigh && !MinerLogger::hasOutput(NonceFoundTooHigh))
-		return SubmitResponse::TooHigh;
+	const auto tooHigh = targetDeadline > 0 && deadline > targetDeadline;
 
 	auto block = data_.getBlockData();
 
 	if (block == nullptr)
 		return SubmitResponse::Error;
-
-	//auto bestDeadline = block->getBestDeadline(accountId, BlockData::DeadlineSearchType::Found);
 
 	newDeadline = block->addDeadlineIfBest(
 		nonce,
@@ -385,7 +380,12 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 
 	if (newDeadline)
 	{
-		log_unimportant_if(MinerLogger::miner, MinerLogger::hasOutput(NonceFound) || tooHigh,
+		auto output = MinerLogger::hasOutput(NonceFound) || tooHigh && MinerLogger::hasOutput(NonceFoundTooHigh);
+
+		if (tooHigh)
+			output = MinerLogger::hasOutput(NonceFoundTooHigh);
+
+		log_unimportant_if(MinerLogger::miner, output,
 			"%s: nonce found (%s)\n"
 			"\tnonce: %s\n"
 			"\tin:    %s",
