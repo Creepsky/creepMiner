@@ -422,8 +422,8 @@ void Burst::BlockData::clearEntries() const
 }
 
 Burst::MinerData::MinerData()
-	: lowestDifficulty_{{0, 0}},
-	  highestDifficulty_ {{0, 0}},
+	: lowestDifficulty_{0, 0},
+	  highestDifficulty_ {0, 0},
 	  blocksMined_(0),
 	  blocksWon_(0),
 	  deadlinesConfirmed_(0),
@@ -467,15 +467,15 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 	currentBlockheight_ = block;
 	currentBasetarget_ = baseTarget;
 	currentScoopNum_ = blockData_->getScoop();
-	
-	const auto lowestDiff = lowestDifficulty_.load();
-	const auto highestDiff = highestDifficulty_.load();
+
+	const auto lowestDiff = lowestDifficulty_;
+	const auto highestDiff = highestDifficulty_;
 
 	if (highestDiff.height == 0 || highestDiff.value < blockData_->getDifficulty())
-		highestDifficulty_.store({blockData_->getBlockheight(), blockData_->getDifficulty()});
+		highestDifficulty_ = {blockData_->getBlockheight(), blockData_->getDifficulty()};
 
 	if (lowestDiff.height == 0 || lowestDiff.value > blockData_->getDifficulty())
-		lowestDifficulty_.store({ blockData_->getBlockheight(), blockData_->getDifficulty() });
+		lowestDifficulty_ = {blockData_->getBlockheight(), blockData_->getDifficulty()};
 
 	return blockData_;
 }
@@ -665,12 +665,14 @@ Poco::Int64 Burst::MinerData::getDifficultyDifference() const
 
 Burst::HighscoreValue<Poco::UInt64> Burst::MinerData::getLowestDifficulty() const
 {
-	return lowestDifficulty_.load();
+	std::lock_guard<std::mutex> lock{ mutex_ };
+	return lowestDifficulty_;
 }
 
 Burst::HighscoreValue<unsigned long long> Burst::MinerData::getHighestDifficulty() const
 {
-	return highestDifficulty_.load();
+	std::lock_guard<std::mutex> lock {mutex_};
+	return highestDifficulty_;
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentBlockheight() const

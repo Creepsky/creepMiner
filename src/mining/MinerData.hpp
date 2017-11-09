@@ -179,7 +179,7 @@ namespace Burst
 
 		Poco::Timestamp startTime_ = {};
 		std::shared_ptr<Deadline> bestDeadlineOverall_ = nullptr;
-		std::atomic<HighscoreValue<Poco::UInt64>> lowestDifficulty_, highestDifficulty_;
+		HighscoreValue<Poco::UInt64> lowestDifficulty_, highestDifficulty_;
 		std::atomic<Poco::UInt64> blocksMined_;
 		std::atomic<Poco::UInt64> blocksWon_;
 		std::atomic<Poco::UInt64> deadlinesConfirmed_;
