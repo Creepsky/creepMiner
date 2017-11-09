@@ -545,6 +545,7 @@ void Burst::Miner::shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskMan
 namespace Burst
 {
 	std::mutex progressMutex_;
+	Progress progress_;
 
 	void showProgress(PlotReadProgress& progressRead, PlotReadProgress& progressVerify, MinerData& data, Poco::UInt64 blockheight,
 		std::chrono::high_resolution_clock::time_point& startPoint)
@@ -558,16 +559,23 @@ namespace Burst
 
 		const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint;
 		const auto timeDiffSeconds = std::chrono::duration<double>(timeDiff);
-		
-		Progress progress;
-		progress.read = readProgressPercent;
-		progress.verify = verifyProgressPercent;
-		progress.bytesPerSecondRead = readProgressValue / 4096 / timeDiffSeconds.count();
-		progress.bytesPerSecondVerify = verifyProgressValue / 4096 / timeDiffSeconds.count();
-		progress.bytesPerSecondCombined = (readProgressValue + verifyProgressValue) / 4096 / timeDiffSeconds.
+
+		const auto readProgressChanged = progress_.read != readProgressPercent;
+		const auto verifyProgressChanged = progress_.verify != readProgressPercent;
+
+		progress_.read = readProgressPercent;
+		progress_.verify = verifyProgressPercent;
+
+		if (readProgressChanged)
+			progress_.bytesPerSecondRead = readProgressValue / 4096 / timeDiffSeconds.count();
+
+		if (verifyProgressChanged)
+			progress_.bytesPerSecondVerify = verifyProgressValue / 4096 / timeDiffSeconds.count();
+
+		progress_.bytesPerSecondCombined = (readProgressValue + verifyProgressValue) / 4096 / timeDiffSeconds.
 			count();
 
-		MinerLogger::writeProgress(progress);
+		MinerLogger::writeProgress(progress_);
 		data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
 		
 		if (readProgressPercent == 100.f && verifyProgressPercent == 100.f)
