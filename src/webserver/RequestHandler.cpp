@@ -394,7 +394,7 @@ bool Burst::RequestHandler::checkCredentials(Poco::Net::HTTPServerRequest& reque
 
 void Burst::RequestHandler::shutdown(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner, MinerServer& server)
 {
-	poco_ndc("ShutdownHandler::handleRequest");
+	poco_ndc("RequestHandler::shutdown");
 
 	if (!checkCredentials(request, response))
 		return;
@@ -420,6 +420,21 @@ void Burst::RequestHandler::shutdown(Poco::Net::HTTPServerRequest& request, Poco
 	server.stop();
 
 	log_system(MinerLogger::server, "Goodbye");
+}
+
+void Burst::RequestHandler::restart(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
+	Miner& miner, MinerServer& server)
+{
+	poco_ndc("RequestHandler::restart");
+
+	if (!checkCredentials(request, response))
+		return;
+
+	miner.restart();
+
+	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+	response.setContentLength(0);
+	response.send();
 }
 
 void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, MinerServer& server, Miner& miner)

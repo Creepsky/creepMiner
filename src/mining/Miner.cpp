@@ -176,12 +176,22 @@ void Burst::Miner::run()
 void Burst::Miner::stop()
 {
 	poco_ndc(Miner::stop);
+
 	// stop plot reader
-	shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
+	if (plot_reader_ != nullptr)
+		shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
+
 	// stop verifier
-	shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
+	if (verifier_ != nullptr)
+		shut_down_worker(*verifier_pool_, *verifier_, verificationQueue_);
 	
 	running_ = false;
+}
+
+void Burst::Miner::restart()
+{
+	restart_ = true;
+	stop();
 }
 
 void Burst::Miner::addPlotReadNotifications(bool wakeUpCall)
@@ -234,6 +244,11 @@ void Burst::Miner::addPlotReadNotifications(bool wakeUpCall)
 
 		return true;
 	});
+}
+
+bool Burst::Miner::wantRestart() const
+{
+	return restart_;
 }
 
 void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget)

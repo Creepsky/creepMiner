@@ -232,6 +232,16 @@ namespace Burst
 		              Miner& miner, MinerServer& server);
 
 		/**
+		* \brief Restarts the application. Before that, the credentials are checked.
+		* \param request The HTTP request.
+		* \param response The HTTP response.
+		* \param miner The miner instance, that is restarted.
+		* \param server The server instance, that is restarted.
+		*/
+		void restart(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
+		             Miner& miner, MinerServer& server);
+
+		/**
 		 * \brief Submits a nonce by forwarding it to the pool of the local miner instance.
 		 * \param request The HTTP request.
 		 * \param response The HTTP response.

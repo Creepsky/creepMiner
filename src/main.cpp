@@ -237,34 +237,46 @@ int main(int argc, const char* argv[])
 		catch (...)
 		{ }
 
-		if (Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath))
+		auto running = true;
+
+		while (running)
 		{
-			if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
-				Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
-					Burst::MinerConfig::getConfig().getGpuDevice());
-			else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
+			if (Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath))
 			{
-				Burst::Gpu_Cuda_Impl::listDevices();
-				Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
+				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
+					Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
+						Burst::MinerConfig::getConfig().getGpuDevice());
+				else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
+				{
+					Burst::Gpu_Cuda_Impl::listDevices();
+					Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
+				}
+
+				Burst::Miner miner;
+				Burst::MinerServer server{miner};
+
+				if (Burst::MinerConfig::getConfig().getStartServer())
+				{
+					server.connectToMinerData(miner.getData());
+					server.run(Burst::MinerConfig::getConfig().getServerUrl().getPort());
+				}
+
+				Burst::MinerLogger::setChannelMinerData(&miner.getData());
+
+				miner.run();
+				server.stop();
+
+				running = miner.wantRestart();
+				Burst::MinerLogger::setChannelMinerData(nullptr);
+
+				if (running)
+					log_system(Burst::MinerLogger::miner, "Restarting the miner...");
 			}
-
-			Burst::Miner miner;
-			Burst::MinerServer server{miner};
-
-			if (Burst::MinerConfig::getConfig().getStartServer())
+			else
 			{
-				server.connectToMinerData(miner.getData());
-				server.run(Burst::MinerConfig::getConfig().getServerUrl().getPort());
+				log_error(general, "Aborting program due to invalid configuration");
+				running = false;
 			}
-
-			Burst::MinerLogger::setChannelMinerData(&miner.getData());
-
-			miner.run();
-			server.stop();
-		}
-		else
-		{
-			log_error(general, "Aborting program due to invalid configuration");
 		}
 	}
 	catch (Poco::Exception& exc)
