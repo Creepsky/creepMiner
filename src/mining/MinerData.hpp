@@ -81,6 +81,7 @@ namespace Burst
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
 		std::shared_ptr<Deadline> getBestDeadline() const;
+		std::shared_ptr<Deadline> getBestDeadline(DeadlineSearchType searchType) const;
 		//std::vector<Poco::JSON::Object> getEntries() const;
 		bool forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const;
 		//const std::unordered_map<AccountId, Deadlines>& getDeadlines() const;

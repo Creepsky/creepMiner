@@ -276,6 +276,36 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline() const
 	return bestDeadline_;
 }
 
+std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(const DeadlineSearchType searchType) const
+{
+	std::lock_guard<std::mutex> lock{ mutex_ };
+	std::shared_ptr<Deadline> bestDeadline;
+
+	for (const auto& accountDeadlines : deadlines_)
+	{
+		if (accountDeadlines.second == nullptr)
+			continue;
+	
+		std::shared_ptr<Deadline> accountBestDeadline;
+
+		if (searchType == DeadlineSearchType::Found)
+			accountBestDeadline = accountDeadlines.second->getBestFound();
+		else if (searchType == DeadlineSearchType::Sent)
+			accountBestDeadline = accountDeadlines.second->getBestSent();
+		else if (searchType == DeadlineSearchType::Confirmed)
+			accountBestDeadline = accountDeadlines.second->getBestConfirmed();
+
+		if (accountBestDeadline == nullptr)
+			continue;
+
+		if (bestDeadline == nullptr ||
+			bestDeadline->getDeadline() > accountBestDeadline->getDeadline())
+			bestDeadline = accountBestDeadline;
+	}
+
+	return bestDeadline;
+}
+
 bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const
 {
 	std::lock_guard<std::mutex> lock{ mutex_ };
