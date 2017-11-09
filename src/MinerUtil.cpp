@@ -262,7 +262,7 @@ Poco::UInt64 Burst::formatDeadline(const std::string& format)
 	if (tokens.empty())
 		return 0;
 
-	auto deadline = 0u;
+	Poco::UInt64 deadline = 0u;
 	std::locale loc;
 
 	std::regex years("\\d*y");
@@ -272,7 +272,7 @@ Poco::UInt64 Burst::formatDeadline(const std::string& format)
 
 	const auto extractFunction = [](const std::string& token, uint32_t conversion, uint32_t postfixSize = 1)
 	{
-		return stoul(token.substr(0, token.size() - postfixSize)) * conversion;
+		return Poco::NumberParser::parseUnsigned64(token.substr(0, token.size() - postfixSize)) * conversion;
 	};
 
 	for (auto& token : tokens)
