@@ -423,7 +423,7 @@ void Burst::BlockData::clearEntries() const
 
 Burst::MinerData::MinerData()
 	: blocksMined_(0), blocksWon_(0), deadlinesConfirmed_(0),
-	  targetDeadline_(0), currentBlockheight_(0), currentBasetarget_(0), currentScoopNum_(0),
+	  currentBlockheight_(0), currentBasetarget_(0), currentScoopNum_(0),
 	  activityWonBlocks_{this, &MinerData::runGetWonBlocks}
 {
 }
@@ -510,11 +510,6 @@ void Burst::MinerData::setBestDeadline(std::shared_ptr<Deadline> deadline)
 	if (bestDeadlineOverall_ == nullptr ||
 		deadline->getDeadline() < bestDeadlineOverall_->getDeadline())
 		bestDeadlineOverall_ = deadline;
-}
-
-void Burst::MinerData::setTargetDeadline(Poco::UInt64 deadline)
-{
-	targetDeadline_ = deadline;
 }
 
 void Burst::MinerData::addMessage(const Poco::Message& message)
@@ -610,37 +605,6 @@ std::vector<std::shared_ptr<const Burst::BlockData>> Burst::MinerData::getAllHis
 Poco::UInt64 Burst::MinerData::getConfirmedDeadlines() const
 {
 	return deadlinesConfirmed_;
-}
-
-Poco::UInt64 Burst::MinerData::getTargetDeadline(TargetDeadlineType type) const
-{
-	switch (type)
-	{
-	case TargetDeadlineType::Pool:
-		return targetDeadline_.load();
-	case TargetDeadlineType::Local:
-		return MinerConfig::getConfig().getTargetDeadline();
-	case TargetDeadlineType::Combined:
-		{
-			auto targetDeadline = targetDeadline_.load();
-			const auto manualTargetDeadline = MinerConfig::getConfig().getTargetDeadline();
-
-			if (targetDeadline == 0)
-				targetDeadline = manualTargetDeadline;
-			else if (targetDeadline > manualTargetDeadline &&
-				manualTargetDeadline > 0)
-				targetDeadline = manualTargetDeadline;
-
-			return targetDeadline;
-		}
-	default:
-		return 0;
-	}
-}
-
-bool Burst::MinerData::compareToTargetDeadline(Poco::UInt64 deadline) const
-{
-	return deadline < getTargetDeadline();
 }
 
 Poco::UInt64 Burst::MinerData::getAverageDeadline() const

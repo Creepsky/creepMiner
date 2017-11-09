@@ -573,7 +573,7 @@ void Burst::RequestHandler::miningInfo(Poco::Net::HTTPServerRequest& request, Po
 	Poco::JSON::Object json;
 	json.set("baseTarget", std::to_string(miner.getBaseTarget()));
 	json.set("generationSignature", miner.getGensigStr());
-	json.set("targetDeadline", miner.getTargetDeadline());
+	json.set("targetDeadline", MinerConfig::getConfig().getTargetDeadline());
 	json.set("height", miner.getBlockheight());
 
 	try
@@ -629,7 +629,7 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 				else if (key == "submission-max-retry")
 					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned(value));
 				else if (key == "target-deadline")
-					MinerConfig::getConfig().setTargetDeadline(value);
+					MinerConfig::getConfig().setTargetDeadline(value, TargetDeadlineType::Local);
 				else if (key == "timeout")
 					MinerConfig::getConfig().setTimeout(static_cast<float>(np::parseFloat(value)));
 				else if (key == "log-dir")

@@ -42,13 +42,6 @@ namespace Burst
 	class Wallet;
 	class Account;
 
-	enum class TargetDeadlineType
-	{
-		Pool,
-		Local,
-		Combined
-	};
-
 	class BlockData
 	{
 	public:
@@ -146,7 +139,6 @@ namespace Burst
 		~MinerData() override;
 		
 		std::shared_ptr<BlockData> startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig);
-		void setTargetDeadline(Poco::UInt64 deadline);
 		void addMessage(const Poco::Message& message);
 
 		std::shared_ptr<Deadline> getBestDeadlineOverall() const;
@@ -159,8 +151,6 @@ namespace Burst
 		std::shared_ptr<const BlockData> getHistoricalBlockData(Poco::UInt32 roundsBefore) const;
 		std::vector<std::shared_ptr<const BlockData>> getAllHistoricalBlockData() const;
 		Poco::UInt64 getConfirmedDeadlines() const;
-		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
-		bool compareToTargetDeadline(Poco::UInt64 deadline) const;
 		Poco::UInt64 getAverageDeadline() const;
 		Poco::Int64 getDifficultyDifference() const;
 
@@ -183,7 +173,6 @@ namespace Burst
 		std::atomic<Poco::UInt64> blocksMined_;
 		std::atomic<Poco::UInt64> blocksWon_;
 		std::atomic<Poco::UInt64> deadlinesConfirmed_;
-		std::atomic<Poco::UInt64> targetDeadline_;
 		std::shared_ptr<BlockData> blockData_ = nullptr;
 		std::deque<std::shared_ptr<BlockData>> historicalBlocks_;
 		mutable std::mutex mutex_;

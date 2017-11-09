@@ -356,11 +356,6 @@ Poco::UInt64 Burst::Miner::getBlockheight() const
 	return data_.getCurrentBlockheight();
 }
 
-Poco::UInt64 Burst::Miner::getTargetDeadline() const
-{
-	return data_.getTargetDeadline();
-}
-
 Poco::UInt64 Burst::Miner::getScoopNum() const
 {
 	return data_.getCurrentScoopNum();
@@ -374,7 +369,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	if (blockheight != getBlockheight())
 		return SubmitResponse::WrongBlock;
 
-	const auto targetDeadline = getTargetDeadline();
+	const auto targetDeadline = MinerConfig::getConfig().getTargetDeadline();
 	const auto tooHigh = targetDeadline > 0 && deadline > targetDeadline;
 
 	auto block = data_.getBlockData();
@@ -392,7 +387,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 
 	if (newDeadline)
 	{
-		newDeadline->found();
+		newDeadline->found(tooHigh);
 
 		auto output = MinerLogger::hasOutput(NonceFound) || tooHigh && MinerLogger::hasOutput(NonceFoundTooHigh);
 
@@ -501,7 +496,7 @@ bool Burst::Miner::getMiningInfo()
 					if (root->has("targetDeadline"))
 					{
 						// remember the current pool target deadline
-						auto target_deadline_pool_before = data_.getTargetDeadline(TargetDeadlineType::Pool);
+						auto target_deadline_pool_before = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool);
 
 						// get the target deadline from pool
 						auto target_deadline_pool_json = root->get("targetDeadline");
@@ -511,10 +506,10 @@ bool Burst::Miner::getMiningInfo()
 						if (!target_deadline_pool_json.isEmpty())
 							target_deadline_pool = target_deadline_pool_json.convert<Poco::UInt64>();
 
-						data_.setTargetDeadline(target_deadline_pool);
+						MinerConfig::getConfig().setTargetDeadline(target_deadline_pool, TargetDeadlineType::Pool);
 
 						// if its changed, print it
-						if (target_deadline_pool_before != data_.getTargetDeadline(TargetDeadlineType::Pool))
+						if (target_deadline_pool_before != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
 							log_system(MinerLogger::config,
 								"got new target deadline from pool\n"
 								"\told pool target deadline:    %s\n"
@@ -522,9 +517,9 @@ bool Burst::Miner::getMiningInfo()
 								"\ttarget deadline from config: %s\n"
 								"\tlowest target deadline:      %s",
 								deadlineFormat(target_deadline_pool_before),
-								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Pool)),
-								deadlineFormat(data_.getTargetDeadline(TargetDeadlineType::Local)),
-								deadlineFormat(data_.getTargetDeadline()));
+								deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)),
+								deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
+								deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
 					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));

@@ -530,8 +530,16 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));
 	json.set("miningIntensityRaw", std::to_string(MinerConfig::getConfig().getMiningIntensity(false)));
 	json.set("submissionMaxRetry", std::to_string(MinerConfig::getConfig().getSubmissionMaxRetry()));
-	json.set("targetDeadline", std::to_string(MinerConfig::getConfig().getTargetDeadline()));
-	json.set("targetDeadlineText", deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+
+	const auto addTargetDeadline = [&json](const std::string& id, auto value) {
+		json.set("targetDeadline" + id, deadlineFormat(value));
+		json.set("targetDeadline" + id + "Raw", std::to_string(value));
+	};
+
+	addTargetDeadline("Combined", MinerConfig::getConfig().getTargetDeadline());
+	addTargetDeadline("Local", MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local));
+	addTargetDeadline("Pool", MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool));
+
 	json.set("logDir", MinerConfig::getConfig().getLogDir());
 
 	Poco::JSON::Object json_channel_priorities;

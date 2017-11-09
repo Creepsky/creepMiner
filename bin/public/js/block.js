@@ -418,7 +418,9 @@ function config(cfg) {
 	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
 	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
 	addSystemEntry("Buffersize", cfg["bufferSize"]);
-	addSystemEntry("Target deadline", cfg["targetDeadlineText"]);
+	addSystemEntry("Target deadline", cfg["targetDeadlineCombined"] + " (lowest)<br />" +
+									  cfg["targetDeadlineLocal"] + " (local)<br />" +
+									  cfg["targetDeadlinePool"] + " (pool)");
 	addSystemEntry("Plot readers", cfg["maxPlotReaders"]);
 	addSystemEntry("Mining intensity", cfg["miningIntensity"]);
 	addSystemEntry("Submission retry", cfg["submissionMaxRetry"]);

@@ -878,10 +878,32 @@ bool Burst::MinerConfig::getStartServer() const
 	return startServer_;
 }
 
-Poco::UInt64 Burst::MinerConfig::getTargetDeadline() const
+Poco::UInt64 Burst::MinerConfig::getTargetDeadline(TargetDeadlineType type) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return targetDeadline_;
+
+	switch (type)
+	{
+	case TargetDeadlineType::Pool:
+		return targetDeadlinePool_;
+	case TargetDeadlineType::Local:
+		return targetDeadline_;
+	case TargetDeadlineType::Combined:
+	{
+		auto targetDeadline = targetDeadlinePool_;
+		const auto manualTargetDeadline = targetDeadline_;
+
+		if (targetDeadline == 0)
+			targetDeadline = manualTargetDeadline;
+		else if (targetDeadline > manualTargetDeadline &&
+			manualTargetDeadline > 0)
+			targetDeadline = manualTargetDeadline;
+
+		return targetDeadline;
+	}
+	default:
+		return 0;
+	}
 }
 
 Burst::Url Burst::MinerConfig::getServerUrl() const
@@ -1065,16 +1087,20 @@ void Burst::MinerConfig::setTimeout(float value)
 	timeout_ = value;
 }
 
-void Burst::MinerConfig::setTargetDeadline(const std::string& target_deadline)
+void Burst::MinerConfig::setTargetDeadline(const std::string& target_deadline, TargetDeadlineType type)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	setTargetDeadline(formatDeadline(target_deadline));
+	setTargetDeadline(formatDeadline(target_deadline), type);
 }
 
-void Burst::MinerConfig::setTargetDeadline(Poco::UInt64 target_deadline)
+void Burst::MinerConfig::setTargetDeadline(Poco::UInt64 target_deadline, TargetDeadlineType type)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	targetDeadline_ = target_deadline;
+
+	if (type == TargetDeadlineType::Local)
+		targetDeadline_ = target_deadline;
+	else if (type == TargetDeadlineType::Pool)
+		targetDeadlinePool_ = target_deadline;
 }
 
 Poco::UInt64 Burst::MinerConfig::getMaxBufferSize(bool optimal) const
@@ -1151,7 +1177,7 @@ unsigned Burst::MinerConfig::getGpuDevice() const
 void Burst::MinerConfig::printTargetDeadline() const
 {
 	if (getTargetDeadline() > 0)
-		log_system(MinerLogger::config, "Target deadline : %s", deadlineFormat(getTargetDeadline()));
+		log_system(MinerLogger::config, "Target deadline : %s", deadlineFormat(getTargetDeadline(TargetDeadlineType::Local)));
 }
 
 bool Burst::MinerConfig::save() const
@@ -1452,6 +1478,12 @@ void Burst::MinerConfig::setBufferChunkCount(unsigned bufferChunkCount)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	bufferChunkCount_ = bufferChunkCount;
+}
+
+void Burst::MinerConfig::setPoolTargetDeadline(Poco::UInt64 targetDeadline)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	targetDeadlinePool_ = targetDeadline;
 }
 
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)

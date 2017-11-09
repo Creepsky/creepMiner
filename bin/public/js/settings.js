@@ -9,7 +9,7 @@ function update_settings(config) {
     buffer_size.val(config['bufferSizeRaw']);
     plot_readers.val(config['maxPlotReadersRaw']);
     submission_max_retry.val(config['submissionMaxRetry']);
-    target_deadline.val(config['targetDeadlineText']);
+    target_deadline.val(config['targetDeadlineLocal']);
 
     timeout.val(config['timeout']);
 

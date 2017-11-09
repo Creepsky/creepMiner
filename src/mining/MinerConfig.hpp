@@ -50,6 +50,13 @@ namespace Burst
 		Server
 	};
 
+	enum class TargetDeadlineType
+	{
+		Pool,
+		Local,
+		Combined
+	};
+
 	/**
 	 * \brief Represents a passphrase, used for solo-mining.
 	 * Includes informations for en-/decrypting a passphrase.
@@ -142,8 +149,10 @@ namespace Burst
 		unsigned getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
 		bool getStartServer() const;
+
+
 		Url getServerUrl() const;
-		Poco::UInt64 getTargetDeadline() const;
+		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		unsigned getMiningIntensity(bool real = true) const;
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
 		const std::string& getPlotsHash() const;
@@ -190,13 +199,14 @@ namespace Burst
 		void setBufferSize(Poco::UInt64 bufferSize);
 		void setMaxSubmissionRetry(unsigned value);
 		void setTimeout(float value);
-		void setTargetDeadline(const std::string& target_deadline);
-		void setTargetDeadline(Poco::UInt64 target_deadline);
+		void setTargetDeadline(const std::string& target_deadline, TargetDeadlineType type);
+		void setTargetDeadline(Poco::UInt64 target_deadline, TargetDeadlineType type);
 		void setMininigIntensity(unsigned intensity);
 		void setMaxPlotReaders(unsigned max_reader);
 		void setLogDir(const std::string& log_dir);
 		void setGetMiningInfoInterval(unsigned interval);
 		void setBufferChunkCount(unsigned bufferChunkCount);
+		void setPoolTargetDeadline(Poco::UInt64 targetDeadline);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.
@@ -249,7 +259,7 @@ namespace Burst
 		Url urlWallet_;
 		bool startServer_ = false;
 		Url serverUrl_;
-		Poco::UInt64 targetDeadline_ = 0;
+		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;
 		unsigned miningIntensity_ = 1;
 		std::string plotsHash_;
 		std::string serverUser_, serverPass_;

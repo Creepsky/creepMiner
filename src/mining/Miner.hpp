@@ -60,7 +60,6 @@ namespace Burst
 		Poco::UInt64 getScoopNum() const;
 		Poco::UInt64 getBaseTarget() const;
 		Poco::UInt64 getBlockheight() const;
-		Poco::UInt64 getTargetDeadline() const;
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
 		void updateGensig(const std::string& gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
