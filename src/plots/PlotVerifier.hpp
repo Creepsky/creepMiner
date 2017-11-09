@@ -97,44 +97,61 @@ namespace Burst
 
 		while (!isCancelled())
 		{
-			Poco::Notification::Ptr notification(queue_->waitDequeueNotification());
-			VerifyNotification::Ptr verifyNotification;
-
-			if (notification)
-				verifyNotification = notification.cast<VerifyNotification>();
-			else
-				break;
-
-			const auto stopFunction = [this, &verifyNotification]()
+			try
 			{
-				return isCancelled() || verifyNotification->block != miner_->getBlockheight();
-			};
+				Poco::Notification::Ptr notification(queue_->waitDequeueNotification());
+				VerifyNotification::Ptr verifyNotification;
 
-			START_PROBE("PlotVerifier.SearchDeadline");
-			auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer, verifyNotification->nonceRead,
-														  verifyNotification->nonceStart, verifyNotification->baseTarget, verifyNotification->gensig,
-														  stopFunction, stream);
-			TAKE_PROBE("PlotVerifier.SearchDeadline");
+				if (notification)
+					verifyNotification = notification.cast<VerifyNotification>();
+				else
+					break;
 
-			if (bestResult.first != 0 && bestResult.second != 0)
-			{
-				START_PROBE("PlotVerifier.Submit");
-				miner_->submitNonceAsync(std::make_tuple(bestResult.first,
-					verifyNotification->accountId,
-					bestResult.second,
-					verifyNotification->block,
-					verifyNotification->inputPath,
-					true));
-				TAKE_PROBE("PlotVerifier.Submit");
+				const auto stopFunction = [this, &verifyNotification]()
+				{
+					return isCancelled() || verifyNotification->block != miner_->getBlockheight();
+				};
+
+				START_PROBE("PlotVerifier.SearchDeadline");
+				auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer, verifyNotification->nonceRead,
+					verifyNotification->nonceStart, verifyNotification->baseTarget, verifyNotification->gensig,
+					stopFunction, stream);
+				TAKE_PROBE("PlotVerifier.SearchDeadline");
+
+				if (bestResult.first != 0 && bestResult.second != 0)
+				{
+					START_PROBE("PlotVerifier.Submit");
+					miner_->submitNonceAsync(std::make_tuple(bestResult.first,
+						verifyNotification->accountId,
+						bestResult.second,
+						verifyNotification->block,
+						verifyNotification->inputPath,
+						true));
+					TAKE_PROBE("PlotVerifier.Submit");
+				}
+
+				START_PROBE("PlotVerifier.FreeMemory");
+				PlotReader::globalBufferSize.free(verifyNotification->memorySize);
+				TAKE_PROBE("PlotVerifier.FreeMemory");
+
+				if (progress_ != nullptr)
+					progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::PlotSize,
+						verifyNotification->block);
 			}
-
-			START_PROBE("PlotVerifier.FreeMemory");
-			PlotReader::globalBufferSize.free(verifyNotification->memorySize);
-			TAKE_PROBE("PlotVerifier.FreeMemory");
-
-			if (progress_ != nullptr)
-				progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::PlotSize,
-				               verifyNotification->block);
+			catch (Poco::Exception& exc)
+			{
+				log_error(MinerLogger::plotVerifier, "One of the plot verifiers just crashed! It will recover now.");
+				log_exception(MinerLogger::plotVerifier, exc);
+			}
+			catch (std::exception& exc)
+			{
+				log_error(MinerLogger::plotVerifier, "One of the plot verifiers just crashed! It will recover now.\n"
+					"\tReason:\t%s", std::string(exc.what()));
+			}
+			catch (...)
+			{
+				log_error(MinerLogger::plotVerifier, "One of the plot verifiers just crashed by an unknown reason! It will recover now.");
+			}
 		}
 
 		log_debug(MinerLogger::plotVerifier, "Verifier stopped");
