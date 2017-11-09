@@ -942,9 +942,16 @@ Poco::JSON::Object::Ptr Burst::MinerConfig::readOutput(Poco::JSON::Object::Ptr j
 	return json;
 }
 
-unsigned Burst::MinerConfig::getMiningIntensity() const
+unsigned Burst::MinerConfig::getMiningIntensity(bool real) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
+
+	if (!real)
+		return miningIntensity_;
+
+	if (miningIntensity_ == 0)
+		return getMaxPlotReaders(true);
+
 	return miningIntensity_;
 }
 

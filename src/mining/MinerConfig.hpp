@@ -144,7 +144,7 @@ namespace Burst
 		bool getStartServer() const;
 		Url getServerUrl() const;
 		Poco::UInt64 getTargetDeadline() const;
-		unsigned getMiningIntensity() const;
+		unsigned getMiningIntensity(bool real = true) const;
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
 		const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
