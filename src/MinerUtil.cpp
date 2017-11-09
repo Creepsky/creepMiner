@@ -521,10 +521,12 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("totalPlotSize", memToString(PlotSizes::getTotal() * 1024 * 1024 * 1024, 2));
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	json.set("bufferSize", memToString(MinerConfig::getConfig().getMaxBufferSize(), 0));
-	json.set("bufferSizeMB", std::to_string(MinerConfig::getConfig().getMaxBufferSize(false)));
+	json.set("bufferSizeRaw", std::to_string(MinerConfig::getConfig().getMaxBufferSize(false)));
 	json.set("targetDeadline", deadlineFormat(targetDeadline));
-	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders(false)));
+	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
+	json.set("maxPlotReadersRaw", std::to_string(MinerConfig::getConfig().getMaxPlotReaders(false)));
 	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));
+	json.set("miningIntensityRaw", std::to_string(MinerConfig::getConfig().getMiningIntensity(false)));
 	json.set("submissionMaxRetry", std::to_string(MinerConfig::getConfig().getSubmissionMaxRetry()));
 	json.set("targetDeadline", std::to_string(MinerConfig::getConfig().getTargetDeadline()));
 	json.set("targetDeadlineText", deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));

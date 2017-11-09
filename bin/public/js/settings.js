@@ -5,9 +5,9 @@ function update_settings(config) {
     submission_url.val(config['poolUrl'] + ':' + config['poolUrlPort']);
     wallet_url.val(config['walletUrl'] + ':' + config['walletUrlPort']);
 
-    intensity.val(config['miningIntensity']);
-    buffer_size.val(config['bufferSizeMB']);
-    plot_readers.val(config['maxPlotReaders']);
+    intensity.val(config['miningIntensityRaw']);
+    buffer_size.val(config['bufferSizeRaw']);
+    plot_readers.val(config['maxPlotReadersRaw']);
     submission_max_retry.val(config['submissionMaxRetry']);
     target_deadline.val(config['targetDeadlineText']);
 
