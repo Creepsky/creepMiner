@@ -450,6 +450,7 @@ Poco::JSON::Object Burst::createJsonDeadline(const Deadline& deadline)
 	json.set("accountId", std::to_string(deadline.getAccountId()));
 	json.set("plotfile", deadline.getPlotFile());
 	json.set("deadlineNum", std::to_string(deadline.getDeadline()));
+	json.set("blockheight", std::to_string(deadline.getBlock()));
 	return json;
 }
 
@@ -471,6 +472,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 
 	auto& block = *blockPtr;
 	const auto bestOverall = data.getBestDeadlineOverall();
+	const auto bestHistorical = data.getBestDeadlineOverall(true);
 
 	json.set("type", "new block");
 	json.set("block", std::to_string(block.getBlockheight()));
@@ -480,11 +482,13 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	json.set("time", getTime());
 	json.set("blocksMined", std::to_string(data.getBlocksMined()));
 	json.set("blocksWon", std::to_string(data.getBlocksWon()));
+	
 	if (bestOverall != nullptr)
-	{
-		json.set("bestOverallNum", std::to_string(bestOverall->getDeadline()));
-		json.set("bestOverall", deadlineFormat(bestOverall->getDeadline()));
-	}
+		json.set("bestOverall", createJsonDeadline(*bestOverall));
+
+	if (bestHistorical != nullptr)
+		json.set("bestHistorical", createJsonDeadline(*bestHistorical));
+
 	json.set("deadlinesConfirmed", std::to_string(data.getConfirmedDeadlines()));
 	json.set("deadlinesAvg", deadlineFormat(data.getAverageDeadline()));
 		
@@ -502,13 +506,13 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	}
 
 	json.set("bestDeadlines", bestDeadlines);
-	json.set("difficulty", block.getDifficulty());
-	json.set("difficultyDifference", data.getDifficultyDifference());
+	json.set("difficulty", std::to_string(block.getDifficulty()));
+	json.set("difficultyDifference", std::to_string(data.getDifficultyDifference()));
 
 	const auto diffToJson = [&json](const HighscoreValue<Poco::UInt64>& diff, const std::string& id) {
 		Poco::JSON::Object jsonDiff;
-		jsonDiff.set("blockheight", diff.height);
-		jsonDiff.set("value", diff.value);
+		jsonDiff.set("blockheight", std::to_string(diff.height));
+		jsonDiff.set("value", std::to_string(diff.value));
 		json.set(id, jsonDiff);
 	};
 

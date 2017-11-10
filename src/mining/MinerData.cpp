@@ -535,9 +535,22 @@ void Burst::MinerData::addMessage(const Poco::Message& message)
 		blockData->addMessage(message);
 }
 
-std::shared_ptr<Burst::Deadline> Burst::MinerData::getBestDeadlineOverall() const
+std::shared_ptr<Burst::Deadline> Burst::MinerData::getBestDeadlineOverall(bool onlyHistorical) const
 {
-	return bestDeadlineOverall_;
+	if (!onlyHistorical)
+		return bestDeadlineOverall_;
+
+	std::lock_guard<std::mutex> lock(mutex_);
+
+	std::shared_ptr<Deadline> bestHistoricalDeadline;
+
+	for (const auto& block : historicalBlocks_)
+		if (block != nullptr && block->getBestDeadline() != nullptr &&
+			(bestHistoricalDeadline == nullptr ||
+				block->getBestDeadline()->getDeadline() < bestHistoricalDeadline->getDeadline()))
+			bestHistoricalDeadline = block->getBestDeadline();
+
+	return bestHistoricalDeadline;
 }
 
 const Poco::Timestamp& Burst::MinerData::getStartTime() const

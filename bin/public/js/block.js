@@ -27,7 +27,7 @@ class Block {
 
 	newBlock(block) {
 		this.head.html("Block " + block["block"]);
-		this.body.html("<div class='row'><div class='col-md-3 col-xs-5'>Time</div><div class='col-md-9 col-xs-7'>" + block["time"] + "</div></div>");
+		this.body.html("<div class='row'><div class='col-md-3 col-xs-5'>Start time</div><div class='col-md-9 col-xs-7'>" + block["time"] + "</div></div>");
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Scoop</div><div class='col-md-9 col-xs-7'>" + block["scoop"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Base target</div><div class='col-md-9 col-xs-7'>" + block["baseTarget"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Generation sig.</div><div class='col-md-9 col-xs-7'>" + block["gensigStr"] + "</div></div>"));
@@ -64,6 +64,7 @@ var thisBlockBest;
 var thisBlockBestElement;
 var bestDeadlineOverall;
 var bestDeadlineOverallElement;
+var bestHistorical;
 var minedBlocks = -1;
 var minedBlocksElement;
 var name = document.title;
@@ -195,14 +196,17 @@ function newBlock(json) {
 	thisBlockBestElement.html(nullDeadline);
 	setMinedBlocks(json["blocksMined"]);
 	document.title = name + " (" + json["block"] + ")";
-	checkAddBestOverall(BigInteger(json["bestOverallNum"]), json["bestOverall"]);
+	checkAddBestOverall(BigInteger(json["bestOverall"]["deadlineNum"]),
+								   json["bestOverall"]["deadline"],
+								   json["bestOverall"]["blockheight"]);
+	bestHistorical.html(json["bestHistorical"]["deadline"] + " <small>@" + json["bestHistorical"]["blockheight"] + "</small>");
 	setConfirmedDeadlines(BigInteger(json["deadlinesConfirmed"]));
 	setOverallProgress(0);
 	lastWinnerContainer.hide();
 	avgDeadline.html(json["deadlinesAvg"]);
 	wonBlocks.html(json["blocksWon"]);
-	lowestDiff.html(json["lowestDifficulty"]["value"] + " (block " + json["lowestDifficulty"]["blockheight"] + ")");
-	highestDiff.html(json["highestDifficulty"]["value"] + " (block " + json["highestDifficulty"]["blockheight"] + ")");
+	lowestDiff.html(json["lowestDifficulty"]["value"] + " <small>@" + json["lowestDifficulty"]["blockheight"] + "</small>");
+	highestDiff.html(json["highestDifficulty"]["value"] + " <small>@" + json["highestDifficulty"]["blockheight"] + "</small>");
 	plot.setData([json["bestDeadlines"]]);
 	plot.setupGrid();
 	plot.draw();
@@ -314,11 +318,11 @@ function checkAddBestRound(deadlineNum, deadline) {
 	}
 }
 
-function checkAddBestOverall(deadlineNum, deadline) {
+function checkAddBestOverall(deadlineNum, deadline, blockheight) {
 	if (!bestDeadlineOverall ||
 		bestDeadlineOverall > deadlineNum) {
 		bestDeadlineOverall = deadlineNum;
-		bestDeadlineOverallElement.html(deadline);
+		bestDeadlineOverallElement.html(deadline + " <small>@" + blockheight + "</small>");
 	}
 }
 
@@ -687,6 +691,7 @@ function initBlock() {
 	system = $("#system");
 	thisBlockBestElement = $("#thisBlockBest");
 	bestDeadlineOverallElement = $("#bestOverall");
+	bestHistorical = $("#bestHistorical");
 	minedBlocksElement = $("#minedBlocks");
 	confirmedDeadlinesElement = $("#confirmedDeadlines");
 	hideSameNonces = $("#cbHideSameNonces");

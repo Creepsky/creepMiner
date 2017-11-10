@@ -148,7 +148,7 @@ namespace Burst
 		std::shared_ptr<BlockData> startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig);
 		void addMessage(const Poco::Message& message);
 
-		std::shared_ptr<Deadline> getBestDeadlineOverall() const;
+		std::shared_ptr<Deadline> getBestDeadlineOverall(bool onlyHistorical = false) const;
 		const Poco::Timestamp& getStartTime() const;
 		Poco::Timespan getRunTime() const;
 		Poco::UInt64 getBlocksMined() const;
