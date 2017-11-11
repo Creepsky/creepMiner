@@ -38,6 +38,9 @@
 #include "plots/PlotReader.hpp"
 #include "plots/Plot.hpp"
 #include <Poco/FileStream.h>
+#include <Poco/JSON/PrintHandler.h>
+#include <Poco/StringTokenizer.h>
+#include "extlibs/json.hpp"
 
 const std::string Burst::MinerConfig::WebserverUserPassphrase = "ms7zKm7QjsSOQEP13wHAWnraSp7yP7YSQdPzAjvO";
 const std::string Burst::MinerConfig::WebserverPassPassphrase = "CAAwj6RTQqXZGxbNjLVqr5FwAqT7GM9Y1wppNLRp";
@@ -218,20 +221,57 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 	Poco::JSON::Parser parser;
 	Poco::JSON::Object::Ptr config;
-	
+	std::stringstream jsonValidationStream;
+
 	parser.setAllowComments(true);
-	
-	std::string jsonStr((std::istreambuf_iterator<char>(inputFileStream)),
+
+	const std::string jsonStr((std::istreambuf_iterator<char>(inputFileStream)),
 		std::istreambuf_iterator<char>());
 	
 	inputFileStream.close();
 
 	try
 	{
+		// validate the syntax
+		nlohmann::json::parse(jsonStr);
+
+		// parse the config
 		config = parser.parse(jsonStr).extract<Poco::JSON::Object::Ptr>();
 	}
-	catch (Poco::JSON::JSONException& exc)
-	{		
+	catch (nlohmann::json::parse_error& exc)
+	{
+		const auto slice = 256;
+		auto startByte = std::max(0, static_cast<int>(exc.byte) - slice);
+		auto endByte = std::min(exc.byte + slice, jsonStr.size());
+
+		if (startByte < 5)
+			startByte = 0;
+
+		if (endByte > jsonStr.size() - 5)
+			endByte = jsonStr.size();
+		
+		const auto errorColor = MinerLogger::getTextTypeColor(TextType::Error);
+
+		auto printBlock = Console::print();
+		printBlock.addTime() << ": " << errorColor << "There is an error in the config file!";
+		printBlock.nextLine();
+		printBlock.resetColor();
+
+		if (startByte > 0)
+			printBlock << "...";
+
+		printBlock << jsonStr.substr(startByte, exc.byte - startByte)
+			<< errorColor << " <-- error somewhere here";
+		printBlock.resetColor() << jsonStr.substr(exc.byte, endByte - exc.byte);
+
+		if (endByte < jsonStr.size())
+			printBlock << "...";
+
+		printBlock.nextLine();
+		return false;
+	}
+	catch (Poco::Exception& exc)
+	{
 		log_error(MinerLogger::config,
 			"There is an error in the config file!\n"
 			"%s",
