@@ -124,6 +124,7 @@ endif ()
 # Header files
 ##################################################################
 set(HEADER_FILES
+	src/extlibs/json.hpp
 	src/gpu/algorithm/gpu_algorithm_atomic.hpp
 	src/gpu/impl/gpu_cuda_impl.hpp
 	src/gpu/impl/gpu_opencl_impl.hpp
