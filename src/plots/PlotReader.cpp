@@ -150,7 +150,7 @@ void Burst::PlotReader::runTask()
 						break;
 					}
 
-					const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024;
+					const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSize();
 					auto chunkBytes = maxBufferSize / MinerConfig::getConfig().getBufferChunkCount();
 
 					// unlimited buffer size

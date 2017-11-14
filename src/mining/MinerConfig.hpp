@@ -135,7 +135,8 @@ namespace Burst
 		std::vector<std::shared_ptr<PlotFile>> getPlotFiles() const;
 		uintmax_t getTotalPlotsize() const;
 
-		Poco::UInt64 getMaxBufferSize(bool optimal = true) const;
+		Poco::UInt64 getMaxBufferSize() const;
+		Poco::UInt64 getMaxBufferSizeRaw() const;
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
 		float getTimeout() const;

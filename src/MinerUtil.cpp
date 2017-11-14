@@ -537,7 +537,7 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("totalPlotSize", memToString(PlotSizes::getTotal() * 1024 * 1024 * 1024, 2));
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	json.set("bufferSize", memToString(MinerConfig::getConfig().getMaxBufferSize(), 0));
-	json.set("bufferSizeRaw", std::to_string(MinerConfig::getConfig().getMaxBufferSize(false)));
+	json.set("bufferSizeRaw", std::to_string(MinerConfig::getConfig().getMaxBufferSizeRaw()));
 	json.set("targetDeadline", deadlineFormat(targetDeadline));
 	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
 	json.set("maxPlotReadersRaw", std::to_string(MinerConfig::getConfig().getMaxPlotReaders(false)));

@@ -135,8 +135,8 @@ void Burst::MinerConfig::printUrl(const Url& url, const std::string& url_name)
 void Burst::MinerConfig::printBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	const auto bufferSize = getMaxBufferSize(true);
-	log_system(MinerLogger::config, "Buffer Size : %s", memToString(bufferSize, 0));
+	log_system(MinerLogger::config, "Buffer Size : %s",
+		std::to_string(getMaxBufferSizeRaw()) + " (" + memToString(getMaxBufferSize(), 0) + ")");
 }
 
 template <typename T>
@@ -1143,17 +1143,19 @@ void Burst::MinerConfig::setTargetDeadline(Poco::UInt64 target_deadline, TargetD
 		targetDeadlinePool_ = target_deadline;
 }
 
-Poco::UInt64 Burst::MinerConfig::getMaxBufferSize(bool optimal) const
+Poco::UInt64 Burst::MinerConfig::getMaxBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-
-	if (!optimal)
-		return maxBufferSizeMB_;
-
+	
 	if (maxBufferSizeMB_ == 0)
 		return getTotalPlotsize() / 4096;
 
 	return maxBufferSizeMB_ * 1024 * 1024;
+}
+
+Poco::UInt64 Burst::MinerConfig::getMaxBufferSizeRaw() const
+{
+	return maxBufferSizeMB_;
 }
 
 void Burst::MinerConfig::setMininigIntensity(unsigned intensity)

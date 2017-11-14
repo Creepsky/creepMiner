@@ -266,7 +266,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 		log_debug(MinerLogger::miner, "Allocated memory: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
 	
 		START_PROBE("Miner.SetBuffersize")
-		PlotReader::globalBufferSize.setMax(MinerConfig::getConfig().getMaxBufferSize() * 1024 * 1024);
+		PlotReader::globalBufferSize.setMax(MinerConfig::getConfig().getMaxBufferSize());
 		TAKE_PROBE("Miner.SetBuffersize")
 	}
 	
