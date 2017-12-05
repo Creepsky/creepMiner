@@ -196,8 +196,7 @@ int main(int argc, const char* argv[])
 		HTTPSStreamFactory::registerFactory();
 
 		const SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
-		const Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "", "", "",
-			Context::VERIFY_RELAXED, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+		const Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "");
 		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
 
 		HTTPSessionInstantiator::registerInstantiator();
