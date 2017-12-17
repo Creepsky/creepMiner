@@ -438,7 +438,21 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
 		wakeUpTime_ = getOrAdd(miningObj, "wakeUpTime", 0);
 		
-		cpuInstructionSet_ = getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2"));
+		cpuInstructionSet_ = Poco::toUpper(getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2")));
+
+		// auto detect the max. cpu instruction set
+		if (cpuInstructionSet_ == "AUTO")
+		{
+			if (cpuHasInstructionSet(CpuInstructionSet::avx2))
+				cpuInstructionSet_ = "AVX2";
+			else if (cpuHasInstructionSet(CpuInstructionSet::avx))
+				cpuInstructionSet_ = "AVX";
+			else if (cpuHasInstructionSet(CpuInstructionSet::sse4))
+				cpuInstructionSet_ = "SSE4";
+			else
+				cpuInstructionSet_ = "SSE2";
+		}
+
 		Settings::setCpuInstructionSet(cpuInstructionSet_);
 
 		processorType_ = getOrAdd(miningObj, "processorType", std::string("CPU"));

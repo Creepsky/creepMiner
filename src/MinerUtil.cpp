@@ -47,6 +47,20 @@
 #include <Poco/File.h>
 #include <fstream>
 #include "plots/PlotSizes.hpp"
+#include <chrono>
+
+// cpuinfo stuff (sse2, sse4, ...)
+#ifdef _WIN32
+//  Windows
+#define cpuid(info, x) __cpuidex(info, x, 0)
+#else
+//  GCC Intrinsics
+#include <cpuid.h>
+void cpuid(int info[4], int InfoType)
+{
+	__cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
+}
+#endif
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -736,4 +750,61 @@ std::string Burst::createTruncatedString(const std::string& string, size_t paddi
 	}
 
 	return padded_string;
+}
+
+bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
+{
+	const auto instructionSets = cpuGetInstructionSets();
+
+	switch (cpuInstructionSet)
+	{
+	case sse2: return (instructionSets & sse2) == sse2;
+	case sse4: return (instructionSets & sse4) == sse4;
+	case avx: return (instructionSets & avx) == avx;
+	case avx2: return (instructionSets & avx2) == avx2;
+	default: return false;
+	}
+}
+
+int Burst::cpuGetInstructionSets()
+{
+	int info[4];
+	cpuid(info, 0);
+	const auto n_ids = info[0];
+
+	auto has_sse2 = false;
+	auto has_sse4 = false;
+	auto has_avx = false;
+	auto has_avx2 = false;
+
+	//  Detect Features
+	if (n_ids >= 0x00000001)
+	{
+		cpuid(info, 0x00000001);
+		has_sse2 = (info[3] & 1 << 26) != 0;
+		has_sse4 = (info[2] & 1 << 19) != 0 || (info[2] & 1 << 20) != 0;
+		has_avx = (info[2] & 1 << 28) != 0;
+	}
+
+	if (n_ids >= 0x00000007)
+	{
+		cpuid(info, 0x00000007);
+		has_avx2 = (info[1] & (static_cast<int>(1) << 5)) != 0;
+	}
+
+	auto instruction_sets = 0;
+
+	if (has_sse2)
+		instruction_sets += sse2;
+
+	if (has_sse4)
+		instruction_sets += sse4;
+
+	if (has_avx)
+		instruction_sets += avx;
+
+	if (has_avx2)
+		instruction_sets += avx2;
+
+	return instruction_sets;
 }

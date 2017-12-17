@@ -87,6 +87,14 @@ namespace Burst
 		Seconds
 	};
 
+	enum CpuInstructionSet
+	{
+		sse2 = 1 << 0,
+		sse4 = 1 << 1,
+		avx = 1 << 2,
+		avx2 = 1 << 3
+	};
+
 	bool isNumberStr(const std::string& str);
 	std::string getFileNameFromPath(const std::string& strPath);
 	std::vector<std::string>& splitStr(const std::string& s, char delim, std::vector<std::string>& elems);
@@ -157,4 +165,7 @@ namespace Burst
 		sstream << number;
 		return sstream.str();
 	}
+
+	bool cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet);
+	int cpuGetInstructionSets();
 }
