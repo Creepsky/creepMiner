@@ -1548,6 +1548,12 @@ void Burst::MinerConfig::setProcessorType(const std::string& processorType)
 	processorType_ = processorType;
 }
 
+void Burst::MinerConfig::setCpuInstructionSet(const std::string& instructionSet)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	cpuInstructionSet_ = instructionSet;
+}
+
 void Burst::MinerConfig::setGpuPlatform(const unsigned platformIndex)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);

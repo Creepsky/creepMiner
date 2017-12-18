@@ -29,7 +29,9 @@
 #include "Poco/Net/HTTPSStreamFactory.h"
 #include "Poco/Net/AcceptCertificateHandler.h"
 #include <Poco/Net/HTTPSSessionInstantiator.h>
+// ReSharper disable CppUnusedIncludeDirective
 #include <Poco/Net/PrivateKeyPassphraseHandler.h>
+// ReSharper restore CppUnusedIncludeDirective
 #include <Poco/NestedDiagnosticContext.h>
 #include "webserver/MinerServer.hpp"
 #include <Poco/Logger.h>
@@ -41,6 +43,7 @@
 #include <Poco/Util/OptionProcessor.h>
 #include <Poco/Util/HelpFormatter.h>
 #include <Poco/Util/Validator.h>
+#include "setup.hpp"
 
 class SSLInitializer
 {
@@ -58,87 +61,23 @@ public:
 
 struct Arguments
 {
-	Arguments()
-	{
-		using Poco::Util::Option;
-
-		options_.addOption(Option("help", "h", "display help information")
-			.required(false)
-			.repeatable(false)
-			.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::displayHelp)));
-
-		options_.addOption(Option("config", "c", "Path to the config file")
-			.required(false)
-			.repeatable(false)
-			.argument("path")
-			.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::setConfPath)));
-	}
-
-	bool process(int argc, const char* argv[])
-	{
-		Poco::Util::OptionProcessor optionProcessor(options_);
-		optionProcessor.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
-
-		try
-		{
-			for (auto i = 1; i < argc; ++i)
-			{
-				std::string name;
-				std::string value;
-				
-				if (optionProcessor.process(argv[i], name, value))
-				{
-					if (!name.empty())
-					{
-						const auto& option = options_.getOption(name);
-
-						if (option.validator())
-							option.validator()->validate(option, value);
-
-						if (option.callback())
-							option.callback()->invoke(name, value);
-					}
-				}
-			}
-			
-			optionProcessor.checkRequired();
-			return true;
-		}
-		catch (...)
-		{
-			displayHelp("", "");
-			return false;
-		}
-	}
-
+	Arguments();
+	bool process(const int argc, const char* argv[]);
+	
 	bool helpRequested = false;
+	bool setupRequested = false;
 	std::string confPath = "mining.conf";
 
 private:
-	void displayHelp(const std::string& name, const std::string& value)
-	{
-		Poco::Util::HelpFormatter helpFormatter(options_);
-		helpFormatter.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
-		helpFormatter.setCommand("creepMiner");
-		helpFormatter.setUsage("<options>");
-		helpFormatter.setHeader("Burstcoin cryptocurrency CPU and GPU miner.");
-		helpFormatter.setFooter("Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)");
-		helpFormatter.setAutoIndent();
-		helpFormatter.format(std::cout);
-
-		helpRequested = true;
-	}
-
-	void setConfPath(const std::string& name, const std::string& value)
-	{
-		confPath = value;
-	}
+	void displayHelp(const std::string& name, const std::string& value);
+	void setConfPath(const std::string& name, const std::string& value);
+	void setup(const std::string& name, const std::string& value);
 
 private:
 	Poco::Util::OptionSet options_;
 };
 
-int main(int argc, const char* argv[])
+int main(const int argc, const char* argv[])
 {
 	poco_ndc(main);
 
@@ -186,7 +125,7 @@ int main(int argc, const char* argv[])
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
 	log_information(general, "Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
 	log_information(general, "----------------------------------------------");
-		
+	
 	try
 	{
 		using namespace Poco;
@@ -211,7 +150,7 @@ int main(int argc, const char* argv[])
 			//
 			Burst::Url url{ "https://raw.githubusercontent.com" };
 			//
-			Poco::Net::HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
+			HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
 			//
 			Burst::Request request{ url.createSession() };
 			auto response = request.send(getRequest);
@@ -249,6 +188,15 @@ int main(int argc, const char* argv[])
 				{
 					Burst::Gpu_Cuda_Impl::listDevices();
 					Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
+				}
+
+				if (arguments.setupRequested)
+				{
+					if (!Burst::Setup::setup(Burst::MinerConfig::getConfig()))
+					{
+						log_warning(general, "Error while setting up!");
+						return EXIT_FAILURE;
+					}
 				}
 
 				Burst::Miner miner;
@@ -296,4 +244,86 @@ int main(int argc, const char* argv[])
 	Poco::ThreadPool::defaultPool().joinAll();
 
 	return 0;
+}
+
+Arguments::Arguments()
+{
+	using Poco::Util::Option;
+
+	options_.addOption(Option("help", "h", "Display help information")
+		.required(false)
+		.repeatable(false)
+		.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::displayHelp)));
+
+	options_.addOption(Option("config", "c", "Path to the config file")
+		.required(false)
+		.repeatable(false)
+		.argument("path")
+		.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::setConfPath)));
+
+	options_.addOption(Option("setup", "s", "Set up the miner")
+		.required(false)
+		.repeatable(false)
+		.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::setup)));
+}
+
+bool Arguments::process(const int argc, const char* argv[])
+{
+	Poco::Util::OptionProcessor optionProcessor(options_);
+	optionProcessor.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+
+	try
+	{
+		for (auto i = 1; i < argc; ++i)
+		{
+			std::string name;
+			std::string value;
+
+			if (optionProcessor.process(argv[i], name, value))
+			{
+				if (!name.empty())
+				{
+					const auto& option = options_.getOption(name);
+
+					if (option.validator())
+						option.validator()->validate(option, value);
+
+					if (option.callback())
+						option.callback()->invoke(name, value);
+				}
+			}
+		}
+
+		optionProcessor.checkRequired();
+		return true;
+	}
+	catch (...)
+	{
+		displayHelp("", "");
+		return false;
+	}
+}
+
+void Arguments::displayHelp(const std::string& name, const std::string& value)
+{
+	Poco::Util::HelpFormatter helpFormatter(options_);
+	helpFormatter.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+	helpFormatter.setCommand("creepMiner");
+	helpFormatter.setUsage("<options>");
+	helpFormatter.setHeader("Burstcoin cryptocurrency CPU and GPU miner.");
+	helpFormatter.setFooter("Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)");
+	helpFormatter.setAutoIndent();
+	helpFormatter.format(std::cout);
+
+	helpRequested = true;
+}
+
+void Arguments::setConfPath(const std::string& name, const std::string& value)
+{
+	confPath = value;
+}
+
+void Arguments::setup(const std::string& name, const std::string& value)
+{
+	setupRequested = true;
 }

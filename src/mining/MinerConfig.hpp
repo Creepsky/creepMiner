@@ -209,6 +209,7 @@ namespace Burst
 		void setBufferChunkCount(unsigned bufferChunkCount);
 		void setPoolTargetDeadline(Poco::UInt64 targetDeadline);
 		void setProcessorType(const std::string& processorType);
+		void setCpuInstructionSet(const std::string& instructionSet);
 		void setGpuPlatform(unsigned platformIndex);
 		void setGpuDevice(unsigned deviceIndex);
 
