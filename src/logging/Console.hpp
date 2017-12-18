@@ -25,6 +25,7 @@
 #include <mutex>
 #include <memory>
 #include <iostream>
+#include <Poco/Format.h>
 
 namespace Burst
 {
@@ -97,6 +98,20 @@ namespace Burst
 			return *this;
 		}
 
+		template <typename T>
+		const PrintBlock& print(const T& text) const
+		{
+			return (*this << text);
+		}
+
+		const PrintBlock& print(const std::string& text) const;
+
+		template <typename ...T>
+		const PrintBlock& print(const std::string& format, const T&... args) const
+		{
+			return print(Poco::format(format, std::forward<const T&>(args)...));
+		}
+
 		/**
 		 * \brief Changes the current color of the font.
 		 * \param color The font color.
@@ -141,6 +156,8 @@ namespace Burst
 		 */
 		const PrintBlock& resetColor() const;
 		
+		const PrintBlock& setColor(ConsoleColor color) const;
+
 	private:
 		std::ostream* stream_;
 	};

@@ -39,6 +39,11 @@ Burst::PrintBlock::PrintBlock(std::ostream& stream)
 {
 }
 
+const Burst::PrintBlock& Burst::PrintBlock::print(const std::string& text) const
+{
+	return *this << text;
+}
+
 const Burst::PrintBlock& Burst::PrintBlock::operator<<(ConsoleColor color) const
 {
 	Console::setColor(color);
@@ -67,6 +72,11 @@ const Burst::PrintBlock& Burst::PrintBlock::resetColor() const
 {
 	Console::resetColor();
 	return *this;
+}
+
+const Burst::PrintBlock& Burst::PrintBlock::setColor(ConsoleColor color) const
+{
+	return *this << color;
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::clearLine(bool wipe) const
