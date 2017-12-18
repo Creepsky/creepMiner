@@ -27,6 +27,7 @@
 #include "mining/MinerCL.hpp"
 #include "logging/MinerLogger.hpp"
 #include "plots/PlotVerifier.hpp"
+#include <Poco/File.h>
 
 const std::string Burst::Setup::exit = "Exit";
 
@@ -38,6 +39,7 @@ bool Burst::Setup::setup(MinerConfig& config)
 	std::string processorType;
 	std::string instructionSet;
 	int platformIndex, deviceIndex;
+	std::vector<std::string> plotLocations;
 
 	if (!chooseProcessorType(processorType))
 		return false;
@@ -63,6 +65,11 @@ bool Burst::Setup::setup(MinerConfig& config)
 	}
 
 	config.setProcessorType(processorType);
+
+	if (!choosePlots(plotLocations))
+		return false;
+
+	config.setPlotDirs(plotLocations);
 
 	if (!config.save())
 		log_warning(MinerLogger::miner, "Your settings could not be saved! They are only valid for this session.");
@@ -110,7 +117,7 @@ std::string Burst::Setup::readInput(const std::vector<std::string>& options, con
 
 	if (exit)
 	{
-		choiceText = exit;
+		choiceText = Setup::exit;
 		color = ConsoleColor::Red;
 	}
 	else if (useDefault)
@@ -193,4 +200,40 @@ bool Burst::Setup::chooseGpuDevice(const int platformIndex, int& deviceIndex)
 		devices.emplace_back(device.name);
 
 	return readInput(devices, "Choose the OpenCL device", platform.devices.begin()->name, deviceIndex) != exit;
+}
+
+bool Burst::Setup::choosePlots(std::vector<std::string>& plots)
+{
+	log_notice(MinerLogger::general, "Please enter your plotfile locations");
+	log_notice(MinerLogger::general, "[ Enter] to accept the current list");
+
+	plots.clear();
+	std::string path;
+
+	auto pb = Console::print();
+
+	do
+	{
+		try
+		{
+			pb.addTime().setColor(ConsoleColor::Yellow).print(": Path: ").resetColor();
+			getline(std::cin, path);
+
+			if (!path.empty())
+			{
+				Poco::File location(path);
+			
+				if (location.isDirectory())
+					plots.emplace_back(path);
+				else
+					log_warning(MinerLogger::general, "The location you entered is not a directory");
+			}
+		}
+		catch (...)
+		{
+		}
+	}
+	while (!path.empty());
+
+	return true;
 }

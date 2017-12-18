@@ -1566,9 +1566,17 @@ void Burst::MinerConfig::setGpuDevice(const unsigned deviceIndex)
 	gpuDevice_ = deviceIndex;
 }
 
+void Burst::MinerConfig::setPlotDirs(const std::vector<std::string>& plotDirs)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	plotDirs_.clear();
+	for (const auto& plotDir : plotDirs)
+		addPlotDir(plotDir);
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
-	return addPlotDir(std::make_shared<PlotDir>(dir, PlotDir::Type::Sequential));
+	return addPlotDir(std::make_shared<PlotDir>(Poco::replace(dir, "\\", "/"), PlotDir::Type::Sequential));
 }
 
 bool Burst::MinerConfig::removePlotDir(const std::string& dir)

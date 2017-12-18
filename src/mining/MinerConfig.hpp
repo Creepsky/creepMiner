@@ -212,6 +212,7 @@ namespace Burst
 		void setCpuInstructionSet(const std::string& instructionSet);
 		void setGpuPlatform(unsigned platformIndex);
 		void setGpuDevice(unsigned deviceIndex);
+		void setPlotDirs(const std::vector<std::string>& plotDirs);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.
