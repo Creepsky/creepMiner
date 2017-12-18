@@ -40,6 +40,7 @@ bool Burst::Setup::setup(MinerConfig& config)
 	std::string instructionSet;
 	int platformIndex, deviceIndex;
 	std::vector<std::string> plotLocations;
+	unsigned memory = 0;
 
 	if (!chooseProcessorType(processorType))
 		return false;
@@ -64,12 +65,16 @@ bool Burst::Setup::setup(MinerConfig& config)
 		config.setGpuDevice(deviceIndex);
 	}
 
-	config.setProcessorType(processorType);
-
 	if (!choosePlots(plotLocations))
 		return false;
 
+	if (!plotLocations.empty())
+		if (!chooseBufferSize(memory))
+			return false;
+
+	config.setProcessorType(processorType);
 	config.setPlotDirs(plotLocations);
+	config.setBufferSize(memory);
 
 	if (!config.save())
 		log_warning(MinerLogger::miner, "Your settings could not be saved! They are only valid for this session.");
@@ -81,14 +86,14 @@ std::string Burst::Setup::readInput(const std::vector<std::string>& options, con
                                     const std::string& defaultValue, int& index)
 {
 	auto pb = Console::print();
-	pb.addTime().setColor(ConsoleColor::LightCyan).print(": %s", header).resetColor().nextLine();
+	pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("%s", header).resetColor().nextLine();
 
 	for (size_t i = 0; i < options.size(); ++i)
 	{
 		pb.addTime().print(": [%7z]: %s", i + 1, options[i]);
 
 		if (options[i] == defaultValue)
-			pb.setColor(ConsoleColor::LightGreen).print(" *").resetColor();
+			pb.setColor(ConsoleColor::LightGreen).print(" <--").resetColor();
 
 		pb.nextLine();
 	}
@@ -216,7 +221,7 @@ bool Burst::Setup::choosePlots(std::vector<std::string>& plots)
 	{
 		try
 		{
-			pb.addTime().setColor(ConsoleColor::Yellow).print(": Path: ").resetColor();
+			pb.addTime().print(": ").setColor(ConsoleColor::Yellow).print("Path: ").resetColor();
 			getline(std::cin, path);
 
 			if (!path.empty())
@@ -234,6 +239,105 @@ bool Burst::Setup::choosePlots(std::vector<std::string>& plots)
 		}
 	}
 	while (!path.empty());
+
+	return true;
+}
+
+bool Burst::Setup::chooseBufferSize(unsigned& memory)
+{
+	// set buffer size to auto
+	MinerConfig::getConfig().setBufferSize(0);
+
+	// get the theoretically used buffer size
+	const auto autoBufferSize = MinerConfig::getConfig().getMaxBufferSize();
+
+	// the amount of physical memory
+	const auto physicalMemory = getMemorySize();
+
+	// is there enough RAM for the auto buffer size?
+	const auto autoBufferSizeAllowed = physicalMemory >= autoBufferSize;
+
+	log_notice(MinerLogger::general, "Please enter your maximum buffer size (in MB)");
+	log_notice(MinerLogger::general, "Your physical amount of RAM is: %s MB",
+		memToString(physicalMemory, MemoryUnit::Megabyte, 0));
+	log_notice(MinerLogger::general, "The optimal amount of memory for your miner is: %s", memToString(autoBufferSize, 0));
+	
+	if (autoBufferSizeAllowed)
+		log_notice(MinerLogger::general, "If you use the size 0, the miner will use the optimal amount (%.0f%% of your RAM)",
+			static_cast<double>(autoBufferSize) / physicalMemory * 100);
+
+	log_notice(MinerLogger::general, "Press [ Enter] for the optimal amount");
+
+	auto entered = false;
+	auto pb = Console::print();
+	std::string input;
+
+	while (!entered)
+	{
+		try
+		{
+			pb.addTime().print(": ");
+			getline(std::cin, input);
+			
+			if (input == "0" || input.empty())
+			{
+				auto useAutoBuffer = autoBufferSizeAllowed;
+				
+				if (!autoBufferSizeAllowed)
+				{
+					pb.addTime().print(": Size: ")
+					  .setColor(ConsoleColor::Red)
+					  .print("This will use ~%s of memory, but you have only %s. Still use 0?: (y/n)",
+					         memToString(autoBufferSize, 0),
+					         memToString(physicalMemory, 0));
+
+					char yesNo;
+
+					do
+					{
+						yesNo = _getch();
+					}
+					while (yesNo != 'y' && yesNo != 'n');
+
+					pb.print(yesNo).nextLine();
+					useAutoBuffer = yesNo == 'y';
+				}
+
+				if (useAutoBuffer)
+				{
+					memory = 0;
+					entered = true;
+				}
+			}
+			else
+			{
+				memory = Poco::NumberParser::parseUnsigned(input);
+				auto useMemory = true;
+
+				if (memory > physicalMemory / 1024 / 1024)
+				{
+					pb.addTime().print(": ")
+						.setColor(ConsoleColor::LightRed)
+						.print("Are you sure that you want to use a bigger buffer than your physical RAM? (y/n): ");
+
+					char yesNo;
+
+					do
+					{
+						yesNo = _getch();
+					} while (yesNo != 'y' && yesNo != 'n');
+
+					pb.print(yesNo).nextLine();
+					useMemory = yesNo == 'y';
+				}
+				
+				entered = useMemory;
+			}
+		}
+		catch (...)
+		{
+		}
+	}
 
 	return true;
 }

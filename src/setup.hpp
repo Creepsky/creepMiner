@@ -40,5 +40,6 @@ namespace Burst
 		static bool chooseGpuPlatform(int& platformIndex);
 		static bool chooseGpuDevice(int platformIndex, int& deviceIndex);
 		static bool choosePlots(std::vector<std::string>& plots);
+		static bool chooseBufferSize(unsigned& memory);
 	};
 }

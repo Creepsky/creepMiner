@@ -168,4 +168,6 @@ namespace Burst
 
 	bool cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet);
 	int cpuGetInstructionSets();
+
+	size_t getMemorySize();
 }
