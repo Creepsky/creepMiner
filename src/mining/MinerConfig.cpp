@@ -1542,6 +1542,24 @@ void Burst::MinerConfig::setPoolTargetDeadline(Poco::UInt64 targetDeadline)
 	targetDeadlinePool_ = targetDeadline;
 }
 
+void Burst::MinerConfig::setProcessorType(const std::string& processorType)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	processorType_ = processorType;
+}
+
+void Burst::MinerConfig::setGpuPlatform(const unsigned platformIndex)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	gpuPlatform_ = platformIndex;
+}
+
+void Burst::MinerConfig::setGpuDevice(const unsigned deviceIndex)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	gpuDevice_ = deviceIndex;
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
 	return addPlotDir(std::make_shared<PlotDir>(dir, PlotDir::Type::Sequential));

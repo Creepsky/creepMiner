@@ -208,6 +208,9 @@ namespace Burst
 		void setGetMiningInfoInterval(unsigned interval);
 		void setBufferChunkCount(unsigned bufferChunkCount);
 		void setPoolTargetDeadline(Poco::UInt64 targetDeadline);
+		void setProcessorType(const std::string& processorType);
+		void setGpuPlatform(unsigned platformIndex);
+		void setGpuDevice(unsigned deviceIndex);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.
