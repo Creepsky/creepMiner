@@ -1574,6 +1574,12 @@ void Burst::MinerConfig::setPlotDirs(const std::vector<std::string>& plotDirs)
 		addPlotDir(plotDir);
 }
 
+void Burst::MinerConfig::setWebserverUri(const std::string& uri)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	serverUrl_ = uri;
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
 	return addPlotDir(std::make_shared<PlotDir>(Poco::replace(dir, "\\", "/"), PlotDir::Type::Sequential));

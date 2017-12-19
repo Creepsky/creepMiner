@@ -30,6 +30,8 @@
 #include <Poco/File.h>
 #include <Poco/Delegate.h>
 #include <Poco/Random.h>
+#include <Poco/Net/DNS.h>
+#include <Poco/Net/ServerSocket.h>
 
 const std::string Burst::Setup::exit = "Exit";
 const std::string Burst::Setup::yes = "Yes";
@@ -96,9 +98,7 @@ bool Burst::Setup::setup(MinerConfig& config)
 	if (!chooseIp(ip))
 		return false;
 
-	if (ip.empty())
-	{
-	}
+	MinerConfig::getConfig().setWebserverUri(ip);
 
 	if (!chooseProgressbar(fancyProgressbar, steadyProgressbar))
 		return false;
@@ -704,12 +704,117 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 
 bool Burst::Setup::chooseIp(std::string& ip)
 {
-	// TODO: default is the first local ip
-	return false;
+	std::vector<std::string> ips;
+
+	auto thisHost = Poco::Net::DNS::thisHost();
+	std::string defaultIp;
+
+	for (const auto& address : thisHost.addresses())
+	{
+		ips.emplace_back(address.toString());
+
+		if (address.family() == Poco::Net::AddressFamily::IPv4 && defaultIp.empty())
+			defaultIp = address.toString();
+	}
+	
+	ips.emplace_back("Manual");
+	int index;
+	ip = readInput(ips, "Choose your IP", defaultIp, index);
+		
+	if (ip == exit)
+		return false;
+
+	if (ip == "Manual")
+	{
+		auto entered = false;
+		const auto pb = Console::print();
+
+		while (!entered)
+		{
+			pb.addTime().print(": ");
+			getline(std::cin, ip);
+			Poco::Net::IPAddress address;
+			entered = Poco::Net::IPAddress::tryParse(ip, address);
+		}
+	}
+	
+	std::vector<std::string> ports;
+
+	const auto checkPort = [](Poco::UInt16 portToCheck, Poco::UInt16& port)
+	{
+		try
+		{
+			Poco::Net::ServerSocket serverSocket;
+			serverSocket.bind(portToCheck);
+			serverSocket.listen();
+			port = serverSocket.address().port();
+			serverSocket.close();
+			return true;
+		}
+		catch (...)
+		{
+			return false;
+		}
+	};
+
+	Poco::UInt16 port;
+
+	if (checkPort(8080, port))
+		ports.emplace_back(std::to_string(port));
+
+	for (auto i = 0; i < 5; ++i)
+		if (checkPort(0, port))
+			ports.emplace_back(std::to_string(port));
+
+	ports.emplace_back("Random");
+	ports.emplace_back("Manual");
+
+	int portIndex;
+	const auto portInput = readInput(ports, "Choose your port", *ports.begin(), portIndex);
+
+	if (portInput == exit)
+		return false;
+
+	if (portInput == "Manual")
+	{
+		log_information(MinerLogger::general, "[  Enter]: Use a random port");
+
+		auto valid = false;
+		while (!valid)
+		{
+			Poco::Int64 number;
+			Poco::UInt16 numberPort;
+
+			if (!readNumber("Port", 0, std::numeric_limits<Poco::UInt16>::max(), 0, number))
+				return false;
+
+			if (checkPort(static_cast<Poco::UInt16>(number), numberPort))
+			{
+				port = static_cast<Poco::UInt16>(numberPort);
+				valid = true;
+			}
+		}
+	}
+	else if (portInput == "Random")
+	{
+		if (!checkPort(0, port))
+			return false;
+	}
+	else
+		port = Poco::NumberParser::parse(portInput);
+
+	Poco::URI uri;
+	uri.setScheme("http");
+	uri.setHost(ip);
+	uri.setPort(port);
+
+	ip = uri.toString();
+	log_information(MinerLogger::general, "Your ip is: %s", ip);
+	return true;
 }
 
 bool Burst::Setup::chooseProgressbar(bool& fancy, bool& steady)
 {
 	// TODO: show different progressbar combinations
-	return false;
+	return true;
 }
