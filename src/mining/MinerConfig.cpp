@@ -1580,6 +1580,13 @@ void Burst::MinerConfig::setWebserverUri(const std::string& uri)
 	serverUrl_ = uri;
 }
 
+void Burst::MinerConfig::setProgressbar(bool fancy, bool steady)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	fancyProgressBar_ = fancy;
+	steadyProgressBar_ = steady;
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
 	return addPlotDir(std::make_shared<PlotDir>(Poco::replace(dir, "\\", "/"), PlotDir::Type::Sequential));

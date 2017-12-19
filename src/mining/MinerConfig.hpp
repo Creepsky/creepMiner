@@ -214,6 +214,7 @@ namespace Burst
 		void setGpuDevice(unsigned deviceIndex);
 		void setPlotDirs(const std::vector<std::string>& plotDirs);
 		void setWebserverUri(const std::string& uri);
+		void setProgressbar(bool fancy, bool steady);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.

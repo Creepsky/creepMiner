@@ -93,15 +93,17 @@ bool Burst::Setup::setup(MinerConfig& config)
 
 		config.setMaxPlotReaders(reader);
 		config.setMininigIntensity(verifier);
+
+		if (!chooseProgressbar(fancyProgressbar, steadyProgressbar))
+			return false;
+
+		MinerConfig::getConfig().setProgressbar(fancyProgressbar, steadyProgressbar);
 	}
 	
 	if (!chooseIp(ip))
 		return false;
 
 	MinerConfig::getConfig().setWebserverUri(ip);
-
-	if (!chooseProgressbar(fancyProgressbar, steadyProgressbar))
-		return false;
 
 	if (!config.save())
 		log_warning(MinerLogger::miner, "Your settings could not be saved! They are only valid for this session.");
@@ -815,6 +817,103 @@ bool Burst::Setup::chooseIp(std::string& ip)
 
 bool Burst::Setup::chooseProgressbar(bool& fancy, bool& steady)
 {
-	// TODO: show different progressbar combinations
+	log_notice(MinerLogger::general, "Have a look at different the progressbar types");
+
+	Progress progress;
+	ProgressPrinter printer;
+	Poco::Random random;
+	
+	const auto simulateProgressbar = [&progress, &printer, &random]()
+	{
+		progress.read = 0;
+		progress.verify = 0;
+		progress.bytesPerSecondRead = 200 * 1024 * 1024;
+		progress.bytesPerSecondVerify = 300 * 1024 * 1024;
+
+		while (progress.read < 100.f || progress.verify < 100.f)
+		{
+			progress.bytesPerSecondRead += 1 * 1024 * 1024 * (random.nextBool() ? 1 : -1);
+			progress.bytesPerSecondVerify += 2 * 1024 * 1024 * (random.nextBool() ? 1 : -1);
+
+			//progress.bytesPerSecondRead += random.next(2) * (random.nextBool() ? 1 : -1);
+			//progress.bytesPerSecondVerify += random.next(2) * (random.nextBool() ? 1 : -1);
+			progress.bytesPerSecondCombined = (progress.bytesPerSecondRead + progress.bytesPerSecondVerify) / 2.0;
+			
+			MinerLogger::writeProgress(progress);
+
+			const auto verifyStep = random.nextDouble() * 5;
+
+			if (progress.read < 100.f)
+			{
+				progress.read += verifyStep * 2;
+
+				if (progress.read > 100.f)
+					progress.read = 100.f;
+			}
+
+			if (progress.verify < 100.f)
+			{
+				progress.verify += verifyStep;
+				
+				if (progress.verify > 100.f)
+					progress.verify = 100.f;
+			}
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+
+		MinerLogger::writeProgress(progress);
+		Console::nextLine();
+	};
+
+	const auto startProgressSimulation = [&simulateProgressbar](bool useFancy, bool useSteady)
+	{
+		log_information(MinerLogger::general, "fancy: %b, steady: %b", useFancy, useSteady);
+		MinerConfig::getConfig().setProgressbar(useFancy, useSteady);
+		simulateProgressbar();
+	};
+
+	for (auto i = 0; i < 4; i++)
+		startProgressSimulation(i & 1, i & 2);
+
+	const std::string nFnS = "not fancy, not steady";
+	const std::string FnS = "fancy, not steady";
+	const std::string nFS = "not fancy, steady";
+	const std::string FS = "fancy, steady";
+
+	const std::vector<std::string> types = {nFnS, FnS, nFS, FS};
+
+	int index;
+	const auto input = readInput(types, "Choose your progressbar style", FS, index);
+
+	if (input == exit)
+		return false;
+
+	if (input == nFnS)
+	{
+		fancy = false;
+		steady = false;
+	}
+	else if (input == FnS)
+	{
+		fancy = true;
+		steady = false;
+	}
+	else if (input == nFS)
+	{
+		fancy = false;
+		steady = true;
+	}
+	else if (input == FS)
+	{
+		fancy = true;
+		steady = true;
+	}
+	else
+	{
+		fancy = true;
+		steady = true;
+	}
+
 	return true;
 }
