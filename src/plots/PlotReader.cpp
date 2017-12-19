@@ -79,9 +79,9 @@ Poco::UInt64 Burst::GlobalBufferSize::getMax() const
 	return max_;
 }
 
-Burst::PlotReader::PlotReader(Miner& miner, std::shared_ptr<Burst::PlotReadProgress> progress,
+Burst::PlotReader::PlotReader(MinerData& data, std::shared_ptr<Burst::PlotReadProgress> progress,
 	Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
-	: Task("PlotReader"), miner_(miner), progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
+	: Task("PlotReader"), data_(data), progress_{progress}, verificationQueue_{&verificationQueue}, plotReadQueue_(&plotReadQueue)
 {
 	//scoopNum_ = miner_.getScoopNum();
 	//gensig_ = miner_.getGensig();
@@ -105,13 +105,13 @@ void Burst::PlotReader::runTask()
 			START_PROBE_DOMAIN("PlotReader.ReadDir", plotReadNotification->dir)
 
 				// only process the current block
-				if (miner_.getBlockheight() != plotReadNotification->blockheight)
+				if (data_.getCurrentBlockheight() != plotReadNotification->blockheight)
 					continue;
 
 			Poco::Timestamp timeStartDir;
 
 			// check, if the incoming plot-read-notification is for the current round
-			auto currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+			auto currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
 
 			auto& plotList = plotReadNotification->plotList;
 
@@ -161,7 +161,7 @@ void Burst::PlotReader::runTask()
 
 					auto nonce = 0ull;
 
-					while (nonce < plotFile.getNonces() && currentBlock)
+					while (nonce < plotFile.getNonces() && currentBlock && !isCancelled())
 					{
 						START_PROBE_DOMAIN("PlotReader.Nonces", plotFile.getPath());
 						auto startNonce = nonce;
@@ -226,7 +226,7 @@ void Burst::PlotReader::runTask()
 								progress_->add(readNonces * Settings::PlotSize, plotReadNotification->blockheight);
 
 							// check, if the incoming plot-read-notification is for the current round
-							currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+							currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
 							nonce += readNonces;
 
 							TAKE_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
@@ -243,7 +243,7 @@ void Burst::PlotReader::runTask()
 				inputStream.close();
 
 				// check, if the incoming plot-read-notification is for the current round
-				currentBlock = plotReadNotification->blockheight == miner_.getBlockheight();
+				currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
 
 				if (!isCancelled() && currentBlock)
 				{
@@ -255,7 +255,7 @@ void Burst::PlotReader::runTask()
 
 					if (plotListSize > 0)
 					{
-						miner_.getData().getBlockData()->setProgress(
+						data_.getBlockData()->setProgress(
 							plotReadNotification->dir,
 							static_cast<float>(std::distance(plotReadNotification->plotList.begin(), plotFileIter) + 1) / plotListSize * 100.f,
 							plotReadNotification->blockheight
@@ -289,7 +289,7 @@ void Burst::PlotReader::runTask()
 			if (plotReadNotification->wakeUpCall)
 				continue;
 
-			miner_.getData().getBlockData()->setProgress(plotReadNotification->dir, 100.f, plotReadNotification->blockheight);
+			data_.getBlockData()->setProgress(plotReadNotification->dir, 100.f, plotReadNotification->blockheight);
 
 			auto dirReadDiff = timeStartDir.elapsed();
 			auto dirReadDiffSeconds = static_cast<float>(dirReadDiff) / 1000 / 1000;

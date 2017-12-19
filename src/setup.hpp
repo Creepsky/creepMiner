@@ -31,9 +31,13 @@ namespace Burst
 		static bool setup(MinerConfig& config);
 
 	private:
-		static const std::string exit;
+		static const std::string exit, yes, no;
+
 		static std::string readInput(const std::vector<std::string>& options, const std::string& header,
 			const std::string& defaultValue, int& index);
+		static std::string readYesNo(const std::string& header, bool defaultValue);
+		static bool readNumber(const std::string& title, Poco::Int64 min, Poco::Int64 max, Poco::Int64 defaultValue,
+		                       Poco::Int64& number);
 
 		static bool chooseProcessorType(std::string& processorType);
 		static bool chooseCpuInstructionSet(std::string& instructionSet);
@@ -41,5 +45,8 @@ namespace Burst
 		static bool chooseGpuDevice(int platformIndex, int& deviceIndex);
 		static bool choosePlots(std::vector<std::string>& plots);
 		static bool chooseBufferSize(unsigned& memory);
+		static bool choosePlotReader(size_t plotLocations, unsigned& reader, unsigned& verifier);
+		static bool chooseIp(std::string& ip);
+		static bool chooseProgressbar(bool& fancy, bool& steady);
 	};
 }

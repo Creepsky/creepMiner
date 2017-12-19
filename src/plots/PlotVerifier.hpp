@@ -56,25 +56,28 @@ namespace Burst
 	};
 	
 	using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
+	using SubmitFunction = std::function<void(Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool)>;
 
 	template <typename TVerificationAlgorithm>
 	class PlotVerifier : public Poco::Task
 	{
 	public:
-		PlotVerifier(Miner &miner, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress);
+		PlotVerifier(MinerData& data, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress,
+		             SubmitFunction submitFunction);
 		~PlotVerifier() override;
 		void runTask() override;
 		
 	private:
-		Miner* miner_;
+		MinerData* data_;
 		Poco::NotificationQueue* queue_;
 		std::shared_ptr<PlotReadProgress> progress_;
+		SubmitFunction submitFunction_;
 	};
 
 	template <typename TVerificationAlgorithm>
-	PlotVerifier<TVerificationAlgorithm>::PlotVerifier(Miner& miner, Poco::NotificationQueue& queue,
-		std::shared_ptr<PlotReadProgress> progress)
-		: Task("PlotVerifier"), miner_{&miner}, queue_{&queue}, progress_{progress}
+	PlotVerifier<TVerificationAlgorithm>::PlotVerifier(MinerData& data, Poco::NotificationQueue& queue,
+		std::shared_ptr<PlotReadProgress> progress, SubmitFunction submitFunction)
+		: Task("PlotVerifier"), data_{&data}, queue_{&queue}, progress_{progress}, submitFunction_{submitFunction}
 	{
 	}
 
@@ -109,7 +112,7 @@ namespace Burst
 
 				const auto stopFunction = [this, &verifyNotification]()
 				{
-					return isCancelled() || verifyNotification->block != miner_->getBlockheight();
+					return isCancelled() || verifyNotification->block != data_->getCurrentBlockheight();
 				};
 
 				START_PROBE("PlotVerifier.SearchDeadline");
@@ -121,12 +124,12 @@ namespace Burst
 				if (bestResult.first != 0 && bestResult.second != 0)
 				{
 					START_PROBE("PlotVerifier.Submit");
-					miner_->submitNonceAsync(std::make_tuple(bestResult.first,
-						verifyNotification->accountId,
-						bestResult.second,
-						verifyNotification->block,
-						verifyNotification->inputPath,
-						true));
+					submitFunction_(bestResult.first,
+					                verifyNotification->accountId,
+					                bestResult.second,
+					                verifyNotification->block,
+					                verifyNotification->inputPath,
+					                true);
 					TAKE_PROBE("PlotVerifier.Submit");
 				}
 
