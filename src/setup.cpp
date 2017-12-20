@@ -32,6 +32,9 @@
 #include <Poco/Random.h>
 #include <Poco/Net/DNS.h>
 #include <Poco/Net/ServerSocket.h>
+#include "network/Request.hpp"
+#include <Poco/Net/HTTPRequest.h>
+#include <Poco/JSON/Parser.h>
 
 const std::string Burst::Setup::exit = "Exit";
 const std::string Burst::Setup::yes = "Yes";
@@ -50,6 +53,8 @@ bool Burst::Setup::setup(MinerConfig& config)
 	unsigned reader = 0, verifier = 0;
 	std::string ip;
 	bool fancyProgressbar, steadyProgressbar;
+	std::string submission, miningInfo, wallet;
+	std::string passphrase;
 
 	if (!chooseProcessorType(processorType))
 		return false;
@@ -103,7 +108,14 @@ bool Burst::Setup::setup(MinerConfig& config)
 	if (!chooseIp(ip))
 		return false;
 
-	MinerConfig::getConfig().setWebserverUri(ip);
+	if (!chooseUris(submission, miningInfo, wallet, passphrase))
+		return false;
+
+	MinerConfig::getConfig().setUrl(ip, HostType::Server);
+	MinerConfig::getConfig().setUrl(submission, HostType::MiningInfo);
+	MinerConfig::getConfig().setUrl(miningInfo, HostType::Pool);
+	MinerConfig::getConfig().setUrl(wallet, HostType::Wallet);
+	MinerConfig::getConfig().setPassphrase(passphrase);
 
 	if (!config.save())
 		log_warning(MinerLogger::miner, "Your settings could not be saved! They are only valid for this session.");
@@ -203,6 +215,23 @@ bool Burst::Setup::readNumber(const std::string& title, const Poco::Int64 min, c
 	}
 
 	return entered;
+}
+
+std::string Burst::Setup::readText(const std::string& title, const std::function<bool(const std::string&, std::string&)> validator)
+{
+	auto validated = false;
+	std::string text;
+
+	const auto pb = Console::print();
+
+	while (!validated)
+	{
+		pb.addTime().print(": ").print(title).print(": ");
+		getline(std::cin, text);
+		validated = validator(text, text);
+	}
+
+	return text;
 }
 
 bool Burst::Setup::chooseProcessorType(std::string& processorType)
@@ -353,7 +382,10 @@ bool Burst::Setup::chooseBufferSize(unsigned& memory)
 		memToString(physicalMemory, MemoryUnit::Megabyte, 0));
 	log_notice(MinerLogger::general, "The optimal amount of memory for your miner is: %s (%.0f%% of your RAM)",
 		memToString(autoBufferSize, 0),
-		static_cast<double>(autoBufferSize) / physicalMemory * 100);
+		static_cast<double>(autoBufferSize) / physicalMemory * 100)
+
+
+;
 	
 	if (autoBufferSizeAllowed)
 		log_notice(MinerLogger::general, "If you use the size 0, the miner will use the optimal amount");
@@ -913,6 +945,182 @@ bool Burst::Setup::chooseProgressbar(bool& fancy, bool& steady)
 	{
 		fancy = true;
 		steady = true;
+	}
+
+	return true;
+}
+
+bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, std::string& wallet, std::string& passphrase)
+{
+	const std::vector<std::string> miningTypes = {"Pool", "Solo"};
+
+	int index;
+	const auto miningType = readInput(miningTypes, "Choose your mining type", "Pool", index);
+
+	if (miningType == exit)
+		return false;
+
+	const auto validateUri = [](const std::string& toValidate, const std::string& requestPath, std::string& result)
+	{
+		const auto checkUri = [&requestPath](const std::string& uriToValidate, Poco::UInt16 port, Poco::URI& resultUri)
+		{
+			try
+			{
+				auto url = Url{ uriToValidate, "http", port };
+
+				// change localhosts to 127.0.0.1
+				if (url.getUri().getHost() == "localhost" ||
+					url.getUri().getHost() == "0.0.0.0")
+					url.getUri().setHost("127.0.0.1");
+
+				resultUri = url.getUri().toString();
+
+				Poco::JSON::Parser jsonParser;
+				
+				if (!url.empty())
+				{
+					// create a session
+					auto session = url.createSession();
+					session->setTimeout(Poco::Timespan(5, 0));
+					std::string data;
+
+					Poco::Net::HTTPRequest requestData;
+					requestData.setURI(requestPath);
+
+					// check mining info
+					Request request(move(session));
+					auto response = request.send(requestData);
+
+					if (response.receive(data))
+					{
+						jsonParser.parse(data);
+						return true;
+					}
+				}
+
+				return false;
+			}
+			catch (...)
+			{
+				return false;
+			}
+		};
+
+		try
+		{
+			Poco::URI uri_(toValidate);
+
+			log_information(MinerLogger::general, "Testing the connection...");
+
+			if (checkUri(uri_.toString(), uri_.getPort(), uri_))
+			{
+				result = uri_.toString();
+				log_success(MinerLogger::general, "%s: ok", result);
+				return true;
+			}
+
+			const std::vector<Poco::UInt16> wellKnownPorts = { 8080, 8124, 8125, 8880 };
+
+			for (const auto& port : wellKnownPorts)
+			{
+				if (checkUri(toValidate, port, uri_))
+				{
+					result = uri_.toString();
+					log_success(MinerLogger::general, "%s: ok", result);
+					return true;
+				}
+			}
+
+			log_error(MinerLogger::general, "No connection!");
+			return false;
+		}
+		catch (...)
+		{
+			return false;
+		}
+	};
+
+	// Solo mining
+	if (miningType == "Solo")
+	{
+		log_notice(MinerLogger::general, "Wallet");
+
+		miningInfo = readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
+		{
+			return validateUri(toValidate, "/burst?requestType=getMiningInfo", result);
+		});
+
+		submission = miningInfo;
+		wallet = miningInfo;
+
+		if (!chooseSoloMining(passphrase))
+			return false;
+
+		return true;
+	}
+
+	// mining info uri
+	log_notice(MinerLogger::general, "Mininginfo");
+	miningInfo = readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
+	{
+		return validateUri(toValidate, "/burst?requestType=getMiningInfo", result);
+	});
+
+	// submission uri
+	log_notice(MinerLogger::general, "Submission");
+	const auto submissionPath = "/burst?requestType=submitNonce&accountId=123&nonce=123";
+
+	if (!validateUri(miningInfo, submissionPath, submission))
+	{
+		submission = readText("URI", [&validateUri, &submissionPath](const std::string& toValidate, std::string& result)
+		{
+			return validateUri(toValidate, submissionPath, result);
+		});
+
+		if (submission == exit)
+			return false;
+	}
+
+	// wallet uri
+	log_notice(MinerLogger::general, "Wallet");
+	wallet = readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
+	{
+		return validateUri(toValidate, "/burst?requestType=getAccount&accountId=123", result);
+	});
+
+	return true;
+}
+
+bool Burst::Setup::chooseSoloMining(std::string& passphrase)
+{
+	const auto pb = Console::print();
+	passphrase.clear();
+
+	const auto enterPassword = [&pb]()
+	{
+		std::string pass;
+		setStdInEcho(false);
+		while (pass.empty())
+		{
+			getline(std::cin, pass);
+			pb.nextLine();
+		}
+		setStdInEcho(true);
+		return pass;
+	};
+
+	std::string passphraseRepeat = "0";
+
+	while (passphrase != passphraseRepeat)
+	{
+		pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Your passphrase: ").resetColor();
+		passphrase = enterPassword();
+
+		pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Repeat: ").resetColor();
+		passphraseRepeat = enterPassword();
+
+		if (passphrase != passphraseRepeat)
+			log_error(MinerLogger::general, "Mismatch, try again");
 	}
 
 	return true;

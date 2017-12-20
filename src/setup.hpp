@@ -38,6 +38,7 @@ namespace Burst
 		static std::string readYesNo(const std::string& header, bool defaultValue);
 		static bool readNumber(const std::string& title, Poco::Int64 min, Poco::Int64 max,
 		                       Poco::Int64 defaultValue, Poco::Int64& number);
+		static std::string readText(const std::string& title, std::function<bool(const std::string&, std::string&)> validator);
 
 		static bool chooseProcessorType(std::string& processorType);
 		static bool chooseCpuInstructionSet(std::string& instructionSet);
@@ -48,5 +49,7 @@ namespace Burst
 		static bool choosePlotReader(size_t plotLocations, unsigned& reader, unsigned& verifier);
 		static bool chooseIp(std::string& ip);
 		static bool chooseProgressbar(bool& fancy, bool& steady);
+		static bool chooseUris(std::string& submission, std::string& miningInfo, std::string& wallet, std::string& passphrase);
+		static bool chooseSoloMining(std::string& passphrase);
 	};
 }

@@ -37,7 +37,7 @@ Burst::Url::Url(const std::string& url, const std::string& defaultScheme, unsign
 		if (invalid && !defaultScheme.empty() && !url.empty())
 		{
 			// we try to prepend the default scheme and hope that it can get resolved now
-			uri_ = defaultScheme + "://" + url;
+			uri_ = defaultScheme + "://" + url + (defaultPort == 0 ? "" : ":" + std::to_string(defaultPort));
 
 			if (uri_.getPort() == 0)
 				uri_.setPort(defaultPort);
@@ -66,6 +66,11 @@ uint16_t Burst::Url::getPort() const
 }
 
 const Poco::URI& Burst::Url::getUri() const
+{
+	return uri_;
+}
+
+Poco::URI& Burst::Url::getUri()
 {
 	return uri_;
 }

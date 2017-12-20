@@ -45,6 +45,7 @@ namespace Burst
 		std::string getIp() const;
 		uint16_t getPort() const;
 		const Poco::URI& getUri() const;
+		Poco::URI& getUri();
 		bool empty() const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession() const;
 

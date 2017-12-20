@@ -170,4 +170,5 @@ namespace Burst
 	int cpuGetInstructionSets();
 
 	size_t getMemorySize();
+	void setStdInEcho(bool enable);
 }

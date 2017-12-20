@@ -215,6 +215,7 @@ namespace Burst
 		void setPlotDirs(const std::vector<std::string>& plotDirs);
 		void setWebserverUri(const std::string& uri);
 		void setProgressbar(bool fancy, bool steady);
+		void setPassphrase(const std::string& passphrase);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.

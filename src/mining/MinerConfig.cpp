@@ -1113,6 +1113,7 @@ void Burst::MinerConfig::setUrl(std::string url, HostType hostType)
 	case HostType::MiningInfo: uri = &urlMiningInfo_; break;
 	case HostType::Pool: uri = &urlPool_; break;
 	case HostType::Wallet: uri = &urlWallet_; break;
+	case HostType::Server: uri = &serverUrl_; break;
 	default: uri = nullptr;
 	}
 
@@ -1585,6 +1586,13 @@ void Burst::MinerConfig::setProgressbar(bool fancy, bool steady)
 	Poco::Mutex::ScopedLock lock(mutex_);
 	fancyProgressBar_ = fancy;
 	steadyProgressBar_ = steady;
+}
+
+void Burst::MinerConfig::setPassphrase(const std::string& passphrase)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	passphrase_.decrypted = passphrase;
+	passphrase_.encrypt();
 }
 
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
