@@ -512,9 +512,13 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	
 	if (bestOverall != nullptr)
 		json.set("bestOverall", createJsonDeadline(*bestOverall));
+	else
+		json.set("bestOverall", Poco::JSON::Object());
 
 	if (bestHistorical != nullptr)
 		json.set("bestHistorical", createJsonDeadline(*bestHistorical));
+	else
+		json.set("bestHistorical", Poco::JSON::Object());
 
 	json.set("deadlinesConfirmed", std::to_string(data.getConfirmedDeadlines()));
 	json.set("deadlinesAvg", deadlineFormat(data.getAverageDeadline()));
