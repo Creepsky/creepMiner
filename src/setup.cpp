@@ -40,6 +40,45 @@ const std::string Burst::Setup::exit = "Exit";
 const std::string Burst::Setup::yes = "Yes";
 const std::string Burst::Setup::no = "No";
 
+namespace Burst
+{
+	namespace Helper
+	{
+		std::string enterPassword()
+		{
+			std::string pass;
+			setStdInEcho(false);
+			while (pass.empty())
+			{
+				getline(std::cin, pass);
+				Console::nextLine();
+			}
+			setStdInEcho(true);
+			return pass;
+		}
+
+		void enterPasswordSecured(std::string& password)
+		{
+			const auto pb = Console::print();
+			password.clear();
+
+			std::string passRepeat = "0";
+
+			while (password != passRepeat)
+			{
+				pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Your pass: ").resetColor();
+				password = enterPassword();
+				
+				pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Repeat: ").resetColor();
+				passRepeat = enterPassword();
+
+				if (password != passRepeat)
+					log_error(MinerLogger::general, "Mismatch, try again");
+			}
+		}
+	}
+}
+
 bool Burst::Setup::setup(MinerConfig& config)
 {
 	auto logger = &Poco::Logger::get("general");
@@ -51,7 +90,7 @@ bool Burst::Setup::setup(MinerConfig& config)
 	std::vector<std::string> plotLocations;
 	unsigned memory = 0;
 	unsigned reader = 0, verifier = 0;
-	std::string ip;
+	std::string ip, webinterfaceUser, webinterfacePassword;
 	bool fancyProgressbar, steadyProgressbar;
 	std::string submission, miningInfo, wallet;
 	std::string passphrase;
@@ -105,7 +144,7 @@ bool Burst::Setup::setup(MinerConfig& config)
 		MinerConfig::getConfig().setProgressbar(fancyProgressbar, steadyProgressbar);
 	}
 	
-	if (!chooseIp(ip))
+	if (!chooseWebserver(ip, webinterfaceUser, webinterfacePassword))
 		return false;
 
 	if (!chooseUris(submission, miningInfo, wallet, passphrase))
@@ -115,7 +154,9 @@ bool Burst::Setup::setup(MinerConfig& config)
 	MinerConfig::getConfig().setUrl(submission, HostType::MiningInfo);
 	MinerConfig::getConfig().setUrl(miningInfo, HostType::Pool);
 	MinerConfig::getConfig().setUrl(wallet, HostType::Wallet);
+	
 	MinerConfig::getConfig().setPassphrase(passphrase);
+	MinerConfig::getConfig().setWebserverCredentials(webinterfaceUser, webinterfacePassword);
 
 	if (!config.save())
 		log_warning(MinerLogger::miner, "Your settings could not be saved! They are only valid for this session.");
@@ -226,7 +267,7 @@ std::string Burst::Setup::readText(const std::string& title, const std::function
 
 	while (!validated)
 	{
-		pb.addTime().print(": ").print(title).print(": ");
+		pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print(title).print(": ").resetColor();
 		getline(std::cin, text);
 		validated = validator(text, text);
 	}
@@ -736,7 +777,7 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 	return true;
 }
 
-bool Burst::Setup::chooseIp(std::string& ip)
+bool Burst::Setup::chooseWebserver(std::string& ip, std::string& user, std::string& password)
 {
 	std::vector<std::string> ips;
 
@@ -841,6 +882,18 @@ bool Burst::Setup::chooseIp(std::string& ip)
 	uri.setScheme("http");
 	uri.setHost(ip);
 	uri.setPort(port);
+
+	// username
+	log_notice(MinerLogger::general, "Enter the username for the webserver");
+	readText("Username", [](const std::string& toVerify, std::string& verified)
+	{
+		verified = toVerify;
+		return true;
+	});
+
+	// password
+	log_notice(MinerLogger::general, "Enter the password for the webserver");
+	Helper::enterPasswordSecured(password);
 
 	ip = uri.toString();
 	log_information(MinerLogger::general, "Your ip is: %s", ip);
@@ -1093,35 +1146,6 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 
 bool Burst::Setup::chooseSoloMining(std::string& passphrase)
 {
-	const auto pb = Console::print();
-	passphrase.clear();
-
-	const auto enterPassword = [&pb]()
-	{
-		std::string pass;
-		setStdInEcho(false);
-		while (pass.empty())
-		{
-			getline(std::cin, pass);
-			pb.nextLine();
-		}
-		setStdInEcho(true);
-		return pass;
-	};
-
-	std::string passphraseRepeat = "0";
-
-	while (passphrase != passphraseRepeat)
-	{
-		pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Your passphrase: ").resetColor();
-		passphrase = enterPassword();
-
-		pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Repeat: ").resetColor();
-		passphraseRepeat = enterPassword();
-
-		if (passphrase != passphraseRepeat)
-			log_error(MinerLogger::general, "Mismatch, try again");
-	}
-
+	Helper::enterPasswordSecured(passphrase);
 	return true;
 }

@@ -47,7 +47,7 @@ namespace Burst
 		static bool choosePlots(std::vector<std::string>& plots);
 		static bool chooseBufferSize(unsigned& memory);
 		static bool choosePlotReader(size_t plotLocations, unsigned& reader, unsigned& verifier);
-		static bool chooseIp(std::string& ip);
+		static bool chooseWebserver(std::string& ip, std::string& user, std::string& password);
 		static bool chooseProgressbar(bool& fancy, bool& steady);
 		static bool chooseUris(std::string& submission, std::string& miningInfo, std::string& wallet, std::string& passphrase);
 		static bool chooseSoloMining(std::string& passphrase);
