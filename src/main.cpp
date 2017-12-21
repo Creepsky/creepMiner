@@ -181,15 +181,6 @@ int main(const int argc, const char* argv[])
 		{
 			if (Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath))
 			{
-				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
-					Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
-						Burst::MinerConfig::getConfig().getGpuDevice());
-				else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
-				{
-					Burst::Gpu_Cuda_Impl::listDevices();
-					Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
-				}
-
 				if (arguments.setupRequested)
 				{
 					if (!Burst::Setup::setup(Burst::MinerConfig::getConfig()))
@@ -197,6 +188,16 @@ int main(const int argc, const char* argv[])
 						log_warning(general, "Error while setting up!");
 						return EXIT_FAILURE;
 					}
+				}
+				
+				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL" &&
+					!Burst::MinerCL::getCL().initialized())
+					Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
+						Burst::MinerConfig::getConfig().getGpuDevice());
+				else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
+				{
+					Burst::Gpu_Cuda_Impl::listDevices();
+					Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
 				}
 
 				Burst::Miner miner;

@@ -94,69 +94,110 @@ bool Burst::Setup::setup(MinerConfig& config)
 	bool fancyProgressbar, steadyProgressbar;
 	std::string submission, miningInfo, wallet;
 	std::string passphrase;
+	int index;
 
-	if (!chooseProcessorType(processorType))
-		return false;
+	const auto type = readInput(
+		{
+			"Everything", "Processor type", "Plots", "Buffersize", "Plotreader/verifier",
+			"Progressbar", "URIs"
+		}, "What do you want to setup?", "Everything",
+		index);
 
-	if (processorType == "CPU")
+	const auto all = type == "Everything";
+	// TODO: delete and create and create a new file with the content {} <- the miner will create a default config
+	const auto reset = type == "Reset";
+	const auto processorTypeFlag = type == "Processor type" || all;
+	const auto plots = type == "Plots" || all;
+	const auto buffersize = type == "Buffersize" || all;
+	const auto plotReaderVerifier = type == "Plotreader/verifier" || all || processorTypeFlag;
+	const auto progressBar = type == "Progressbar" || all;
+	const auto webserver = type == "URIs" || all;
+	const auto poolWallet = type == "URIs" || all;
+
+	if (reset)
+		return true;
+
+	if (processorTypeFlag)
 	{
-		if (!chooseCpuInstructionSet(instructionSet))
-			return false;
-
-		config.setCpuInstructionSet(instructionSet);
+		if (chooseProcessorType(processorType))
+			config.setProcessorType(processorType);
+		else return false;
 	}
 
-	if (processorType == "OPENCL")
+	if (processorTypeFlag && processorType == "CPU")
 	{
-		if (!chooseGpuPlatform(platformIndex))
-			return false;
+		if (chooseCpuInstructionSet(instructionSet))
+			config.setCpuInstructionSet(instructionSet);
+		else return false;
+	}
 
-		if (!chooseGpuDevice(platformIndex, deviceIndex))
+	if (processorTypeFlag && processorType == "OPENCL")
+	{
+		if (!chooseGpuPlatform(platformIndex) ||
+			!chooseGpuDevice(platformIndex, deviceIndex))
 			return false;
 
 		config.setGpuPlatform(platformIndex);
 		config.setGpuDevice(deviceIndex);
+
+		MinerCL::getCL().create();
 	}
-
-	config.setProcessorType(processorType);
-
-	if (!choosePlots(plotLocations))
-		return false;
-
-	config.setPlotDirs(plotLocations);
-
-	if (!plotLocations.empty())
+	
+	if (plots)
 	{
-		if (!chooseBufferSize(memory))
-			return false;
-	
-		config.setBufferSize(memory);
+		if (choosePlots(plotLocations))
+			config.setPlotDirs(plotLocations);
+		else return false;
+	}
 
-		if (!choosePlotReader(plotLocations.size(), reader, verifier))
-			return false;
+	if ((buffersize || plotReaderVerifier) && !plotLocations.empty())
+	{
+		if (buffersize)
+		{
+			if (chooseBufferSize(memory))
+				config.setBufferSize(memory);
+			else return false;
+		}
 
-		config.setMaxPlotReaders(reader);
-		config.setMininigIntensity(verifier);
+		if (plotReaderVerifier)
+		{
+			if (choosePlotReader(plotLocations.size(), reader, verifier))
+			{
+				config.setMaxPlotReaders(reader);
+				config.setMininigIntensity(verifier);
+			}
+			else return false;
+		}
+	}
 
-		if (!chooseProgressbar(fancyProgressbar, steadyProgressbar))
-			return false;
-
-		MinerConfig::getConfig().setProgressbar(fancyProgressbar, steadyProgressbar);
+	if (progressBar)
+	{
+		if (chooseProgressbar(fancyProgressbar, steadyProgressbar))
+			config.setProgressbar(fancyProgressbar, steadyProgressbar);
+		else return false;
 	}
 	
-	if (!chooseWebserver(ip, webinterfaceUser, webinterfacePassword))
-		return false;
+	if (webserver)
+	{
+		if (chooseWebserver(ip, webinterfaceUser, webinterfacePassword))
+		{
+			config.setUrl(ip, HostType::Server);
+			config.setWebserverCredentials(webinterfaceUser, webinterfacePassword);
+		}
+		else return false;
+	}
 
-	if (!chooseUris(submission, miningInfo, wallet, passphrase))
-		return false;
-
-	MinerConfig::getConfig().setUrl(ip, HostType::Server);
-	MinerConfig::getConfig().setUrl(submission, HostType::MiningInfo);
-	MinerConfig::getConfig().setUrl(miningInfo, HostType::Pool);
-	MinerConfig::getConfig().setUrl(wallet, HostType::Wallet);
-	
-	MinerConfig::getConfig().setPassphrase(passphrase);
-	MinerConfig::getConfig().setWebserverCredentials(webinterfaceUser, webinterfacePassword);
+	if (poolWallet)
+	{
+		if (chooseUris(submission, miningInfo, wallet, passphrase))
+		{
+			config.setUrl(submission, HostType::MiningInfo);
+			config.setUrl(miningInfo, HostType::Pool);
+			config.setUrl(wallet, HostType::Wallet);
+			config.setPassphrase(passphrase);
+		}
+		else return false;
+	}
 
 	if (!config.save())
 		log_warning(MinerLogger::miner, "Your settings could not be saved! They are only valid for this session.");
@@ -423,10 +464,7 @@ bool Burst::Setup::chooseBufferSize(unsigned& memory)
 		memToString(physicalMemory, MemoryUnit::Megabyte, 0));
 	log_notice(MinerLogger::general, "The optimal amount of memory for your miner is: %s (%.0f%% of your RAM)",
 		memToString(autoBufferSize, 0),
-		static_cast<double>(autoBufferSize) / physicalMemory * 100)
-
-
-;
+		static_cast<double>(autoBufferSize) / physicalMemory * 100);
 	
 	if (autoBufferSizeAllowed)
 		log_notice(MinerLogger::general, "If you use the size 0, the miner will use the optimal amount");
@@ -593,6 +631,9 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 		const auto plotsize = MinerConfig::getConfig().getTotalPlotsize();
 		Poco::Random random;
 
+		const auto processorType = MinerConfig::getConfig().getProcessorType();
+		const auto instructionSet = MinerConfig::getConfig().getCpuInstructionSet();
+
 		while (!done)
 		{
 			// wake up all sleeping reader and verifier
@@ -612,7 +653,23 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 
 				// create the verifier
 				for (auto i = 0; i < verifier; i++)
-					tasks.start(new PlotVerifier<PlotVerifierAlgorithm_avx2>(data, verifyQueue, progressVerify, submitFunction));
+				{
+					if (processorType == "CPU")
+					{
+						if (instructionSet == "AVX2")
+							tasks.start(new PlotVerifier<PlotVerifierAlgorithm_avx2>(data, verifyQueue, progressVerify, submitFunction));
+						else if (instructionSet == "AVX")
+							tasks.start(new PlotVerifier<PlotVerifierAlgorithm_avx>(data, verifyQueue, progressVerify, submitFunction));
+						else if (instructionSet == "SSE4")
+							tasks.start(new PlotVerifier<PlotVerifierAlgorithm_sse4>(data, verifyQueue, progressVerify, submitFunction));
+						else
+							tasks.start(new PlotVerifier<PlotVerifierAlgorithm_sse2>(data, verifyQueue, progressVerify, submitFunction));
+					}
+					else if (processorType == "CUDA")
+						tasks.start(new PlotVerifier<PlotVerifierAlgorithm_cuda>(data, verifyQueue, progressVerify, submitFunction));
+					else if (processorType == "OPENCL")
+						tasks.start(new PlotVerifier<PlotVerifierAlgorithm_opencl>(data, verifyQueue, progressVerify, submitFunction));
+				}
 
 				// create a new gensig with a scoop that was not read yet
 				do

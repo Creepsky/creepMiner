@@ -180,6 +180,8 @@ Burst::MinerCL::~MinerCL()
 
 	if (context_ != nullptr)
 		clReleaseContext(context_);
+
+	initialized_ = false;
 #endif
 }
 

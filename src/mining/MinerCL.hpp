@@ -69,6 +69,8 @@ namespace Burst
 	public:
 		MinerCL();
 		~MinerCL();
+
+		void destroy();
 		bool create(unsigned platformIdx = 0, unsigned deviceIdx = 0);
 		cl_command_queue createCommandQueue();
 
