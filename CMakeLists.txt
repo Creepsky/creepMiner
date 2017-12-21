@@ -22,11 +22,7 @@ option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
 ##################################################################
 # Environment variables
 ##################################################################
-if (CMAKE_BUILD_TYPE STREQUAL "RELEASE")
-	include(conanbuildinfo.cmake)
-else ()
-	include(Conan/debug/conanbuildinfo.cmake)
-endif ()
+include(conanbuildinfo.cmake)
 conan_basic_setup()
 
 ##################################################################
