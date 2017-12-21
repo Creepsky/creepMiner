@@ -28,25 +28,32 @@ It is designed multi-threaded to reach the best performance.
 
 ## Quickstart
 
-- **CPU** (SSE2, SSE4, AVX, AVX2) + **GPU** (OPENCL, CUDA) version:
+For Windows: download and unzip the [latest release](https://github.com/Creepsky/creepMiner/releases/latest)
+
+For all others:
+1. Install [Python](https://www.python.org/)
+2. Install [Conan](https://conan.io/downloads): `pip install conan`
+3. Install [Poco](https://pocoproject.org/download/index.html): `conan install` (inside the creepMiner root dir)
+4. Create the project by executing one of the following commands
+- **CPU** (SSE2, SSE4, AVX, AVX2) + **GPU** (OPENCL, CUDA) version: 
 ```
 cmake CMakeLists.txt
-make
 ```
 - **CPU only** (SSE2, SSE4, AVX, AVX2) version:
 ```
 cmake CMakeLists.txt -DNO_GPU=ON
-make
 ```
 - **CPU only minimal** (SSE2) version (for example for single-board computers):
 ```
 cmake CMakeLists.txt -DMINIMAL_BUILD=ON
-make
 ```
+5. Make the project `make`
+6. Setup the miner with `./creepMiner -setup`
 
 ## Instructions
 
 - Compilation & Installation
+    - [**Conan** (recommended for all operating systems)](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-with-Conan)
     - [Windows](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Windows)
     - [Linux](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Linux)
     - [MacOS](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-macOS)
