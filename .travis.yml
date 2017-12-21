@@ -7,7 +7,7 @@ os: linux
 group: stable
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-- pip install conan
+- pip install --user conan
 addons:
   apt:
     sources:
