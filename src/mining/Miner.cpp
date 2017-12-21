@@ -428,7 +428,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 		return SubmitResponse::Found;
 	}
 
-	return SubmitResponse::Error;
+	return SubmitResponse::NotBest;
 }
 
 Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, const std::string& plotFile,

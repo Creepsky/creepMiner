@@ -546,13 +546,14 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (blockheight != miner.getBlockheight())
 		{
-			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-			response.setChunkedTransferEncoding(true);
-			auto& responseData = response.send();
-
-			responseData << Poco::format(
+			const auto responseString = Poco::format(
 				R"({ "result" : "Your submitted deadline is for another block!", "nonce" : %Lu, "blockheight" : %Lu, "currentBlockheight" : %Lu })",
 				nonce, blockheight, miner.getBlockheight());
+
+			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+			response.setContentLength(responseString.size());
+			auto& responseData = response.send();
+			responseData << responseString << std::flush;
 		}
 		else if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
@@ -560,10 +561,9 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 				miner.getBlockheight(), plotfile, false, minerName, capacity);
 
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-			response.setChunkedTransferEncoding(true);
+			response.setContentLength(forwardResult.json.size());
 			auto& responseData = response.send();
-
-			responseData << forwardResult.json;
+			responseData << forwardResult.json << std::flush;
 		}
 		else
 		{
