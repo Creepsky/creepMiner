@@ -5,13 +5,9 @@ compiler: gcc
 env: CXX=g++-5 CXXFLAGS="-std=c++14"
 os: linux
 group: stable
-cache:
-  directories:
-  - $TRAVIS_BUILD_DIR/poco-1.7.8p3-all
-before_install:
-- if [ "$(ls -A poco-1.7.8p3-all)" ]; then cd poco-1.7.8p3-all && sudo ldconfig && sudo make install; else ./install-poco.sh; fi
 install:
 - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+- pip install conan
 addons:
   apt:
     sources:
@@ -20,5 +16,6 @@ addons:
     - g++-5
 script: 
 - cd $TRAVIS_BUILD_DIR/
+- conan install
 - cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release -DNO_GPU=ON
 - make
