@@ -23,7 +23,6 @@
 #include "setup.hpp"
 #include "logging/Console.hpp"
 #include "logging/Message.hpp"
-#include <conio.h>
 #include "mining/MinerCL.hpp"
 #include "logging/MinerLogger.hpp"
 #include "plots/PlotVerifier.hpp"
@@ -33,8 +32,10 @@
 #include <Poco/Net/DNS.h>
 #include <Poco/Net/ServerSocket.h>
 #include "network/Request.hpp"
+#include "MinerUtil.hpp"
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/JSON/Parser.h>
+#include <condition_variable>
 
 const std::string Burst::Setup::exit = "Exit";
 const std::string Burst::Setup::yes = "Yes";
@@ -233,9 +234,9 @@ std::string Burst::Setup::readInput(const std::vector<std::string>& options, con
 
 	do
 	{
-		const auto choice = _getch();
+		const auto choice = getChar();
 		exit = choice == 0x1B;
-		useDefault = choice == '\r';
+		useDefault = choice == '\n';
 		index = choice - '0' - 1;
 	}
 	while (!exit && !useDefault && (index < 0 || index >= options.size()));
@@ -284,7 +285,7 @@ bool Burst::Setup::readNumber(const std::string& title, const Poco::Int64 min, c
 			
 			if (input.empty())
 				number = defaultValue;
-			else if (input == "\r") // exit
+			else if (input == "\n") // exit
 				return false;
 			else
 				number = Poco::NumberParser::parse64(input);

@@ -20,10 +20,12 @@
 // ==========================================================================
 
 #include "MinerCL.hpp"
+
+#ifdef USE_OPENCL
 #include "logging/MinerLogger.hpp"
 #include <fstream>
 #include "gpu/impl/gpu_opencl_impl.hpp"
-#include "shabal/cuda/Shabal.hpp"
+#endif
 
 namespace Burst
 {
@@ -65,6 +67,7 @@ std::vector<cl_device_id> Burst::ClPlatform::getDeviceIds() const
 
 bool Burst::ClPlatform::getPlatforms(std::vector<ClPlatform>& platforms, std::string& error)
 {
+#ifdef USE_OPENCL
 	platforms.clear();
 
 	std::vector<cl_platform_id> platform_ids;
@@ -146,7 +149,7 @@ bool Burst::ClPlatform::getPlatforms(std::vector<ClPlatform>& platforms, std::st
 			MinerCLHelper::infoHelperFunc(device_id, device.name, clGetDeviceInfo, CL_DEVICE_NAME, ret_device_name);
 		}
 	}
-
+#endif
 	return true;
 }
 
@@ -156,9 +159,9 @@ Burst::MinerCL::MinerCL()
 	ClPlatform::getPlatforms(platforms_, error);
 }
 
+#ifdef USE_OPENCL
 Burst::MinerCL::~MinerCL()
 {
-#ifdef USE_OPENCL
 	for (auto command_queue : command_queues_)
 	{
 		if (command_queue != nullptr)
@@ -182,8 +185,10 @@ Burst::MinerCL::~MinerCL()
 		clReleaseContext(context_);
 
 	initialized_ = false;
-#endif
 }
+#else
+Burst::MinerCL::~MinerCL() = default;
+#endif
 
 bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 {

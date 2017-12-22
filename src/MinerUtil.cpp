@@ -51,11 +51,12 @@
 
 #if defined(_WIN32)
 #include <Windows.h>
-
+#include <conio.h>
 #elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/param.h>
+#include <termios.h>
 #if defined(BSD)
 #include <sys/sysctl.h>
 #endif
@@ -929,5 +930,32 @@ void Burst::setStdInEcho(bool enable)
 		tty.c_lflag |= ECHO;
 
 	(void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+#endif
+}
+
+int Burst::getChar()
+{
+#ifdef WIN32
+    return _getch();
+#else
+	// https://stackoverflow.com/questions/7469139/what-is-equivalent-to-getch-getche-in-linux
+	char buf=0;
+	struct termios old={0};
+	fflush(stdout);
+	if(tcgetattr(0, &old)<0)
+		perror("tcsetattr()");
+	old.c_lflag&=~ICANON;
+	old.c_lflag&=~ECHO;
+	old.c_cc[VMIN]=1;
+	old.c_cc[VTIME]=0;
+	if(tcsetattr(0, TCSANOW, &old)<0)
+		perror("tcsetattr ICANON");
+	if(read(0,&buf,1)<0)
+		perror("read()");
+	old.c_lflag|=ICANON;
+	old.c_lflag|=ECHO;
+	if(tcsetattr(0, TCSADRAIN, &old)<0)
+		perror ("tcsetattr ~ICANON");
+	return buf;
 #endif
 }

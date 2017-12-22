@@ -26,6 +26,7 @@
  */
 #include <vector>
 #include <stdio.h>
+#include <string>
 
 #ifdef USE_OPENCL
 #ifdef __APPLE__
@@ -70,7 +71,6 @@ namespace Burst
 		MinerCL();
 		~MinerCL();
 
-		void destroy();
 		bool create(unsigned platformIdx = 0, unsigned deviceIdx = 0);
 		cl_command_queue createCommandQueue();
 
