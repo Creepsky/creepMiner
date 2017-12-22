@@ -16,6 +16,6 @@ addons:
     - g++-5
 script: 
 - cd $TRAVIS_BUILD_DIR/
-- conan install
+- conan install -s compiler.libcxx=libstdc++11
 - cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release -DNO_GPU=ON
 - make
