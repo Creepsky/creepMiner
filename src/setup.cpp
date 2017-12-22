@@ -236,7 +236,7 @@ std::string Burst::Setup::readInput(const std::vector<std::string>& options, con
 	{
 		const auto choice = getChar();
 		exit = choice == 0x1B;
-		useDefault = choice == '\n';
+		useDefault = choice == '\n' || choice == '\r';
 		index = choice - '0' - 1;
 	}
 	while (!exit && !useDefault && (index < 0 || index >= options.size()));
@@ -285,7 +285,7 @@ bool Burst::Setup::readNumber(const std::string& title, const Poco::Int64 min, c
 			
 			if (input.empty())
 				number = defaultValue;
-			else if (input == "\n") // exit
+			else if (input == "\n" || input == "\r") // exit
 				return false;
 			else
 				number = Poco::NumberParser::parse64(input);
