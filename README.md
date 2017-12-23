@@ -33,7 +33,7 @@ For Windows: download and unzip the [latest release](https://github.com/Creepsky
 For all others:
 1. Install [Python](https://www.python.org/)
 2. Install [Conan](https://conan.io/downloads): `pip install conan`
-3. Install [Poco](https://pocoproject.org/download/index.html): `conan install -s compiler.libcxx=libstdc++11` (inside the creepMiner root dir)
+3. Install [Poco](https://pocoproject.org/download/index.html): `conan install -s compiler.libcxx=libstdc++11 --build=missing` (inside the creepMiner root dir)
 4. Create the project by executing one of the following commands
 - **CPU** (SSE2, SSE4, AVX, AVX2) + **GPU** (OPENCL, CUDA) version: 
 ```
