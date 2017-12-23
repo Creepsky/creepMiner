@@ -159,11 +159,7 @@ endif ()
 ##################################################################
 # Libraries
 ##################################################################
-if (UNIX OR APPLE)
-	target_link_libraries(creepMiner ${CONAN_LIBS})
-elseif (MSVC)
-	target_link_libraries(creepMiner ${CONAN_LIBS})
-endif ()
+target_link_libraries(creepMiner ${CONAN_LIBS})
 
 if (USE_OPENCL)
 	target_link_libraries(creepMiner ${OpenCL_LIBRARY})

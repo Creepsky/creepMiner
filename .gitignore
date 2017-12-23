@@ -421,3 +421,5 @@ CMakeSettings.json
 conanbuildinfo.cmake
 conanbuildinfo.txt
 conaninfo.txt
+conan_imports_manifest.txt
+

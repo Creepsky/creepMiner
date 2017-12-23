@@ -1,5 +1,9 @@
 [requires]
 Poco/1.8.0.1@pocoproject/stable
 
+[options]
+Poco:shared=True
+
 [generators]
 cmake
+
