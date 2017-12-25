@@ -53,7 +53,7 @@ make
 - [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Forwarding](https://github.com/Creepsky/creepMiner/wiki/Forwarding)
 - [Solo mining](https://github.com/Creepsky/creepMiner/wiki/Solo-mining)
-- [The mining process and otimizations](https://github.com/Creepsky/creepMiner/wiki/The-mining-process-and-otimizations)
+- [The mining process and otimizations](https://github.com/Creepsky/creepMiner/wiki/The-mining-process-and-optimizations)
 
 ## Dependencies
 
