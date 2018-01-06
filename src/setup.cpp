@@ -943,7 +943,7 @@ bool Burst::Setup::chooseWebserver(std::string& ip, std::string& user, std::stri
 
 	// username
 	log_notice(MinerLogger::general, "Enter the username for the webserver");
-	readText("Username", [](const std::string& toVerify, std::string& verified)
+	user = readText("Username", [](const std::string& toVerify, std::string& verified)
 	{
 		verified = toVerify;
 		return true;
