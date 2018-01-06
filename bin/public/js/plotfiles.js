@@ -61,6 +61,8 @@ function createDirLine(dirElement, index) {
     line.append(createProgressBar(index));
 
     line.click(function () {
+        plotDirList.find('.active').removeClass('active');
+        line.addClass('active');
         showPlotfiles(dirElement["plotfiles"]);
         activePlotDir = dirElement;
         colorConfirmedPlotfiles();
