@@ -22,7 +22,12 @@ option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
 ##################################################################
 # Environment variables
 ##################################################################
-include(conanbuildinfo.cmake)
+if (CONAN_DEBUG)
+	include(bin/debug/conanbuildinfo.cmake)
+else ()
+	include(conanbuildinfo.cmake)
+endif ()
+
 conan_basic_setup()
 
 ##################################################################
@@ -71,6 +76,7 @@ endif ()
 # Additional options
 ##################################################################
 option(OVERWRITE_MINING_CONF "If yes, on install the mining.conf will be overwritten" OFF)
+option(CONAN_DEBUG "Only for development" OFF)
 
 ##################################################################
 # UNIX / BSD specific
