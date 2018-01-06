@@ -1,6 +1,5 @@
 [requires]
 Poco/1.8.0.1@pocoproject/stable
-zlib/1.2.11@lasote/stable
 
 [options]
 Poco:shared=True
