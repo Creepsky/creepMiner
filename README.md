@@ -28,6 +28,8 @@ It is designed multi-threaded to reach the best performance.
 
 ## Quickstart
 
+### Build
+
 - **CPU** (SSE2, SSE4, AVX, AVX2) + **GPU** (OPENCL, CUDA) version:
 ```
 cmake CMakeLists.txt
@@ -43,6 +45,13 @@ make
 cmake CMakeLists.txt -DMINIMAL_BUILD=ON
 make
 ```
+
+### Run
+
+1. Follow the [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) documentation.
+2. Start the mining with `./bin/run.sh` or in a detached `screen` by `./bin/screen.sh`.
+3. To enter the screen attach by `screen -r creep`.
+4. To detach the screen use the keyboard shortcut `CTRL + A + D`.
 
 ## Instructions
 
