@@ -155,9 +155,12 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 			{
 				log_error(MinerLogger::nonceSubmitter,
 					"The pool calculated a different deadline for your nonce than your miner has!\n"
+					"\tPlot file: %s\n"
 					"\tPools deadline: %s\n"
 					"\tYour deadline: %s",
-					deadlineFormat(confirmation.deadline), deadlineFormat(deadline->getDeadline()));
+					deadline->getPlotFile(),
+					deadlineFormat(confirmation.deadline),
+					deadlineFormat(deadline->getDeadline()));
 
 				// change the deadline
 				deadline->setDeadline(confirmation.deadline);
