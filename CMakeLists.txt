@@ -22,6 +22,14 @@ option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
 ##################################################################
 # Environment variables
 ##################################################################
+
+# get the version number from version.id
+file(STRINGS version.id VERSION_RAW)
+string(REPLACE "version:" "" VERSION ${VERSION_RAW})
+# define it for the source files
+add_definitions(-DVERSION="${VERSION}")
+
+# init conan
 if (CONAN_DEBUG)
 	include(bin/debug/conanbuildinfo.cmake)
 else ()
