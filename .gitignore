@@ -423,3 +423,10 @@ conanbuildinfo.txt
 conaninfo.txt
 conan_imports_manifest.txt
 
+CPackConfig.cmake
+CPackSourceConfig.cmake
+_CPack_Packages/
+lib/
+*.deb
+*.rpm
+*.tar*
