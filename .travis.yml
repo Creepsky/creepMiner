@@ -23,7 +23,7 @@ matrix:
         - ubuntu-toolchain-r-test
         packages:
         - g++-5
-        - rpm-build
+        - rpm
     env:
     - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     script:
