@@ -197,8 +197,27 @@ if (OVERWRITE_MINING_CONF)
 endif  ()
 
 if (NOT MSVC)
-	install(FILES
-		bin/run.sh
-		icon.png
-		DESTINATION .)
+	install(DIRECTORY bin/ DESTINATION .)
+if (UNIX)
+    install(DIRECTORY lib/ DESTINATION /usr/lib/)
 endif ()
+endif ()
+
+##################################################################
+# Packaging
+##################################################################
+if (UNIX)
+    set(CPACK_SET_DESTDIR true)
+    set(CPACK_INSTALL_PREFIX "/opt/${CMAKE_PROJECT_NAME}")
+    set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
+    set(CPACK_GENERATOR "TGZ;DEB;RPM")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burstcoin c++ cpu/gpu miner")
+    set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
+    SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+    set(CPACK_PACKAGE_VERSION ${VERSION})
+    set(CPACK_SOURCE_PACKAGE_FILE "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}")
+    set(CPACK_PACKAGE_SECTION "misc")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Creepsky")
+    include(CPack)
+endif ()
+
