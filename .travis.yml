@@ -1,21 +1,24 @@
 language: cpp
-sudo: true
 dist: trusty
 compiler: gcc
-env: CXX=g++-5 CXXFLAGS="-std=c++14"
-os: linux
 group: stable
-install:
-- if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-- pip install --user conan
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - g++-5
-script: 
-- cd $TRAVIS_BUILD_DIR/
-- conan install -s compiler.libcxx=libstdc++11 --build=missing
-- cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release -DNO_GPU=ON
-- make
+matrix:
+  fast_finish: true
+  include:
+    - os: osx
+      compiler: clang
+      script:
+        - sh install.sh
+    - os: linux
+      compiler: gcc
+      addons:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - g++-5
+        env:
+          - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+      script:
+        - sh install.sh
+before_install:
+   - eval "${MATRIX_EVAL}"
