@@ -8,9 +8,14 @@ matrix:
   - os: osx
     compiler: clang
     script:
-    - sh install.sh
+    - conan install --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
     env:
     - NAME="osx clang" MATRIX_EVAL="brew install conan"
+    cache:
+      directories:
+      - $HOME/.conan
   - os: linux
     addons:
       apt:
@@ -18,12 +23,18 @@ matrix:
         - ubuntu-toolchain-r-test
         packages:
         - g++-5
+        - rpm-build
     env:
     - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     script:
     - pip install conan --user
-    - sh install.sh
+    - conan install --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
     - make package
+    cache:
+      directories:
+      - $HOME/.conan
   - os: linux
     addons:
       apt:
@@ -35,8 +46,12 @@ matrix:
     - NAME="linux g++-6" MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
     script:
     - pip install conan --user
-    - sh install.sh
-    - make package
+    - conan install --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
+    cache:
+      directories:
+      - $HOME/.conan
   - os: linux
     addons:
       apt:
@@ -48,6 +63,10 @@ matrix:
     - NAME="linux g++-7" - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     script:
     - pip install conan --user
-    - sh install.sh
-    - make package
+    - conan install --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
+    cache:
+      directories:
+      - $HOME/.conan
 
