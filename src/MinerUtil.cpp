@@ -68,12 +68,17 @@
 //  Windows
 #define cpuid(info, x) __cpuidex(info, x, 0)
 #else
+#ifdef __arm__
+void cpuid(int info[4], int InfoType)
+{}
+#else
 //  GCC Intrinsics
 #include <cpuid.h>
 void cpuid(int info[4], int InfoType)
 {
 	__cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
 }
+#endif
 #endif
 
 bool Burst::isNumberStr(const std::string& str)
@@ -786,6 +791,9 @@ bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
 
 int Burst::cpuGetInstructionSets()
 {
+#ifndef __arm__
+	return sse2;
+#else
 	int info[4];
 	cpuid(info, 0);
 	const auto n_ids = info[0];
@@ -825,6 +833,7 @@ int Burst::cpuGetInstructionSets()
 		instruction_sets += avx2;
 
 	return instruction_sets;
+#endif
 }
 
 size_t Burst::getMemorySize()
