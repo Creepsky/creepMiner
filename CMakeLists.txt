@@ -82,7 +82,7 @@ option(CONAN_DEBUG "Only for development" OFF)
 # UNIX / BSD specific
 ##################################################################
 if (UNIX OR APPLE)	 
-	add_definitions(-D_REENTRANT -Wall -march=native -std=c++14)
+	add_definitions(-D_REENTRANT -std=c++14)
 	link_directories(/usr/local/lib)
 	include_directories(/usr/local/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 ##################################################################
