@@ -1,26 +1,53 @@
 language: cpp
-dist: trusty
-compiler: gcc
-group: stable
+sudo: false
+before_install:
+   - eval "${MATRIX_EVAL}"
 matrix:
   fast_finish: true
   include:
-    - os: osx
-      compiler: clang
-      script:
-        - sudo brew install conan
-        - sh install.sh
-    - os: linux
-      addons:
+  - os: osx
+    compiler: clang
+    script:
+    - sh install.sh
+    env:
+    - MATRIX_EVAL="brew install conan"
+  - os: linux
+    addons:
+      apt:
         sources:
-          - ubuntu-toolchain-r-test
+        - ubuntu-toolchain-r-test
         packages:
-          - g++-5
-        env:
-          - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
-      script:
-        - pip install conan --user
-        - sh install.sh
-        - make package
-before_install:
-   - eval "${MATRIX_EVAL}"
+        - g++-5
+    env: g++-5
+      - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+    script:
+    - pip install conan --user
+    - sh install.sh
+    - make package
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-6
+    env: g++-6
+    - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+    script:
+    - pip install conan --user
+    - sh install.sh
+    - make package
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+    env: g++-7
+    - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+    script:
+    - pip install conan --user
+    - sh install.sh
+    - make package
+
