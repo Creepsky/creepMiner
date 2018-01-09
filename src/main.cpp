@@ -312,7 +312,7 @@ void Arguments::displayHelp(const std::string& name, const std::string& value)
 	helpFormatter.setCommand("creepMiner");
 	helpFormatter.setUsage("<options>");
 	helpFormatter.setHeader("Burstcoin cryptocurrency CPU and GPU miner.");
-	helpFormatter.setFooter("Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)");
+	helpFormatter.setFooter("Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)");
 	helpFormatter.setAutoIndent();
 	helpFormatter.format(std::cout);
 
