@@ -8,9 +8,9 @@ matrix:
     - os: osx
       compiler: clang
       script:
+        - sudo brew install conan
         - sh install.sh
     - os: linux
-      compiler: gcc
       addons:
         sources:
           - ubuntu-toolchain-r-test
@@ -19,6 +19,8 @@ matrix:
         env:
           - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
       script:
+        - pip install conan --user
         - sh install.sh
+        - make package
 before_install:
    - eval "${MATRIX_EVAL}"

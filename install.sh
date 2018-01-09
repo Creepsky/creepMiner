@@ -88,10 +88,8 @@ echo $use_avx2
 echo $use_opencl
 echo $use_cuda
 
-pip install conan --user
 conan install --build=missing -s compiler.libcxx=libstdc++11
 rm CMakeCache.txt -y
 cmake . -DCMAKE_BUILD_TYPE=RELEASE $use_sse4 $use_avx $use_avx2 $use_opencl $use_cuda
 make -j$(nproc)
-make package
 
