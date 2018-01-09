@@ -336,7 +336,6 @@ hs_err_pid*
 *.pydevproject
 .metadata
 .gradle
-bin/
 tmp/
 *.tmp
 *.bak
@@ -398,8 +397,6 @@ buildNumber.properties
 makefile
 mining.conf
 *.graphml
-!/bin/*.dll
-!/bin/public/*
 build/
 
 # Visual Code
@@ -430,3 +427,4 @@ lib/
 *.deb
 *.rpm
 *.tar*
+bin/creepMiner
