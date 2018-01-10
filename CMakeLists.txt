@@ -27,7 +27,7 @@ option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
 file(STRINGS version.id VERSION_RAW)
 string(REPLACE "version:" "" VERSION ${VERSION_RAW})
 # define it for the source files
-add_definitions(-DVERSION="${VERSION}")
+add_definitions(-DVERSION="\\"${VERSION}\\"")
 
 # init conan
 if (CONAN_DEBUG)
@@ -98,7 +98,7 @@ if (UNIX OR APPLE)
 ##################################################################
 elseif (MSVC)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
-	set_source_files_properties(icon.ico src/resources.rc PROPERTIES LANGUAGE RC)
+	set_source_files_properties(bin/icon.ico src/resources.rc PROPERTIES LANGUAGE RC)
 endif ()
 
 ##################################################################
