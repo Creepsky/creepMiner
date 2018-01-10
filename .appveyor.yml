@@ -67,9 +67,10 @@ deploy:
 
     # Deploy to GitHub Releases
   - provider: GitHub
-    artifact: bin
+    artifact: /.*\.zip/
     draft: false
     prerelease: false
+    force_update: true
     auth_token:
       secure: cIGGvYiRLrapIH5uW9tl18cGB7qgBTTkrOo+yFo0Hcv7zl0KYu0qUaxFRvKLj1Yi
     on:
