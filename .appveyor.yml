@@ -68,8 +68,10 @@ deploy:
     # Deploy to GitHub Releases
   - provider: GitHub
     artifact: bin
-    draft: true
-    prerelease: true
+    draft: false
+    prerelease: false
+    auth_token:
+      secure: cIGGvYiRLrapIH5uW9tl18cGB7qgBTTkrOo+yFo0Hcv7zl0KYu0qUaxFRvKLj1Yi
     on:
       branch: development
       appveyor_repo_tag: true       # deploy on tag push only
