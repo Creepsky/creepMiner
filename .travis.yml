@@ -5,17 +5,17 @@ before_install:
 matrix:
   fast_finish: true
   include:
-  - os: osx
-    compiler: clang
-    script:
-    - conan install . --build=missing
-    - cmake . -DNO_GPU=ON
-    - make -j$(nproc)
-    env:
-    - NAME="osx clang" MATRIX_EVAL="brew install conan"
-    cache:
-      directories:
-      - "$HOME/.conan"
+#  - os: osx
+#    compiler: clang
+#    script:
+#    - conan install . --build=missing
+#    - cmake . -DNO_GPU=ON
+#    - make -j$(nproc)
+#    env:
+#    - NAME="osx clang" MATRIX_EVAL="brew install conan"
+#    cache:
+#      directories:
+#      - "$HOME/.conan"
   - os: linux
     addons:
       apt:
