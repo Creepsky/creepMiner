@@ -8,7 +8,7 @@ matrix:
   - os: osx
     compiler: clang
     script:
-    - conan install --build=missing
+    - conan install . --build=missing
     - cmake . -DNO_GPU=ON
     - make -j$(nproc)
     env:
@@ -28,7 +28,7 @@ matrix:
     - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     script:
     - pip install conan --user
-    - conan install --build=missing
+    - conan install . --build=missing
     - cmake . -DNO_GPU=ON
     - make -j$(nproc)
     - make package
@@ -59,7 +59,7 @@ matrix:
     - NAME="linux g++-6" MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
     script:
     - pip install conan --user
-    - conan install --build=missing
+    - conan install . --build=missing
     - cmake . -DNO_GPU=ON
     - make -j$(nproc)
     cache:
@@ -76,7 +76,7 @@ matrix:
     - NAME="linux g++-7" - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     script:
     - pip install conan --user
-    - conan install --build=missing
+    - conan install . --build=missing
     - cmake . -DNO_GPU=ON
     - make -j$(nproc)
     cache:
