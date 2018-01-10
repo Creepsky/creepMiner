@@ -46,5 +46,30 @@ build:
 before_build:
   - mkdir C:\projects\creepMiner\bin\Release
   - cd C:\projects\creepminer
-  - conan install -o Poco:shared=False -o OpenSSL:shared=False -o zlib:shared=False --build=missing
+  - conan install . -o Poco:shared=False -o OpenSSL:shared=False -o zlib:shared=False --build=missing
   - cmake CMakeLists.txt -G "Visual Studio 15 2017 Win64" -DUSE_CUDA=OFF -DUSE_OPENCL=OFF -DCMAKE_BUILD_TYPE=RELEASE
+
+#---------------------------------#
+#      artifacts configuration    #
+#---------------------------------#
+
+artifacts:
+  # pushing entire folder as a zip archive
+  - path: bin
+
+#---------------------------------#
+#     deployment configuration    #
+#---------------------------------#
+
+# providers: Local, FTP, WebDeploy, AzureCS, AzureBlob, S3, NuGet, Environment
+# provider names are case-sensitive!
+deploy:
+
+    # Deploy to GitHub Releases
+  - provider: GitHub
+    artifact: bin
+    draft: true
+    prerelease: true
+    on:
+      branch: development
+      appveyor_repo_tag: true       # deploy on tag push only
