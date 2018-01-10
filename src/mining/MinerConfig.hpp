@@ -281,7 +281,7 @@ namespace Burst
 		unsigned walletRequestRetryWaitTime_ = 3;
 		Passphrase passphrase_ = {};
 		bool useInsecurePlotfiles_ = false;
-		bool logfile_ = true;
+		bool logfile_ = false;
 		unsigned getMiningInfoInterval_ = 3;
 		bool rescanEveryBlock_ = false;
 		LogOutputType logOutputType_ = LogOutputType::Terminal;

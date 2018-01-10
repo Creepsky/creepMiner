@@ -110,7 +110,7 @@ const std::unordered_map<std::string, Burst::MinerDataChannel*> Burst::MinerLogg
 	return channels_;
 }();
 
-Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel{"startup.log"};
+Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel;
 Poco::FormattingChannel* Burst::MinerLogger::fileFormatter_ = nullptr;
 std::string Burst::MinerLogger::logFileName_ = getFilenameWithtimestamp("creepMiner", "log");
 
@@ -442,7 +442,6 @@ void Burst::MinerLogger::setup()
 	}
 
 	refreshChannels();
-	setLogDir("");
 }
 
 void Burst::MinerLogger::refreshChannels()

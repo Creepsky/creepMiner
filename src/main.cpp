@@ -43,6 +43,8 @@
 #include <Poco/Util/OptionProcessor.h>
 #include <Poco/Util/HelpFormatter.h>
 #include <Poco/Util/Validator.h>
+#include <Poco/FileStream.h>
+#include <Poco/File.h>
 #include "setup.hpp"
 
 class SSLInitializer
@@ -179,9 +181,64 @@ int main(const int argc, const char* argv[])
 
 		while (running)
 		{
-			if (Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath))
+			// load the config
+			auto configLoaded = Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath);
+			auto configCreated = false;
+
+			// the config could not be loaded, look for a config in the creepMiner home dir
+			if (!configLoaded)
 			{
-				if (arguments.setupRequested)
+				log_information(general, "Could not load config file %s", arguments.confPath);
+
+				Poco::Path minerHomePath(Poco::Path::home());
+				minerHomePath.pushDirectory(".creepMiner");
+
+				if (Poco::File(minerHomePath).createDirectory())
+					log_information(general, "Miner home directory created: %s", minerHomePath.toString());
+
+				Poco::Path homeConfigPath(minerHomePath);
+				homeConfigPath.append("mining.conf");
+				const auto homeConfig = homeConfigPath.toString();
+
+				log_information(general, "Trying to load the config file %s", homeConfig);
+				configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
+
+				// if there is also no config in the home dir, create one in the home dir
+				if (!configLoaded)
+				{
+					log_information(general, "Config file %s does not exist, creating a default config...", homeConfig);
+
+					try
+					{
+						Poco::FileOutputStream defaultConfig(homeConfig);
+						defaultConfig << "{}" << std::endl;
+						defaultConfig.close();
+					}
+					catch (...)
+					{
+						throw std::runtime_error(Poco::format("Could not create default config %s!", homeConfig));
+					}
+
+					// load the freshly created config in the home dir
+					configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
+					configCreated = true;
+
+					// also create the log dir
+					Poco::Path homeLogPath(minerHomePath);
+					homeLogPath.pushDirectory("logs");
+					homeLogPath.makeDirectory();
+
+					// and save it in the config
+					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
+					Burst::MinerConfig::getConfig().save();
+				}
+			}
+
+			if (configLoaded)
+			{
+				log_information(general, "Config file loaded: %s", Burst::MinerConfig::getConfig().getPath());
+
+				if (arguments.setupRequested || configCreated)
 				{
 					if (!Burst::Setup::setup(Burst::MinerConfig::getConfig()))
 					{

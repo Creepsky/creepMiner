@@ -199,22 +199,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 
 	if (!inputFileStream.is_open())
-	{
-		log_critical(MinerLogger::config, "Config file %s does not exist, creating a default config...", configPath);
-
-		try
-		{
-			Poco::FileOutputStream defaultConfig(configPath);
-			defaultConfig << "{}" << std::endl;
-			defaultConfig.close();
-			inputFileStream.open(configPath);
-		}
-		catch (...)
-		{
-			log_critical(MinerLogger::config, "Could not create default config %s!", configPath);
-			return false;
-		}
-	}
+		return false;
 
 	configPath_ = configPath;
 	plotDirs_.clear();

@@ -159,8 +159,6 @@ if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
 	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/cuda/Shabal.cu)
 endif ()
 
-configure_file(${CMAKE_SOURCE_DIR}/bin/mining.conf ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.conf COPYONLY)
-
 ##################################################################
 # Executable
 ##################################################################
@@ -177,7 +175,6 @@ target_link_libraries(creepMiner ${CONAN_LIBS})
 
 if (USE_OPENCL)
 	target_link_libraries(creepMiner ${OpenCL_LIBRARY})
-	configure_file(${CMAKE_SOURCE_DIR}/src/shabal/opencl/mining.cl ${CMAKE_CURRENT_BINARY_DIR}/bin/mining.cl COPYONLY)
 endif ()
 
 ##################################################################
@@ -188,18 +185,12 @@ set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
 ##################################################################
 # Installing
 ##################################################################
-install(TARGETS	creepMiner RUNTIME DESTINATION .)
 install(FILES src/shabal/opencl/mining.cl DESTINATION .)
-install(DIRECTORY bin/public DESTINATION .)
-
-if (OVERWRITE_MINING_CONF)
-	install(FILES bin/mining.conf DESTINATION .)
-endif  ()
 
 if (NOT MSVC)
-	install(DIRECTORY bin/ DESTINATION .)
+	install(DIRECTORY bin/ DESTINATION . USE_SOURCE_PERMISSIONS)
 if (UNIX)
-    install(DIRECTORY lib/ DESTINATION /usr/lib/)
+    install(DIRECTORY lib/ DESTINATION lib)
 endif ()
 endif ()
 
