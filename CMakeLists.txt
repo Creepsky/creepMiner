@@ -200,7 +200,10 @@ install(DIRECTORY resources/public DESTINATION .)
 
 if (NOT MSVC)
 	install(DIRECTORY bin/ DESTINATION . USE_SOURCE_PERMISSIONS)
-	install(FILES resources/run.sh DESTINATION . USE_SOURCE_PERMISSIONS)
+	install(FILES resources/run.sh DESTINATION . PERMISSIONS
+			OWNER_READ, OWNER_WRITE, OWNER_EXECUTE,
+			GROUP_READ, GROUP_WRITE, GROUP_EXECUTE,
+			WORLD_READ, WORLD_WRITE, WORLD_EXECUTE)
 	if (UNIX)
 		install(DIRECTORY lib/ DESTINATION lib)
 	endif ()
@@ -231,10 +234,10 @@ if (UNIX)
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Creepsky")
 	include(CPack)
 elseif (WIN32)
-	set(CPACK_GENERATOR NSIS)
-	set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
-	set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
-	set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
+	set(CPACK_GENERATOR "NSIS;ZIP")
+	#set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
+	#set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
+	#set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
 	include(CPack)
 endif ()
 

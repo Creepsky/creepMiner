@@ -48,6 +48,9 @@ before_build:
   - cd C:\projects\creepminer
   - conan install . -o Poco:shared=False -o OpenSSL:shared=False -o zlib:shared=False --build=missing
   - cmake CMakeLists.txt -G "Visual Studio 15 2017 Win64" -DUSE_CUDA=OFF -DUSE_OPENCL=OFF -DCMAKE_BUILD_TYPE=RELEASE
+
+# scripts to run after build
+after_build:
   - CPack -C Release
 
 #---------------------------------#
