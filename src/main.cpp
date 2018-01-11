@@ -190,13 +190,14 @@ int main(const int argc, const char* argv[])
 			{
 				log_information(general, "Could not load config file %s", arguments.confPath);
 
-				Poco::Path minerHomePath(Poco::Path::home());
+				Path minerHomePath(Poco::Path::home());
 				minerHomePath.pushDirectory(".creepMiner");
+				minerHomePath.pushDirectory(std::string(Project.version.literal));
 
-				if (Poco::File(minerHomePath).createDirectory())
+				if (File(minerHomePath).createDirectory())
 					log_information(general, "Miner home directory created: %s", minerHomePath.toString());
 
-				Poco::Path homeConfigPath(minerHomePath);
+				Path homeConfigPath(minerHomePath);
 				homeConfigPath.append("mining.conf");
 				const auto homeConfig = homeConfigPath.toString();
 
@@ -210,13 +211,13 @@ int main(const int argc, const char* argv[])
 
 					try
 					{
-						Poco::FileOutputStream defaultConfig(homeConfig);
+						FileOutputStream defaultConfig(homeConfig);
 						defaultConfig << "{}" << std::endl;
 						defaultConfig.close();
 					}
 					catch (...)
 					{
-						throw std::runtime_error(Poco::format("Could not create default config %s!", homeConfig));
+						throw std::runtime_error(format("Could not create default config %s!", homeConfig));
 					}
 
 					// load the freshly created config in the home dir
@@ -224,7 +225,7 @@ int main(const int argc, const char* argv[])
 					configCreated = true;
 
 					// also create the log dir
-					Poco::Path homeLogPath(minerHomePath);
+					Path homeLogPath(minerHomePath);
 					homeLogPath.pushDirectory("logs");
 					homeLogPath.makeDirectory();
 

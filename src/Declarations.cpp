@@ -27,7 +27,8 @@
 #include "logging/MinerLogger.hpp"
 
 std::string Burst::Settings::Cpu_Instruction_Set = "";
-Burst::ProjectData Burst::Settings::Project = Burst::ProjectData("creepMiner", Burst::Version(VERSION));
+Burst::ProjectData Burst::Settings::Project = Burst::ProjectData("creepMiner",
+	Burst::Version(VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, 0));
 
 #ifdef USE_SSE4
 const bool Burst::Settings::Sse4 = true;

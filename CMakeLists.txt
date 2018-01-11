@@ -26,12 +26,23 @@ option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
 # get the version number from version.id
 file(STRINGS version.id VERSION_RAW)
 string(REPLACE "version:" "" VERSION ${VERSION_RAW})
+
+# make a list
+string(REPLACE "." ";" VERSION_LIST ${VERSION})
+
+# filter version numbers
+list(GET VERSION_LIST 0 VERSION_MAJOR)
+list(GET VERSION_LIST 1 VERSION_MINOR)
+list(GET VERSION_LIST 2 VERSION_BUILD)
+
 # define it for the source files
-add_definitions(-DVERSION="\\"${VERSION}\\"")
+add_definitions(-DVERSION_MAJOR=${VERSION_MAJOR}
+				-DVERSION_MINOR=${VERSION_MINOR}
+				-DVERSION_BUILD=${VERSION_BUILD})
 
 # init conan
 if (CONAN_DEBUG)
-	include(bin/debug/conanbuildinfo.cmake)
+	include(conan/debug/conanbuildinfo.cmake)
 else ()
 	include(conanbuildinfo.cmake)
 endif ()
@@ -83,7 +94,6 @@ endif ()
 ##################################################################
 # Additional options
 ##################################################################
-option(OVERWRITE_MINING_CONF "If yes, on install the mining.conf will be overwritten" OFF)
 option(CONAN_DEBUG "Only for development" OFF)
 
 ##################################################################
@@ -186,29 +196,45 @@ set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
 # Installing
 ##################################################################
 install(FILES src/shabal/opencl/mining.cl DESTINATION .)
+install(DIRECTORY resources/public DESTINATION .)
 
 if (NOT MSVC)
 	install(DIRECTORY bin/ DESTINATION . USE_SOURCE_PERMISSIONS)
-if (UNIX)
-    install(DIRECTORY lib/ DESTINATION lib)
-endif ()
+	install(FILES resources/run.sh DESTINATION . USE_SOURCE_PERMISSIONS)
+	if (UNIX)
+		install(DIRECTORY lib/ DESTINATION lib)
+	endif ()
+else ()
+	install(TARGETS creepMiner RUNTIME DESTINATION .)
 endif ()
 
 ##################################################################
 # Packaging
 ##################################################################
+set(CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burstcoin c++ cpu/gpu miner")
+set(CPACK_PACKAGE_VENDOR "Creepsky")
+set(CPACK_PACKAGE_VERSION ${VERSION})
+set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${VERSION_BUILD})
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
+SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_SOURCE_PACKAGE_FILE "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}")
+
 if (UNIX)
-    set(CPACK_SET_DESTDIR true)
-    set(CPACK_INSTALL_PREFIX "/opt/${CMAKE_PROJECT_NAME}")
+    #set(CPACK_SET_DESTDIR true)
+    set(CPACK_INSTALL_PREFIX "/opt/${CMAKE_PROJECT_NAME}-${VERSION}")
     set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
     set(CPACK_GENERATOR "TGZ;DEB;RPM")
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burstcoin c++ cpu/gpu miner")
-    set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
-    SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
-    set(CPACK_PACKAGE_VERSION ${VERSION})
-    set(CPACK_SOURCE_PACKAGE_FILE "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}")
     set(CPACK_PACKAGE_SECTION "misc")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Creepsky")
-    include(CPack)
+	include(CPack)
+elseif (WIN32)
+	set(CPACK_GENERATOR NSIS)
+	set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
+	set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
+	set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
+	include(CPack)
 endif ()
 

@@ -426,4 +426,4 @@ lib/
 *.deb
 *.rpm
 *.tar*
-bin/creepMiner
+bin
