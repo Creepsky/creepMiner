@@ -34,6 +34,9 @@
 #include <cmath>
 #endif
 
+const std::string Burst::Console::yes = "Yes";
+const std::string Burst::Console::no = "No";
+
 Burst::PrintBlock::PrintBlock(std::ostream& stream)
 	: stream_(&stream)
 {
@@ -191,4 +194,108 @@ void Burst::Console::clearLine(bool wipe)
 void Burst::Console::nextLine()
 {
 	std::cout << std::endl;
+}
+
+std::string Burst::Console::readInput(const std::vector<std::string>& options, const std::string& header,
+	const std::string& defaultValue, int& index)
+{
+	auto pb = Console::print();
+	pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("%s", header).resetColor().nextLine();
+
+	for (size_t i = 0; i < options.size(); ++i)
+	{
+		pb.addTime().print(": [%7z]: %s", i + 1, options[i]);
+
+		if (options[i] == defaultValue)
+			pb.setColor(ConsoleColor::LightGreen).print(" <--").resetColor();
+
+		pb.nextLine();
+	}
+	
+	pb.addTime().print(": [  Enter]: Use the default value (")
+	  .setColor(ConsoleColor::Green).print(defaultValue)
+	  .resetColor().print(')').nextLine();
+
+	bool useDefault;
+
+	do
+	{
+		pb.addTime().print(": Your choice: ");
+		std::string choice;
+		std::getline(std::cin, choice);
+		useDefault = choice.empty();
+		if (Poco::NumberParser::tryParse(choice, index))
+			--index;
+		else
+			index = -1;
+	}
+	while (!useDefault && (index < 0 || index >= static_cast<int>(options.size())));
+
+	std::string choiceText;
+
+	if (useDefault)
+	{
+		choiceText = defaultValue;
+		const auto iter = find(options.begin(), options.end(), defaultValue);
+		index = static_cast<int>(distance(options.begin(), iter));
+	}
+	else
+		choiceText = options[index];
+
+	return choiceText;
+}
+
+std::string Burst::Console::readYesNo(const std::string& header, bool defaultValue)
+{
+	int index;
+	return readInput({"Yes", "No"}, header, defaultValue ? "Yes" : "No", index);
+}
+
+bool Burst::Console::readNumber(const std::string& title, Poco::Int64 min, Poco::Int64 max, Poco::Int64 defaultValue,
+	Poco::Int64& number)
+{
+	auto entered = false;
+	std::string input;
+	const auto pb = Console::print();
+
+	while (!entered)
+	{
+		try
+		{
+			pb.addTime().print(": ").print(title).print(": ");
+			getline(std::cin, input);
+			
+			if (input.empty())
+				number = defaultValue;
+			else if (input == "\n" || input == "\r") // exit
+				return false;
+			else
+				number = Poco::NumberParser::parse64(input);
+
+			entered = number >= min && number <= max;
+		}
+		catch (...)
+		{
+		}
+	}
+
+	return entered;
+}
+
+std::string Burst::Console::readText(const std::string& title,
+	std::function<bool(const std::string&, std::string&)> validator)
+{
+	auto validated = false;
+	std::string input, output;
+
+	const auto pb = Console::print();
+
+	while (!validated)
+	{
+		pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print(title).print(": ").resetColor();
+		getline(std::cin, input);
+		validated = validator(input, output);
+	}
+
+	return output;
 }

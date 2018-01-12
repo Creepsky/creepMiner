@@ -42,6 +42,8 @@ namespace Burst
 		Version(std::string version);
 
 		bool operator>(const Version& rhs) const;
+		bool operator==(const Version& rhs) const;
+		bool operator!=(const Version& rhs) const;
 
 		uint32_t major, minor, build, revision;
 		std::string literal, literalVerbose;

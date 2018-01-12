@@ -38,8 +38,6 @@
 #include <condition_variable>
 #include <Poco/URI.h>
 
-const std::string Burst::Setup::yes = "Yes";
-const std::string Burst::Setup::no = "No";
 const std::string Burst::Setup::everything = "Everything";
 const std::string Burst::Setup::userInput;
 
@@ -106,7 +104,7 @@ bool Burst::Setup::setup(MinerConfig& config, std::string type)
 	{
 		if (type.empty())
 		{
-			type = readInput(
+			type = Console::Console::readInput(
 				{
 					"Everything", "Processor type", "Plots", "Buffersize", "Plotreader/verifier",
 					"Progressbar", "Webserver", "Pool/Solo mining", "Exit", "Start mining"
@@ -226,7 +224,7 @@ bool Burst::Setup::setup(MinerConfig& config, std::string type)
 
 		if (all)
 		{
-			startMining = readYesNo("Do you want to start mining now", true) == yes;
+			startMining = Console::readYesNo("Do you want to start mining now", true) == Console::yes;
 			exit = !startMining;
 		}
 
@@ -247,109 +245,6 @@ bool Burst::Setup::setup(MinerConfig& config, std::string type)
 	return false;
 }
 
-std::string Burst::Setup::readInput(const std::vector<std::string>& options, const std::string& header,
-                                    const std::string& defaultValue, int& index)
-{
-	auto pb = Console::print();
-	pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("%s", header).resetColor().nextLine();
-
-	for (size_t i = 0; i < options.size(); ++i)
-	{
-		pb.addTime().print(": [%7z]: %s", i + 1, options[i]);
-
-		if (options[i] == defaultValue)
-			pb.setColor(ConsoleColor::LightGreen).print(" <--").resetColor();
-
-		pb.nextLine();
-	}
-	
-	pb.addTime().print(": [  Enter]: Use the default value (")
-	  .setColor(ConsoleColor::Green).print(defaultValue)
-	  .resetColor().print(')').nextLine();
-
-	bool useDefault;
-
-	do
-	{
-		pb.addTime().print(": Your choice: ");
-		std::string choice;
-		std::getline(std::cin, choice);
-		useDefault = choice.empty();
-		if (Poco::NumberParser::tryParse(choice, index))
-			--index;
-		else
-			index = -1;
-	}
-	while (!useDefault && (index < 0 || index >= static_cast<int>(options.size())));
-
-	std::string choiceText;
-
-	if (useDefault)
-	{
-		choiceText = defaultValue;
-		const auto iter = find(options.begin(), options.end(), defaultValue);
-		index = static_cast<int>(distance(options.begin(), iter));
-	}
-	else
-		choiceText = options[index];
-
-	return choiceText;
-}
-
-std::string Burst::Setup::readYesNo(const std::string& header, const bool defaultValue)
-{
-	int index;
-	return readInput({"Yes", "No"}, header, defaultValue ? "Yes" : "No", index);
-}
-
-bool Burst::Setup::readNumber(const std::string& title, const Poco::Int64 min, const Poco::Int64 max,
-                              const Poco::Int64 defaultValue, Poco::Int64& number)
-{
-	auto entered = false;
-	std::string input;
-	const auto pb = Console::print();
-
-	while (!entered)
-	{
-		try
-		{
-			pb.addTime().print(": ").print(title).print(": ");
-			getline(std::cin, input);
-			
-			if (input.empty())
-				number = defaultValue;
-			else if (input == "\n" || input == "\r") // exit
-				return false;
-			else
-				number = Poco::NumberParser::parse64(input);
-
-			entered = number >= min && number <= max;
-		}
-		catch (...)
-		{
-		}
-	}
-
-	return entered;
-}
-
-std::string Burst::Setup::readText(const std::string& title, const std::function<bool(const std::string&, std::string&)> validator)
-{
-	auto validated = false;
-	std::string input, output;
-
-	const auto pb = Console::print();
-
-	while (!validated)
-	{
-		pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print(title).print(": ").resetColor();
-		getline(std::cin, input);
-		validated = validator(input, output);
-	}
-
-	return output;
-}
-
 bool Burst::Setup::chooseProcessorType(std::string& processorType)
 {
 	// first, check what processor types are available
@@ -362,7 +257,7 @@ bool Burst::Setup::chooseProcessorType(std::string& processorType)
 		processorTypes.emplace_back("OPENCL");
 
 	int index;
-	processorType = readInput(processorTypes, "Choose your processor type", "CPU", index);
+	processorType = Console::readInput(processorTypes, "Choose your processor type", "CPU", index);
 
 	return !processorType.empty();
 }
@@ -391,7 +286,7 @@ bool Burst::Setup::chooseCpuInstructionSet(std::string& instructionSet)
 		defaultSetting = "SSE2";
 
 	int index;
-	instructionSet = readInput(instructionSets, "Choose the CPU instruction set", defaultSetting, index);
+	instructionSet = Console::readInput(instructionSets, "Choose the CPU instruction set", defaultSetting, index);
 
 	return !instructionSet.empty();
 }
@@ -403,7 +298,7 @@ bool Burst::Setup::chooseGpuPlatform(int& platformIndex)
 	for (const auto& platform : MinerCL::getCL().getPlatforms())
 		platforms.emplace_back(platform.name);
 
-	return !readInput(platforms, "Choose the OpenCL platform", MinerCL::getCL().getPlatforms().begin()->name,
+	return !Console::readInput(platforms, "Choose the OpenCL platform", MinerCL::getCL().getPlatforms().begin()->name,
 	                  platformIndex).empty();
 }
 
@@ -415,7 +310,7 @@ bool Burst::Setup::chooseGpuDevice(const int platformIndex, int& deviceIndex)
 	for (const auto& device : platform.devices)
 		devices.emplace_back(device.name);
 
-	return !readInput(devices, "Choose the OpenCL device", platform.devices.begin()->name, deviceIndex).empty();
+	return !Console::readInput(devices, "Choose the OpenCL device", platform.devices.begin()->name, deviceIndex).empty();
 }
 
 bool Burst::Setup::choosePlots(std::vector<std::string>& plots)
@@ -439,9 +334,9 @@ bool Burst::Setup::choosePlots(std::vector<std::string>& plots)
 		for (const auto& plot : plots)
 			log_information(MinerLogger::general, plot);
 
-		const auto yesNo = readYesNo("Do you want to use the current list?", true);
+		const auto yesNo = Console::readYesNo("Do you want to use the current list?", true);
 
-		if (yesNo == yes)
+		if (yesNo == Console::yes)
 			return true;
 
 		if (yesNo.empty())
@@ -521,7 +416,7 @@ bool Burst::Setup::chooseBufferSize(unsigned& memory)
 	{
 		Poco::Int64 number;
 		
-		if (!readNumber("Buffersize", 0, std::numeric_limits<Poco::Int64>::max(), 0, number))
+		if (!Console::readNumber("Buffersize", 0, std::numeric_limits<Poco::Int64>::max(), 0, number))
 			return false;
 
 		if (number == 0)
@@ -533,8 +428,8 @@ bool Burst::Setup::chooseBufferSize(unsigned& memory)
 			auto useAutoBuffer = autoBufferSizeAllowed;
 
 			if (!autoBufferSizeAllowed)
-				useAutoBuffer = readYesNo(Poco::format("This will use ~%s of memory, but you have only %s. Still use 0?",
-					memToString(autoBufferSize, 0), memToString(physicalMemory, 0)), true) == yes;
+				useAutoBuffer = Console::readYesNo(Poco::format("This will use ~%s of memory, but you have only %s. Still use 0?",
+					memToString(autoBufferSize, 0), memToString(physicalMemory, 0)), true) == Console::yes;
 
 			if (useAutoBuffer)
 			{
@@ -547,7 +442,7 @@ bool Burst::Setup::chooseBufferSize(unsigned& memory)
 			auto useMemory = true;
 
 			if (memory > physicalMemory / 1024 / 1024)
-				useMemory = readYesNo("Are you sure that you want to use a bigger buffer than your physical RAM?", false) == yes;
+				useMemory = Console::readYesNo("Are you sure that you want to use a bigger buffer than your physical RAM?", false) == Console::yes;
 
 			entered = useMemory;
 		}
@@ -616,7 +511,7 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 		log_notice(MinerLogger::general, "Your CPU has %u cores", cores);
 
 		int typeIndex;
-		type = readInput({"Auto", "Manual"}, "How to set the plotreader/-verifier?", "Auto", typeIndex);
+		type = Console::readInput({"Auto", "Manual"}, "How to set the plotreader/-verifier?", "Auto", typeIndex);
 	}
 	else
 		type = "Manual";
@@ -829,7 +724,7 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 		combinations.emplace_back("Manual");
 
 		int choiceIndex;
-		const auto choice = readInput(combinations, "Choose the plotreader/-reader combination", defaultCombination, choiceIndex);
+		const auto choice = Console::readInput(combinations, "Choose the plotreader/-reader combination", defaultCombination, choiceIndex);
 
 		if (choice.empty())
 			return false;
@@ -854,12 +749,12 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 		log_information(MinerLogger::general, "Use 0 to auto adjust the plotreader/-verifier");
 		log_information(MinerLogger::general, "[  Enter]: 0 (auto adjust)");
 
-		if (!readNumber("Plotreader", 0, std::numeric_limits<Poco::Int64>::max(), 0, number))
+		if (!Console::readNumber("Plotreader", 0, std::numeric_limits<Poco::Int64>::max(), 0, number))
 			return false;
 
 		reader = static_cast<unsigned>(number);
 
-		if (!readNumber("Plotverifier", 0, std::numeric_limits<Poco::Int64>::max(), 0, number))
+		if (!Console::readNumber("Plotverifier", 0, std::numeric_limits<Poco::Int64>::max(), 0, number))
 			return false;
 
 		verifier = static_cast<unsigned>(number);
@@ -897,7 +792,7 @@ bool Burst::Setup::chooseWebserver(std::string& ip, std::string& user, std::stri
 	
 	ips.emplace_back("Manual");
 	int index;
-	ip = readInput(ips, "Choose your IP", defaultIp, index);
+	ip = Console::readInput(ips, "Choose your IP", defaultIp, index);
 		
 	if (ip.empty())
 		return false;
@@ -948,7 +843,7 @@ bool Burst::Setup::chooseWebserver(std::string& ip, std::string& user, std::stri
 	ports.emplace_back("Manual");
 
 	int portIndex;
-	const auto portInput = readInput(ports, "Choose your port", *ports.begin(), portIndex);
+	const auto portInput = Console::readInput(ports, "Choose your port", *ports.begin(), portIndex);
 
 	if (portInput.empty())
 		return false;
@@ -963,7 +858,7 @@ bool Burst::Setup::chooseWebserver(std::string& ip, std::string& user, std::stri
 			Poco::Int64 number;
 			Poco::UInt16 numberPort;
 
-			if (!readNumber("Port", 0, std::numeric_limits<Poco::UInt16>::max(), 0, number))
+			if (!Console::readNumber("Port", 0, std::numeric_limits<Poco::UInt16>::max(), 0, number))
 				return false;
 
 			if (checkPort(static_cast<Poco::UInt16>(number), numberPort))
@@ -988,7 +883,7 @@ bool Burst::Setup::chooseWebserver(std::string& ip, std::string& user, std::stri
 
 	// username
 	log_notice(MinerLogger::general, "Enter the username for the webserver");
-	user = readText("Username", [](const std::string& toVerify, std::string& verified)
+	user = Console::readText("Username", [](const std::string& toVerify, std::string& verified)
 	{
 		verified = toVerify;
 		return true;
@@ -1072,7 +967,7 @@ bool Burst::Setup::chooseProgressbar(bool& fancy, bool& steady)
 	const std::vector<std::string> types = {nFnS, FnS, nFS, FS};
 
 	int index;
-	const auto input = readInput(types, "Choose your progressbar style", FS, index);
+	const auto input = Console::readInput(types, "Choose your progressbar style", FS, index);
 
 	if (input.empty())
 		return false;
@@ -1111,7 +1006,7 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 	const std::vector<std::string> miningTypes = {"Pool", "Solo"};
 
 	int index;
-	const auto miningType = readInput(miningTypes, "Choose your mining type", "Pool", index);
+	const auto miningType = Console::readInput(miningTypes, "Choose your mining type", "Pool", index);
 
 	if (miningType.empty())
 		return false;
@@ -1208,7 +1103,7 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 	{
 		log_notice(MinerLogger::general, "Wallet");
 
-		miningInfo = readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
+		miningInfo = Console::readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
 		{
 			return validateUri(toValidate, "/burst?requestType=getMiningInfo", result);
 		});
@@ -1224,7 +1119,7 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 
 	// mining info uri
 	log_notice(MinerLogger::general, "Mininginfo");
-	miningInfo = readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
+	miningInfo = Console::readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
 	{
 		return validateUri(toValidate, "/burst?requestType=getMiningInfo", result);
 	});
@@ -1234,9 +1129,9 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 	const auto submissionPath = "/burst?requestType=submitNonce&accountId=123&nonce=123";
 
 	if (!validateUri(miningInfo, submissionPath, submission) ||
-		readYesNo(Poco::format("Do you want to use %s for your submissions?", submission), true) == no)
+		Console::readYesNo(Poco::format("Do you want to use %s for your submissions?", submission), true) == Console::no)
 	{
-		submission = readText("URI", [&validateUri, &submissionPath](const std::string& toValidate, std::string& result)
+		submission = Console::readText("URI", [&validateUri, &submissionPath](const std::string& toValidate, std::string& result)
 		{
 			return validateUri(toValidate, submissionPath, result);
 		});
@@ -1247,7 +1142,7 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 
 	// wallet uri
 	log_notice(MinerLogger::general, "Wallet");
-	wallet = readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
+	wallet = Console::readText("URI", [&validateUri](const std::string& toValidate, std::string& result)
 	{
 		return validateUri(toValidate, "/burst?requestType=getAccount&accountId=123", result);
 	});

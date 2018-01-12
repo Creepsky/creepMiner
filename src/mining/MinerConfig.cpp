@@ -1477,7 +1477,7 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 		// refresh the channels
 		MinerLogger::refreshChannels();
 
-		log_system(MinerLogger::config, "Logfile deactivated");
+		log_debug(MinerLogger::config, "Logfile deactivated");
 	}
 	else if (logDirAndFile.empty())
 		log_warning(MinerLogger::config, "Could not create logfile");

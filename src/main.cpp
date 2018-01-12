@@ -46,6 +46,8 @@
 #include <Poco/FileStream.h>
 #include <Poco/File.h>
 #include "setup.hpp"
+#include <Poco/DirectoryIterator.h>
+#include <regex>
 
 class SSLInitializer
 {
@@ -78,6 +80,8 @@ private:
 private:
 	Poco::Util::OptionSet options_;
 };
+
+bool importOldConfig(const std::string& directory, const std::string& newConfigFilePath);
 
 int main(const int argc, const char* argv[])
 {
@@ -190,8 +194,10 @@ int main(const int argc, const char* argv[])
 			{
 				log_information(general, "Could not load config file %s", arguments.confPath);
 
-				Path minerHomePath(Poco::Path::home());
-				minerHomePath.pushDirectory(".creepMiner");
+				Path minerRootPath(Path::home());
+				minerRootPath.pushDirectory(".creepMiner");
+
+				Path minerHomePath(minerRootPath);
 				minerHomePath.pushDirectory(std::string(Project.version.literal));
 
 				if (File(minerHomePath).createDirectory())
@@ -207,24 +213,25 @@ int main(const int argc, const char* argv[])
 				// if there is also no config in the home dir, create one in the home dir
 				if (!configLoaded)
 				{
-					log_information(general, "Config file %s does not exist, creating a default config...", homeConfig);
-
-					try
+					if (!importOldConfig(minerRootPath.toString(), homeConfig))
 					{
-						FileOutputStream defaultConfig(homeConfig);
-						defaultConfig << "{}" << std::endl;
-						defaultConfig.close();
-					}
-					catch (...)
-					{
-						throw std::runtime_error(format("Could not create default config %s!", homeConfig));
+						log_information(general, "Config file %s does not exist, creating a default config...", homeConfig);
+
+						try
+						{
+							FileOutputStream defaultConfig(homeConfig);
+							defaultConfig << "{}" << std::endl;
+							defaultConfig.close();
+						}
+						catch (...)
+						{
+							throw std::runtime_error(format("Could not create default config %s!", homeConfig));
+						}
+
+						configCreated = true;
 					}
 
-					// load the freshly created config in the home dir
-					configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
-					configCreated = true;
-
-					// also create the log dir
+					// create the log dir
 					Path homeLogPath(minerHomePath);
 					homeLogPath.pushDirectory("logs");
 					homeLogPath.makeDirectory();
@@ -232,6 +239,9 @@ int main(const int argc, const char* argv[])
 					// and save it in the config
 					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
 					Burst::MinerConfig::getConfig().save();
+
+					// load the freshly created config in the home dir
+					configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
 				}
 			}
 
@@ -386,4 +396,50 @@ void Arguments::setConfPath(const std::string& name, const std::string& value)
 void Arguments::setup(const std::string& name, const std::string& value)
 {
 	setupRequested = true;
+}
+
+bool importOldConfig(const std::string& directory, const std::string& newConfigFilePath)
+{
+	std::vector<std::string> versions;
+
+	for (auto iter = Poco::DirectoryIterator(directory); iter != Poco::DirectoryIterator{}; ++iter)
+	{
+		if (iter->isDirectory() &&
+			Burst::Version{iter.name()} != Burst::Settings::Project.version)
+			versions.emplace_back(iter.name());
+	}
+
+	if (!versions.empty())
+	{
+		const auto scratch = "No, start from scratch";
+		versions.emplace_back(scratch);
+		int index;
+		const auto version = Burst::Console::readInput(versions, "Do you want to import an old config file?",
+		                                               *(versions.end() - 2), index);
+
+		if (version == scratch)
+			return false;
+		
+		try
+		{
+			// create the old config path
+			Poco::Path oldConfigPath{directory};
+			oldConfigPath.pushDirectory(version);
+			oldConfigPath.append("mining.conf");
+
+			// copy the old config file
+			Poco::File oldConfig{oldConfigPath.toString()};
+			oldConfig.copyTo(newConfigFilePath);
+
+			log_success(Burst::MinerLogger::config, "Config file successfully imported!");
+			return true;
+		}
+		catch (Poco::Exception& e)
+		{
+			log_error(Burst::MinerLogger::config, "Could not import the config file: %s", e.displayText());
+			return false;
+		}
+	}
+
+	return false;
 }

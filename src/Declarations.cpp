@@ -155,6 +155,19 @@ bool Burst::Version::operator>(const Version& rhs) const
 	return false;
 }
 
+bool Burst::Version::operator==(const Version& rhs) const
+{
+	return major == rhs.major &&
+		minor == rhs.minor &&
+		build == rhs.build &&
+		revision == rhs.revision;
+}
+
+bool Burst::Version::operator!=(const Version& rhs) const
+{
+	return !(*this == rhs);
+}
+
 void Burst::ProjectData::refreshNameAndVersion()
 {
 	nameAndVersion = this->name + " " + this->version.literal;
