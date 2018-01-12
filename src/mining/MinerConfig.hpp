@@ -217,6 +217,7 @@ namespace Burst
 		void setProgressbar(bool fancy, bool steady);
 		void setPassphrase(const std::string& passphrase);
 		void setWebserverCredentials(const std::string& user, const std::string& pass);
+		void setStartWebserver(bool start);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.

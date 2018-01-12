@@ -241,7 +241,8 @@ int main(const int argc, const char* argv[])
 
 				if (arguments.setupRequested || configCreated)
 				{
-					if (!Burst::Setup::setup(Burst::MinerConfig::getConfig()))
+					if (!Burst::Setup::setup(Burst::MinerConfig::getConfig(),
+					                         configCreated ? Burst::Setup::everything : Burst::Setup::userInput))
 					{
 						log_warning(general, "Error while setting up!");
 						return EXIT_FAILURE;

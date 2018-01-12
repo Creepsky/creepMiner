@@ -28,10 +28,14 @@ namespace Burst
 	class Setup
 	{
 	public:
-		static bool setup(MinerConfig& config);
+		static const std::string everything;
+		static const std::string userInput;
+
+	public:
+		static bool setup(MinerConfig& config, std::string type);
 
 	private:
-		static const std::string exit, yes, no;
+		static const std::string yes, no;
 
 		static std::string readInput(const std::vector<std::string>& options, const std::string& header,
 			const std::string& defaultValue, int& index);

@@ -171,5 +171,4 @@ namespace Burst
 
 	size_t getMemorySize();
 	void setStdInEcho(bool enable);
-	int getChar();
 }

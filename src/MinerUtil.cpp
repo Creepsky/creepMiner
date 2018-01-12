@@ -791,7 +791,7 @@ bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
 
 int Burst::cpuGetInstructionSets()
 {
-#ifndef __arm__
+#ifdef __arm__
 	return sse2;
 #else
 	int info[4];
@@ -939,32 +939,5 @@ void Burst::setStdInEcho(bool enable)
 		tty.c_lflag |= ECHO;
 
 	(void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
-#endif
-}
-
-int Burst::getChar()
-{
-#ifdef WIN32
-    return _getch();
-#else
-	// https://stackoverflow.com/questions/7469139/what-is-equivalent-to-getch-getche-in-linux
-	char buf=0;
-	struct termios old={0};
-	fflush(stdout);
-	if(tcgetattr(0, &old)<0)
-		perror("tcsetattr()");
-	old.c_lflag&=~ICANON;
-	old.c_lflag&=~ECHO;
-	old.c_cc[VMIN]=1;
-	old.c_cc[VTIME]=0;
-	if(tcsetattr(0, TCSANOW, &old)<0)
-		perror("tcsetattr ICANON");
-	if(read(0,&buf,1)<0)
-		perror("read()");
-	old.c_lflag|=ICANON;
-	old.c_lflag|=ECHO;
-	if(tcsetattr(0, TCSADRAIN, &old)<0)
-		perror ("tcsetattr ~ICANON");
-	return buf;
 #endif
 }

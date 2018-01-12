@@ -1562,6 +1562,12 @@ void Burst::MinerConfig::setWebserverCredentials(const std::string& user, const 
 	serverPass_ = hash_HMAC_SHA1(pass, WebserverPassPassphrase);
 }
 
+void Burst::MinerConfig::setStartWebserver(bool start)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	startServer_ = start;
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
 	return addPlotDir(std::make_shared<PlotDir>(Poco::replace(dir, "\\", "/"), PlotDir::Type::Sequential));

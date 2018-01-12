@@ -36,10 +36,12 @@
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/JSON/Parser.h>
 #include <condition_variable>
+#include <Poco/URI.h>
 
-const std::string Burst::Setup::exit = "Exit";
 const std::string Burst::Setup::yes = "Yes";
 const std::string Burst::Setup::no = "No";
+const std::string Burst::Setup::everything = "Everything";
+const std::string Burst::Setup::userInput;
 
 namespace Burst
 {
@@ -49,11 +51,8 @@ namespace Burst
 		{
 			std::string pass;
 			setStdInEcho(false);
-			while (pass.empty())
-			{
-				getline(std::cin, pass);
-				Console::nextLine();
-			}
+			getline(std::cin, pass);
+			Console::nextLine();
 			setStdInEcho(true);
 			return pass;
 		}
@@ -61,26 +60,29 @@ namespace Burst
 		void enterPasswordSecured(std::string& password)
 		{
 			const auto pb = Console::print();
-			password.clear();
+			password = "0";
 
-			std::string passRepeat = "0";
+			std::string passRepeat;
 
 			while (password != passRepeat)
 			{
 				pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Your pass: ").resetColor();
 				password = enterPassword();
 				
-				pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Repeat: ").resetColor();
-				passRepeat = enterPassword();
+				if (!password.empty())
+				{
+					pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print("Repeat: ").resetColor();
+					passRepeat = enterPassword();
 
-				if (password != passRepeat)
-					log_error(MinerLogger::general, "Mismatch, try again");
+					if (password != passRepeat)
+						log_error(MinerLogger::general, "Mismatch, try again");
+				}
 			}
 		}
 	}
 }
 
-bool Burst::Setup::setup(MinerConfig& config)
+bool Burst::Setup::setup(MinerConfig& config, std::string type)
 {
 	auto logger = &Poco::Logger::get("general");
 	log_information(logger, "Welcome to the creepMiner setup");
@@ -97,113 +99,152 @@ bool Burst::Setup::setup(MinerConfig& config)
 	std::string passphrase;
 	int index;
 
-	const auto type = readInput(
+	auto exit = false;
+	auto startMining = false;
+
+	do
+	{
+		if (type.empty())
 		{
-			"Everything", "Processor type", "Plots", "Buffersize", "Plotreader/verifier",
-			"Progressbar", "URIs"
-		}, "What do you want to setup?", "Everything",
-		index);
+			type = readInput(
+				{
+					"Everything", "Processor type", "Plots", "Buffersize", "Plotreader/verifier",
+					"Progressbar", "Webserver", "Pool/Solo mining", "Exit", "Start mining"
+				}, "What do you want to setup?", "Everything",
+				index);
+		}
 
-	const auto all = type == "Everything";
-	// TODO: delete and create and create a new file with the content {} <- the miner will create a default config
-	const auto reset = type == "Reset";
-	const auto processorTypeFlag = type == "Processor type" || all;
-	const auto plots = type == "Plots" || all;
-	const auto buffersize = type == "Buffersize" || all;
-	const auto plotReaderVerifier = type == "Plotreader/verifier" || all || processorTypeFlag;
-	const auto progressBar = type == "Progressbar" || all;
-	const auto webserver = type == "URIs" || all;
-	const auto poolWallet = type == "URIs" || all;
+		const auto all = type == "Everything";
+		// TODO: delete and create and create a new file with the content {} <- the miner will create a default config
+		const auto reset = type == "Reset";
+		const auto processorTypeFlag = type == "Processor type" || all;
+		const auto plots = type == "Plots" || all;
+		const auto buffersize = type == "Buffersize" || all;
+		const auto plotReaderVerifier = type == "Plotreader/verifier" || all || processorTypeFlag;
+		const auto progressBar = type == "Progressbar" || all;
+		const auto webserver = type == "Webserver" || all;
+		const auto poolWallet = type == "Pool/Solo mining" || all;
+		exit = type == "Exit";
+		startMining = type == "Start mining";
 
-	if (reset)
-		return true;
+		if (processorTypeFlag)
+		{
+			if (chooseProcessorType(processorType))
+				config.setProcessorType(processorType);
+			else return false;
+		}
 
-	if (processorTypeFlag)
-	{
-		if (chooseProcessorType(processorType))
-			config.setProcessorType(processorType);
-		else return false;
-	}
+		if (processorTypeFlag && processorType == "CPU")
+		{
+			if (chooseCpuInstructionSet(instructionSet))
+				config.setCpuInstructionSet(instructionSet);
+			else return false;
+		}
 
-	if (processorTypeFlag && processorType == "CPU")
-	{
-		if (chooseCpuInstructionSet(instructionSet))
-			config.setCpuInstructionSet(instructionSet);
-		else return false;
-	}
+		if (processorTypeFlag && processorType == "OPENCL")
+		{
+			if (!chooseGpuPlatform(platformIndex) ||
+				!chooseGpuDevice(platformIndex, deviceIndex))
+				return false;
 
-	if (processorTypeFlag && processorType == "OPENCL")
-	{
-		if (!chooseGpuPlatform(platformIndex) ||
-			!chooseGpuDevice(platformIndex, deviceIndex))
-			return false;
+			config.setGpuPlatform(platformIndex);
+			config.setGpuDevice(deviceIndex);
 
-		config.setGpuPlatform(platformIndex);
-		config.setGpuDevice(deviceIndex);
-
-		MinerCL::getCL().create();
-	}
+			if (!MinerCL::getCL().create())
+				return false;
+		}
 	
-	if (plots)
-	{
-		if (choosePlots(plotLocations))
-			config.setPlotDirs(plotLocations);
-		else return false;
-	}
+		if (plots)
+		{
+			if (choosePlots(plotLocations))
+				config.setPlotDirs(plotLocations);
+			else return false;
+		}
 
-	if ((buffersize || plotReaderVerifier) && !plotLocations.empty())
-	{
 		if (buffersize)
 		{
-			if (chooseBufferSize(memory))
-				config.setBufferSize(memory);
-			else return false;
+			if ((all && !plotLocations.empty()) || !all)
+			{
+				if (chooseBufferSize(memory))
+					config.setBufferSize(memory);
+				else return false;
+			}
 		}
 
 		if (plotReaderVerifier)
 		{
-			if (choosePlotReader(plotLocations.size(), reader, verifier))
+			if ((all && !plotLocations.empty()) || !all)
 			{
-				config.setMaxPlotReaders(reader);
-				config.setMininigIntensity(verifier);
+				if (choosePlotReader(plotLocations.size(), reader, verifier))
+				{
+					config.setMaxPlotReaders(reader);
+					config.setMininigIntensity(verifier);
+				}
+				else return false;
+			}
+		}
+
+		if (progressBar)
+		{
+			if ((all && !plotLocations.empty()) || !all)
+			{
+				if (chooseProgressbar(fancyProgressbar, steadyProgressbar))
+					config.setProgressbar(fancyProgressbar, steadyProgressbar);
+				else return false;
+			}
+		}
+	
+		if (webserver)
+		{
+			if (chooseWebserver(ip, webinterfaceUser, webinterfacePassword))
+			{
+				if (!ip.empty())
+				{
+					config.setUrl(ip, HostType::Server);
+					config.setWebserverCredentials(webinterfaceUser, webinterfacePassword);
+					config.setStartWebserver(true);
+				}
+				else
+				{
+					config.setStartWebserver(false);
+				}
 			}
 			else return false;
 		}
-	}
 
-	if (progressBar)
-	{
-		if (chooseProgressbar(fancyProgressbar, steadyProgressbar))
-			config.setProgressbar(fancyProgressbar, steadyProgressbar);
-		else return false;
-	}
-	
-	if (webserver)
-	{
-		if (chooseWebserver(ip, webinterfaceUser, webinterfacePassword))
+		if (poolWallet)
 		{
-			config.setUrl(ip, HostType::Server);
-			config.setWebserverCredentials(webinterfaceUser, webinterfacePassword);
+			if (chooseUris(submission, miningInfo, wallet, passphrase))
+			{
+				config.setUrl(submission, HostType::MiningInfo);
+				config.setUrl(miningInfo, HostType::Pool);
+				config.setUrl(wallet, HostType::Wallet);
+				config.setPassphrase(passphrase);
+			}
+			else return false;
 		}
-		else return false;
-	}
 
-	if (poolWallet)
-	{
-		if (chooseUris(submission, miningInfo, wallet, passphrase))
+		if (all)
 		{
-			config.setUrl(submission, HostType::MiningInfo);
-			config.setUrl(miningInfo, HostType::Pool);
-			config.setUrl(wallet, HostType::Wallet);
-			config.setPassphrase(passphrase);
+			startMining = readYesNo("Do you want to start mining now", true) == yes;
+			exit = !startMining;
 		}
-		else return false;
+
+		type.clear();
 	}
+	while (!exit && !startMining);	
 
 	if (!config.save())
 		log_warning(MinerLogger::miner, "Your settings could not be saved! They are only valid for this session.");
 
-	return true;
+	if (exit)
+		return false;
+
+	if (startMining)
+		return true;
+
+	// something was wrong
+	return false;
 }
 
 std::string Burst::Setup::readInput(const std::vector<std::string>& options, const std::string& header,
@@ -221,35 +262,29 @@ std::string Burst::Setup::readInput(const std::vector<std::string>& options, con
 
 		pb.nextLine();
 	}
-
-	pb.addTime().print(": [ Escape]: Exit").nextLine();
-
+	
 	pb.addTime().print(": [  Enter]: Use the default value (")
 	  .setColor(ConsoleColor::Green).print(defaultValue)
 	  .resetColor().print(')').nextLine();
 
-	bool exit, useDefault;
-
-	pb.addTime().print(": Your choice: ");
+	bool useDefault;
 
 	do
 	{
-		const auto choice = getChar();
-		exit = choice == 0x1B;
-		useDefault = choice == '\n' || choice == '\r';
-		index = choice - '0' - 1;
+		pb.addTime().print(": Your choice: ");
+		std::string choice;
+		std::getline(std::cin, choice);
+		useDefault = choice.empty();
+		if (Poco::NumberParser::tryParse(choice, index))
+			--index;
+		else
+			index = -1;
 	}
-	while (!exit && !useDefault && (index < 0 || index >= options.size()));
+	while (!useDefault && (index < 0 || index >= static_cast<int>(options.size())));
 
 	std::string choiceText;
-	auto color = ConsoleColor::LightGreen;
 
-	if (exit)
-	{
-		choiceText = Setup::exit;
-		color = ConsoleColor::Red;
-	}
-	else if (useDefault)
+	if (useDefault)
 	{
 		choiceText = defaultValue;
 		const auto iter = find(options.begin(), options.end(), defaultValue);
@@ -257,8 +292,6 @@ std::string Burst::Setup::readInput(const std::vector<std::string>& options, con
 	}
 	else
 		choiceText = options[index];
-
-	pb.setColor(color).print(choiceText).nextLine().resetColor().flush();
 
 	return choiceText;
 }
@@ -303,18 +336,18 @@ bool Burst::Setup::readNumber(const std::string& title, const Poco::Int64 min, c
 std::string Burst::Setup::readText(const std::string& title, const std::function<bool(const std::string&, std::string&)> validator)
 {
 	auto validated = false;
-	std::string text;
+	std::string input, output;
 
 	const auto pb = Console::print();
 
 	while (!validated)
 	{
 		pb.addTime().print(": ").setColor(ConsoleColor::LightCyan).print(title).print(": ").resetColor();
-		getline(std::cin, text);
-		validated = validator(text, text);
+		getline(std::cin, input);
+		validated = validator(input, output);
 	}
 
-	return text;
+	return output;
 }
 
 bool Burst::Setup::chooseProcessorType(std::string& processorType)
@@ -331,7 +364,7 @@ bool Burst::Setup::chooseProcessorType(std::string& processorType)
 	int index;
 	processorType = readInput(processorTypes, "Choose your processor type", "CPU", index);
 
-	return processorType != exit;
+	return !processorType.empty();
 }
 
 bool Burst::Setup::chooseCpuInstructionSet(std::string& instructionSet)
@@ -360,7 +393,7 @@ bool Burst::Setup::chooseCpuInstructionSet(std::string& instructionSet)
 	int index;
 	instructionSet = readInput(instructionSets, "Choose the CPU instruction set", defaultSetting, index);
 
-	return instructionSet != exit;
+	return !instructionSet.empty();
 }
 
 bool Burst::Setup::chooseGpuPlatform(int& platformIndex)
@@ -370,8 +403,8 @@ bool Burst::Setup::chooseGpuPlatform(int& platformIndex)
 	for (const auto& platform : MinerCL::getCL().getPlatforms())
 		platforms.emplace_back(platform.name);
 
-	return readInput(platforms, "Choose the OpenCL platform", MinerCL::getCL().getPlatforms().begin()->name,
-	          platformIndex) != exit;
+	return !readInput(platforms, "Choose the OpenCL platform", MinerCL::getCL().getPlatforms().begin()->name,
+	                  platformIndex).empty();
 }
 
 bool Burst::Setup::chooseGpuDevice(const int platformIndex, int& deviceIndex)
@@ -382,7 +415,7 @@ bool Burst::Setup::chooseGpuDevice(const int platformIndex, int& deviceIndex)
 	for (const auto& device : platform.devices)
 		devices.emplace_back(device.name);
 
-	return readInput(devices, "Choose the OpenCL device", platform.devices.begin()->name, deviceIndex) != exit;
+	return !readInput(devices, "Choose the OpenCL device", platform.devices.begin()->name, deviceIndex).empty();
 }
 
 bool Burst::Setup::choosePlots(std::vector<std::string>& plots)
@@ -411,7 +444,7 @@ bool Burst::Setup::choosePlots(std::vector<std::string>& plots)
 		if (yesNo == yes)
 			return true;
 
-		if (yesNo == exit)
+		if (yesNo.empty())
 			return false;
 	}
 
@@ -588,7 +621,7 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 	else
 		type = "Manual";
 
-	if (type == exit)
+	if (type.empty())
 		return false;
 
 	if (type == "Auto")
@@ -798,7 +831,7 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 		int choiceIndex;
 		const auto choice = readInput(combinations, "Choose the plotreader/-reader combination", defaultCombination, choiceIndex);
 
-		if (choice == exit)
+		if (choice.empty())
 			return false;
 
 		if (choice == "Manual")
@@ -817,9 +850,9 @@ bool Burst::Setup::choosePlotReader(const size_t plotLocations, unsigned& reader
 	{
 		Poco::Int64 number;
 
-		log_notice(MinerLogger::general, "Choose the plotreader/-reader combination");
-		log_information(MinerLogger::general, "[      0]: Auto adjust the reader/verifier");
-		log_information(MinerLogger::general, "[  Enter]: Auto adjust the reader/verifier");
+		log_notice(MinerLogger::general, "Choose the plotreader/-verifier combination");
+		log_information(MinerLogger::general, "Use 0 to auto adjust the plotreader/-verifier");
+		log_information(MinerLogger::general, "[  Enter]: 0 (auto adjust)");
 
 		if (!readNumber("Plotreader", 0, std::numeric_limits<Poco::Int64>::max(), 0, number))
 			return false;
@@ -842,19 +875,31 @@ bool Burst::Setup::chooseWebserver(std::string& ip, std::string& user, std::stri
 	auto thisHost = Poco::Net::DNS::thisHost();
 	std::string defaultIp;
 
+	if (thisHost.addresses().empty())
+	{
+		ip.clear();
+		user.clear();
+		password.clear();
+		return true;
+	}
+
 	for (const auto& address : thisHost.addresses())
 	{
-		ips.emplace_back(address.toString());
+		if (std::find(ips.begin(), ips.end(), address.toString()) == ips.end())
+			ips.emplace_back(address.toString());
 
 		if (address.family() == Poco::Net::AddressFamily::IPv4 && defaultIp.empty())
 			defaultIp = address.toString();
 	}
+
+	if (defaultIp.empty())
+		defaultIp = thisHost.addresses().begin()->toString();
 	
 	ips.emplace_back("Manual");
 	int index;
 	ip = readInput(ips, "Choose your IP", defaultIp, index);
 		
-	if (ip == exit)
+	if (ip.empty())
 		return false;
 
 	if (ip == "Manual")
@@ -905,7 +950,7 @@ bool Burst::Setup::chooseWebserver(std::string& ip, std::string& user, std::stri
 	int portIndex;
 	const auto portInput = readInput(ports, "Choose your port", *ports.begin(), portIndex);
 
-	if (portInput == exit)
+	if (portInput.empty())
 		return false;
 
 	if (portInput == "Manual")
@@ -962,11 +1007,11 @@ bool Burst::Setup::chooseProgressbar(bool& fancy, bool& steady)
 {
 	log_notice(MinerLogger::general, "Have a look at different the progressbar types");
 
-	Progress progress;
+	Progress progress{};
 	ProgressPrinter printer;
 	Poco::Random random;
 	
-	const auto simulateProgressbar = [&progress, &printer, &random]()
+	const auto simulateProgressbar = [&progress, &random]()
 	{
 		progress.read = 0;
 		progress.verify = 0;
@@ -975,8 +1020,8 @@ bool Burst::Setup::chooseProgressbar(bool& fancy, bool& steady)
 
 		while (progress.read < 100.f || progress.verify < 100.f)
 		{
-			progress.bytesPerSecondRead += 1 * 1024 * 1024 * (random.nextBool() ? 1 : -1);
-			progress.bytesPerSecondVerify += 2 * 1024 * 1024 * (random.nextBool() ? 1 : -1);
+			progress.bytesPerSecondRead += 2 * 1024 * 1024 * (random.nextBool() ? 1 : -1);
+			progress.bytesPerSecondVerify += 1 * 1024 * 1024 * (random.nextBool() ? 1 : -1);
 
 			//progress.bytesPerSecondRead += random.next(2) * (random.nextBool() ? 1 : -1);
 			//progress.bytesPerSecondVerify += random.next(2) * (random.nextBool() ? 1 : -1);
@@ -984,7 +1029,7 @@ bool Burst::Setup::chooseProgressbar(bool& fancy, bool& steady)
 			
 			MinerLogger::writeProgress(progress);
 
-			const auto verifyStep = random.nextDouble() * 5;
+			const auto verifyStep = random.nextDouble() * 10;
 
 			if (progress.read < 100.f)
 			{
@@ -1029,7 +1074,7 @@ bool Burst::Setup::chooseProgressbar(bool& fancy, bool& steady)
 	int index;
 	const auto input = readInput(types, "Choose your progressbar style", FS, index);
 
-	if (input == exit)
+	if (input.empty())
 		return false;
 
 	if (input == nFnS)
@@ -1068,16 +1113,17 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 	int index;
 	const auto miningType = readInput(miningTypes, "Choose your mining type", "Pool", index);
 
-	if (miningType == exit)
+	if (miningType.empty())
 		return false;
 
 	const auto validateUri = [](const std::string& toValidate, const std::string& requestPath, std::string& result)
 	{
-		const auto checkUri = [&requestPath](const std::string& uriToValidate, Poco::UInt16 port, Poco::URI& resultUri)
+		const auto checkUri = [&requestPath](const std::string& uriToValidate, const std::string defaultScheme,
+		                                     Poco::UInt16 defaultPort, std::string& resultUri)
 		{
 			try
 			{
-				auto url = Url{ uriToValidate, "http", port };
+				auto url = Url{uriToValidate, defaultScheme, defaultPort};
 
 				// change localhosts to 127.0.0.1
 				if (url.getUri().getHost() == "localhost" ||
@@ -1092,7 +1138,7 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 				{
 					// create a session
 					auto session = url.createSession();
-					session->setTimeout(Poco::Timespan(5, 0));
+					session->setTimeout(Poco::Timespan(10, 0));
 					std::string data;
 
 					Poco::Net::HTTPRequest requestData;
@@ -1105,6 +1151,7 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 					if (response.receive(data))
 					{
 						jsonParser.parse(data);
+						log_success(MinerLogger::general, "%s: ok", resultUri);
 						return true;
 					}
 				}
@@ -1119,28 +1166,33 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 
 		try
 		{
-			Poco::URI uri_(toValidate);
-
 			log_information(MinerLogger::general, "Testing the connection...");
 
-			if (checkUri(uri_.toString(), uri_.getPort(), uri_))
-			{
-				result = uri_.toString();
-				log_success(MinerLogger::general, "%s: ok", result);
+			if (checkUri(toValidate, "http", 80, result))
 				return true;
-			}
 
-			const std::vector<Poco::UInt16> wellKnownPorts = { 8080, 8124, 8125, 8880 };
+			const std::vector<std::string> wellKnownSchemes = {"http", "https"};
+			const std::vector<Poco::UInt16> wellKnownPorts = {8080, 8124, 8125, 8880};
 
-			for (const auto& port : wellKnownPorts)
+			for (const auto& scheme : wellKnownSchemes)
 			{
-				if (checkUri(toValidate, port, uri_))
-				{
-					result = uri_.toString();
-					log_success(MinerLogger::general, "%s: ok", result);
+				Poco::URI helperUri(toValidate);
+				helperUri.setScheme(scheme);
+				helperUri.setPort(0);
+
+				// try the default port for the scheme
+				if (checkUri(toValidate, scheme, helperUri.getPort(), result))
 					return true;
+
+				// try the well known ports
+				for (const auto& port : wellKnownPorts)
+				{
+					helperUri.setPort(port);
+					if (checkUri(toValidate, scheme, port, result))
+						return true;
 				}
 			}
+
 
 			log_error(MinerLogger::general, "No connection!");
 			return false;
@@ -1181,14 +1233,15 @@ bool Burst::Setup::chooseUris(std::string& submission, std::string& miningInfo, 
 	log_notice(MinerLogger::general, "Submission");
 	const auto submissionPath = "/burst?requestType=submitNonce&accountId=123&nonce=123";
 
-	if (!validateUri(miningInfo, submissionPath, submission))
+	if (!validateUri(miningInfo, submissionPath, submission) ||
+		readYesNo(Poco::format("Do you want to use %s for your submissions?", submission), true) == no)
 	{
 		submission = readText("URI", [&validateUri, &submissionPath](const std::string& toValidate, std::string& result)
 		{
 			return validateUri(toValidate, submissionPath, result);
 		});
 
-		if (submission == exit)
+		if (submission.empty())
 			return false;
 	}
 

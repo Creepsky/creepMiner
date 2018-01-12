@@ -60,6 +60,7 @@ after_build:
 artifacts:
   # pushing a single file
   - path: '*.exe'
+  - path: '*.zip'
 
 #---------------------------------#
 #     deployment configuration    #
@@ -71,12 +72,12 @@ deploy:
 
     # Deploy to GitHub Releases
   - provider: GitHub
-    artifact: /.*\.exe/
+    artifact: /.*\.(exe|zip)
     draft: false
     prerelease: false
     force_update: true
     auth_token:
       secure: cIGGvYiRLrapIH5uW9tl18cGB7qgBTTkrOo+yFo0Hcv7zl0KYu0qUaxFRvKLj1Yi
     on:
-      branch: development
+      branch: master
       appveyor_repo_tag: true       # deploy on tag push only
