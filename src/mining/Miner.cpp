@@ -99,6 +99,8 @@ void Burst::Miner::run()
 		return;
 	}
 
+	Poco::ThreadPool::defaultPool().addCapacity(128);
+
 	MinerConfig::getConfig().printConsole();
 
 	// only create the thread pools and manager for mining if there is work to do (plot files)
