@@ -28,12 +28,12 @@ It is designed multi-threaded to reach the best performance.
 
 ## Quickstart
 
-For Windows: download and unzip the [latest release](https://github.com/Creepsky/creepMiner/releases/latest)
+For Windows and Debian: download and install the [latest release](https://github.com/Creepsky/creepMiner/releases/latest)
 
 For all others:
 1. Install [Python](https://www.python.org/)
 2. Install [Conan](https://conan.io/downloads): `pip install conan`
-3. Install [Poco](https://pocoproject.org/download/index.html): `conan install -s compiler.libcxx=libstdc++11 --build=missing` (inside the creepMiner root dir)
+3. Install [Poco](https://pocoproject.org/download/index.html): `conan install . -s compiler.libcxx=libstdc++11 --build=missing` (inside the creepMiner root dir)
 4. Create the project by executing one of the following commands
 - **CPU** (SSE2, SSE4, AVX, AVX2) + **GPU** (OPENCL, CUDA) version: 
 ```
@@ -48,9 +48,11 @@ cmake CMakeLists.txt -DNO_GPU=ON
 cmake CMakeLists.txt -DMINIMAL_BUILD=ON
 ```
 5. Make the project `make` (or `make -j <number of cores to use>` for a faster way)
-6. Setup the miner with `./creepMiner -setup`
+6. Change your configuration file (located at `~/.creepMiner/<version>/config.json`)
 
 ## Instructions
+
+- [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ)
 
 - Compilation & Installation
     - [**Conan** (recommended for all operating systems)](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-with-Conan)
