@@ -72,7 +72,7 @@ namespace Burst
 		 * Locks the console mutex.
 		 * \param stream The output stream.
 		 */
-		PrintBlock(std::ostream& stream, void* handle);
+		PrintBlock(std::ostream& stream, void* handle = nullptr);
 
 		/**
 		 * \brief Destructor.

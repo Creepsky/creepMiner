@@ -49,7 +49,7 @@ const Burst::PrintBlock& Burst::PrintBlock::print(const std::string& text) const
 	WriteFile(handle_, text.data(), static_cast<DWORD>(text.size()), &written, nullptr);
 	return *this;
 #else
-	stream_ << text;
+	*stream_ << text;
 	return *this;
 #endif
 }
