@@ -128,70 +128,19 @@ void Burst::MinerServer::connectToMinerData(MinerData& minerData)
 	minerData_->blockDataChangedEvent += Poco::delegate(this, &MinerServer::onMinerDataChangeEvent);
 }
 
-void Burst::MinerServer::addWebsocket(std::unique_ptr<Poco::Net::WebSocket> websocket)
-{
-	poco_ndc(MinerServer::addWebsocket);
-	
-	ScopedLock<Mutex> lock{mutex_};
-	auto blockData = minerData_->getBlockData();
-	bool error;
-
-	// send the config
-	{
-		std::stringstream ss;
-		createJsonConfig().stringify(ss);
-		error = !sendToWebsocket(*websocket, ss.str());
-	}
-
-	// send the plot dir data
-	if (!error)
-	{
-		std::stringstream ss;
-		createJsonPlotDirsRescan().stringify(ss);
-		error = !sendToWebsocket(*websocket, ss.str());
-	}
-
-	if (!error && blockData != nullptr)
-	{
-		blockData->forEntries([this, &websocket](const Poco::JSON::Object& entry)
-		{
-			std::stringstream ss;
-			entry.stringify(ss);
-			return sendToWebsocket(*websocket, ss.str());
-		});
-	}
-
-	if (error)
-		websocket.reset();
-	else
-		websockets_.emplace_back(move(websocket));
-	
-	// check the status of all connected websockets by sending a "ping" message
-	// if the message can't be delivered, the websocket gets dropped
-	sendToWebsockets("ping");
-}
-
-void Burst::MinerServer::sendToWebsockets(const std::string& data)
+void Burst::MinerServer::sendToWebsockets(std::string& data)
 {
 	poco_ndc(MinerServer::sendToWebsockets);
 	ScopedLock<Mutex> lock{mutex_};
-	
-	auto ws = websockets_.begin();
-
-	while (ws != websockets_.end())
-	{
-		if (sendToWebsocket(**ws, data))
-			++ws;
-		else
-			ws = websockets_.erase(ws);
-	}
+	newDataEvent(this, data);
 }
 
 void Burst::MinerServer::sendToWebsockets(const JSON::Object& json)
 {
-	std::stringstream ss;
-	json.stringify(ss);
-	sendToWebsockets(ss.str());
+	std::stringstream sstream;
+	json.stringify(sstream);
+	auto jsonString = sstream.str();
+	sendToWebsockets(jsonString);
 }
 
 void Burst::MinerServer::onMinerDataChangeEvent(const void* sender, const Poco::JSON::Object& data)
@@ -216,33 +165,6 @@ void Burst::MinerServer::onMinerDataChangeEvent(const void* sender, const Poco::
 		sendToWebsockets(data);
 }
 
-bool Burst::MinerServer::sendToWebsocket(WebSocket& websocket, const std::string& data)
-{
-	poco_ndc(MinerServer::sendToWebsocket(WebSocket&, const std::string&));
-	
-	try
-	{
-		auto n = websocket.sendFrame(data.data(), static_cast<int>(data.size()));
-		if (n != static_cast<int>(data.size()))
-			log_warning(MinerLogger::server, "Could not fully send: %s", data);
-		return true;
-	}
-	catch (Poco::Net::ConnectionAbortedException&)
-	{
-		return false;
-	}
-	catch (Poco::IOException&)
-	{
-		return false;
-	}
-	catch (Poco::Exception& exc)
-	{
-		log_warning(MinerLogger::server, "Could not send the data to the websocket!\n\tdata: %s", data);
-		log_exception(MinerLogger::server, exc);
-		return false;
-	}
-}
-
 Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
 	: server_{&server}
 {}
@@ -255,15 +177,8 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 	poco_ndc(MinerServer::RequestFactory::createRequestHandler);
 
-	if (request.find("Upgrade") != request.end() &&
-		icompare(request["Upgrade"], "websocket") == 0)
-		return new LambdaRequestHandler([&](req_t& req, res_t& res)
-		{
-			if (!RequestHandler::checkCredentials(req, res))
-				return;
-
-			RequestHandler::addWebsocket(req, res, *server_);
-		});
+	if (request.find("Upgrade") != request.end() && icompare(request["Upgrade"], "websocket") == 0)
+		return new RequestHandler::WebsocketRequestHandler(*server_, *server_->minerData_);
 
 	std::stringstream sstream;
 	sstream << "Request: " << request.getURI() << std::endl;

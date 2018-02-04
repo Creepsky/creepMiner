@@ -57,20 +57,18 @@ namespace Burst
 		void stop();
 		
 		void connectToMinerData(MinerData& minerData);
-
-		void addWebsocket(std::unique_ptr<Poco::Net::WebSocket> websocket);
-		void sendToWebsockets(const std::string& data);
+		void sendToWebsockets(std::string& data);
 		void sendToWebsockets(const Poco::JSON::Object& json);
+
+		Poco::BasicEvent<std::string> newDataEvent;
 
 	private:
 		void onMinerDataChangeEvent(const void* sender, const Poco::JSON::Object& data);
-		static bool sendToWebsocket(Poco::Net::WebSocket& websocket, const std::string& data);
 
 		Miner* miner_;
 		MinerData* minerData_;
 		uint16_t port_;
 		std::unique_ptr<Poco::Net::HTTPServer> server_;
-		std::vector<std::unique_ptr<Poco::Net::WebSocket>> websockets_;
 		Poco::Mutex mutex_;
 		TemplateVariables variables_;
 		Poco::ThreadPool threadPool_;
