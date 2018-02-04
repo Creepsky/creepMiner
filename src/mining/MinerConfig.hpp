@@ -268,8 +268,8 @@ namespace Burst
 		Url urlPool_;
 		Url urlMiningInfo_;
 		Url urlWallet_;
-		bool startServer_ = false;
-		Url serverUrl_;
+		bool startServer_ = true;
+		Url serverUrl_{"http://127.0.0.1:8080"};
 		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;
 		unsigned miningIntensity_ = 0;
 		std::string plotsHash_;
