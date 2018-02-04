@@ -37,14 +37,21 @@
 const std::string Burst::Console::yes = "Yes";
 const std::string Burst::Console::no = "No";
 
-Burst::PrintBlock::PrintBlock(std::ostream& stream)
-	: stream_(&stream)
+Burst::PrintBlock::PrintBlock(std::ostream& stream, void* handle)
+	: handle_(handle), stream_(&stream)
 {
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::print(const std::string& text) const
 {
-	return *this << text;
+#ifdef WIN32
+	DWORD written;
+	WriteFile(handle_, text.data(), static_cast<DWORD>(text.size()), &written, nullptr);
+	return *this;
+#else
+	stream_ << text;
+	return *this;
+#endif
 }
 
 const Burst::PrintBlock& Burst::PrintBlock::operator<<(ConsoleColor color) const
@@ -159,7 +166,11 @@ std::string Burst::Console::getUnixConsoleCode(ConsoleColor color)
 
 Burst::PrintBlock Burst::Console::print()
 {
-	return PrintBlock{ std::cout };
+#ifdef WIN32
+	return PrintBlock{std::cout, GetStdHandle(STD_OUTPUT_HANDLE)};
+#else
+	return PrintBlock{std::cout};
+#endif
 }
 
 void Burst::Console::clearLine(bool wipe)
