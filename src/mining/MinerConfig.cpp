@@ -303,7 +303,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (!loggingObj.isNull())
 		{
 			// do we need to create a logfile
-			logfile_ = getOrAdd(loggingObj, "logfile", false);
+			logfile_ = getOrAdd(loggingObj, "logfile", true);
 
 			auto logOutput = getOrAdd(loggingObj, "outputType", std::string("terminal"));
 
@@ -403,13 +403,13 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		else
 			miningObj = new Poco::JSON::Object;
 
-		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 3);
+		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 10);
 		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 0u);
 
 		auto timeout = getOrAdd(miningObj, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
 
-		miningIntensity_ = getOrAdd(miningObj, "intensity", 1);
+		miningIntensity_ = getOrAdd(miningObj, "intensity", 0);
 		maxPlotReaders_ = getOrAdd(miningObj, "maxPlotReaders", 0);
 
 		walletRequestTries_ = getOrAdd(miningObj, "walletRequestTries", 5);
@@ -422,8 +422,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		
 		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
 		wakeUpTime_ = getOrAdd(miningObj, "wakeUpTime", 0);
-		
+
 		cpuInstructionSet_ = Poco::toUpper(getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2")));
+		cpuInstructionSet_ = Poco::trim(cpuInstructionSet_);
 
 		// auto detect the max. cpu instruction set
 		if (cpuInstructionSet_ == "AUTO")
@@ -607,7 +608,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			}
 			else
 			{
-				miningObj->set("targetDeadline", "0y 1m 0d 00:00:00");
+				miningObj->set("targetDeadline", "0y 0m 0d 00:00:00");
 				targetDeadline_ = 0;
 			}
 		}
@@ -635,7 +636,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				passphrase_.salt = getOrAdd<std::string>(passphrase, "salt", "");
 				passphrase_.key = getOrAdd<std::string>(passphrase, "key", "");
 				passphrase_.iterations = getOrAdd(passphrase, "iterations", 1000u);
-				passphrase_.deleteKey = getOrAdd(passphrase, "deleteKey", false);
+				passphrase_.deleteKey = getOrAdd(passphrase, "deleteKey", true);
 				passphrase_.algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
 
 				// there is a decrypted passphrase, we need to encrypt it
@@ -710,9 +711,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			webserverObj.assign(new Poco::JSON::Object);
 
 		startServer_ = getOrAdd(webserverObj, "start", true);
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://192.168.0.101:8080", startServer_);
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://127.0.0.1:8080", startServer_);
 		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 64u);
-		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 8u);
+		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 32u);
 		cumulatePlotsizes_ = getOrAdd(webserverObj, "cumulatePlotsizes", true);
 		minerNameForwarding_ = getOrAdd(webserverObj, "forwardMinerNames", true);
 		calculateEveryDeadline_ = getOrAdd(webserverObj, "calculateEveryDeadline", false);

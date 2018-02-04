@@ -186,6 +186,8 @@ int main(const int argc, const char* argv[])
 				Path minerRootPath(Path::home());
 				minerRootPath.pushDirectory(".creepMiner");
 
+				File(minerRootPath).createDirectory();
+
 				Path minerHomePath(minerRootPath);
 				minerHomePath.pushDirectory(std::string(Project.version.literal));
 
@@ -225,7 +227,10 @@ int main(const int argc, const char* argv[])
 
 					// and save it in the config
 					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
-					Burst::MinerConfig::getConfig().save();
+					Burst::MinerConfig::getConfig().useLogfile(true);
+					
+					if (!Burst::MinerConfig::getConfig().save(homeConfig))
+						log_error(Burst::MinerLogger::general, "Could not save the current settings!");
 
 					// load the freshly created config in the home dir
 					configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);

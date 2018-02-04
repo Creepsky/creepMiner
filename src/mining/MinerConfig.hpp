@@ -63,11 +63,11 @@ namespace Burst
 	 */
 	struct Passphrase
 	{
-		std::string algorithm;
+		std::string algorithm = "aes-256-cbc";
 		std::string decrypted;
-		bool deleteKey;
+		bool deleteKey = true;
 		std::string encrypted;
-		Poco::UInt32 iterations;
+		Poco::UInt32 iterations = 1000;
 		std::string key;
 		std::string salt;
 
@@ -262,8 +262,8 @@ namespace Burst
 		float timeout_ = 45.f;
 		unsigned send_max_retry_ = 3;
 		unsigned receive_max_retry_ = 3;
-		unsigned submission_max_retry_ = 3;
-		unsigned http_ = 0;
+		unsigned submission_max_retry_ = 10;
+		unsigned http_ = 1;
 		std::string confirmedDeadlinesPath_ = "";
 		Url urlPool_;
 		Url urlMiningInfo_;
@@ -271,14 +271,14 @@ namespace Burst
 		bool startServer_ = false;
 		Url serverUrl_;
 		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;
-		unsigned miningIntensity_ = 1;
+		unsigned miningIntensity_ = 0;
 		std::string plotsHash_;
 		std::string serverUser_, serverPass_;
 		unsigned maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
-		Poco::UInt64 maxBufferSizeMB_ = 256;
-		unsigned bufferChunkCount_ = 8;
-		unsigned walletRequestTries_ = 5;
+		Poco::UInt64 maxBufferSizeMB_ = 0;
+		unsigned bufferChunkCount_ = 16;
+		unsigned walletRequestTries_ = 3;
 		unsigned walletRequestRetryWaitTime_ = 3;
 		Passphrase passphrase_ = {};
 		bool useInsecurePlotfiles_ = false;
@@ -290,12 +290,12 @@ namespace Burst
 		bool steadyProgressBar_ = true;
 		bool fancyProgressBar_ = true;
 		unsigned wakeUpTime_ = 0;
-		std::string cpuInstructionSet_ = "SSE2";
+		std::string cpuInstructionSet_ = "AUTO";
 		std::string processorType_ = "CPU";
 		bool benchmark_ = false;
 		long benchmarkInterval_ = 60;
 		unsigned gpuPlatform_ = 0, gpuDevice_ = 0;
-		unsigned maxConnectionsQueued_ = 64, maxConnectionsActive_ = 8;
+		unsigned maxConnectionsQueued_ = 64, maxConnectionsActive_ = 32;
 		std::vector<std::string> forwardingWhitelist_;
 		bool cumulatePlotsizes_ = true;
 		bool minerNameForwarding_ = true;
