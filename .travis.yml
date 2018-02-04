@@ -42,7 +42,6 @@ matrix:
       file:
       - "*.deb"
       - "*.tar.gz"
-      - "*.rpm"
       on:
         tags: true
       api_key:
