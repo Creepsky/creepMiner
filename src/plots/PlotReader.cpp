@@ -209,10 +209,31 @@ void Burst::PlotReader::runTask()
 							verification->block = plotReadNotification->blockheight;
 							verification->inputPath = plotFile.getPath();
 							verification->gensig = plotReadNotification->gensig;
-							verification->buffer.resize(readNonces);
 							verification->nonceRead = startNonce;
 							verification->baseTarget = plotReadNotification->baseTarget;
 							verification->memorySize = memoryToAcquire;
+
+							memoryAcquired = false;
+
+							while (!memoryAcquired && !isCancelled())
+							{
+								try
+								{
+									verification->buffer.resize(readNonces);
+									memoryAcquired = true;
+								}
+								catch (std::bad_alloc&)
+								{
+								}
+								catch (...)
+								{
+									globalBufferSize.free(memoryToAcquire);
+									throw;
+								}
+
+								if (!memoryAcquired)
+									std::this_thread::sleep_for(std::chrono::milliseconds{10});
+							}
 							TAKE_PROBE("PlotReader.CreateVerification");
 
 							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
