@@ -50,6 +50,13 @@ cmake CMakeLists.txt -DMINIMAL_BUILD=ON
 5. Make the project `make` (or `make -j <number of cores to use>` for a faster way)
 6. Change your configuration file (located at `~/.creepMiner/<version>/config.json`)
 
+### Run
+
+1. Follow the [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) documentation.
+2. Start the mining with `./bin/run.sh` or in a detached `screen` by `./bin/screen.sh`.
+3. To enter the screen attach by `screen -r creep`.
+4. To detach the screen use the keyboard shortcut `CTRL + A + D`.
+
 ## Instructions
 
 - [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ)
@@ -62,7 +69,7 @@ cmake CMakeLists.txt -DMINIMAL_BUILD=ON
 - [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Forwarding](https://github.com/Creepsky/creepMiner/wiki/Forwarding)
 - [Solo mining](https://github.com/Creepsky/creepMiner/wiki/Solo-mining)
-- [The mining process and otimizations](https://github.com/Creepsky/creepMiner/wiki/The-mining-process-and-otimizations)
+- [The mining process and optimizations](https://github.com/Creepsky/creepMiner/wiki/The-mining-process-and-optimizations)
 
 ## Dependencies
 
