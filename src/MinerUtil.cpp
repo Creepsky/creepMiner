@@ -791,8 +791,24 @@ bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
 
 int Burst::cpuGetInstructionSets()
 {
-#ifdef __arm__
+#if defined __arm__
 	return sse2;
+#elif defined __GNUC__
+	auto instruction_sets = 0;
+
+	if (__builtin_cpu_supports("sse2"))
+		instruction_sets += sse2;
+
+	if (__builtin_cpu_supports("sse4.2"))
+		instruction_sets += sse4;
+
+	if (__builtin_cpu_supports("avx"))
+		instruction_sets += avx;
+
+	if (__builtin_cpu_supports("avx2"))
+		instruction_sets += avx2;
+
+	return instruction_sets;
 #else
 	int info[4];
 	cpuid(info, 0);
