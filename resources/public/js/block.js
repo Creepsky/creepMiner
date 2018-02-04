@@ -271,7 +271,7 @@ function createNonceLine(deadline, glyphIconId, lineType, nonceType) {
 		nonceTypeStr = "nonce confirmed";
 
 	message.append("<span class='glyphicon " + glyphIconId + "' aria-hidden='true'></span> ");
-	message.append("<b><a href='https://block.burstcoin.info/acc.php?acc=" + deadline.accountId.toString() + "' target='_blank'>" +
+	message.append("<b><a href='https://explore.burst.cryptoguru.org/account/" + deadline.accountId.toString() + "' target='_blank'>" +
 		deadline.accountName + "</a></b>: " + nonceTypeStr);
 	message.append(" (" + deadline.deadlineStr + ")");
 	message.append("<p class='pull-right'><span class='label label-default'>" + deadline.time + "</span></p>");
@@ -458,7 +458,7 @@ function setLastWinner(winner) {
 		var address = lastWinner.find("#lastWinnerAddress");
 		var name = lastWinner.find("#lastWinnerName");
 
-		var link = "https://block.burstcoin.info/acc.php?acc=BURST-" + burstAddress;
+		var link = "https://explore.burst.cryptoguru.org/account/BURST-" + burstAddress;
 
 		if (winner["name"]) {
 			name.html(winner["name"]);
