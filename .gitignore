@@ -18,7 +18,6 @@
 x64/
 x86/
 bld/
-[Bb]in/
 [Oo]bj/
 [Ll]og/
 
@@ -336,7 +335,6 @@ hs_err_pid*
 *.pydevproject
 .metadata
 .gradle
-bin/
 tmp/
 *.tmp
 *.bak
@@ -398,8 +396,6 @@ buildNumber.properties
 makefile
 mining.conf
 *.graphml
-!/bin/*.dll
-!/bin/public/*
 build/
 
 # Visual Code
@@ -415,3 +411,19 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+CMakeSettings.json
+
+# conan
+conanbuildinfo.cmake
+conanbuildinfo.txt
+conaninfo.txt
+conan_imports_manifest.txt
+
+CPackConfig.cmake
+CPackSourceConfig.cmake
+_CPack_Packages/
+lib/
+*.deb
+*.rpm
+*.tar*
+bin

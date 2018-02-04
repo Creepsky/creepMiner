@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -29,7 +29,9 @@
 #include "Poco/Net/HTTPSStreamFactory.h"
 #include "Poco/Net/AcceptCertificateHandler.h"
 #include <Poco/Net/HTTPSSessionInstantiator.h>
+// ReSharper disable CppUnusedIncludeDirective
 #include <Poco/Net/PrivateKeyPassphraseHandler.h>
+// ReSharper restore CppUnusedIncludeDirective
 #include <Poco/NestedDiagnosticContext.h>
 #include "webserver/MinerServer.hpp"
 #include <Poco/Logger.h>
@@ -41,104 +43,35 @@
 #include <Poco/Util/OptionProcessor.h>
 #include <Poco/Util/HelpFormatter.h>
 #include <Poco/Util/Validator.h>
+#include <Poco/FileStream.h>
+#include <Poco/File.h>
+#include <Poco/DirectoryIterator.h>
+#include <regex>
 
-class SSLInitializer
+class SslInitializer
 {
 public:
-	SSLInitializer()
-	{
-		Poco::Net::initializeSSL();
-	}
-
-	~SSLInitializer()
-	{
-		Poco::Net::uninitializeSSL();
-	}
+	SslInitializer();
+	~SslInitializer();
 };
 
 struct Arguments
 {
-	Arguments()
-	{
-		using Poco::Util::Option;
-
-		options_.addOption(Option("help", "h", "display help information")
-			.required(false)
-			.repeatable(false)
-			.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::displayHelp)));
-
-		options_.addOption(Option("config", "c", "Path to the config file")
-			.required(false)
-			.repeatable(false)
-			.argument("path")
-			.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::setConfPath)));
-	}
-
-	bool process(int argc, const char* argv[])
-	{
-		Poco::Util::OptionProcessor optionProcessor(options_);
-		optionProcessor.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
-
-		try
-		{
-			for (auto i = 1; i < argc; ++i)
-			{
-				std::string name;
-				std::string value;
-				
-				if (optionProcessor.process(argv[i], name, value))
-				{
-					if (!name.empty())
-					{
-						const auto& option = options_.getOption(name);
-
-						if (option.validator())
-							option.validator()->validate(option, value);
-
-						if (option.callback())
-							option.callback()->invoke(name, value);
-					}
-				}
-			}
-			
-			optionProcessor.checkRequired();
-			return true;
-		}
-		catch (...)
-		{
-			displayHelp("", "");
-			return false;
-		}
-	}
-
+	Arguments();
+	bool process(int argc, const char* argv[]);
+	
 	bool helpRequested = false;
 	std::string confPath = "mining.conf";
 
 private:
-	void displayHelp(const std::string& name, const std::string& value)
-	{
-		Poco::Util::HelpFormatter helpFormatter(options_);
-		helpFormatter.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
-		helpFormatter.setCommand("creepMiner");
-		helpFormatter.setUsage("<options>");
-		helpFormatter.setHeader("Burstcoin cryptocurrency CPU and GPU miner.");
-		helpFormatter.setFooter("Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)");
-		helpFormatter.setAutoIndent();
-		helpFormatter.format(std::cout);
-
-		helpRequested = true;
-	}
-
-	void setConfPath(const std::string& name, const std::string& value)
-	{
-		confPath = value;
-	}
+	void displayHelp(const std::string& name, const std::string& value);
+	void setConfPath(const std::string& name, const std::string& value);
 
 private:
 	Poco::Util::OptionSet options_;
 };
 
-int main(int argc, const char* argv[])
+int main(const int argc, const char* argv[])
 {
 	poco_ndc(main);
 
@@ -157,7 +90,7 @@ int main(int argc, const char* argv[])
 	// ..and start it in its own thread
 	//Poco::ThreadPool::defaultPool().start(*messageDispatcher);
 
-	auto general = &Poco::Logger::get("general");
+	const auto general = &Poco::Logger::get("general");
 	
 #ifdef NDEBUG
 	std::string mode = "Release";
@@ -186,18 +119,17 @@ int main(int argc, const char* argv[])
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
 	log_information(general, "Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
 	log_information(general, "----------------------------------------------");
-		
+	
 	try
 	{
 		using namespace Poco;
 		using namespace Net;
 		
-		SSLInitializer sslInitializer;
+		SslInitializer sslInitializer;
 		HTTPSStreamFactory::registerFactory();
 
 		const SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
-		const Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "", "", "",
-			Context::VERIFY_RELAXED, 9, false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+		const Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "");
 		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
 
 		HTTPSessionInstantiator::registerInstantiator();
@@ -212,7 +144,7 @@ int main(int argc, const char* argv[])
 			//
 			Burst::Url url{ "https://raw.githubusercontent.com" };
 			//
-			Poco::Net::HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
+			HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
 			//
 			Burst::Request request{ url.createSession() };
 			auto response = request.send(getRequest);
@@ -241,9 +173,58 @@ int main(int argc, const char* argv[])
 
 		while (running)
 		{
-			if (Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath))
+			// load the config
+			auto configLoaded = Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath);
+
+			// the config could not be loaded, look for a config in the creepMiner home dir
+			if (!configLoaded)
 			{
-				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL")
+				log_information(general, "Could not load config file %s", arguments.confPath);
+
+				Path minerRootPath(Path::home());
+				minerRootPath.pushDirectory(".creepMiner");
+
+				File(minerRootPath).createDirectory();
+
+				Path minerHomePath(minerRootPath);
+				minerHomePath.pushDirectory(std::string(Project.version.literal));
+
+				if (File(minerHomePath).createDirectory())
+					log_information(general, "Miner home directory created: %s", minerHomePath.toString());
+
+				Path homeConfigPath(minerHomePath);
+				homeConfigPath.append("mining.conf");
+				const auto homeConfig = homeConfigPath.toString();
+
+				log_information(general, "Trying to load the config file %s", homeConfig);
+				configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
+
+				// if there is also no config in the home dir, create one in the home dir
+				if (!configLoaded)
+				{
+					// create the log dir
+					Path homeLogPath(minerHomePath);
+					homeLogPath.pushDirectory("logs");
+					homeLogPath.makeDirectory();
+
+					// and save it in the config
+					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
+					Burst::MinerConfig::getConfig().useLogfile(true);
+					
+					if (!Burst::MinerConfig::getConfig().save(homeConfig))
+						log_error(Burst::MinerLogger::general, "Could not save the current settings!");
+
+					// load the freshly created config in the home dir
+					configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
+				}
+			}
+
+			if (configLoaded)
+			{
+				log_information(general, "Config file loaded: %s", Burst::MinerConfig::getConfig().getPath());
+
+				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL" &&
+					!Burst::MinerCL::getCL().initialized())
 					Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
 						Burst::MinerConfig::getConfig().getGpuDevice());
 				else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
@@ -297,4 +278,86 @@ int main(int argc, const char* argv[])
 	Poco::ThreadPool::defaultPool().joinAll();
 
 	return 0;
+}
+
+SslInitializer::SslInitializer()
+{
+	Poco::Net::initializeSSL();
+}
+
+SslInitializer::~SslInitializer()
+{
+	Poco::Net::uninitializeSSL();
+}
+
+Arguments::Arguments()
+{
+	using Poco::Util::Option;
+
+	options_.addOption(Option("help", "h", "Display help information")
+		.required(false)
+		.repeatable(false)
+		.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::displayHelp)));
+
+	options_.addOption(Option("config", "c", "Path to the config file")
+		.required(false)
+		.repeatable(false)
+		.argument("path")
+		.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::setConfPath)));
+}
+
+bool Arguments::process(const int argc, const char* argv[])
+{
+	Poco::Util::OptionProcessor optionProcessor(options_);
+	optionProcessor.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+
+	try
+	{
+		for (auto i = 1; i < argc; ++i)
+		{
+			std::string name;
+			std::string value;
+
+			if (optionProcessor.process(argv[i], name, value))
+			{
+				if (!name.empty())
+				{
+					const auto& option = options_.getOption(name);
+
+					if (option.validator())
+						option.validator()->validate(option, value);
+
+					if (option.callback())
+						option.callback()->invoke(name, value);
+				}
+			}
+		}
+
+		optionProcessor.checkRequired();
+		return true;
+	}
+	catch (...)
+	{
+		displayHelp("", "");
+		return false;
+	}
+}
+
+void Arguments::displayHelp(const std::string& name, const std::string& value)
+{
+	Poco::Util::HelpFormatter helpFormatter(options_);
+	helpFormatter.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+	helpFormatter.setCommand("creepMiner");
+	helpFormatter.setUsage("<options>");
+	helpFormatter.setHeader("Burstcoin cryptocurrency CPU and GPU miner.");
+	helpFormatter.setFooter("Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)");
+	helpFormatter.setAutoIndent();
+	helpFormatter.format(std::cout);
+
+	helpRequested = true;
+}
+
+void Arguments::setConfPath(const std::string& name, const std::string& value)
+{
+	confPath = value;
 }

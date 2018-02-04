@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -63,11 +63,11 @@ namespace Burst
 	 */
 	struct Passphrase
 	{
-		std::string algorithm;
+		std::string algorithm = "aes-256-cbc";
 		std::string decrypted;
-		bool deleteKey;
+		bool deleteKey = true;
 		std::string encrypted;
-		Poco::UInt32 iterations;
+		Poco::UInt32 iterations = 1000;
 		std::string key;
 		std::string salt;
 
@@ -208,6 +208,16 @@ namespace Burst
 		void setGetMiningInfoInterval(unsigned interval);
 		void setBufferChunkCount(unsigned bufferChunkCount);
 		void setPoolTargetDeadline(Poco::UInt64 targetDeadline);
+		void setProcessorType(const std::string& processorType);
+		void setCpuInstructionSet(const std::string& instructionSet);
+		void setGpuPlatform(unsigned platformIndex);
+		void setGpuDevice(unsigned deviceIndex);
+		void setPlotDirs(const std::vector<std::string>& plotDirs);
+		void setWebserverUri(const std::string& uri);
+		void setProgressbar(bool fancy, bool steady);
+		void setPassphrase(const std::string& passphrase);
+		void setWebserverCredentials(const std::string& user, const std::string& pass);
+		void setStartWebserver(bool start);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.
@@ -252,27 +262,27 @@ namespace Burst
 		float timeout_ = 45.f;
 		unsigned send_max_retry_ = 3;
 		unsigned receive_max_retry_ = 3;
-		unsigned submission_max_retry_ = 3;
-		unsigned http_ = 0;
+		unsigned submission_max_retry_ = 10;
+		unsigned http_ = 1;
 		std::string confirmedDeadlinesPath_ = "";
 		Url urlPool_;
 		Url urlMiningInfo_;
 		Url urlWallet_;
-		bool startServer_ = false;
-		Url serverUrl_;
+		bool startServer_ = true;
+		Url serverUrl_{"http://127.0.0.1:8080"};
 		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;
-		unsigned miningIntensity_ = 1;
+		unsigned miningIntensity_ = 0;
 		std::string plotsHash_;
 		std::string serverUser_, serverPass_;
 		unsigned maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
-		Poco::UInt64 maxBufferSizeMB_ = 256;
-		unsigned bufferChunkCount_ = 8;
-		unsigned walletRequestTries_ = 5;
+		Poco::UInt64 maxBufferSizeMB_ = 0;
+		unsigned bufferChunkCount_ = 16;
+		unsigned walletRequestTries_ = 3;
 		unsigned walletRequestRetryWaitTime_ = 3;
 		Passphrase passphrase_ = {};
 		bool useInsecurePlotfiles_ = false;
-		bool logfile_ = true;
+		bool logfile_ = false;
 		unsigned getMiningInfoInterval_ = 3;
 		bool rescanEveryBlock_ = false;
 		LogOutputType logOutputType_ = LogOutputType::Terminal;
@@ -280,12 +290,12 @@ namespace Burst
 		bool steadyProgressBar_ = true;
 		bool fancyProgressBar_ = true;
 		unsigned wakeUpTime_ = 0;
-		std::string cpuInstructionSet_ = "SSE2";
+		std::string cpuInstructionSet_ = "AUTO";
 		std::string processorType_ = "CPU";
 		bool benchmark_ = false;
 		long benchmarkInterval_ = 60;
 		unsigned gpuPlatform_ = 0, gpuDevice_ = 0;
-		unsigned maxConnectionsQueued_ = 64, maxConnectionsActive_ = 8;
+		unsigned maxConnectionsQueued_ = 64, maxConnectionsActive_ = 32;
 		std::vector<std::string> forwardingWhitelist_;
 		bool cumulatePlotsizes_ = true;
 		bool minerNameForwarding_ = true;

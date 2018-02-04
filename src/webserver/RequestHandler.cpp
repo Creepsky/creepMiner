@@ -1,7 +1,7 @@
 ﻿// ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -20,10 +20,10 @@
 // ==========================================================================
 
 #include "RequestHandler.hpp"
+#include <Poco/Net/WebSocket.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/Net/HTTPServerRequest.h>
 #include <Poco/Net/HTTPServerResponse.h>
-#include <Poco/Net/WebSocket.h>
 #include <Poco/FileStream.h>
 #include "logging/MinerLogger.hpp"
 #include "MinerUtil.hpp"
@@ -41,6 +41,8 @@
 #include <Poco/Net/HTMLForm.h>
 #include "plots/PlotGenerator.hpp"
 #include <regex>
+#include <Poco/Net/NetException.h>
+#include <Poco/Delegate.h>
 
 const std::string COOKIE_USER_NAME = "creepminer-webserver-user";
 const std::string COOKIE_PASS_NAME = "creepminer-webserver-pass";
@@ -69,6 +71,108 @@ Burst::RequestHandler::LambdaRequestHandler::LambdaRequestHandler(Lambda lambda)
 void Burst::RequestHandler::LambdaRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
 	lambda_(request, response);
+}
+
+Burst::RequestHandler::WebsocketRequestHandler::WebsocketRequestHandler(MinerServer& server, MinerData& data)
+	: server_{server}, data_{data}
+{
+	server_.newDataEvent += Poco::delegate(this, &WebsocketRequestHandler::onNewData);
+}
+
+Burst::RequestHandler::WebsocketRequestHandler::~WebsocketRequestHandler()
+{
+	server_.newDataEvent -= Poco::delegate(this, &WebsocketRequestHandler::onNewData);
+}
+
+void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& request,
+	Poco::Net::HTTPServerResponse& response)
+{
+	using namespace Poco;
+	using namespace Net;
+
+	try
+	{
+		WebSocket ws(request, response);
+		poco_debug(MinerLogger::server, "WebSocket connection established.");
+
+		try
+		{
+			// send the config
+			std::stringstream sstream;
+			createJsonConfig().stringify(sstream);
+			const auto configString = sstream.str();
+			ws.sendFrame(configString.data(), static_cast<int>(configString.size()));
+
+			// send the plot dir data
+			sstream.str("");
+			createJsonPlotDirsRescan().stringify(sstream);
+			const auto plotDirString = sstream.str();
+			ws.sendFrame(plotDirString.data(), static_cast<int>(plotDirString.size()));
+
+			data_.getBlockData()->forEntries([&](const JSON::Object& json)
+			{
+				sstream.str("");
+				JSON::Stringifier::condense(json, sstream);
+				const auto jsonString = sstream.str();
+				ws.sendFrame(jsonString.data(), static_cast<int>(jsonString.size()));
+				return true;
+			});
+		}
+		catch (Exception& exc)
+		{
+			log_exception(MinerLogger::server, exc);
+			return;
+		}
+		
+		char buffer[1024];
+		int flags;
+		auto n = 0;
+		auto close = false;
+		ws.setReceiveTimeout(Timespan{10000}); // 10 ms
+		do
+		{
+			try
+			{
+				n = ws.receiveFrame(buffer, sizeof buffer, flags);
+				close = n == 0;
+			}
+			catch (TimeoutException&)
+			{
+				// do nothing
+			}
+			catch (Exception& exc)
+			{
+				log_exception(MinerLogger::server, exc);
+				close = true;
+			}
+
+			if (!close)
+			{
+				std::lock_guard<std::mutex> lock(mutex_);
+				if (!queue_.empty())
+				{
+					auto data = queue_.front();
+					queue_.pop_front();
+					const auto s = ws.sendFrame(data.data(), static_cast<int>(data.size()));
+					if (s != static_cast<int>(data.size()))
+						log_warning(MinerLogger::server, "Could not fully send: %s", data);
+				}
+			}
+		}
+		while (!close && (flags & WebSocket::FRAME_OP_BITMASK) != WebSocket::FRAME_OP_CLOSE);
+		ws.shutdown();
+		poco_debug(MinerLogger::server, "WebSocket connection closed.");
+	}
+	catch (WebSocketException& exc)
+	{
+		log_exception(MinerLogger::server, exc);
+	}
+}
+
+void Burst::RequestHandler::WebsocketRequestHandler::onNewData(std::string& data)
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+	queue_.emplace_back(data);
 }
 
 void Burst::RequestHandler::loadTemplate(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
@@ -349,20 +453,6 @@ void Burst::RequestHandler::rescanPlotfiles(Poco::Net::HTTPServerRequest& reques
 	response.send();
 }
 
-void Burst::RequestHandler::addWebsocket(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
-                                                  Burst::MinerServer& server)
-{
-	try
-	{
-		server.addWebsocket(std::make_unique<Poco::Net::WebSocket>(request, response));
-	}
-	catch (Poco::Exception& exc)
-	{
-		log_error(MinerLogger::server, "Could not accept incoming websocket request.");
-		log_exception(MinerLogger::server, exc);
-	}
-}
-
 bool Burst::RequestHandler::checkCredentials(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
 	auto credentialsOk = isLoggedIn(request);
@@ -546,13 +636,14 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (blockheight != miner.getBlockheight())
 		{
-			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-			response.setChunkedTransferEncoding(true);
-			auto& responseData = response.send();
-
-			responseData << Poco::format(
+			const auto responseString = Poco::format(
 				R"({ "result" : "Your submitted deadline is for another block!", "nonce" : %Lu, "blockheight" : %Lu, "currentBlockheight" : %Lu })",
 				nonce, blockheight, miner.getBlockheight());
+
+			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+			response.setContentLength(responseString.size());
+			auto& responseData = response.send();
+			responseData << responseString << std::flush;
 		}
 		else if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
@@ -560,10 +651,9 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 				miner.getBlockheight(), plotfile, false, minerName, capacity);
 
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-			response.setChunkedTransferEncoding(true);
+			response.setContentLength(forwardResult.json.size());
 			auto& responseData = response.send();
-
-			responseData << forwardResult.json;
+			responseData << forwardResult.json << std::flush;
 		}
 		else
 		{

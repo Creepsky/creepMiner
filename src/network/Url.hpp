@@ -1,7 +1,7 @@
 ﻿// ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ namespace Burst
 		std::string getIp() const;
 		uint16_t getPort() const;
 		const Poco::URI& getUri() const;
+		Poco::URI& getUri();
 		bool empty() const;
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession() const;
 

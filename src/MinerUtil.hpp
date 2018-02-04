@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -87,6 +87,14 @@ namespace Burst
 		Seconds
 	};
 
+	enum CpuInstructionSet
+	{
+		sse2 = 1 << 0,
+		sse4 = 1 << 1,
+		avx = 1 << 2,
+		avx2 = 1 << 3
+	};
+
 	bool isNumberStr(const std::string& str);
 	std::string getFileNameFromPath(const std::string& strPath);
 	std::vector<std::string>& splitStr(const std::string& s, char delim, std::vector<std::string>& elems);
@@ -157,4 +165,10 @@ namespace Burst
 		sstream << number;
 		return sstream.str();
 	}
+
+	bool cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet);
+	int cpuGetInstructionSets();
+
+	size_t getMemorySize();
+	void setStdInEcho(bool enable);
 }

@@ -159,6 +159,9 @@ function localInitCheckBoxes() {
 function localInitLogSettings() {
 	var temp = localGet('logSettings');
 
+	if (temp == null)
+		return;
+
 	if (temp['miner']) $("#cmb_miner").val(temp['miner'])
 	if (temp['config']) $("#cmb_config").val(temp['config'])
 	if (temp['server']) $("#cmb_server").val(temp['server'])
@@ -199,7 +202,13 @@ function newBlock(json) {
 	checkAddBestOverall(BigInteger(json["bestOverall"]["deadlineNum"]),
 								   json["bestOverall"]["deadline"],
 								   json["bestOverall"]["blockheight"]);
-	bestHistorical.html(json["bestHistorical"]["deadline"] + " <small>@" + json["bestHistorical"]["blockheight"] + "</small>");
+
+	var bestHistoricalJson = json["bestHistorical"]["deadline"];
+	var bestHistoricalHeightJson = json["bestHistorical"]["blockheight"];
+
+	if (bestHistoricalJson != null && bestHistoricalHeightJson != null)
+		bestHistorical.html(bestHistoricalJson + " <small>@" + bestHistoricalHeightJson + "</small>");
+
 	setConfirmedDeadlines(BigInteger(json["deadlinesConfirmed"]));
 	setOverallProgress(0);
 	lastWinnerContainer.hide();
@@ -262,7 +271,7 @@ function createNonceLine(deadline, glyphIconId, lineType, nonceType) {
 		nonceTypeStr = "nonce confirmed";
 
 	message.append("<span class='glyphicon " + glyphIconId + "' aria-hidden='true'></span> ");
-	message.append("<b><a href='https://block.burstcoin.info/acc.php?acc=" + deadline.accountId.toString() + "' target='_blank'>" +
+	message.append("<b><a href='https://explore.burst.cryptoguru.org/account/" + deadline.accountId.toString() + "' target='_blank'>" +
 		deadline.accountName + "</a></b>: " + nonceTypeStr);
 	message.append(" (" + deadline.deadlineStr + ")");
 	message.append("<p class='pull-right'><span class='label label-default'>" + deadline.time + "</span></p>");
@@ -319,8 +328,7 @@ function checkAddBestRound(deadlineNum, deadline) {
 }
 
 function checkAddBestOverall(deadlineNum, deadline, blockheight) {
-	if (!bestDeadlineOverall ||
-		bestDeadlineOverall > deadlineNum) {
+	if (deadline != null && (!bestDeadlineOverall || bestDeadlineOverall > deadlineNum)) {
 		bestDeadlineOverall = deadlineNum;
 		bestDeadlineOverallElement.html(deadline + " <small>@" + blockheight + "</small>");
 	}
@@ -450,7 +458,7 @@ function setLastWinner(winner) {
 		var address = lastWinner.find("#lastWinnerAddress");
 		var name = lastWinner.find("#lastWinnerName");
 
-		var link = "https://block.burstcoin.info/acc.php?acc=BURST-" + burstAddress;
+		var link = "https://explore.burst.cryptoguru.org/account/BURST-" + burstAddress;
 
 		if (winner["name"]) {
 			name.html(winner["name"]);
@@ -717,6 +725,7 @@ function initBlock() {
 
 	initPlot();
 	bestDeadlineOverallElement.html(nullDeadline);
+	bestHistorical.html(nullDeadline);
 	connectBlock();
 	// deActivateConfirmationSound(true);
 	

@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ namespace Poco
 
 namespace Burst
 {
-	class Miner;
+	class MinerData;
 	class PlotReadProgress;
 
 	class GlobalBufferSize
@@ -76,7 +76,7 @@ namespace Burst
 	class PlotReader : public Poco::Task
 	{
 	public:
-		PlotReader(Miner& miner, std::shared_ptr<PlotReadProgress> progress,
+		PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress> progress,
 			Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue);
 		~PlotReader() override = default;
 
@@ -85,7 +85,7 @@ namespace Burst
 		static GlobalBufferSize globalBufferSize;
 
 	private:
-		Miner& miner_;
+		MinerData& data_;
 		std::shared_ptr<PlotReadProgress> progress_;
 		Poco::NotificationQueue* verificationQueue_;
 		Poco::NotificationQueue* plotReadQueue_;

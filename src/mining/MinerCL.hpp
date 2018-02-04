@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
  */
 #include <vector>
 #include <stdio.h>
+#include <string>
 
 #ifdef USE_OPENCL
 #ifdef __APPLE__
@@ -44,13 +45,32 @@ using cl_device_id = int*;
 
 namespace Burst
 {
+	struct ClDevice
+	{
+		cl_device_id id;
+		std::string name;
+	};
+
+	struct ClPlatform
+	{
+		cl_platform_id id;
+		std::string name;
+		std::string version;
+		std::vector<ClDevice> devices;
+		std::vector<cl_device_id> getDeviceIds() const;
+
+		static bool getPlatforms(std::vector<ClPlatform>& platforms, std::string& error);
+	};
+
 	/**
 	 * \brief A OpenCL context.
 	 */
 	class MinerCL
 	{
 	public:
+		MinerCL();
 		~MinerCL();
+
 		bool create(unsigned platformIdx = 0, unsigned deviceIdx = 0);
 		cl_command_queue createCommandQueue();
 
@@ -61,7 +81,10 @@ namespace Burst
 		size_t getKernelCalculateWorkGroupSize(bool preferred = false) const;
 		size_t getKernelFindBestWorkGroupSize(bool preferred = false) const;
 		size_t getComputeUnits() const;
-		cl_device_id getDevice() const;
+		const ClPlatform* getPlatform() const;
+		const cl_device_id* getDeviceId() const;
+		const ClDevice* getDevice() const;
+		const std::vector<ClPlatform>& getPlatforms() const;
 
 		bool initialized() const;
 
@@ -74,8 +97,7 @@ namespace Burst
 		cl_kernel kernel_calculate_deadlines_ = nullptr,
 			kernel_best_deadline_ = nullptr;
 		bool initialized_ = false;
-		std::vector<cl_platform_id> platforms_;
-		std::vector<cl_device_id> devices_;
+		std::vector<ClPlatform> platforms_;
 		unsigned platformIdx_ = 0, deviceIdx_ = 0;
 		size_t kernel_Calculate_WorkGroupSize_ = 0;
 		size_t kernel_FindBest_WorkGroupSize_ = 0;

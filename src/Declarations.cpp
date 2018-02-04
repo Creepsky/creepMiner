@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@
 #include "logging/MinerLogger.hpp"
 
 std::string Burst::Settings::Cpu_Instruction_Set = "";
-Burst::ProjectData Burst::Settings::Project = { "creepMiner", { 1, 7, 13, 0 } };
+Burst::ProjectData Burst::Settings::Project = Burst::ProjectData("creepMiner",
+	Burst::Version(VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, 0));
 
 #ifdef USE_SSE4
 const bool Burst::Settings::Sse4 = true;
@@ -152,6 +153,19 @@ bool Burst::Version::operator>(const Version& rhs) const
 
 	// 1.5.6.>1< vs 1.5.6.>6<
 	return false;
+}
+
+bool Burst::Version::operator==(const Version& rhs) const
+{
+	return major == rhs.major &&
+		minor == rhs.minor &&
+		build == rhs.build &&
+		revision == rhs.revision;
+}
+
+bool Burst::Version::operator!=(const Version& rhs) const
+{
+	return !(*this == rhs);
 }
 
 void Burst::ProjectData::refreshNameAndVersion()

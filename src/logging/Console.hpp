@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,8 +23,9 @@
 
 #include "channels/ColoredPriorityConsoleChannel.hpp"
 #include <mutex>
-#include <memory>
-#include <iostream>
+#include <string>
+#include <functional>
+#include <Poco/Format.h>
 
 namespace Burst
 {
@@ -70,9 +71,8 @@ namespace Burst
 		 * \brief Constructor.
 		 * Locks the console mutex.
 		 * \param stream The output stream.
-		 * \param mutex The console mutex.
 		 */
-		explicit PrintBlock(std::ostream& stream);
+		PrintBlock(std::ostream& stream, void* handle = nullptr);
 
 		/**
 		 * \brief Destructor.
@@ -95,6 +95,20 @@ namespace Burst
 		{
 			*stream_ << text;
 			return *this;
+		}
+
+		template <typename T>
+		const PrintBlock& print(const T& text) const
+		{
+			return (*this << text);
+		}
+
+		const PrintBlock& print(const std::string& text) const;
+
+		template <typename ...T>
+		const PrintBlock& print(const std::string& format, const T&... args) const
+		{
+			return print(Poco::format(format, std::forward<const T&>(args)...));
 		}
 
 		/**
@@ -141,7 +155,10 @@ namespace Burst
 		 */
 		const PrintBlock& resetColor() const;
 		
+		const PrintBlock& setColor(ConsoleColor color) const;
+
 	private:
+		void* handle_ = nullptr;
 		std::ostream* stream_;
 	};
 
@@ -151,6 +168,9 @@ namespace Burst
 	 */
 	class Console
 	{
+	public:
+		static const std::string yes, no;
+
 	public:
 		Console() = delete;
 		~Console() = delete;
@@ -203,5 +223,45 @@ namespace Burst
 		 * \brief Prints a line break.
 		 */
 		static void nextLine();
+
+		/**
+		 * \brief Reads the index based user choice from a list of options.
+		 * \param options The options, from whom the user can choose.
+		 * \param header The text that will be printed in different color before the options are listed.
+		 * \param defaultValue The default value that will be chosen if the user just presses enter.
+		 * \param index The index of the chosen element.
+		 * \return The chosen text.
+		 */
+		static std::string readInput(const std::vector<std::string>& options, const std::string& header,
+		                             const std::string& defaultValue, int& index);
+
+		/**
+		 * \brief Prints a question and lets the user decide between yes or no.
+		 * \param header The question that will be printed before the decision.
+		 * \param defaultValue The default value that will be chosen if the user just presses enter.
+		 * \return The chosen the text.
+		 */
+		static std::string readYesNo(const std::string& header, bool defaultValue);
+
+		/**
+		 * \brief Reads a number written by the user.
+		 * \param title The text that will be printed before the input.
+		 * \param min The minimum number that the user has to enter.
+		 * \param max The maximum number that the user has to enter.
+		 * \param defaultValue The default value that will be chosen if the user just presses enter.
+		 * \param number The number that the user wrote.
+		 * \return true, if the user gave a valid number, false otherwise
+		 */
+		static bool readNumber(const std::string& title, Poco::Int64 min, Poco::Int64 max,
+		                       Poco::Int64 defaultValue, Poco::Int64& number);
+
+		/**
+		 * \brief Reads a text written by the user.
+		 * \param title The text that will be printed before the input.
+		 * \param validator The validator of the written text.
+		 * \return The text that the user gave.
+		 */
+		static std::string readText(const std::string& title,
+		                            std::function<bool(const std::string&, std::string&)> validator);
 	};
 }

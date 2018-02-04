@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -48,8 +48,15 @@ namespace Burst
 			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
 			task_manager = std::make_unique<Poco::TaskManager>(*thread_pool);
 
+			auto submitFunction = [&miner](Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
+			                               Poco::UInt64 blockheight, const std::string& plotFile,
+			                               bool ownAccount)
+			{
+				miner.submitNonceAsync(make_tuple(nonce, accountId, deadline, blockheight, plotFile, ownAccount));
+			};
+
 			for (size_t i = 0; i < size; ++i)
-			task_manager->start(new T(miner, queue, progress));
+				task_manager->start(new T(miner.getData(), queue, progress, submitFunction));
 		}
 
 		template <typename T, typename ...Args>
@@ -92,6 +99,8 @@ void Burst::Miner::run()
 		return;
 	}
 
+	Poco::ThreadPool::defaultPool().addCapacity(128);
+
 	MinerConfig::getConfig().printConsole();
 
 	// only create the thread pools and manager for mining if there is work to do (plot files)
@@ -102,7 +111,7 @@ void Burst::Miner::run()
 
 		// create the plot readers
 		MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
-			*this, progressRead_, verificationQueue_, plotReadQueue_);
+			data_, progressRead_, verificationQueue_, plotReadQueue_);
 
 		// create the plot verifiers
 		createPlotVerifiers();
@@ -421,7 +430,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 		return SubmitResponse::Found;
 	}
 
-	return SubmitResponse::Error;
+	return SubmitResponse::NotBest;
 }
 
 Burst::NonceConfirmation Burst::Miner::submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight, const std::string& plotFile,
@@ -780,7 +789,7 @@ void Burst::Miner::setMaxPlotReader(unsigned max_reader)
 	shut_down_worker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
 	MinerConfig::getConfig().setMaxPlotReaders(max_reader);
 	MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
-		*this, progressRead_, verificationQueue_, plotReadQueue_);
+		data_, progressRead_, verificationQueue_, plotReadQueue_);
 }
 
 void Burst::Miner::setMaxBufferSize(Poco::UInt64 size)

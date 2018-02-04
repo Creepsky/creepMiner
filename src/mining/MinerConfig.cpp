@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -199,22 +199,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	}
 
 	if (!inputFileStream.is_open())
-	{
-		log_critical(MinerLogger::config, "Config file %s does not exist, creating a default config...", configPath);
-
-		try
-		{
-			Poco::FileOutputStream defaultConfig(configPath);
-			defaultConfig << "{}" << std::endl;
-			defaultConfig.close();
-			inputFileStream.open(configPath);
-		}
-		catch (...)
-		{
-			log_critical(MinerLogger::config, "Could not create default config %s!", configPath);
-			return false;
-		}
-	}
+		return false;
 
 	configPath_ = configPath;
 	plotDirs_.clear();
@@ -318,7 +303,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (!loggingObj.isNull())
 		{
 			// do we need to create a logfile
-			logfile_ = getOrAdd(loggingObj, "logfile", false);
+			logfile_ = getOrAdd(loggingObj, "logfile", true);
 
 			auto logOutput = getOrAdd(loggingObj, "outputType", std::string("terminal"));
 
@@ -418,13 +403,13 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		else
 			miningObj = new Poco::JSON::Object;
 
-		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 3);
+		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 10);
 		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 0u);
 
 		auto timeout = getOrAdd(miningObj, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
 
-		miningIntensity_ = getOrAdd(miningObj, "intensity", 1);
+		miningIntensity_ = getOrAdd(miningObj, "intensity", 0);
 		maxPlotReaders_ = getOrAdd(miningObj, "maxPlotReaders", 0);
 
 		walletRequestTries_ = getOrAdd(miningObj, "walletRequestTries", 5);
@@ -437,8 +422,23 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		
 		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
 		wakeUpTime_ = getOrAdd(miningObj, "wakeUpTime", 0);
-		
-		cpuInstructionSet_ = getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2"));
+
+		cpuInstructionSet_ = Poco::toUpper(getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2")));
+		cpuInstructionSet_ = Poco::trim(cpuInstructionSet_);
+
+		// auto detect the max. cpu instruction set
+		if (cpuInstructionSet_ == "AUTO")
+		{
+			if (cpuHasInstructionSet(CpuInstructionSet::avx2))
+				cpuInstructionSet_ = "AVX2";
+			else if (cpuHasInstructionSet(CpuInstructionSet::avx))
+				cpuInstructionSet_ = "AVX";
+			else if (cpuHasInstructionSet(CpuInstructionSet::sse4))
+				cpuInstructionSet_ = "SSE4";
+			else
+				cpuInstructionSet_ = "SSE2";
+		}
+
 		Settings::setCpuInstructionSet(cpuInstructionSet_);
 
 		processorType_ = getOrAdd(miningObj, "processorType", std::string("CPU"));
@@ -608,7 +608,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			}
 			else
 			{
-				miningObj->set("targetDeadline", "0y 1m 0d 00:00:00");
+				miningObj->set("targetDeadline", "0y 0m 0d 00:00:00");
 				targetDeadline_ = 0;
 			}
 		}
@@ -636,7 +636,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				passphrase_.salt = getOrAdd<std::string>(passphrase, "salt", "");
 				passphrase_.key = getOrAdd<std::string>(passphrase, "key", "");
 				passphrase_.iterations = getOrAdd(passphrase, "iterations", 1000u);
-				passphrase_.deleteKey = getOrAdd(passphrase, "deleteKey", false);
+				passphrase_.deleteKey = getOrAdd(passphrase, "deleteKey", true);
 				passphrase_.algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
 
 				// there is a decrypted passphrase, we need to encrypt it
@@ -711,9 +711,9 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			webserverObj.assign(new Poco::JSON::Object);
 
 		startServer_ = getOrAdd(webserverObj, "start", true);
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://192.168.0.101:8080", startServer_);
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://127.0.0.1:8080", startServer_);
 		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 64u);
-		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 8u);
+		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 32u);
 		cumulatePlotsizes_ = getOrAdd(webserverObj, "cumulatePlotsizes", true);
 		minerNameForwarding_ = getOrAdd(webserverObj, "forwardMinerNames", true);
 		calculateEveryDeadline_ = getOrAdd(webserverObj, "calculateEveryDeadline", false);
@@ -1099,6 +1099,7 @@ void Burst::MinerConfig::setUrl(std::string url, HostType hostType)
 	case HostType::MiningInfo: uri = &urlMiningInfo_; break;
 	case HostType::Pool: uri = &urlPool_; break;
 	case HostType::Wallet: uri = &urlWallet_; break;
+	case HostType::Server: uri = &serverUrl_; break;
 	default: uri = nullptr;
 	}
 
@@ -1236,23 +1237,21 @@ bool Burst::MinerConfig::save(const std::string& path) const
 	{
 		// logger
 		Poco::JSON::Object logging;
-		//
+	
 		for (auto& priority : MinerLogger::getChannelPriorities())
 			logging.set(priority.first, priority.second);
-		//
+		
 		// output
 		Poco::JSON::Object outputs;
-		//
+		
 		for (auto& output : MinerLogger::getOutput())
 			outputs.set(Output_Helper::output_to_string(output.first), output.second);
-		//
+		
 		logging.set("output", outputs);
 
-		// path
 		logging.set("path", getLogDir());
-		
-		// logfile
 		logging.set("logfile", isLogfileUsed());
+		logging.set("useColors", isUsingLogColors());
 
 		// output type
 		if (logOutputType_ == LogOutputType::Terminal)
@@ -1262,19 +1261,12 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		else
 			logging.set("outputType", "terminal");
 
-		// log colors
-		logging.set("useColors", isUsingLogColors());
 
 		// progress bar
 		{
 			Poco::JSON::Object progressBar;
-
-			// stready progress bar
-			logging.set("steady", isSteadyProgressBar());
-
-			// fancy progress bar
-			logging.set("fancy", isFancyProgressBar());
-
+			progressBar.set("steady", isSteadyProgressBar());
+			progressBar.set("fancy", isFancyProgressBar());
 			logging.set("progressBar", progressBar);
 		}		
 
@@ -1286,84 +1278,60 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		Poco::JSON::Object mining;
 
 		// miningInfoInterval
-		mining.set("miningInfoInterval", getMiningInfoInterval());
-
-		// intensity
+		mining.set("getMiningInfoInterval", getMiningInfoInterval());
 		mining.set("intensity", miningIntensity_);
-
-		// max buffer size
 		mining.set("maxBufferSizeMB", maxBufferSizeMB_);
-
-		// max plot reader
 		mining.set("maxPlotReaders", maxPlotReaders_);
-
-		// submission max retry
 		mining.set("submissionMaxRetry", submission_max_retry_);
-
-		// target deadline
 		mining.set("targetDeadline", deadlineFormat(targetDeadline_));
-
-		// timeout
 		mining.set("timeout", static_cast<Poco::UInt64>(timeout_));
-
-		// wallet max retry wait time
 		mining.set("walletRequestRetryWaitTime", walletRequestRetryWaitTime_);
-
-		// wallet max request tries
 		mining.set("walletRequestTries", walletRequestTries_);
-
-		// insecurePlotfiles
 		mining.set("useInsecurePlotfiles", useInsecurePlotfiles());
-
 		mining.set("rescanEveryBlock", isRescanningEveryBlock());
-
 		mining.set("bufferChunkCount", getBufferChunkCount());
-
 		mining.set("wakeUpTime", getWakeUpTime());
-
 		mining.set("cpuInstructionSet", getCpuInstructionSet());
-
-		mining.set("processorType", getProcessorType());		
+		mining.set("processorType", getProcessorType());
+		mining.set("gpuDevice", getGpuDevice());
+		mining.set("gpuPlatform", getGpuPlatform());
 
 		// benchmark
 		{
 			Poco::JSON::Object benchmark;
 			benchmark.set("active", isBenchmark());
 			benchmark.set("interval", getBenchmarkInterval());
+			mining.set("benchmark", benchmark);
 		}
 
 		// passphrase
 		{
 			Poco::JSON::Object passphrase;
-
 			passphrase.set("algorithm", passphrase_.algorithm);
 			passphrase.set("decrypted", ""); // don't leak it
 			passphrase.set("deleteKey", passphrase_.deleteKey);
 			passphrase.set("encrypted", passphrase_.encrypted);
 			passphrase.set("iterations", passphrase_.iterations);
 			passphrase.set("encrypted", passphrase_.encrypted);
-
+			passphrase.set("key", passphrase_.deleteKey ? "" : passphrase_.key);
+			passphrase.set("salt", passphrase_.salt);
 			mining.set("passphrase", passphrase);
 		}
 
 		// plots
 		{
 			Poco::JSON::Array plots;
-			//
 			for (auto& plot_dir : plotDirs_)
 				plots.add(plot_dir->getPath());
-
 			mining.set("plots", plots);
 		}
 
 		// urls
 		{
 			Poco::JSON::Object urls;
-			//
 			urls.set("miningInfo", urlMiningInfo_.getUri().toString());
 			urls.set("submission", urlPool_.getUri().toString());
 			urls.set("wallet", urlWallet_.getUri().toString());
-
 			mining.set("urls", urls);
 		}
 
@@ -1377,18 +1345,26 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// credentials
 		{
 			Poco::JSON::Object credentials;
-			//
 			credentials.set("pass", serverPass_.empty() ? "" : HASH_DELIMITER + serverPass_);
 			credentials.set("user", serverUser_.empty() ? "" : HASH_DELIMITER + serverUser_);
-			//
 			webserver.set("credentials", credentials);
 		}
 
-		// start webserver
 		webserver.set("start", startServer_);
-
-		// url
+		webserver.set("activeConnections", getMaxConnectionsActive());
+		webserver.set("calculateEveryDeadline", isCalculatingEveryDeadline());
+		webserver.set("connectionQueue", getMaxConnectionsQueued());
+		webserver.set("cumulatePlotsizes", isCumulatingPlotsizes());
+		webserver.set("forwardMinerNames", isForwardingMinerName());
 		webserver.set("url", serverUrl_.getUri().toString());
+
+		// forwardUrls
+		{
+			Poco::JSON::Array forwardUrls;
+			for (const auto& forward : getForwardingWhitelist())
+				forwardUrls.add(forward);
+			webserver.set("forwardUrls", forwardUrls);
+		}
 
 		json.set("webserver", webserver);
 	}
@@ -1502,7 +1478,7 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 		// refresh the channels
 		MinerLogger::refreshChannels();
 
-		log_system(MinerLogger::config, "Logfile deactivated");
+		log_debug(MinerLogger::config, "Logfile deactivated");
 	}
 	else if (logDirAndFile.empty())
 		log_warning(MinerLogger::config, "Could not create logfile");
@@ -1528,9 +1504,74 @@ void Burst::MinerConfig::setPoolTargetDeadline(Poco::UInt64 targetDeadline)
 	targetDeadlinePool_ = targetDeadline;
 }
 
+void Burst::MinerConfig::setProcessorType(const std::string& processorType)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	processorType_ = processorType;
+}
+
+void Burst::MinerConfig::setCpuInstructionSet(const std::string& instructionSet)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	cpuInstructionSet_ = instructionSet;
+}
+
+void Burst::MinerConfig::setGpuPlatform(const unsigned platformIndex)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	gpuPlatform_ = platformIndex;
+}
+
+void Burst::MinerConfig::setGpuDevice(const unsigned deviceIndex)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	gpuDevice_ = deviceIndex;
+}
+
+void Burst::MinerConfig::setPlotDirs(const std::vector<std::string>& plotDirs)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	plotDirs_.clear();
+	for (const auto& plotDir : plotDirs)
+		addPlotDir(plotDir);
+}
+
+void Burst::MinerConfig::setWebserverUri(const std::string& uri)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	serverUrl_ = uri;
+}
+
+void Burst::MinerConfig::setProgressbar(bool fancy, bool steady)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	fancyProgressBar_ = fancy;
+	steadyProgressBar_ = steady;
+}
+
+void Burst::MinerConfig::setPassphrase(const std::string& passphrase)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	passphrase_.decrypted = passphrase;
+	passphrase_.encrypt();
+}
+
+void Burst::MinerConfig::setWebserverCredentials(const std::string& user, const std::string& pass)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	serverUser_ = hash_HMAC_SHA1(user, WebserverUserPassphrase);
+	serverPass_ = hash_HMAC_SHA1(pass, WebserverPassPassphrase);
+}
+
+void Burst::MinerConfig::setStartWebserver(bool start)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	startServer_ = start;
+}
+
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
-	return addPlotDir(std::make_shared<PlotDir>(dir, PlotDir::Type::Sequential));
+	return addPlotDir(std::make_shared<PlotDir>(Poco::replace(dir, "\\", "/"), PlotDir::Type::Sequential));
 }
 
 bool Burst::MinerConfig::removePlotDir(const std::string& dir)

@@ -1,7 +1,7 @@
 ﻿// ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
 #include <functional>
 #include <unordered_map>
 #include "mining/MinerConfig.hpp"
+#include <stack>
+#include <mutex>
 
 namespace Poco
 {
@@ -100,6 +102,23 @@ namespace Burst
 			 * \brief The lambda. 
 			 */
 			Lambda lambda_;
+		};
+
+		class WebsocketRequestHandler : public Poco::Net::HTTPRequestHandler
+		{
+		public:
+			WebsocketRequestHandler(MinerServer& server, MinerData& data);
+			~WebsocketRequestHandler() override;
+			void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) override;
+
+		private:
+			void onNewData(std::string& data);
+
+		private:
+			std::mutex mutex_;
+			MinerServer& server_;
+			MinerData& data_;
+			std::deque<std::string> queue_;
 		};
 
 		/**
@@ -202,16 +221,6 @@ namespace Burst
 		 */
 		void rescanPlotfiles(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
 		                     Miner& miner);
-
-		/**
-		 * \brief Accepts an incoming websocket connection and if established,
-		 * sends the config and all entries from log for the current block.
-		 * \param request The HTTP request.
-		 * \param response The HTTP response.
-		 * \param server The server instance, that will accept and handle the websocket.
-		 */
-		void addWebsocket(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
-						  MinerServer& server);
 
 		/**
 		 * \brief Checks the credentials for a request and compares them with the credentials set in the config file.

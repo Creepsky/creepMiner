@@ -19,7 +19,7 @@ It is designed multi-threaded to reach the best performance.
 - Build a network of several miners with the forwarding feature
 - Watch the status of the miner in your web browser on every device
 
-## Build
+## Build Status
 
 | Platform | Master | Development |
 | -------- | ------ | ----------- |
@@ -28,23 +28,27 @@ It is designed multi-threaded to reach the best performance.
 
 ## Quickstart
 
-### Build
+For Windows and Debian: download and install the [latest release](https://github.com/Creepsky/creepMiner/releases/latest)
 
-- **CPU** (SSE2, SSE4, AVX, AVX2) + **GPU** (OPENCL, CUDA) version:
+For all others:
+1. Install [Python](https://www.python.org/)
+2. Install [Conan](https://conan.io/downloads): `pip install conan`
+3. Install [Poco](https://pocoproject.org/download/index.html): `conan install . -s compiler.libcxx=libstdc++11 --build=missing` (inside the creepMiner root dir)
+4. Create the project by executing one of the following commands
+- **CPU** (SSE2, SSE4, AVX, AVX2) + **GPU** (OPENCL, CUDA) version: 
 ```
 cmake CMakeLists.txt
-make
 ```
 - **CPU only** (SSE2, SSE4, AVX, AVX2) version:
 ```
 cmake CMakeLists.txt -DNO_GPU=ON
-make
 ```
 - **CPU only minimal** (SSE2) version (for example for single-board computers):
 ```
 cmake CMakeLists.txt -DMINIMAL_BUILD=ON
-make
 ```
+5. Make the project `make` (or `make -j <number of cores to use>` for a faster way)
+6. Change your configuration file (located at `~/.creepMiner/<version>/config.json`)
 
 ### Run
 
@@ -55,7 +59,9 @@ make
 
 ## Instructions
 
+- [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ)
 - Compilation & Installation
+    - [**Conan** (recommended for all operating systems)](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-with-Conan)
     - [Windows](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Windows)
     - [Linux](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Linux)
     - [MacOS](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-macOS)

@@ -1,8 +1,0 @@
-.plot-progress {
-  width: 50%;
-  float: right;
-}
-
-.plots >>> .progress-bar-warning {
-  background-color: #2686ad !important;
-}

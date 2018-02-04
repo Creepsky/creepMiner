@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -110,7 +110,7 @@ const std::unordered_map<std::string, Burst::MinerDataChannel*> Burst::MinerLogg
 	return channels_;
 }();
 
-Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel{"startup.log"};
+Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel;
 Poco::FormattingChannel* Burst::MinerLogger::fileFormatter_ = nullptr;
 std::string Burst::MinerLogger::logFileName_ = getFilenameWithtimestamp("creepMiner", "log");
 
@@ -442,7 +442,6 @@ void Burst::MinerLogger::setup()
 	}
 
 	refreshChannels();
-	setLogDir("");
 }
 
 void Burst::MinerLogger::refreshChannels()

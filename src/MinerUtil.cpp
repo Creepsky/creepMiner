@@ -1,7 +1,7 @@
 // ==========================================================================
 // 
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
-// Copyright (C)  2016-2017 Creepsky (creepsky@gmail.com)
+// Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
 // 
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,6 +47,39 @@
 #include <Poco/File.h>
 #include <fstream>
 #include "plots/PlotSizes.hpp"
+#include <chrono>
+
+#if defined(_WIN32)
+#include <Windows.h>
+#include <conio.h>
+#elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/param.h>
+#include <termios.h>
+#if defined(BSD)
+#include <sys/sysctl.h>
+#endif
+
+#endif
+
+// cpuinfo stuff (sse2, sse4, ...)
+#ifdef _WIN32
+//  Windows
+#define cpuid(info, x) __cpuidex(info, x, 0)
+#else
+#ifdef __arm__
+void cpuid(int info[4], int InfoType)
+{}
+#else
+//  GCC Intrinsics
+#include <cpuid.h>
+void cpuid(int info[4], int InfoType)
+{
+	__cpuid_count(InfoType, 0, info[0], info[1], info[2], info[3]);
+}
+#endif
+#endif
 
 bool Burst::isNumberStr(const std::string& str)
 {
@@ -485,9 +518,13 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	
 	if (bestOverall != nullptr)
 		json.set("bestOverall", createJsonDeadline(*bestOverall));
+	else
+		json.set("bestOverall", Poco::JSON::Object());
 
 	if (bestHistorical != nullptr)
 		json.set("bestHistorical", createJsonDeadline(*bestHistorical));
+	else
+		json.set("bestHistorical", Poco::JSON::Object());
 
 	json.set("deadlinesConfirmed", std::to_string(data.getConfirmedDeadlines()));
 	json.set("deadlinesAvg", deadlineFormat(data.getAverageDeadline()));
@@ -736,4 +773,187 @@ std::string Burst::createTruncatedString(const std::string& string, size_t paddi
 	}
 
 	return padded_string;
+}
+
+bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
+{
+	const auto instructionSets = cpuGetInstructionSets();
+
+	switch (cpuInstructionSet)
+	{
+	case sse2: return (instructionSets & sse2) == sse2;
+	case sse4: return (instructionSets & sse4) == sse4;
+	case avx: return (instructionSets & avx) == avx;
+	case avx2: return (instructionSets & avx2) == avx2;
+	default: return false;
+	}
+}
+
+int Burst::cpuGetInstructionSets()
+{
+#if defined __arm__
+	return sse2;
+#elif defined __GNUC__
+	auto instruction_sets = 0;
+
+	if (__builtin_cpu_supports("sse2"))
+		instruction_sets += sse2;
+
+	if (__builtin_cpu_supports("sse4.2"))
+		instruction_sets += sse4;
+
+	if (__builtin_cpu_supports("avx"))
+		instruction_sets += avx;
+
+	if (__builtin_cpu_supports("avx2"))
+		instruction_sets += avx2;
+
+	return instruction_sets;
+#else
+	int info[4];
+	cpuid(info, 0);
+	const auto n_ids = info[0];
+
+	auto has_sse2 = false;
+	auto has_sse4 = false;
+	auto has_avx = false;
+	auto has_avx2 = false;
+
+	//  Detect Features
+	if (n_ids >= 0x00000001)
+	{
+		cpuid(info, 0x00000001);
+		has_sse2 = (info[3] & 1 << 26) != 0;
+		has_sse4 = (info[2] & 1 << 19) != 0 || (info[2] & 1 << 20) != 0;
+		has_avx = (info[2] & 1 << 28) != 0;
+	}
+
+	if (n_ids >= 0x00000007)
+	{
+		cpuid(info, 0x00000007);
+		has_avx2 = (info[1] & (static_cast<int>(1) << 5)) != 0;
+	}
+
+	auto instruction_sets = 0;
+
+	if (has_sse2)
+		instruction_sets += sse2;
+
+	if (has_sse4)
+		instruction_sets += sse4;
+
+	if (has_avx)
+		instruction_sets += avx;
+
+	if (has_avx2)
+		instruction_sets += avx2;
+
+	return instruction_sets;
+#endif
+}
+
+size_t Burst::getMemorySize()
+{
+	/*
+	 * Author:  David Robert Nadeau
+	 * Site:    http://NadeauSoftware.com/
+	 * License: Creative Commons Attribution 3.0 Unported License
+	 *          http://creativecommons.org/licenses/by/3.0/deed.en_US
+	 */
+
+
+#if defined(_WIN32) && (defined(__CYGWIN__) || defined(__CYGWIN32__))
+	/* Cygwin under Windows. ------------------------------------ */
+	/* New 64-bit MEMORYSTATUSEX isn't available.  Use old 32.bit */
+	MEMORYSTATUS status;
+	status.dwLength = sizeof(status);
+	GlobalMemoryStatus(&status);
+	return (size_t)status.dwTotalPhys;
+
+#elif defined(_WIN32)
+	/* Windows. ------------------------------------------------- */
+	/* Use new 64-bit MEMORYSTATUSEX, not old 32-bit MEMORYSTATUS */
+	MEMORYSTATUSEX status;
+	status.dwLength = sizeof(status);
+	GlobalMemoryStatusEx(&status);
+	return (size_t)status.ullTotalPhys;
+
+#elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
+	/* UNIX variants. ------------------------------------------- */
+	/* Prefer sysctl() over sysconf() except sysctl() HW_REALMEM and HW_PHYSMEM */
+
+#if defined(CTL_HW) && (defined(HW_MEMSIZE) || defined(HW_PHYSMEM64))
+	int mib[2];
+	mib[0] = CTL_HW;
+#if defined(HW_MEMSIZE)
+	mib[1] = HW_MEMSIZE;            /* OSX. --------------------- */
+#elif defined(HW_PHYSMEM64)
+	mib[1] = HW_PHYSMEM64;          /* NetBSD, OpenBSD. --------- */
+#endif
+	int64_t size = 0;               /* 64-bit */
+	size_t len = sizeof(size);
+	if (sysctl(mib, 2, &size, &len, NULL, 0) == 0)
+		return (size_t)size;
+	return 0L;			/* Failed? */
+
+#elif defined(_SC_AIX_REALMEM)
+	/* AIX. ----------------------------------------------------- */
+	return (size_t)sysconf(_SC_AIX_REALMEM) * (size_t)1024L;
+
+#elif defined(_SC_PHYS_PAGES) && defined(_SC_PAGESIZE)
+	/* FreeBSD, Linux, OpenBSD, and Solaris. -------------------- */
+	return (size_t)sysconf(_SC_PHYS_PAGES) *
+		(size_t)sysconf(_SC_PAGESIZE);
+
+#elif defined(_SC_PHYS_PAGES) && defined(_SC_PAGE_SIZE)
+	/* Legacy. -------------------------------------------------- */
+	return (size_t)sysconf(_SC_PHYS_PAGES) *
+		(size_t)sysconf(_SC_PAGE_SIZE);
+
+#elif defined(CTL_HW) && (defined(HW_PHYSMEM) || defined(HW_REALMEM))
+	/* DragonFly BSD, FreeBSD, NetBSD, OpenBSD, and OSX. -------- */
+	int mib[2];
+	mib[0] = CTL_HW;
+#if defined(HW_REALMEM)
+	mib[1] = HW_REALMEM;		/* FreeBSD. ----------------- */
+#elif defined(HW_PYSMEM)
+	mib[1] = HW_PHYSMEM;		/* Others. ------------------ */
+#endif
+	unsigned int size = 0;		/* 32-bit */
+	size_t len = sizeof(size);
+	if (sysctl(mib, 2, &size, &len, NULL, 0) == 0)
+		return (size_t)size;
+	return 0L;			/* Failed? */
+#endif /* sysctl and sysconf variants */
+
+#else
+	return 0L;			/* Unknown OS. */
+#endif
+}
+
+// https://stackoverflow.com/questions/1413445/reading-a-password-from-stdcin
+void Burst::setStdInEcho(bool enable)
+{
+#ifdef WIN32
+	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	DWORD mode;
+	GetConsoleMode(hStdin, &mode);
+
+	if (!enable)
+		mode &= ~ENABLE_ECHO_INPUT;
+	else
+		mode |= ENABLE_ECHO_INPUT;
+
+	SetConsoleMode(hStdin, mode);
+
+#else
+	struct termios tty;
+	tcgetattr(STDIN_FILENO, &tty);
+	if (!enable)
+		tty.c_lflag &= ~ECHO;
+	else
+		tty.c_lflag |= ECHO;
+
+	(void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+#endif
 }

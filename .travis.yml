@@ -1,24 +1,83 @@
 language: cpp
-sudo: true
-dist: trusty
-compiler: gcc
-env: CXX=g++-5 CXXFLAGS="-std=c++14"
-os: linux
-group: stable
-cache:
-  directories:
-  - $TRAVIS_BUILD_DIR/poco-1.7.8p3-all
+sudo: false
 before_install:
-- if [ "$(ls -A poco-1.7.8p3-all)" ]; then cd poco-1.7.8p3-all && sudo ldconfig && sudo make install; else ./install-poco.sh; fi
-install:
-- if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - g++-5
-script: 
-- cd $TRAVIS_BUILD_DIR/
-- cmake CMakeLists.txt -DCMAKE_BUILD_TYPE=Release -DNO_GPU=ON
-- make
+- eval "${MATRIX_EVAL}"
+matrix:
+  fast_finish: true
+  include:
+#  - os: osx
+#    compiler: clang
+#    script:
+#    - conan install . --build=missing
+#    - cmake . -DNO_GPU=ON
+#    - make -j$(nproc)
+#    env:
+#    - NAME="osx clang" MATRIX_EVAL="brew install conan"
+#    cache:
+#      directories:
+#      - "$HOME/.conan"
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-5
+        - rpm
+    env:
+    - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+    script:
+    - pip install conan --user
+    - conan install . --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
+    - make package
+    cache:
+      directories:
+      - "$HOME/.conan"
+    deploy:
+      provider: releases
+      skip_cleanup: true
+      file_glob: true
+      file:
+      - "*.deb"
+      - "*.tar.gz"
+      on:
+        tags: true
+      api_key:
+        secure: xs3GCmymdo/fo46+ELma466ZdnYtYnQtV68EE3wbhXJD1Kc4Wq+rRiHXIpR+fhWhDFsbaiM0KIhjbMwwmphnXOhcVXvcufxqtvMxEySWx9uPOsIQ+LoeElmiU4AmmnEerVOEYDACj//KianI6Zm70PIwUBYGBaW41x97jhe4WLoQdKPj/ORsEGh/oZtJfI05qXzW1UdF6labSD/4jcx6CEsiFFCAh7EeAZjB0rhqfknp1IGn3N1G+rN43zYgMs9D3ww9PRDZdGlMqYk4cJglCQQAqQa0I71LtNcgkKNxfh4JBz8qyHRrTPr4tQXhtz9IPrQFLmSKtCvTJjjmUZ5RE2FqhVPXxswBKEv43tsDklqDt/qGjlcuMZwnn3c18R2gkBx2kXpyie6ujXIxrWaiao6Mp+OS2knzb5ebI4fqj6G8+mwQNheuR5qcmnZVfgv6CyCLxVgIOZEGaq6TBS9+6FiP6pqpKP3ySM/etmQB8GwDz53aUYirykL7sjunYMxiqf7T6XSwqHiZJWZUVZVPNxhEft2BVaxwhCf78KasZd0tzFfsEb0NM8vfKSAkj4zTdYTW3it6iSjH30PJbOjDuYSMC1Aje/T5q8JnPXJcIB2/i1BkAp37VXgC6ebOT/cSQsliVptzZx4ZXjuIN8zkuf6ka6NYNKVYOFRv5pChJoc=
+      branch: master
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-6
+    env:
+    - NAME="linux g++-6" MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+    script:
+    - pip install conan --user
+    - conan install . --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
+    cache:
+      directories:
+      - "$HOME/.conan"
+  - os: linux
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-7
+    env:
+    - NAME="linux g++-7" - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+    script:
+    - pip install conan --user
+    - conan install . --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
+    cache:
+      directories:
+      - "$HOME/.conan"
