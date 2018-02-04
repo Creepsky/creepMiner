@@ -241,4 +241,3 @@ elseif (WIN32)
 	set(CPACK_NSIS_MENU_LINKS "creepMiner.exe" "creepMiner")
 	include(CPack)
 endif ()
-

@@ -45,37 +45,27 @@
 #include <Poco/Util/Validator.h>
 #include <Poco/FileStream.h>
 #include <Poco/File.h>
-#include "setup.hpp"
 #include <Poco/DirectoryIterator.h>
 #include <regex>
 
-class SSLInitializer
+class SslInitializer
 {
 public:
-	SSLInitializer()
-	{
-		Poco::Net::initializeSSL();
-	}
-
-	~SSLInitializer()
-	{
-		Poco::Net::uninitializeSSL();
-	}
+	SslInitializer();
+	~SslInitializer();
 };
 
 struct Arguments
 {
 	Arguments();
-	bool process(const int argc, const char* argv[]);
+	bool process(int argc, const char* argv[]);
 	
 	bool helpRequested = false;
-	bool setupRequested = false;
 	std::string confPath = "mining.conf";
 
 private:
 	void displayHelp(const std::string& name, const std::string& value);
 	void setConfPath(const std::string& name, const std::string& value);
-	void setup(const std::string& name, const std::string& value);
 
 private:
 	Poco::Util::OptionSet options_;
@@ -102,7 +92,7 @@ int main(const int argc, const char* argv[])
 	// ..and start it in its own thread
 	//Poco::ThreadPool::defaultPool().start(*messageDispatcher);
 
-	auto general = &Poco::Logger::get("general");
+	const auto general = &Poco::Logger::get("general");
 	
 #ifdef NDEBUG
 	std::string mode = "Release";
@@ -137,7 +127,7 @@ int main(const int argc, const char* argv[])
 		using namespace Poco;
 		using namespace Net;
 		
-		SSLInitializer sslInitializer;
+		SslInitializer sslInitializer;
 		HTTPSStreamFactory::registerFactory();
 
 		const SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
@@ -187,7 +177,6 @@ int main(const int argc, const char* argv[])
 		{
 			// load the config
 			auto configLoaded = Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath);
-			auto configCreated = false;
 
 			// the config could not be loaded, look for a config in the creepMiner home dir
 			if (!configLoaded)
@@ -227,8 +216,6 @@ int main(const int argc, const char* argv[])
 						{
 							throw std::runtime_error(format("Could not create default config %s!", homeConfig));
 						}
-
-						configCreated = true;
 					}
 
 					// create the log dir
@@ -249,16 +236,7 @@ int main(const int argc, const char* argv[])
 			{
 				log_information(general, "Config file loaded: %s", Burst::MinerConfig::getConfig().getPath());
 
-				if (arguments.setupRequested || configCreated)
-				{
-					if (!Burst::Setup::setup(Burst::MinerConfig::getConfig(),
-					                         configCreated ? Burst::Setup::everything : Burst::Setup::userInput))
-					{
-						log_warning(general, "Error while setting up!");
-						return EXIT_FAILURE;
-					}
-				}
-				
+
 				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL" &&
 					!Burst::MinerCL::getCL().initialized())
 					Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
@@ -316,6 +294,16 @@ int main(const int argc, const char* argv[])
 	return 0;
 }
 
+SslInitializer::SslInitializer()
+{
+	Poco::Net::initializeSSL();
+}
+
+SslInitializer::~SslInitializer()
+{
+	Poco::Net::uninitializeSSL();
+}
+
 Arguments::Arguments()
 {
 	using Poco::Util::Option;
@@ -330,11 +318,6 @@ Arguments::Arguments()
 		.repeatable(false)
 		.argument("path")
 		.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::setConfPath)));
-
-	options_.addOption(Option("setup", "s", "Set up the miner")
-		.required(false)
-		.repeatable(false)
-		.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::setup)));
 }
 
 bool Arguments::process(const int argc, const char* argv[])
@@ -391,11 +374,6 @@ void Arguments::displayHelp(const std::string& name, const std::string& value)
 void Arguments::setConfPath(const std::string& name, const std::string& value)
 {
 	confPath = value;
-}
-
-void Arguments::setup(const std::string& name, const std::string& value)
-{
-	setupRequested = true;
 }
 
 bool importOldConfig(const std::string& directory, const std::string& newConfigFilePath)
