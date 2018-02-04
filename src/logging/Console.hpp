@@ -23,8 +23,8 @@
 
 #include "channels/ColoredPriorityConsoleChannel.hpp"
 #include <mutex>
-#include <memory>
-#include <iostream>
+#include <string>
+#include <functional>
 #include <Poco/Format.h>
 
 namespace Burst
@@ -71,7 +71,6 @@ namespace Burst
 		 * \brief Constructor.
 		 * Locks the console mutex.
 		 * \param stream The output stream.
-		 * \param mutex The console mutex.
 		 */
 		explicit PrintBlock(std::ostream& stream);
 
