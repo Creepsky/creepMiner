@@ -60,7 +60,6 @@ cmake CMakeLists.txt -DMINIMAL_BUILD=ON
 ## Instructions
 
 - [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ)
-
 - Compilation & Installation
     - [**Conan** (recommended for all operating systems)](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-with-Conan)
     - [Windows](https://github.com/Creepsky/creepMiner/wiki/Compilation-&-Installation-on-Windows)
