@@ -30,6 +30,10 @@ It is designed multi-threaded to reach the best performance.
 
 For Windows and Debian: download and install the [latest release](https://github.com/Creepsky/creepMiner/releases/latest)
 
+The install dir for Linux is `/opt/creepMiner-{version}`.
+
+The home dir for Linux is `~/.creepMiner/{version}`, for Windows `C:\Users\You\.creepMiner\{version}`.
+
 For all others:
 1. Install [Python](https://www.python.org/)
 2. Install [Conan](https://conan.io/downloads): `pip install conan`
@@ -53,7 +57,7 @@ cmake CMakeLists.txt -DMINIMAL_BUILD=ON
 ### Run
 
 1. Follow the [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) documentation.
-2. Start the mining with `./bin/run.sh` or in a detached `screen` by `./bin/screen.sh`.
+2. Start the mining with `./run.sh` or in a detached `screen` by `./screen.sh`.
 3. To enter the screen attach by `screen -r creep`.
 4. To detach the screen use the keyboard shortcut `CTRL + A + D`.
 
