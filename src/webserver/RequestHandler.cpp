@@ -41,14 +41,15 @@
 #include <Poco/Net/HTMLForm.h>
 #include "plots/PlotGenerator.hpp"
 #include <regex>
+#include <utility>
 #include <Poco/Net/NetException.h>
 #include <Poco/Delegate.h>
 
-const std::string COOKIE_USER_NAME = "creepminer-webserver-user";
-const std::string COOKIE_PASS_NAME = "creepminer-webserver-pass";
+const std::string cookieUserName = "creepminer-webserver-user";
+const std::string cookiePassName = "creepminer-webserver-pass";
 
 Burst::TemplateVariables::TemplateVariables(std::unordered_map<std::string, Variable> variables)
-	: variables(variables)
+	: variables(std::move(variables))
 {}
 
 void Burst::TemplateVariables::inject(std::string& source) const
@@ -126,15 +127,13 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 		
 		char buffer[1024];
 		int flags;
-		auto n = 0;
 		auto close = false;
 		ws.setReceiveTimeout(Timespan{10000}); // 10 ms
 		do
 		{
 			try
 			{
-				n = ws.receiveFrame(buffer, sizeof buffer, flags);
-				close = n == 0;
+				close = ws.receiveFrame(buffer, sizeof buffer, flags) == 0;
 			}
 			catch (TimeoutException&)
 			{
@@ -251,11 +250,11 @@ bool Burst::RequestHandler::loadAssetByPath(Poco::Net::HTTPServerRequest& reques
 	{
 		Poco::Path pathObject{ "public/" + path };
 		Poco::FileInputStream file{ pathObject.toString(), std::ios::in };
-		std::string str(std::istreambuf_iterator<char>{file}, {});
+		const std::string str(std::istreambuf_iterator<char>{file}, {});
 
 		std::string mimeType = "text/plain";
 
-		auto ext = pathObject.getExtension();
+		const auto ext = pathObject.getExtension();
 
 		if (ext == "css")
 			mimeType = "text/css";
@@ -291,8 +290,8 @@ namespace Burst
 {
 	void clearAuthCookies(Poco::Net::HTTPServerResponse& response)
 	{
-		Poco::Net::HTTPCookie cookieUser(COOKIE_USER_NAME);
-		Poco::Net::HTTPCookie cookiePass(COOKIE_PASS_NAME);
+		Poco::Net::HTTPCookie cookieUser(cookieUserName);
+		Poco::Net::HTTPCookie cookiePass(cookiePassName);
 
 		cookieUser.setMaxAge(0);
 		cookiePass.setMaxAge(0);
@@ -306,19 +305,19 @@ bool Burst::RequestHandler::login(Poco::Net::HTTPServerRequest& request, Poco::N
 {
 	Poco::Net::HTMLForm post_body(request, request.stream());
 
-	const std::string defaultCredential = "";
-	const auto& plainUserPost = post_body.get(COOKIE_USER_NAME, defaultCredential);
-	const auto& plainPassPost = post_body.get(COOKIE_PASS_NAME, defaultCredential);
+	const std::string defaultCredential;
+	const auto& plainUserPost = post_body.get(cookieUserName, defaultCredential);
+	const auto& plainPassPost = post_body.get(cookiePassName, defaultCredential);
 
-	auto credentialsOk =
-		check_HMAC_SHA1(plainUserPost, MinerConfig::getConfig().getServerUser(), MinerConfig::WebserverUserPassphrase) &&
-		check_HMAC_SHA1(plainPassPost, MinerConfig::getConfig().getServerPass(), MinerConfig::WebserverPassPassphrase);
+	const auto credentialsOk =
+		check_HMAC_SHA1(plainUserPost, MinerConfig::getConfig().getServerUser(), MinerConfig::webserverUserPassphrase) &&
+		check_HMAC_SHA1(plainPassPost, MinerConfig::getConfig().getServerPass(), MinerConfig::webserverPassPassphrase);
 
 	// save the hashed username and password in a clientside cookie
 	if (credentialsOk)
 	{
-		response.addCookie({ COOKIE_USER_NAME, hash_HMAC_SHA1(plainUserPost, MinerConfig::WebserverUserPassphrase) });
-		response.addCookie({ COOKIE_PASS_NAME, hash_HMAC_SHA1(plainPassPost, MinerConfig::WebserverPassPassphrase) });
+		response.addCookie({ cookieUserName, hash_HMAC_SHA1(plainUserPost, MinerConfig::webserverUserPassphrase) });
+		response.addCookie({ cookiePassName, hash_HMAC_SHA1(plainPassPost, MinerConfig::webserverPassPassphrase) });
 	}
 
 	return credentialsOk;
@@ -345,10 +344,10 @@ bool Burst::RequestHandler::isLoggedIn(Poco::Net::HTTPServerRequest& request)
 	Poco::Net::NameValueCollection cookies;
 	request.getCookies(cookies);
 	//
-	const std::string emptyValue = "";
+	const std::string emptyValue;
 
-	auto hashedUserCookie = cookies.get(COOKIE_USER_NAME, emptyValue);
-	auto hashedPassCookie = cookies.get(COOKIE_PASS_NAME, emptyValue);
+	auto hashedUserCookie = cookies.get(cookieUserName, emptyValue);
+	auto hashedPassCookie = cookies.get(cookiePassName, emptyValue);
 
 	if (!hashedUserCookie.empty() || !hashedPassCookie.empty())
 		credentialsOk =
@@ -533,56 +532,24 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 	try
 	{
-		std::string plotsHash = "";
-		Poco::UInt64 capacity = 0;
-
-		if (request.has(X_Capacity))
-			capacity = Poco::NumberParser::parseUnsigned64(request.get(X_Capacity));
-
-		try
-		{
-			if (request.has(X_PlotsHash))
-			{
-				if (MinerConfig::getConfig().isCumulatingPlotsizes())
-				{
-					const auto plotsHashEncoded = request.get(X_PlotsHash);
-					Poco::URI::decode(plotsHashEncoded, plotsHash);
-
-					PlotSizes::set(plotsHash, capacity);
-					
-					// send new settings to websockets
-					server.sendToWebsockets(createJsonConfig());
-				}
-			}
-		}
-		catch (Poco::Exception&)
-		{
-			log_debug(MinerLogger::server, "The X-PlotsHash from the other miner is not a number! %s", request.get(X_PlotsHash));
-		}
-
 		auto miningInfoOk = false;
 
 		while (!miningInfoOk)
 		{
-			try
-			{
-				miner.getGensig();
+			if (miner.hasBlockData())
 				miningInfoOk = true;
-			}
-			catch (...)
-			{
+			else
 				std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			}
 		}
 
-		Poco::URI uri{ request.getURI() };
-
+		Poco::URI uri{request.getURI()};
+		Poco::UInt64 capacity = 0;
 		Poco::UInt64 accountId = 0;
 		Poco::UInt64 nonce = 0;
 		Poco::UInt64 deadline = 0;
-		std::string plotfile = "";
+		std::string plotfile;
 		Poco::UInt64 blockheight = 0;
-		std::string minerName = "";
+		std::string minerName;
 
 		for (const auto& param : uri.getQueryParameters())
 		{
@@ -596,12 +563,15 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 				deadline = Poco::NumberParser::parseUnsigned64(param.second) / miner.getBaseTarget();
 		}
 
+		if (request.has(X_Capacity))
+			capacity = Poco::NumberParser::parseUnsigned64(request.get(X_Capacity));
+
 		if (request.has(X_Plotfile))
 		{
-			const auto plotfileEncoded = request.get(X_Plotfile);
+			const auto& plotfileEncoded = request.get(X_Plotfile);
 			Poco::URI::decode(plotfileEncoded, plotfile);
 		}
-
+		
 		if (request.has(X_Deadline))
 			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
 
@@ -611,7 +581,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			account = std::make_shared<Account>(accountId);
 
 		if (plotfile.empty())
-			plotfile = !plotsHash.empty() ? plotsHash : "unknown";
+			plotfile = "unknown";
 		
 		if (blockheight == 0)
 			blockheight = miner.getBlockheight();
@@ -634,6 +604,9 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			numberToString(blockheight), plotfile
 		);
 
+		if (MinerConfig::getConfig().isCumulatingPlotsizes())
+			PlotSizes::set(request.clientAddress().host(), capacity, false);
+
 		if (blockheight != miner.getBlockheight())
 		{
 			const auto responseString = Poco::format(
@@ -647,9 +620,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		}
 		else if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
-			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline,
-				miner.getBlockheight(), plotfile, false, minerName, capacity);
-
+			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline, miner.getBlockheight(), plotfile, false,
+			                                             minerName, capacity);
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setContentLength(forwardResult.json.size());
 			auto& responseData = response.send();
@@ -658,7 +630,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		else
 		{
 			// sum up the capacity
-			request.set("X-Capacity", std::to_string(PlotSizes::getTotal()));
+			request.set("X-Capacity", std::to_string(PlotSizes::getTotal(PlotSizes::Type::Combined)));
 
 			// forward the request to the pool
 			forward(request, response, HostType::Pool);

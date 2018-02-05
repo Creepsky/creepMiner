@@ -571,7 +571,7 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("miningInfoUrlPort", std::to_string(MinerConfig::getConfig().getMiningInfoUrl().getPort()));
 	json.set("walletUrl", MinerConfig::getConfig().getWalletUrl().getCanonical(true));
 	json.set("walletUrlPort", std::to_string(MinerConfig::getConfig().getWalletUrl().getPort()));
-	json.set("totalPlotSize", memToString(PlotSizes::getTotal() * 1024 * 1024 * 1024, 2));
+	json.set("totalPlotSize", memToString(PlotSizes::getTotal(PlotSizes::Type::Combined) * 1024 * 1024 * 1024, 2));
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	json.set("bufferSize", memToString(MinerConfig::getConfig().getMaxBufferSize(), 0));
 	json.set("bufferSizeRaw", std::to_string(MinerConfig::getConfig().getMaxBufferSizeRaw()));

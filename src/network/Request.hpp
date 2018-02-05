@@ -34,7 +34,6 @@ namespace Burst
 {
 	const std::string X_Plotfile = "X-Plotfile";
 	const std::string X_Deadline = "X-Deadline";
-	const std::string X_PlotsHash = "X-PlotsHash";
 	const std::string X_Capacity = "X-Capacity";
 	const std::string X_Miner = "X-Miner";
 

@@ -22,14 +22,15 @@
 #include "Deadline.hpp"
 #include "MinerUtil.hpp"
 #include <algorithm>
+#include <utility>
 #include "nxt/nxt_address.h"
 #include "wallet/Account.hpp"
 #include "MinerData.hpp"
 #include "plots/PlotSizes.hpp"
 
-Burst::Deadline::Deadline(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile,
-                          Deadlines* parent)
-	: account_(account),
+Burst::Deadline::Deadline(const Poco::UInt64 nonce, const Poco::UInt64 deadline, std::shared_ptr<Account> account,
+                          const Poco::UInt64 block, std::string plotFile, Deadlines* parent)
+	: account_(std::move(account)),
 	  block_(block),
 	  nonce_(nonce),
 	  deadline_(deadline),
@@ -98,7 +99,7 @@ std::string Burst::Deadline::getMiner() const
 
 Poco::UInt64 Burst::Deadline::getTotalPlotsize() const
 {
-	return plotsize_ == 0 ? PlotSizes::getTotal() : plotsize_;
+	return plotsize_ == 0 ? PlotSizes::getTotal(PlotSizes::Type::Combined) : plotsize_;
 }
 
 void Burst::Deadline::setDeadline(Poco::UInt64 deadline)
@@ -114,7 +115,7 @@ void Burst::Deadline::setMiner(const std::string& miner)
 	minerName_ = miner;
 }
 
-void Burst::Deadline::setTotalPlotsize(Poco::UInt64 plotsize)
+void Burst::Deadline::setTotalPlotsize(const Poco::UInt64 plotsize)
 {
 	plotsize_ = plotsize;
 }
@@ -124,10 +125,9 @@ bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const
 	return getDeadline() < rhs.getDeadline();
 }
 
-Burst::Deadline::~Deadline()
-{}
+Burst::Deadline::~Deadline() = default;
 
-void Burst::Deadline::found(bool tooHigh)
+void Burst::Deadline::found(const bool tooHigh)
 {
 	if (parent_ != nullptr)
 		parent_->deadlineEvent(this->shared_from_this(), std::string("nonce found") + (tooHigh ? " (too high)" : + ""));
@@ -192,10 +192,10 @@ bool Burst::Deadlines::confirm(Nonce nonce)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	auto iter = std::find_if(deadlines_.begin(), deadlines_.end(), [nonce](std::shared_ptr<Deadline> dl)
-							 {
-								 return dl->getNonce() == nonce;
-							 });
+	const auto iter = std::find_if(deadlines_.begin(), deadlines_.end(), [nonce](std::shared_ptr<Deadline> dl)
+	{
+		return dl->getNonce() == nonce;
+	});
 
 	if (iter == deadlines_.end())
 		return false;
@@ -209,10 +209,12 @@ bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, Poco::UInt64 bl
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
 
-	auto iter = std::find_if(deadlines_.begin(), deadlines_.end(), [nonce, accountId, block](std::shared_ptr<Deadline> dl)
-	                         {
-		                         return dl->getNonce() == nonce && dl->getAccountId() == accountId && dl->getBlock() == block;
-	                         });
+	const auto iter = std::find_if(deadlines_.begin(), deadlines_.end(),
+	                               [nonce, accountId, block](std::shared_ptr<Deadline> dl)
+	                               {
+		                               return dl->getNonce() == nonce && dl->getAccountId() == accountId && dl->getBlock() ==
+			                               block;
+	                               });
 
 	if (iter == deadlines_.end())
 		return false;
@@ -258,13 +260,13 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestSent() const
 	return nullptr;
 }
 
-void Burst::Deadlines::deadlineEvent(std::shared_ptr<Deadline> deadline, const std::string& type) const
+void Burst::Deadlines::deadlineEvent(const std::shared_ptr<Deadline>& deadline, const std::string& type) const
 {
 	if (parent_ != nullptr)
 		parent_->addBlockEntry(createJsonDeadline(*deadline, type));
 }
 
-void Burst::Deadlines::deadlineConfirmed(std::shared_ptr<Deadline> deadline) const
+void Burst::Deadlines::deadlineConfirmed(const std::shared_ptr<Deadline>& deadline) const
 {
 	if (parent_ != nullptr)
 		parent_->confirmedDeadlineEvent(deadline);

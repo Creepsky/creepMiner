@@ -156,7 +156,7 @@ namespace Burst
 		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		unsigned getMiningIntensity(bool real = true) const;
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
-		const std::string& getPlotsHash() const;
+		//const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		bool useInsecurePlotfiles() const;
 		bool isLogfileUsed() const;
@@ -240,12 +240,12 @@ namespace Burst
 		/**
 		 * \brief The passphrase, used by the webserver to hash (hmac) the username.
 		 */
-		static const std::string WebserverUserPassphrase;
+		static const std::string webserverUserPassphrase;
 
 		/**
 		 * \brief The passphrase, used by the webserver to hash (hmac) the password.
 		 */
-		static const std::string WebserverPassPassphrase;
+		static const std::string webserverPassPassphrase;
 
 		/**
 		 * \brief Returns the singleton-instance of the configuration.
@@ -255,14 +255,14 @@ namespace Burst
 		
 	private:
 		static Poco::JSON::Object::Ptr readOutput(Poco::JSON::Object::Ptr json);
-		static const std::string HASH_DELIMITER;
+		static const std::string hashDelimiter;
 
 		std::string configPath_;
 		std::vector<std::shared_ptr<PlotDir>> plotDirs_;
 		float timeout_ = 45.f;
-		unsigned send_max_retry_ = 3;
-		unsigned receive_max_retry_ = 3;
-		unsigned submission_max_retry_ = 10;
+		unsigned sendMaxRetry_ = 3;
+		unsigned receiveMaxRetry_ = 3;
+		unsigned submissionMaxRetry_ = 10;
 		unsigned http_ = 1;
 		std::string confirmedDeadlinesPath_ = "";
 		Url urlPool_;

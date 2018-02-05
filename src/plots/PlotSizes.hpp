@@ -21,39 +21,48 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <unordered_map>
+#include <map>
 #include <Poco/Mutex.h>
+#include <Poco/Net/IPAddress.h>
 
 namespace Burst
 {
 	class PlotSizes
 	{
 	public:
+		enum class Type
+		{
+			Local,
+			Remote,
+			Combined
+		};
+
+	public:
 		~PlotSizes() = delete;
 
 		/**
 		 * \brief Sets or adds the size of all plot files of a miner.
-		 * \param plotsHash The id of the miner.
+		 * \param ip The id of the miner.
 		 * \param size The size of all plot files.
+		 * \param local True, if the plot sizes belongs to the local computer.
 		 */
-		static void set(const std::string& plotsHash, Poco::UInt64 size);
+		static void set(const Poco::Net::IPAddress& ip, Poco::UInt64 size, bool local);
 
 		/**
 		 * \brief Gets the sum size of all plot files of one miner in the cluster.
-		 * \param plotsHash The id of the miner.
+		 * \param ip The id of the miner.
 		 * \return The amount of plot size in GB (0 if the miner is not in the cluster).
 		 */
-		static Poco::UInt64 get(const std::string& plotsHash);
+		static Poco::UInt64 get(const Poco::Net::IPAddress& ip);
 
 		/**
 		 * \brief Gets the sum size of all plot files from all miners in the cluster.
+		 * \param type Filters the size.
 		 * \param maxAge Only count sizes that were updated in the last maxAge rounds.
 		 * If 0, all sizes are summed up.
 		 * \return The total amount of plot size in GB.
 		 */
-		static Poco::UInt64 getTotal(Poco::UInt64 maxAge = 10);
+		static Poco::UInt64 getTotal(Type type, Poco::UInt64 maxAge = 10);
 
 		/**
 		 * \brief Adds one round to all plots sizes.
@@ -63,18 +72,19 @@ namespace Burst
 
 		/**
 		 * \brief Resets the age of a the plots size of a miner.
-		 * \param plotsHash The id of the miner.
+		 * \param ip The id of the miner.
 		 */
-		static void refresh(const std::string& plotsHash);
+		static void refresh(const Poco::Net::IPAddress& ip);
 
 	private:
 		struct HistoricalPlotSize
 		{
 			Poco::UInt64 size = 0;
 			Poco::UInt64 age = 0;
+			bool local = false;
 		};
 
 		static Poco::Mutex mutex_;
-		static std::unordered_map<std::string, HistoricalPlotSize> sizes_;
+		static std::map<Poco::Net::IPAddress, HistoricalPlotSize> sizes_;
 	};
 }

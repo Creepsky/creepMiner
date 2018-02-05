@@ -99,17 +99,12 @@ Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 	if (!MinerConfig::getConfig().getPassphrase().empty())
 		uri.addQueryParameter("secretPhrase", MinerConfig::getConfig().getPassphrase());
 	
-	std::string plotFileStr, plotsHashStr;
-
-	const auto plotFileStrDecoded = deadline.getPlotFile();
-	const auto plotsHashStrDecoded = MinerConfig::getConfig().getConfig().getPlotsHash();
-
+	std::string plotFileStr;
+	const auto& plotFileStrDecoded = deadline.getPlotFile();
 	Poco::URI::encode(plotFileStrDecoded, "", plotFileStr);
-	Poco::URI::encode(plotsHashStrDecoded, "", plotsHashStr);
 
 	HTTPRequest request{HTTPRequest::HTTP_POST, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
 	request.set(X_Capacity, std::to_string(deadline.getTotalPlotsize()));
-	request.set(X_PlotsHash, plotsHashStr);
 	request.set(X_Miner, deadline.getMiner());
 	request.set(X_Deadline, std::to_string(deadline.getDeadline()));
 	request.set(X_Plotfile, plotFileStr);

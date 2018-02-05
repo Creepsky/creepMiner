@@ -328,7 +328,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	progressVerify_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
 
 	PlotSizes::nextRound();
-	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
+	PlotSizes::refresh(Poco::Net::IPAddress{"127.0.0.1"});
 	startPoint_ = std::chrono::high_resolution_clock::now();
 
 	addPlotReadNotifications();
@@ -378,6 +378,11 @@ Poco::UInt64 Burst::Miner::getBaseTarget() const
 Poco::UInt64 Burst::Miner::getBlockheight() const
 {
 	return data_.getCurrentBlockheight();
+}
+
+bool Burst::Miner::hasBlockData() const
+{
+	return data_.getBlockData() != nullptr;
 }
 
 Poco::UInt64 Burst::Miner::getScoopNum() const

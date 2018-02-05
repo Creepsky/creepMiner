@@ -59,6 +59,7 @@ namespace Burst
 		void addPlotReadNotifications(bool wakeUpCall = false);
 		bool wantRestart() const;
 
+		bool hasBlockData() const;
 		Poco::UInt64 getScoopNum() const;
 		Poco::UInt64 getBaseTarget() const;
 		Poco::UInt64 getBlockheight() const;
