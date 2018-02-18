@@ -40,14 +40,21 @@ add_definitions(-DVERSION_MAJOR=${VERSION_MAJOR}
 				-DVERSION_MINOR=${VERSION_MINOR}
 				-DVERSION_BUILD=${VERSION_BUILD})
 
-# init conan
-if (CONAN_DEBUG)
-	include(conan/debug/conanbuildinfo.cmake)
-else ()
-	include(conanbuildinfo.cmake)
-endif ()
+##################################################################
+# using Conan for dependencies
+##################################################################
+option(USE_CONAN "If ON, Conan will be used to satisfy OpenSSL,POCO,and zlib dependency" ON)
 
-conan_basic_setup()
+if (USE_CONAN)
+  # init conan
+  if (CONAN_DEBUG)
+    include(conan/debug/conanbuildinfo.cmake)
+  else ()
+    include(conanbuildinfo.cmake)
+  endif ()
+
+  conan_basic_setup()
+endif ()
 
 ##################################################################
 # CPU architecture (only for Unix/Mac)
