@@ -190,6 +190,11 @@ endif ()
 ##################################################################
 target_link_libraries(creepMiner ${CONAN_LIBS})
 
+if (NOT USE_CONAN)
+  find_package(Poco REQUIRED Foundation Util Net Crypto NetSSL)
+  target_link_libraries(creepMiner ${Poco_LIBRARIES})
+endif()
+
 if (USE_OPENCL)
 	target_link_libraries(creepMiner ${OpenCL_LIBRARY})
 endif ()
