@@ -584,6 +584,39 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			// combining all plotfiles to lists of plotfiles on the same device
 			recalculatePlotsHash();
 		}
+        
+        // total plot size
+		{
+			auto totalPS = miningObj->get("accountTotalPlotsize");
+
+			if (!totalPS.isEmpty())
+			{
+				if (totalPS > (float) getTotalPlotsize() / 1024.f / 1024.f / 1024.f / 1024.f)
+                    setAccountTotalPlotsize( static_cast<float>(totalPS) );
+                else
+                    setAccountTotalPlotsize( (float) getTotalPlotsize() / 1024.f / 1024.f / 1024.f / 1024.f );
+			}
+			else
+			{
+				miningObj->set("accountTotalPlotsize", (float) getTotalPlotsize() / 1024.f / 1024.f / 1024.f / 1024.f);
+				setAccountTotalPlotsize( (float) getTotalPlotsize() / 1024.f / 1024.f / 1024.f / 1024.f );
+			}
+		}
+
+        // submit probability
+		{
+			auto submitProbability = miningObj->get("submitProbability");
+
+			if (!submitProbability.isEmpty())
+			{
+				setSubmitProbability( static_cast<float>(submitProbability) );
+			}
+			else
+			{
+				miningObj->set("submitProbability", 0.999);
+				setSubmitProbability( 0.999f );
+			}
+		}
 
 		// target deadline
 		{
@@ -864,6 +897,24 @@ float Burst::MinerConfig::getTimeout() const
 	return timeout_;
 }
 
+float Burst::MinerConfig::getAccountTotalPlotSize() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return accountTotalPlotsize_;
+}
+
+float Burst::MinerConfig::getTargetDLFactor() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return targetDLFactor_;
+}
+
+float Burst::MinerConfig::getSubmitProbability() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return submitProbability_;
+}
+
 Burst::Url Burst::MinerConfig::getPoolUrl() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
@@ -1128,6 +1179,26 @@ void Burst::MinerConfig::setTimeout(float value)
 	timeout_ = value;
 }
 
+void Burst::MinerConfig::setAccountTotalPlotsize(float totalPS)
+{
+	if (totalPS <= 0)
+		accountTotalPlotsize_ = 0;
+    else
+        accountTotalPlotsize_ = totalPS;
+}
+
+void Burst::MinerConfig::setSubmitProbability(float subP)
+{
+	if (subP < 0)
+		submitProbability_ = 0;
+	else if (subP >=0.999999f)
+		submitProbability_ = 0.999999f;
+    else
+        submitProbability_ = subP;
+
+    targetDLFactor_ = -log( 1.0f - submitProbability_ ) * 240.0f;
+}
+
 void Burst::MinerConfig::setTargetDeadline(const std::string& target_deadline, TargetDeadlineType type)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
@@ -1283,6 +1354,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		mining.set("maxBufferSizeMB", maxBufferSizeMB_);
 		mining.set("maxPlotReaders", maxPlotReaders_);
 		mining.set("submissionMaxRetry", submission_max_retry_);
+        mining.set("accountTotalPlotsize", 0);   
+        mining.set("submitProbability", submitProbability_);    
 		mining.set("targetDeadline", deadlineFormat(targetDeadline_));
 		mining.set("timeout", static_cast<Poco::UInt64>(timeout_));
 		mining.set("walletRequestRetryWaitTime", walletRequestRetryWaitTime_);
