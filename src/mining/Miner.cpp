@@ -303,8 +303,6 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 		const float difficultyFl = block->getDifficultyFloat();
 		const float tarDLFac = MinerConfig::getConfig().getTargetDLFactor();
 		float totAccPlotsize = static_cast<float>( PlotSizes::getTotalBytes(PlotSizes::Type::Combined) ) / 1024.f / 1024.f / 1024.f / 1024.f;
-
-		std::cout << " total Plot Size: " << totAccPlotsize << std::endl;
 		Poco::UInt64 blockTargetDeadline;
 		if (totAccPlotsize > 0)
 			blockTargetDeadline = tarDLFac * difficultyFl / totAccPlotsize;
