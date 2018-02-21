@@ -24,7 +24,6 @@
 #include <map>
 #include <Poco/Mutex.h>
 #include <Poco/Net/IPAddress.h>
-#include <iostream>
 
 namespace Burst
 {
