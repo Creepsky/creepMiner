@@ -299,6 +299,24 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 		const auto difficultyDifference = data_.getDifficultyDifference();
 		std::string diffiultyDifferenceToString;
 
+
+        const float difficultyFl = block->getDifficultyFloat();
+        const float tarDLFac = MinerConfig::getConfig().getTargetDLFactor();
+        const float totAccPlotsize = MinerConfig::getConfig().getAccountTotalPlotSize();
+        Poco::UInt64 blockTargetDeadline;
+        if (totAccPlotsize > 0)
+            blockTargetDeadline = tarDLFac * difficultyFl / totAccPlotsize;
+        else
+            blockTargetDeadline = 8000000000;
+        // Calculate targetDL for this round if a submitProbability is given
+        if (MinerConfig::getConfig().getSubmitProbability() > 0.) 
+        {
+            if( blockTargetDeadline < MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool) )
+                MinerConfig::getConfig().setTargetDeadline( blockTargetDeadline , TargetDeadlineType::Local);
+            else
+                MinerConfig::getConfig().setTargetDeadline( MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool) , TargetDeadlineType::Local);
+        }
+
 		if (difficultyDifference < 0)
 			diffiultyDifferenceToString = numberToString(difficultyDifference);
 		else if (difficultyDifference == 0)
@@ -311,11 +329,13 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 			"scoop#     \t%Lu\n"
 			"baseTarget#\t%s\n"
 			"gensig     \t%s\n"
-			"difficulty \t%s (%s)\n" +
+			"difficulty \t%s (%s)\n"
+            "targetDL \t%s\n" +
 			std::string(50, '-'),
 			numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
 			numberToString(difficulty),
-			diffiultyDifferenceToString
+			diffiultyDifferenceToString,
+            numberToString(MinerConfig::getConfig().getTargetDeadline())
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
@@ -393,10 +413,14 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 	if (blockheight != getBlockheight())
 		return SubmitResponse::WrongBlock;
 
-	const auto targetDeadline = MinerConfig::getConfig().getTargetDeadline();
+	auto block = data_.getBlockData();
+
+
+    const auto targetDeadline = MinerConfig::getConfig().getTargetDeadline();
+    
 	const auto tooHigh = targetDeadline > 0 && deadline > targetDeadline;
 
-	auto block = data_.getBlockData();
+
 
 	if (block == nullptr)
 		return SubmitResponse::Error;

@@ -261,6 +261,11 @@ Poco::UInt64 Burst::BlockData::getDifficulty() const
 	return 18325193796 / getBasetarget();
 }
 
+float Burst::BlockData::getDifficultyFloat() const
+{
+	return 18325193796.0f / ( (float) getBasetarget() );
+}
+
 std::shared_ptr<Burst::Account> Burst::BlockData::getLastWinner() const
 {
 	return lastWinner_;
