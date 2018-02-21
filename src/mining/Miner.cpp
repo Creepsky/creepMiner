@@ -299,6 +299,26 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 		const auto difficultyDifference = data_.getDifficultyDifference();
 		std::string diffiultyDifferenceToString;
 
+		// Get Difficulty, submitProbability and total Plotsize for targetDL calculation
+		const float difficultyFl = block->getDifficultyFloat();
+		const float tarDLFac = MinerConfig::getConfig().getTargetDLFactor();
+		float totAccPlotsize = static_cast<float>( PlotSizes::getTotalBytes(PlotSizes::Type::Combined) ) / 1024.f / 1024.f / 1024.f / 1024.f;
+
+		std::cout << " total Plot Size: " << totAccPlotsize << std::endl;
+		Poco::UInt64 blockTargetDeadline;
+		if (totAccPlotsize > 0)
+			blockTargetDeadline = tarDLFac * difficultyFl / totAccPlotsize;
+		else
+			blockTargetDeadline = 8000000000;
+		// Calculate targetDL for this round if a submitProbability is given
+		if (MinerConfig::getConfig().getSubmitProbability() > 0.) 
+		{
+			if( blockTargetDeadline < MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool) )
+				MinerConfig::getConfig().setTargetDeadline( blockTargetDeadline , TargetDeadlineType::Local);
+			else
+				MinerConfig::getConfig().setTargetDeadline( MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool) , TargetDeadlineType::Local);
+		}
+
 		if (difficultyDifference < 0)
 			diffiultyDifferenceToString = numberToString(difficultyDifference);
 		else if (difficultyDifference == 0)
@@ -311,11 +331,13 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 			"scoop#     \t%Lu\n"
 			"baseTarget#\t%s\n"
 			"gensig     \t%s\n"
-			"difficulty \t%s (%s)\n" +
+			"difficulty \t%s (%s)\n"
+			"targetDL \t%s\n" +
 			std::string(50, '-'),
 			numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
 			numberToString(difficulty),
-			diffiultyDifferenceToString
+			diffiultyDifferenceToString,
+			numberToString(MinerConfig::getConfig().getTargetDeadline())
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
