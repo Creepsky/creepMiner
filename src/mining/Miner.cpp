@@ -311,10 +311,12 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 		// Calculate targetDL for this round if a submitProbability is given
 		if (MinerConfig::getConfig().getSubmitProbability() > 0.) 
 		{
-			if( blockTargetDeadline < MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool) )
+			const Poco::UInt64 poolDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool);
+
+			if( blockTargetDeadline < poolDeadline || poolDeadline == 0 )
 				MinerConfig::getConfig().setTargetDeadline( blockTargetDeadline , TargetDeadlineType::Local);
 			else
-				MinerConfig::getConfig().setTargetDeadline( MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool) , TargetDeadlineType::Local);
+				MinerConfig::getConfig().setTargetDeadline( poolDeadline , TargetDeadlineType::Local);
 		}
 
 		if (difficultyDifference < 0)
@@ -335,7 +337,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 			numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
 			numberToString(difficulty),
 			diffiultyDifferenceToString,
-			numberToString(MinerConfig::getConfig().getTargetDeadline())
+			deadlineFormat(MinerConfig::getConfig().getTargetDeadline())
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
