@@ -767,7 +767,6 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 				serverPass_ = getOrHash(pass, hashDelimiter, passId, credentials, webserverPassPassphrase);
 		}
 
-
 		// forwarding
 		{
 			const Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
@@ -784,7 +783,26 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 					log_error(MinerLogger::config, "Invalid forwarding rule in config: %s", url.toString());
 				}
 			}
+		}
 
+		// certificate
+		{
+			auto certificateJson = webserverObj->get("certificate");
+			Poco::JSON::Object::Ptr certificate;
+			
+			if (!certificateJson.isEmpty())
+				certificate = certificateJson.extract<Poco::JSON::Object::Ptr>();
+
+			if (certificate.isNull())
+			{
+				certificate.assign(new Poco::JSON::Object);
+				certificate->set("path", "");
+				certificate->set("pass", "");
+				webserverObj->set("certificate", certificate);
+			}
+
+			serverCertificatePath_ = getOrAdd(certificate, "path", std::string{});
+			serverCertificatePass_ = getOrAdd(certificate, "pass", std::string{});
 		}
 
 		config->set("webserver", webserverObj);
@@ -916,6 +934,16 @@ bool Burst::MinerConfig::getStartServer() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return startServer_;
+}
+
+const std::string& Burst::MinerConfig::getServerCertificatePath() const
+{
+	return serverCertificatePath_;
+}
+
+const std::string& Burst::MinerConfig::getServerCertificatePass() const
+{
+	return serverCertificatePass_;
 }
 
 Poco::UInt64 Burst::MinerConfig::getTargetDeadline(TargetDeadlineType type) const
@@ -1364,6 +1392,14 @@ bool Burst::MinerConfig::save(const std::string& path) const
 			for (const auto& forward : getForwardingWhitelist())
 				forwardUrls.add(forward);
 			webserver.set("forwardUrls", forwardUrls);
+		}
+
+		// certificate
+		{
+			Poco::JSON::Object certificate;
+			certificate.set("path", getServerCertificatePath());
+			certificate.set("pass", getServerCertificatePass());
+			webserver.set("certificate", certificate);
 		}
 
 		json.set("webserver", webserver);

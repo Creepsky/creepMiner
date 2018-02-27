@@ -150,7 +150,8 @@ namespace Burst
 		unsigned getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
 		bool getStartServer() const;
-
+		const std::string& getServerCertificatePath() const;
+		const std::string& getServerCertificatePass() const;
 
 		Url getServerUrl() const;
 		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
@@ -300,6 +301,8 @@ namespace Burst
 		bool cumulatePlotsizes_ = true;
 		bool minerNameForwarding_ = true;
 		bool calculateEveryDeadline_ = false;
+		std::string serverCertificatePath_;
+		std::string serverCertificatePass_;
 		mutable Poco::Mutex mutex_;
 	};
 }

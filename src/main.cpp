@@ -55,6 +55,14 @@ public:
 	~SslInitializer();
 };
 
+class KeyConfigHandler: public Poco::Net::PrivateKeyPassphraseHandler
+{
+public:
+	explicit KeyConfigHandler(bool server);
+	~KeyConfigHandler() override;
+	void onPrivateKeyRequested(const void*, std::string& privateKey);
+};
+
 struct Arguments
 {
 	Arguments();
@@ -128,9 +136,9 @@ int main(const int argc, const char* argv[])
 		SslInitializer sslInitializer;
 		HTTPSStreamFactory::registerFactory();
 
-		const SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
-		const Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "");
-		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
+		const SharedPtr<InvalidCertificateHandler> ptrCert(new AcceptCertificateHandler(false));
+		const Context::Ptr clientContext(new Context(Context::CLIENT_USE, ""));
+		SSLManager::instance().initializeClient(nullptr, ptrCert, clientContext);
 
 		HTTPSessionInstantiator::registerInstantiator();
 		HTTPSSessionInstantiator::registerInstantiator();
@@ -222,6 +230,15 @@ int main(const int argc, const char* argv[])
 			if (configLoaded)
 			{
 				log_information(general, "Config file loaded: %s", Burst::MinerConfig::getConfig().getPath());
+
+				if (!Burst::MinerConfig::getConfig().getServerCertificatePath().empty())
+				{
+					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
+						Burst::MinerConfig::getConfig().getServerCertificatePath(),
+						Context::VERIFY_RELAXED, Context::OPT_LOAD_CERT_FROM_FILE | Context::OPT_USE_STRONG_CRYPTO));
+					const SharedPtr<PrivateKeyPassphraseHandler> privateKeyPassphraseHandler(new KeyConfigHandler(true));
+					SSLManager::instance().initializeServer(privateKeyPassphraseHandler, ptrCert, serverContext);
+				}
 
 				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL" &&
 					!Burst::MinerCL::getCL().initialized())
@@ -360,4 +377,16 @@ void Arguments::displayHelp(const std::string& name, const std::string& value)
 void Arguments::setConfPath(const std::string& name, const std::string& value)
 {
 	confPath = value;
+}
+
+KeyConfigHandler::KeyConfigHandler(bool server)
+	: PrivateKeyPassphraseHandler{server}
+{}
+
+KeyConfigHandler::~KeyConfigHandler()
+{};
+	
+void KeyConfigHandler::onPrivateKeyRequested(const void*, std::string& privateKey)
+{
+	privateKey = Burst::MinerConfig::getConfig().getServerCertificatePass();
 }

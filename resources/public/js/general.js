@@ -23,7 +23,12 @@ function connect(onMessage) {
 		if (websocket)
 			websocket.close();
 
-		websocket = new WebSocket("ws://" + window.location.host);
+		if (location.protocol == "https:")
+			protocol ="wss"
+		else
+			protocol = "ws"
+		
+		websocket = new WebSocket(protocol + "://" + window.location.host);
 		websocket.onmessage = onMessage;
 	}
 	else {
