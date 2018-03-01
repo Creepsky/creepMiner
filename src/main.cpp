@@ -233,9 +233,16 @@ int main(const int argc, const char* argv[])
 
 				if (!Burst::MinerConfig::getConfig().getServerCertificatePath().empty())
 				{
+#ifdef _WIN32				
 					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
 						Burst::MinerConfig::getConfig().getServerCertificatePath(),
 						Context::VERIFY_RELAXED, Context::OPT_LOAD_CERT_FROM_FILE | Context::OPT_USE_STRONG_CRYPTO));
+#elif defined __linux__
+					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
+						Burst::MinerConfig::getConfig().getServerCertificatePath(),
+						Context::VERIFY_RELAXED));
+#endif
+						
 					const SharedPtr<PrivateKeyPassphraseHandler> privateKeyPassphraseHandler(new KeyConfigHandler(true));
 					SSLManager::instance().initializeServer(privateKeyPassphraseHandler, ptrCert, serverContext);
 				}
