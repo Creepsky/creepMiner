@@ -70,6 +70,7 @@ namespace Burst
 		Poco::UInt64 getScoop() const;
 		Poco::UInt64 getBasetarget() const;
 		Poco::UInt64 getDifficulty() const;
+		float getDifficultyFloat() const;
 		std::shared_ptr<Account> getLastWinner() const;
 		
 		const GensigData& getGensig() const;
