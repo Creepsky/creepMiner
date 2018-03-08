@@ -102,6 +102,7 @@ namespace Burst
 		void printConsolePlots() const;
 		void printUrl(HostType type) const;
 		void printTargetDeadline() const;
+		void printSubmitProbability() const;
 		static void printUrl(const Url& url, const std::string& url_name);
 		void printBufferSize() const;
 

@@ -86,7 +86,14 @@ void Burst::MinerConfig::printConsole() const
 	printUrl(HostType::Wallet);
 	printUrl(HostType::Server);
 
-	printTargetDeadline();
+	if (MinerConfig::getConfig().getSubmitProbability() > 0.)
+	{
+		printSubmitProbability();
+	}
+	else {
+		printTargetDeadline();
+	}
+
 
 	if (isLogfileUsed())
 		log_system(MinerLogger::config, "Log path : %s", getConfig().getPathLogfile().toString());
@@ -1289,6 +1296,11 @@ void Burst::MinerConfig::printTargetDeadline() const
 {
 	if (getTargetDeadline() > 0)
 		log_system(MinerLogger::config, "Target deadline : %s", deadlineFormat(getTargetDeadline(TargetDeadlineType::Local)));
+}
+
+void Burst::MinerConfig::printSubmitProbability() const
+{
+		log_system(MinerLogger::config, "Submit probability : %s", numberToString(getSubmitProbability()));
 }
 
 bool Burst::MinerConfig::save() const
