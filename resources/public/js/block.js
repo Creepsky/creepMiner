@@ -88,15 +88,6 @@ var bestDeadlinesChart;
 var plot;
 var deadlinesInfo;
 var miningData = new Block();
-var settingsDlComboboxes;
-
-// ******************************************
-var logSettings = {};
-// ******************************************
-
-// I change this [] to {} and also in settings.js and general.js
-
-// var logSettings = [];
 
 if (confirmedSound)
 	confirmedSound.volume = 0.5;
@@ -152,26 +143,6 @@ function localInitCheckBoxes() {
 	temp = localGet('noncesConfirmed');
 	if (temp == null) temp = true;
 	noncesConfirmed.prop('checked', temp);
-}
-
-// I break in 2 functions because must initialized in different points of initBlock
-
-function localInitLogSettings() {
-	var temp = localGet('logSettings');
-
-	if (temp == null)
-		return;
-
-	if (temp['miner']) $("#cmb_miner").val(temp['miner'])
-	if (temp['config']) $("#cmb_config").val(temp['config'])
-	if (temp['server']) $("#cmb_server").val(temp['server'])
-	if (temp['socket']) $("#cmb_socket").val(temp['socket'])
-	if (temp['session']) $("#cmb_session").val(temp['session'])
-	if (temp['nonceSubmitter']) $("#cmb_nonceSubmitter").val(temp['nonceSubmitter'])
-	if (temp['plotReader']) $("#cmb_plotReader").val(temp['plotReader'])
-	if (temp['plotVerifier']) $("#cmb_plotVerifier").val(temp['plotVerifier'])
-	if (temp['wallet']) $("#cmb_wallet").val(temp['wallet'])
-	if (temp['general']) $("#cmb_general").val(temp['general'])
 }
 
 // Saves in local storage - no expiration
@@ -417,8 +388,8 @@ function addOrConfirm(json) {
 
 function addSystemEntry(key, value) {
 	var html = "<div class='row'>";
-	html += "	<div class='col-md-5 col-xs-5'>" + key + "</div>";
-	html += "	<div class='col-md-7 col-xs-7'>" + value + "</div>";
+	html += "	<div class='col-md-4 col-xs-4'>" + key + "</div>";
+	html += "	<div class='col-md-8 col-xs-8'>" + value + "</div>";
 	html += "</div>";
 	system.append(html);
 }
@@ -429,17 +400,15 @@ function addLinkWithLabel(label, link) {
 
 function config(cfg) {
 	system.html("");
-	addSystemEntry("Pool-URL", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
-	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
-	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
+	addSystemEntry("Pool", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
+	addSystemEntry("Mining", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
+	addSystemEntry("Wallet", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
 	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
 	addSystemEntry("Buffersize", cfg["bufferSize"]);
-	addSystemEntry("Target deadline", cfg["targetDeadlineCombined"] + " (lowest)<br />" +
-									  cfg["targetDeadlineLocal"] + " (local)<br />" +
-									  cfg["targetDeadlinePool"] + " (pool)");
+	addSystemEntry("Target deadline", cfg["targetDeadlineCombined"]);
 	addSystemEntry("Plot readers", cfg["maxPlotReaders"]);
-	addSystemEntry("Mining intensity", cfg["miningIntensity"]);
-	addSystemEntry("Submission retry", cfg["submissionMaxRetry"]);
+	addSystemEntry("Intensity", cfg["miningIntensity"]);
+	addSystemEntry("Maximum retry", cfg["submissionMaxRetry"]);
 }
 
 function setConfirmedDeadlines(deadlines) {
@@ -521,7 +490,6 @@ function showMessage(json) {
 		9 : off
 		*/
 
-		var hidden = type > logSettings[logger].val();
 		var lineType;
 
 		switch (parseInt(type)) {
@@ -567,33 +535,7 @@ function reparseMessages() {
 				hideSameNonceLines(nonce);
 			}
 		}
-		else if (logger && levelStr) {
-			var loggerLevel = parseInt(logSettings[logger].val());
-			var level = parseInt(levelStr);
-
-			if (level <= loggerLevel)
-				$(this).show();
-			else
-				$(this).hide();
-		}
-	});
-	
-	// ******************************************
-	var tempSettings = {
-		miner: logSettings['miner'].val(),
-		config: logSettings['config'].val(),
-		server: logSettings['server'].val(),
-		socket: logSettings['socket'].val(),
-		session: logSettings['session'].val(),
-		nonceSubmitter: logSettings['nonceSubmitter'].val(),
-		plotReader: logSettings['plotReader'].val(),
-		plotVerifier: logSettings['plotVerifier'].val(),
-		wallet: logSettings['wallet'].val(),
-		general: logSettings['general'].val(),
-	}
-	
-	localSet('logSettings', tempSettings);
-	// ******************************************
+	});	
 }
 
 function resetLogSettings() {
@@ -601,10 +543,6 @@ function resetLogSettings() {
 	noncesFound.prop('checked', true);
 	noncesSent.prop('checked', true);
 	noncesConfirmed.prop('checked', true);
-
-	loggers.forEach(function (element, index, array) {
-		logSettings[element[0]].val(element[2]);
-	});
 }
 
 function connectBlock() {
@@ -717,7 +655,6 @@ function initBlock() {
 	highestDiff = $("#highestDiff");
 	bestDeadlinesChart = $("#deadlinesChart");
 	deadlinesInfo = $("#deadlinesInfo");
-	settingsDlComboboxes = $("#settingsDlComboboxes");
 
 	// ******************************************
 	localInitCheckBoxes();
@@ -740,12 +677,6 @@ function initBlock() {
 	noncesFound.change(reparseMessages);
 	noncesSent.change(reparseMessages);
 	noncesConfirmed.change(reparseMessages);
-
-	logSettings = initSettings(settingsDlComboboxes, reparseMessages);
-
-	// ******************************************
-	localInitLogSettings();
-	// ******************************************
 }
 
 function initPlot() {
