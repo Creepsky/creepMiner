@@ -60,7 +60,7 @@ class KeyConfigHandler: public Poco::Net::PrivateKeyPassphraseHandler
 public:
 	explicit KeyConfigHandler(bool server);
 	~KeyConfigHandler() override;
-	void onPrivateKeyRequested(const void*, std::string& privateKey);
+	void onPrivateKeyRequested(const void*, std::string& privateKey) override;
 };
 
 struct Arguments
@@ -237,7 +237,7 @@ int main(const int argc, const char* argv[])
 					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
 						Burst::MinerConfig::getConfig().getServerCertificatePath(),
 						Context::VERIFY_RELAXED, Context::OPT_LOAD_CERT_FROM_FILE | Context::OPT_USE_STRONG_CRYPTO));
-#elif defined __linux__
+#elif defined __linux__ || defined __APPLE__
 					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
 						Burst::MinerConfig::getConfig().getServerCertificatePath(),
 						Context::VERIFY_RELAXED));
