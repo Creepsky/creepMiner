@@ -9,6 +9,7 @@ function update_settings(config) {
     buffer_size.val(config['bufferSizeRaw']);
     plot_readers.val(config['maxPlotReadersRaw']);
     submission_max_retry.val(config['submissionMaxRetry']);
+	submit_probability.val(config['submitProbability']);
     target_deadline.val(config['targetDeadlineLocal']);
 
     timeout.val(config['timeout']);
@@ -52,6 +53,7 @@ window.onload = function (evt) {
     buffer_size = $("#buffer-size");
     plot_readers = $("#plot-readers");
     submission_max_retry = $("#submission-max-retry");
+	submit_probability = $("#submit-probability");
     target_deadline = $("#target-deadline");
     timeout = $("#timeout");
 
