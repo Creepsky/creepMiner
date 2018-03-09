@@ -605,7 +605,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		);
 
 		if (MinerConfig::getConfig().isCumulatingPlotsizes())
-			PlotSizes::set(request.clientAddress().host(), capacity, false);
+			PlotSizes::set(request.clientAddress().host(), capacity * 1024 * 1024 * 1024, false);
 
 		if (blockheight != miner.getBlockheight())
 		{

@@ -282,8 +282,28 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	// clear the plot read queue
 	plotReadQueue_.clear();
 
+	// Get Difficulty, submitProbability and total Plotsize for targetDL calculation
+	const float difficultyFl = 18325193796.0f / static_cast<float>(baseTarget);
+	const float tarDLFac = MinerConfig::getConfig().getTargetDLFactor();
+	float totAccPlotsize = static_cast<float>(PlotSizes::getTotalBytes(PlotSizes::Type::Combined)) / 1024.f / 1024.f / 1024.f / 1024.f;
+	Poco::UInt64 blockTargetDeadline;
+	if (totAccPlotsize > 0 && MinerConfig::getConfig().getSubmitProbability() > 0.)
+		blockTargetDeadline = tarDLFac * difficultyFl / totAccPlotsize;
+	else
+		blockTargetDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local);
+	// Calculate targetDL for this round if a submitProbability is given
+	if (MinerConfig::getConfig().getSubmitProbability() > 0.)
+	{
+		const Poco::UInt64 poolDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool);
+
+		if (blockTargetDeadline < poolDeadline || poolDeadline == 0)
+			MinerConfig::getConfig().setTargetDeadline(blockTargetDeadline, TargetDeadlineType::Local);
+		else
+			MinerConfig::getConfig().setTargetDeadline(poolDeadline, TargetDeadlineType::Local);
+	}
+
 	// setup new block-data
-	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr);
+	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr, blockTargetDeadline);
 
 	// printing block info and transfer it to local server
 	{
@@ -311,11 +331,13 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 			"scoop#     \t%Lu\n"
 			"baseTarget#\t%s\n"
 			"gensig     \t%s\n"
-			"difficulty \t%s (%s)\n" +
+			"difficulty \t%s (%s)\n"
+			"targetDL \t%s\n" +
 			std::string(50, '-'),
 			numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
 			numberToString(difficulty),
-			diffiultyDifferenceToString
+			diffiultyDifferenceToString,
+			deadlineFormat(MinerConfig::getConfig().getTargetDeadline())
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
@@ -538,17 +560,29 @@ bool Burst::Miner::getMiningInfo()
 						MinerConfig::getConfig().setTargetDeadline(target_deadline_pool, TargetDeadlineType::Pool);
 
 						// if its changed, print it
-						if (target_deadline_pool_before != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
-							log_system(MinerLogger::config,
-								"got new target deadline from pool\n"
-								"\told pool target deadline:    %s\n"
-								"\tnew pool target deadline:    %s\n"
-								"\ttarget deadline from config: %s\n"
-								"\tlowest target deadline:      %s",
-								deadlineFormat(target_deadline_pool_before),
-								deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)),
-								deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
-								deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+						if (MinerConfig::getConfig().getSubmitProbability() == 0.)
+						{
+							if (target_deadline_pool_before != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
+								log_system(MinerLogger::config,
+									"got new target deadline from pool\n"
+									"\told pool target deadline:    %s\n"
+									"\tnew pool target deadline:    %s\n"
+									"\ttarget deadline from config: %s\n"
+									"\tlowest target deadline:      %s",
+									deadlineFormat(target_deadline_pool_before),
+									deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)),
+									deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
+									deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+						}
+						else {
+							if (target_deadline_pool_before != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
+								log_system(MinerLogger::config,
+									"got new target deadline from pool\n"
+									"\told pool target deadline:    %s\n"
+									"\tnew pool target deadline:    %s",
+									deadlineFormat(target_deadline_pool_before),
+									deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)));
+						}
 					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));

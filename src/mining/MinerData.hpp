@@ -53,7 +53,7 @@ namespace Burst
 		};
 
 	public:
-		BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent = nullptr);
+		BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent = nullptr, Poco::UInt64 blockTargetDeadline = 0);
 
 		std::shared_ptr<Deadline> addDeadline(Poco::UInt64 nonce, Poco::UInt64 deadline,
 			std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile);
@@ -70,6 +70,7 @@ namespace Burst
 		Poco::UInt64 getScoop() const;
 		Poco::UInt64 getBasetarget() const;
 		Poco::UInt64 getDifficulty() const;
+		Poco::UInt64 getBlockTargetDeadline() const;
 		std::shared_ptr<Account> getLastWinner() const;
 		
 		const GensigData& getGensig() const;
@@ -118,6 +119,7 @@ namespace Burst
 		std::atomic<Poco::UInt64> blockHeight_;
 		std::atomic<Poco::UInt64> scoop_;
 		std::atomic<Poco::UInt64> baseTarget_;
+		std::atomic<Poco::UInt64> blockTargetDeadline_;
 		GensigData genSig_;
 		std::string genSigStr_ = "";
 		std::shared_ptr<std::vector<Poco::JSON::Object>> entries_;
@@ -145,7 +147,7 @@ namespace Burst
 		MinerData();
 		~MinerData() override;
 		
-		std::shared_ptr<BlockData> startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig);
+		std::shared_ptr<BlockData> startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig, Poco::UInt64 blockTargetDeadline);
 		void addMessage(const Poco::Message& message);
 
 		std::shared_ptr<Deadline> getBestDeadlineOverall(bool onlyHistorical = false) const;

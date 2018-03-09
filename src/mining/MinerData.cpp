@@ -28,11 +28,12 @@
 #include "wallet/Wallet.hpp"
 #include "wallet/Account.hpp"
 
-Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent)
+Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent, Poco::UInt64 blockTargetDeadline)
 	: blockHeight_ {blockHeight},
 	  baseTarget_ {baseTarget},
 	  genSigStr_ {genSigStr},
-	  parent_{parent}
+	  parent_{parent},
+	  blockTargetDeadline_ {blockTargetDeadline}
 {
 	entries_ = std::make_shared<std::vector<Poco::JSON::Object>>();
 	//deadlines_ = std::make_shared<std::unordered_map<AccountId, Deadlines>>();
@@ -261,6 +262,11 @@ Poco::UInt64 Burst::BlockData::getDifficulty() const
 	return 18325193796 / getBasetarget();
 }
 
+Poco::UInt64 Burst::BlockData::getBlockTargetDeadline() const
+{
+	return blockTargetDeadline_.load();
+}
+
 std::shared_ptr<Burst::Account> Burst::BlockData::getLastWinner() const
 {
 	return lastWinner_;
@@ -438,7 +444,7 @@ Burst::MinerData::~MinerData()
 {
 }
 
-std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig)
+std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig, Poco::UInt64 blockTargetDeadline)
 {
 	std::unique_lock<std::mutex> lock{ mutex_ };
 
@@ -461,7 +467,7 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 	}
 
 	lock.unlock();
-	blockData_ = std::make_shared<BlockData>(block, baseTarget, genSig, this);
+	blockData_ = std::make_shared<BlockData>(block, baseTarget, genSig, this, blockTargetDeadline);
 
 	lock.lock();
 	currentBlockheight_ = block;

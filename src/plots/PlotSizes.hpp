@@ -63,6 +63,7 @@ namespace Burst
 		 * \return The total amount of plot size in GB.
 		 */
 		static Poco::UInt64 getTotal(Type type, Poco::UInt64 maxAge = 10);
+		static Poco::UInt64 getTotalBytes(Type type, Poco::UInt64 maxAge = 10);
 
 		/**
 		 * \brief Adds one round to all plots sizes.
