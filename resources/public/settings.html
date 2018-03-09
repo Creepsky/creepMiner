@@ -1,35 +1,58 @@
 <div class="container">
     <div class="row">
-        <div class="page-header">
-            <h1>Urls</h1>
-        </div>
+        <h2>Urls</h2>
         <form method="POST" action="/settings/urls">
-            <div class="form-group input-group">
-                <span class="input-group-addon">Mining-Info-URL</span>
-                <input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
+            <div class="col-lg-6">
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Mining-Info-URL</span>
+                    <input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
+                </div>
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Submission-URL</span>
+                    <input class="form-control" type="url" id="submission-url" name="submission-url">
+                </div>
             </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Submission-URL</span>
-                <input class="form-control" type="url" id="submission-url" name="submission-url">
-            </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Wallet-URL</span>
-                <input class="form-control" type="url" id="wallet-url" name="wallet-url">
+            <div class="col-lg-6">
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Wallet-URL</span>
+                    <input class="form-control" type="url" id="wallet-url" name="wallet-url">
+                </div>
             </div>
             <button type="submit" class="btn btn-primary pull-right">Submit</button>
         </form>
     </div>
     <div class="row">
-        <div class="page-header"><h1>Mining</h1></div>
+        <h2>Miner</h2>
         <form method="POST" action="/settings/mining">
-            <div class="form-group input-group">
-                <span class="input-group-addon">Intensity</span>
-                <input class="form-control" type="number" id="intensity" name="intensity">
+            <div class="col-lg-6">
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Intensity</span>
+                    <input class="form-control" type="number" id="intensity" name="intensity">
+                </div>
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Buffer size</span>
+                    <input class="form-control" type="number" id="buffer-size" name="buffer-size">
+                    <span class="input-group-addon">MB</span>
+                </div>
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Plot reader</span>
+                    <input class="form-control" type="number" id="plot-readers" name="plot-readers">
+                </div>
             </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Buffer size</span>
-                <input class="form-control" type="number" id="buffer-size" name="buffer-size">
-                <span class="input-group-addon">MB</span>
+            <div class="col-lg-6">
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Submission max retry</span>
+                    <input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
+                </div>
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Target deadline</span>
+                    <input class="form-control" type="text" id="target-deadline"  name="target-deadline">
+                </div>
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Timeout</span>
+                    <input class="form-control" type="number" id="timeout" name="timeout">
+                    <span class="input-group-addon">seconds</span>
+                </div>
             </div>
             <div class="form-group input-group">
                 <span class="input-group-addon">Plot reader</span>
@@ -56,25 +79,24 @@
         </form>
     </div>
     <div class="row">
-        <div class="page-header"><h1>Logging (miner, not webinterface)</h1></div>
+        <h2>Console</h2>
         <form method="POST" action="/settings/logging">
-            <div class="form-group input-group">
-                <span class="input-group-addon">Logfile directory</span>
-                <input class="form-control" type="text" id="log-dir" name="log-dir">
-            </div>
-            <div id="settingsDlComboboxes"></div>
+                <div id="settingsDlComboboxes"></div>
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Logfile directory</span>
+                    <input class="form-control" type="text" id="log-dir" name="log-dir">
+                </div>
             <button type="submit" class="btn btn-primary pull-right">Submit</button>
         </form>
     </div>
+
     <div class="row">
-        <div class="page-header"><h1 class="text-danger">Danger Zone</h1></div>
+        <h2 class="text-danger">Danger Zone</h2>
         <button type="button" class="btn btn-danger" onclick="$.get('/shutdown');">
-            <span class="glyphicon glyphicon-off" aria-hidden="true"></span>
-            shutdown
+            <span class="glyphicon glyphicon-off" aria-hidden="true">shutdown</span>
         </button>
         <button type="button" class="btn btn-warning" onclick="$.get('/restart');">
-            <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>
-            restart
+            <span class="glyphicon glyphicon-refresh" aria-hidden="true">restart</span>
         </button>
     </div>
     <br />
