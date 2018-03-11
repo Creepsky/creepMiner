@@ -510,6 +510,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	json.set("type", "new block");
 	json.set("block", std::to_string(block.getBlockheight()));
 	json.set("scoop", std::to_string(block.getScoop()));
+	json.set("targetDeadline", std::to_string(block.getBlockTargetDeadline()));
 	json.set("baseTarget", std::to_string(block.getBasetarget()));
 	json.set("gensigStr", block.getGensigStr());
 	json.set("time", getTime());
@@ -576,6 +577,7 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("bufferSize", memToString(MinerConfig::getConfig().getMaxBufferSize(), 0));
 	json.set("bufferSizeRaw", std::to_string(MinerConfig::getConfig().getMaxBufferSizeRaw()));
 	json.set("targetDeadline", deadlineFormat(targetDeadline));
+	json.set("submitProbability", MinerConfig::getConfig().getSubmitProbability());
 	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
 	json.set("maxPlotReadersRaw", std::to_string(MinerConfig::getConfig().getMaxPlotReaders(false)));
 	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));

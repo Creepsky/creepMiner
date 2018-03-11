@@ -31,6 +31,8 @@ class Block {
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Scoop</div><div class='col-md-9 col-xs-7'>" + block["scoop"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Base target</div><div class='col-md-9 col-xs-7'>" + block["baseTarget"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Generation sig.</div><div class='col-md-9 col-xs-7'>" + block["gensigStr"] + "</div></div>"));
+		
+		
 
 		var diffDifference = block['difficultyDifference'];
 		var diffDifferenceString = String(diffDifference);
@@ -41,6 +43,7 @@ class Block {
 			diffDifferenceString = "+" + String(diffDifference);
 
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Difficulty</div><div class='col-md-9 col-xs-7'>" + block["difficulty"] + " (" + diffDifferenceString + ")</div></div>"));
+		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Target deadline</div><div class='col-md-9 col-xs-7'>" + deadlineFormat(block["targetDeadline"]) + "</div></div>"));
 
 		this.data.empty();
 	}
@@ -434,9 +437,14 @@ function config(cfg) {
 	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
 	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
 	addSystemEntry("Buffersize", cfg["bufferSize"]);
+	if (cfg["submitProbability"] != 0) {
+		addSystemEntry("Submit probability", cfg["submitProbability"]);
+		addSystemEntry("Pool deadline limit", cfg["targetDeadlinePool"] );
+	} else {
 	addSystemEntry("Target deadline", cfg["targetDeadlineCombined"] + " (lowest)<br />" +
 									  cfg["targetDeadlineLocal"] + " (local)<br />" +
 									  cfg["targetDeadlinePool"] + " (pool)");
+	}
 	addSystemEntry("Plot readers", cfg["maxPlotReaders"]);
 	addSystemEntry("Mining intensity", cfg["miningIntensity"]);
 	addSystemEntry("Submission retry", cfg["submissionMaxRetry"]);
