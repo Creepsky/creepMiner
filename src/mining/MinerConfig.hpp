@@ -138,6 +138,7 @@ namespace Burst
 
 		Poco::UInt64 getMaxBufferSize() const;
 		Poco::UInt64 getMaxBufferSizeRaw() const;
+		Poco::UInt64 getMaxHistoricalBlocks() const;
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
 		float getTimeout() const;
@@ -202,6 +203,7 @@ namespace Burst
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(Poco::UInt64 bufferSize);
+		void setMaxHistoricalBlocks(Poco::UInt64 maxHistData);
 		void setMaxSubmissionRetry(unsigned value);
 		void setTimeout(float value);
 		void setSubmitProbability(float subP);
@@ -284,6 +286,7 @@ namespace Burst
 		unsigned maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
 		Poco::UInt64 maxBufferSizeMB_ = 0;
+		Poco::UInt64 maxHistoricalBlocks_ = 0;
 		unsigned bufferChunkCount_ = 16;
 		unsigned walletRequestTries_ = 3;
 		unsigned walletRequestRetryWaitTime_ = 3;

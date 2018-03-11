@@ -451,10 +451,10 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 	// save the old data in the historical container
 	if (blockData_ != nullptr)
 	{
-		const auto maxSize = 30;
+		const auto maxSize = MinerConfig::getConfig().getMaxHistoricalBlocks();
 
 		// if we reached the maximum size of blocks, forget the oldest
-		if (historicalBlocks_.size() + 1 > maxSize)
+		while (historicalBlocks_.size() + 1 > maxSize)
 			historicalBlocks_.pop_front();
 
 		// we clear all entries, because it is also in the logfile

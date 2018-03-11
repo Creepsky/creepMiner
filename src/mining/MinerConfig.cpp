@@ -592,6 +592,22 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			recalculatePlotsHash();
 		}
 
+
+		// max historical data
+		{
+		auto maxHistoricalBlocks = miningObj->get("maxHistoricalBlocks");
+
+		if (!maxHistoricalBlocks.isEmpty())
+		{
+			setMaxHistoricalBlocks(maxHistoricalBlocks.convert<Poco::UInt64>());
+		}
+		else
+		{
+			miningObj->set("maxHistoricalBlocks", 360);
+			setMaxHistoricalBlocks(360);
+		}
+		}
+
 		// submit probability
 		{
 			auto submitProbability = miningObj->get("submitProbability");
@@ -1190,6 +1206,16 @@ void Burst::MinerConfig::setTimeout(float value)
 	timeout_ = value;
 }
 
+void Burst::MinerConfig::setMaxHistoricalBlocks(Poco::UInt64 maxHistData)
+{
+	if (maxHistData < 30)
+		maxHistoricalBlocks_ = 30;
+	else if (maxHistData > 3600)
+		maxHistoricalBlocks_ = 3600;
+	else
+		maxHistoricalBlocks_ = maxHistData;
+}
+
 void Burst::MinerConfig::setSubmitProbability(float subP)
 {
 	if (subP < 0)
@@ -1232,6 +1258,12 @@ Poco::UInt64 Burst::MinerConfig::getMaxBufferSize() const
 Poco::UInt64 Burst::MinerConfig::getMaxBufferSizeRaw() const
 {
 	return maxBufferSizeMB_;
+}
+
+Poco::UInt64 Burst::MinerConfig::getMaxHistoricalBlocks() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return maxHistoricalBlocks_;
 }
 
 void Burst::MinerConfig::setMininigIntensity(unsigned intensity)
@@ -1363,6 +1395,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		mining.set("maxBufferSizeMB", maxBufferSizeMB_);
 		mining.set("maxPlotReaders", maxPlotReaders_);
 		mining.set("submissionMaxRetry", submissionMaxRetry_);
+		mining.set("maxHistoricalBlocks", maxHistoricalBlocks_);
 		mining.set("submitProbability", submitProbability_);
 		mining.set("targetDeadline", deadlineFormat(targetDeadline_));
 		mining.set("timeout", static_cast<Poco::UInt64>(timeout_));

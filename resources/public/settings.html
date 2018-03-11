@@ -1,8 +1,9 @@
-<div class="container">
+<div class="container" style="width:100%">
     <div class="row">
-        <h2>Urls</h2>
+    <div class="col-md-6">
+        <h2>Miner</h2>
         <form method="POST" action="/settings/urls">
-            <div class="col-lg-6">
+            <div class="col-md-12">
                 <div class="form-group input-group">
                     <span class="input-group-addon">Mining-Info-URL</span>
                     <input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
@@ -11,20 +12,15 @@
                     <span class="input-group-addon">Submission-URL</span>
                     <input class="form-control" type="url" id="submission-url" name="submission-url">
                 </div>
-            </div>
-            <div class="col-lg-6">
                 <div class="form-group input-group">
                     <span class="input-group-addon">Wallet-URL</span>
                     <input class="form-control" type="url" id="wallet-url" name="wallet-url">
                 </div>
+                <button type="submit" class="btn btn-primary pull-right" style="margin-bottom:15px">Submit URLs</button>
             </div>
-            <button type="submit" class="btn btn-primary pull-right">Submit</button>
-        </form>
-    </div>
-    <div class="row">
-        <h2>Miner</h2>
+        </form> <br><br><br>
         <form method="POST" action="/settings/mining">
-            <div class="col-lg-6">
+            <div class="col-md-12">
                 <div class="form-group input-group">
                     <span class="input-group-addon">Intensity</span>
                     <input class="form-control" type="number" id="intensity" name="intensity">
@@ -38,8 +34,10 @@
                     <span class="input-group-addon">Plot reader</span>
                     <input class="form-control" type="number" id="plot-readers" name="plot-readers">
                 </div>
-            </div>
-            <div class="col-lg-6">
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Submit probability</span>
+                    <input class="form-control" type="text" id="submit-probability"  name="submit-probability">
+                </div>
                 <div class="form-group input-group">
                     <span class="input-group-addon">Submission max retry</span>
                     <input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
@@ -53,44 +51,10 @@
                     <input class="form-control" type="number" id="timeout" name="timeout">
                     <span class="input-group-addon">seconds</span>
                 </div>
+                <button type="submit" class="btn btn-primary pull-right">Submit Miner Config</button>
             </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Plot reader</span>
-                <input class="form-control" type="number" id="plot-readers" name="plot-readers">
-            </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Submission max retry</span>
-                <input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
-            </div>
-			<div class="form-group input-group">
-                <span class="input-group-addon">Submit probability</span>
-                <input class="form-control" type="text" id="submit-probability"  name="submit-probability">
-            </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Target deadline</span>
-                <input class="form-control" type="text" id="target-deadline"  name="target-deadline">
-            </div>
-            <div class="form-group input-group">
-                <span class="input-group-addon">Timeout</span>
-                <input class="form-control" type="number" id="timeout" name="timeout">
-                <span class="input-group-addon">seconds</span>
-            </div>
-            <button type="submit" class="btn btn-primary pull-right">Submit</button>
-        </form>
-    </div>
-    <div class="row">
-        <h2>Console</h2>
-        <form method="POST" action="/settings/logging">
-                <div id="settingsDlComboboxes"></div>
-                <div class="form-group input-group">
-                    <span class="input-group-addon">Logfile directory</span>
-                    <input class="form-control" type="text" id="log-dir" name="log-dir">
-                </div>
-            <button type="submit" class="btn btn-primary pull-right">Submit</button>
-        </form>
-    </div>
 
-    <div class="row">
+        </form> <br><br>
         <h2 class="text-danger">Danger Zone</h2>
         <button type="button" class="btn btn-danger" onclick="$.get('/shutdown');">
             <span class="glyphicon glyphicon-off" aria-hidden="true">shutdown</span>
@@ -98,6 +62,17 @@
         <button type="button" class="btn btn-warning" onclick="$.get('/restart');">
             <span class="glyphicon glyphicon-refresh" aria-hidden="true">restart</span>
         </button>
+    </div>
+    <div class="col-md-6">
+        <h2>Console</h2>
+        <form method="POST" action="/settings/logging">
+                <div id="settingsDlComboboxes"></div>
+                <div class="form-group input-group">
+                    <span class="input-group-addon">Logfile directory</span>
+                    <input class="form-control" type="text" id="log-dir" name="log-dir">
+                </div>
+            <button type="submit" class="btn btn-primary pull-right">Submit Console Config</button>
+        </form>
     </div>
     <br />
 </div>
