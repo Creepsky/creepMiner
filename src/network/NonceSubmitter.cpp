@@ -193,13 +193,13 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 		{
 			// sent, but not confirmed
 			if (firstSendAttempt)
-				log_warning(MinerLogger::nonceSubmitter, "%s: could not submit nonce! network issues? (%s)",
+				log_warning(MinerLogger::nonceSubmitter, "%s: could not submit nonce! This is probably a network issue. (%s)",
 					accountName, deadlineFormat(deadline->getDeadline()));
 			else if (confirmation.errorCode == SubmitResponse::Error)
 				log_warning(MinerLogger::nonceSubmitter, "%s: error on submitting nonce! (%s)",
 					accountName, deadlineFormat(deadline->getDeadline()));
 			else
-				log_warning(MinerLogger::nonceSubmitter, "%s: got no confirmation from server! busy? (%s)",
+				log_warning(MinerLogger::nonceSubmitter, "%s: got no confirmation from pool! It is probably to busy, please set your submissionMaxRetry a bit higher if you see this (%s)",
 					accountName, deadlineFormat(deadline->getDeadline()));
 		}
 	}
