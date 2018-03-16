@@ -52,7 +52,26 @@ function setProgress(progressBar, progress) {
 	}
 
 	progressBar.css("width", valueFixed + "%").attr("aria-valuenow", valueFixed);
-	progressBar.html(valueFixed + " %");
+	progressBar.html(valueFixed + " % Read");
+}
+
+function setProgressVerify(progressBar, progress) {
+	var valueFixed = parseFloat(progress).toFixed();
+
+	if (valueFixed >= 100) {
+		valueFixed = 100;
+		progressBar.removeClass("active");
+	}
+	else if (valueFixed < 100) {
+		if (valueFixed < 0)
+			valueFixed = 0;
+
+		if (!progressBar.hasClass("active"))
+			progressBar.addClass("active");
+	}
+
+	progressBar.css("width", valueFixed + "%").attr("aria-valuenow", valueFixed);
+	progressBar.html(valueFixed + " % Verified");
 }
 
 function initSettings(container, onChange) {

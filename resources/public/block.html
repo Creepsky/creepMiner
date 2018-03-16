@@ -1,4 +1,4 @@
-<div class="col-md-3">
+<div class="col-lg-4 col-md-12">
 	<!-- Command Buttons -->
 	<div class="btn-group btn-group-justified" role="group" aria-label="commands">
 		<div class="btn-group" role="group">
@@ -15,94 +15,88 @@
 		</div>
 	</div>
 	<br />
-	<!-- Highscores -->
-	<div class="panel panel-success">
-		<div class="panel-heading">Highscores</div>
-		<div class="panel-body">
-			<div class="row">
-				<div class="col-md-6 col-xs-6">This block</div>
-				<div id="thisBlockBest" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Confirmed deadlines</div>
-				<div id="confirmedDeadlines" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Mined blocks</div>
-				<div id="minedBlocks" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Won blocks</div>
-				<div id="wonBlocks" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Best (overall)</div>
-				<div id="bestOverall" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Best (30 rounds)</div>
-				<div id="bestHistorical" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Average deadline</div>
-				<div id="avgDeadline" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Lowest difficulty</div>
-				<div id="lowestDiff" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Highest difficulty</div>
-				<div id="highestDiff" class="col-md-6 col-xs-6"></div>
-			</div>
-		</div>
-	</div>
-	<!-- Last Winner -->
-	<div id="lastWinnerContainer" class="panel panel-default" hidden>
-		<div class="panel-heading">Last winner</div>
-		<div id="lastWinner" class="panel-body">
-			<div id="lastWinnerNameRow" class="row" hidden>
-				<div class="col-md-5 col-xs-4">Name</div>
-				<div class="col-md-7 col-xs-8">
-					<a id="lastWinnerName" target="_blank"></a>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-md-5 col-xs-4">Numeric</div>
-				<div class="col-md-7 col-xs-8">
-					<a id="lastWinnerNumeric" target="_blank"></a>
-				</div>
-			</div>
-			<div class="row">
-				<div class="col-md-5 col-xs-4">Address</div>
-				<div class="col-md-7 col-xs-8">
-					<a id="lastWinnerAddress" target="_blank"></a>
-				</div>
-			</div>
-		</div>
-	</div>
-	</div>
 	<!-- Block data -->
-	<div id="container" class="col-md-6">
+	<div id="container">
+		<div class="progress" style="margin-bottom:0">
+			<label class="progress-label" style="font-size:x-small;"></label>
+			<div id="progressBarVerify" class="progress-bar progress-bar-success progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+			<div id="progressBar" class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+		</div>
 	</div>
-	<div class="col-md-3">
-	<!-- Chart -->
-	<div class="panel panel-default">
-		<div class="panel-heading">Deadlines</div>
-		<div id="deadlinesChart" style="height: 150px; width: auto; margin: 10px"></div>
-		<div id="deadlinesInfo" class="panel-footer"></div>
+</div>
+<div class="col-lg-8 col-md-12">
+	<!-- Highscores -->
+	<div class="panel panel-primary">
+		<div class="panel-heading"><h4 style="color:white;margin:0px">Statistics</h4></div>
+		<div class="panel-body">
+			<div class="col-md-12"><h4>Deadline Stats</h4></div>
+
+				<div class="col-md-3 col-xs-6">This block</div>
+				<div id="thisBlockBest" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-3 col-xs-6">Confirmed deadlines</div>
+				<div id="confirmedDeadlines" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-3 col-xs-6">Mined blocks</div>
+				<div id="minedBlocks" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-3 col-xs-6">Won blocks</div>
+				<div id="wonBlocks" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-3 col-xs-6">Best (overall)</div>
+				<div id="bestOverall" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-3 col-xs-6">Best (Historical Data)</div>
+				<div id="bestHistorical" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-3 col-xs-6">Average deadline</div>
+				<div id="avgDeadline" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-3 col-xs-6">Deadline performance</div>
+				<div id="avgDeadline" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-6 col-xs-12">
+					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Deadline Chart</h4></div>
+					<div class="col-md-12">
+						<div id="deadlinesChart" style="height: 150px; width: auto; margin: 10px"></div>
+						<div id="deadlinesInfo" class="alert alert-info"></div>
+					</div>
+				</div>
+				<div class="col-md-6 col-xs-12">
+					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Deadline Distribution Chart</h4></div>
+					<div class="col-md-12">
+						<div id="deadlineDistributionChart" style="height: 150px; width: auto; margin: 10px"></div>
+						<div id="deadlineDistributionInfo" class="alert alert-info"></div>
+					</div>
+				</div>
+
+				<div class="col-md-12"><h4>Network and Round Stats</h4></div>
+
+				<div class="col-md-3 col-xs-6">Lowest difficulty</div>
+				<div id="lowestDiff" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-3 col-xs-6">Highest difficulty</div>
+				<div id="highestDiff" class="col-md-3 col-xs-6"></div>
+
+				<div class="col-md-6 col-xs-12">
+					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Difficulty Chart</h4></div>
+					<div class="col-md-12">
+						<div id="difficultyChart" style="height: 150px; width: auto; margin: 10px"></div>
+						<div id="difficultyInfo" class="alert alert-info"></div>
+					</div>
+				</div>
+		</div>
 	</div>
+	<div class="col-md-6">
 	<!-- System -->
 	<div class="panel panel-warning">
 		<div class="panel-heading">System</div>
 		<!-- Progress -->
-		<div class="progress">
-			<label class="progress-label" style="font-size:x-small;">Read plot files</label>
-			<div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-		</div>
 		<div id="system" class="panel-body">
 		</div>
 	</div>
+</div>
+<div class="col-md-6">
 	<!-- Settings -->
 	<div class="panel panel-info">
 		<div class="panel-heading">Settings</div>
@@ -127,3 +121,29 @@
 		</div>
 	</div>
 </div>
+	<!-- Last Winner -->
+	<div id="lastWinnerContainer" class="panel panel-default" hidden>
+		<div class="panel-heading">Last winner</div>
+		<div id="lastWinner" class="panel-body">
+			<div id="lastWinnerNameRow" class="row" hidden>
+				<div class="col-md-5 col-xs-4">Name</div>
+				<div class="col-md-7 col-xs-8">
+					<a id="lastWinnerName" target="_blank"></a>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-5 col-xs-4">Numeric</div>
+				<div class="col-md-7 col-xs-8">
+					<a id="lastWinnerNumeric" target="_blank"></a>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-5 col-xs-4">Address</div>
+				<div class="col-md-7 col-xs-8">
+					<a id="lastWinnerAddress" target="_blank"></a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
