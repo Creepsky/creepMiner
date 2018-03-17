@@ -529,10 +529,48 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 
 	json.set("deadlinesConfirmed", std::to_string(data.getConfirmedDeadlines()));
 	json.set("deadlinesAvg", deadlineFormat(data.getAverageDeadline()));
+
+	//Read roundTimes and BlockTimes from blockdata
+	Poco::JSON::Array roundTimeHistory;
+	Poco::JSON::Array blockTimeHistory;
+	int nRTimes = 0;
+	double sumRTimes = 0;
+	int nBTimes = 0;
+	double sumBTimes = 0;
+
+	for (auto& historicalRoundTime : data.getAllHistoricalBlockData())
+	{
+		double roundTime = historicalRoundTime->getRoundTime();
+		if (roundTime > 0)
+		{
+			Poco::JSON::Array jsonRoundTimeHistory;
+			jsonRoundTimeHistory.add(std::to_string(historicalRoundTime->getBlockheight()));
+			jsonRoundTimeHistory.add(std::to_string(roundTime));
+			roundTimeHistory.add(jsonRoundTimeHistory);
+			nRTimes++;
+			sumRTimes += roundTime;
+		}
+		double blockTime = historicalRoundTime->getBlockTime();
+		Poco::JSON::Array jsonBlockTimeHistory;
+		jsonBlockTimeHistory.add(std::to_string(historicalRoundTime->getBlockheight()));
+		jsonBlockTimeHistory.add(std::to_string(blockTime));
+		blockTimeHistory.add(jsonBlockTimeHistory);
+		nBTimes++;
+		sumBTimes += blockTime;
+	}
+	double meanRoundTime = sumRTimes / static_cast<double>(nRTimes);
+
+	json.set("meanBlockTime", std::to_string(sumBTimes / static_cast<double>(nBTimes)));
+	json.set("blockTimeHistory", blockTimeHistory);
+	json.set("meanRoundTime", std::to_string(meanRoundTime));
+	json.set("roundTimeHistory", roundTimeHistory);
 		
+	//get deadlines from blockdata
 	Poco::JSON::Array bestDeadlines;
 	Poco::UInt64 maxDeadline = 0;
 	Poco::UInt64 nDeadlines = 0;
+	double totalTarget = 0;
+	Poco::UInt64 nTargets = 0;
 
 	for (auto& historicalDeadline : data.getAllHistoricalBlockData())
 	{
@@ -545,24 +583,42 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 			bestDeadlines.add(jsonBestDeadline);
 			if( thisDL > maxDeadline ) maxDeadline = thisDL;
 			nDeadlines++;
+			if (historicalDeadline->getBlockTime() > meanRoundTime)
+			{
+				totalTarget += static_cast<double>(thisDL) / (18325193796.0f / static_cast<double>(historicalDeadline->getBasetarget()));
+				nTargets++;
+			}
 		}
 	}
 
 	json.set("nRoundsSubmitted", std::to_string(nDeadlines));
 
+	//calc deadline performance
+	if (nTargets > 0)
+	{
+		double deadlinePerformance = MinerConfig::getConfig().getDeadlinePerformanceFac() * static_cast<double>((nTargets - 1)) / totalTarget;
+		json.set("deadlinePerformance", deadlinePerformance);
+	}
+	else {
+		json.set("deadlinePerformance", 0);
+	}
+
 	//Calculate Deadline distribution from blockdata
 	if (nDeadlines > 0) 
 	{
 		int nClasses = ceil(sqrt(nDeadlines));
-		Poco::UInt64 classWidth = ceil( static_cast<double>(maxDeadline) / static_cast<double>(nClasses) );
-		int deadlineBins[nClasses] = { 0 };
+		Poco::UInt64 classWidth = ceil( static_cast<double>(maxDeadline) / static_cast<double>(nClasses) )+1;
+		int *deadlineBins = new int[nClasses] ;
+		for (int i = 0; i < nClasses; i++) deadlineBins[i] = 0;
 
 		for (auto& historicalDeadline : data.getAllHistoricalBlockData())
 		{
 			if (historicalDeadline->getBestDeadline() != nullptr)
 			{
 				Poco::UInt64 thisDL = historicalDeadline->getBestDeadline()->getDeadline();
-				deadlineBins[ static_cast<int>( floor( static_cast<double>(thisDL)/static_cast<double>(classWidth) ) ) ]++;
+				int bin = floor(static_cast<double>(thisDL) / static_cast<double>(classWidth));
+				if (bin > nClasses - 1) bin = nClasses - 1;
+				deadlineBins[ bin ]++;
 			}
 		}
 
@@ -578,6 +634,8 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 
 		json.set("dlDistBarWidth", std::to_string(classWidth));
 		json.set("deadlineDistribution", deadlineDistribution);	
+
+		delete [] deadlineBins;
 	} else 
 	{
 		Poco::JSON::Array deadlineDistribution;	
@@ -588,17 +646,24 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 		json.set("deadlineDistribution", deadlineDistribution);
 	}
 
+
 	//Read difficulties from blockdata
 	Poco::JSON::Array difficultyHistory;
+	int nDiffs = 0;
+	double sumDiffs = 0;
 
 	for (auto& historicalDifficulty : data.getAllHistoricalBlockData())
 	{
+		float blockDiff = 18325193796.0f / static_cast<float>(historicalDifficulty->getBasetarget());
 		Poco::JSON::Array jsonDifficultyHistory;
 		jsonDifficultyHistory.add(std::to_string(historicalDifficulty->getBlockheight()));
-		jsonDifficultyHistory.add(std::to_string(18325193796.0f / static_cast<float>(historicalDifficulty->getBasetarget())));
+		jsonDifficultyHistory.add(std::to_string(blockDiff));
 		difficultyHistory.add(jsonDifficultyHistory);
+		nDiffs++;
+		sumDiffs += blockDiff;
 	}
 
+	json.set("meanDifficulty",std::to_string(sumDiffs/static_cast<double>(nDiffs)));
 	json.set("difficultyHistory", difficultyHistory);
 	json.set("bestDeadlines", bestDeadlines);
 	json.set("difficulty", std::to_string(block.getDifficulty()));
