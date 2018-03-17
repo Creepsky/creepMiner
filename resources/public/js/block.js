@@ -91,6 +91,9 @@ var highestDiff;
 var bestDeadlinesChart;
 var deadlinePlot;
 var deadlinesInfo;
+var timeChart;
+var timePlot;
+var timeInfo;
 var deadlineDistributionChart;
 var deadlineDistributionBarWidth = 1;
 var deadlineDistributionPlot;
@@ -225,12 +228,21 @@ function newBlock(json) {
 	setOverallProgressVerify(0);
 	lastWinnerContainer.hide();
 	avgDeadline.html(json["deadlinesAvg"]);
+	deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
+	roundsSubmitted.html(json["nRoundsSubmitted"]);
 	wonBlocks.html(json["blocksWon"]);
 	lowestDiff.html(json["lowestDifficulty"]["value"] + " <small>@" + json["lowestDifficulty"]["blockheight"] + "</small>");
 	highestDiff.html(json["highestDifficulty"]["value"] + " <small>@" + json["highestDifficulty"]["blockheight"] + "</small>");
+	meanDiff.html(Math.round(json["meanDifficulty"]));
+	avgRoundTime.html(Math.round(json["meanRoundTime"]*1000)/1000 + " s");
+	avgBlockTime.html(Math.round(json["meanBlockTime"]*1000)/1000 + " s");
 	deadlinePlot.setData([json["bestDeadlines"]]);
 	deadlinePlot.setupGrid();
 	deadlinePlot.draw();
+	timePlot.setData([	{data: json["roundTimeHistory"], label:"Scan time"},
+						{data: json["blockTimeHistory"], label:"Block time",lines:{show:false},points:{show:true}}]);
+	timePlot.setupGrid();
+	timePlot.draw();
 	deadlineDistributionBarWidth = json["dlDistBarWidth"]*0.99;
 	initDeadlineDistributionPlot();
 	deadlineDistributionPlot.setData([json["deadlineDistribution"]]);
@@ -668,7 +680,7 @@ function connectBlock() {
 					config(response);
 					break;
 				case "progress":
-					setOverallProgress(response["value"]);
+					setOverallProgress(response["value"] - response["valueVerification"]);
 					setOverallProgressVerify(response["valueVerification"]);
 					break;
 				case "lastWinner":
@@ -727,14 +739,29 @@ function showDeadlinesInfo(deadlineObj) {
 	lastDeadlineInfo = deadlineObj;
 }
 
+function showTimeInfo(timeObj) {
+	var infos = "---";
+
+	timePlot.unhighlight();
+
+	if (timeObj) {
+		var infos = "block <b>" + timeObj.datapoint[0] + "</b>: " + timeObj.datapoint[1];
+
+		timePlot.highlight(timeObj.series, timeObj.datapoint);
+	}
+
+	timeInfo.html(infos);
+	lastTimeInfo = timeObj;
+}
+
 function showDeadlineDistributionInfo(deadlineDistObj) {
 	var infos = "---";
 
 	deadlineDistributionPlot.unhighlight();
 
 	if (deadlineDistObj) {
-		var barMax = Number(deadlineDistObj.datapoint[0]) + Number(deadlineDistributionBarWidth)/0.99;
-		var infos = "<b>" + deadlineDistObj.datapoint[0] + " - " + barMax.toString() + "</b>: " + deadlineDistObj.datapoint[1] + " Deadlines";
+		var barMax = deadlineFormat(Number(deadlineDistObj.datapoint[0]) + Number(deadlineDistributionBarWidth)/0.99);
+		var infos = "<b>" + deadlineFormat(deadlineDistObj.datapoint[0]) + " - " + barMax.toString() + "</b>: " + deadlineDistObj.datapoint[1] + " Deadlines";
 
 		deadlineDistributionPlot.highlight(deadlineDistObj.series, deadlineDistObj.datapoint);
 	}
@@ -764,6 +791,7 @@ function initBlock() {
 	bestDeadlineOverallElement = $("#bestOverall");
 	bestHistorical = $("#bestHistorical");
 	minedBlocksElement = $("#minedBlocks");
+	roundsSubmitted = $("#roundsSubmitted");
 	confirmedDeadlinesElement = $("#confirmedDeadlines");
 	hideSameNonces = $("#cbHideSameNonces");
 	noncesFound = $("#cbNoncesFound");
@@ -775,12 +803,18 @@ function initBlock() {
 	lastWinner = $("#lastWinner");
 	iconConfirmationSound = $("#iconConfirmationSound");
 	avgDeadline = $("#avgDeadline");
+	deadlinePerformance = $("#deadlinePerformance");
 	connectionStatus = $("#connectionStatus");
 	wonBlocks = $("#wonBlocks");
 	lowestDiff = $("#lowestDiff");
 	highestDiff = $("#highestDiff");
+	meanDiff = $("#meanDiff");
+	avgRoundTime = $("#avgRoundTime");
+	avgBlockTime = $("#avgBlockTime");
 	bestDeadlinesChart = $("#deadlinesChart");
 	deadlinesInfo = $("#deadlinesInfo");
+	timeChart = $("#timeChart");
+	timeInfo = $("#timeInfo");
 	deadlineDistributionChart = $("#deadlineDistributionChart");
 	deadlineDistributionInfo = $("#deadlineDistributionInfo");
 	difficultyChart = $("#difficultyChart");
@@ -792,6 +826,7 @@ function initBlock() {
 	// ******************************************
 
 	initDeadlinePlot();
+	initTimePlot();
 	initDeadlineDistributionPlot();
 	initDifficultyPlot();
 	bestDeadlineOverallElement.html(nullDeadline);
@@ -823,7 +858,7 @@ function initBlock() {
 function initDeadlinePlot() {
 	var options = {
 		series: {
-			points: { show: true }
+			points: { show: true, radius:2 }
 		},
 		grid: {
 			hoverable: true,
@@ -841,7 +876,7 @@ function initDeadlinePlot() {
 				return deadlineFormat(val);
 			}
 		},
-		colors: ["#FF9E28", "#0022FF"]
+		colors: ["#2172A2", "#0022FF"]
 	};
 
 	deadlinePlot = $.plot(bestDeadlinesChart, [], options);
@@ -876,7 +911,7 @@ function initDeadlineDistributionPlot() {
 		yaxis: {
 			min: 0
 		},
-		colors: ["#FF9E28", "#0022FF"]
+		colors: ["#2172A2", "#0022FF"]
 	};
 
 	deadlineDistributionPlot = $.plot(deadlineDistributionChart, [], options);
@@ -892,7 +927,7 @@ function initDeadlineDistributionPlot() {
 	});
 }
 
-function initDifficultyPlot() {
+function initTimePlot() {
 	var options = {
 		series: {
 			lines: {
@@ -900,7 +935,8 @@ function initDifficultyPlot() {
 				fill: true
 			},
 			points: { 
-				show: true 
+				show: false,
+				radius:2
 			}
 		},
 		grid: {
@@ -914,7 +950,49 @@ function initDifficultyPlot() {
 		yaxis: {
 			min: 0
 		},
-		colors: ["#FF9E28", "#0022FF"]
+		legend: {
+			position:"nw"
+		},
+		colors: ["#2172A2", "#FE9E28"]
+	};
+
+	timePlot = $.plot(timeChart, [], options);
+
+	timeChart.bind("plotclick", function (event, pos, item) {
+		if (item)
+			showTimeInfo(item);
+	});
+
+	timeChart.bind("plothover", function (event, pos, item) {
+		if (item)
+			showTimeInfo(item);
+	});
+}
+
+function initDifficultyPlot() {
+	var options = {
+		series: {
+			lines: {
+				show: true,
+				fill: true
+			},
+			points: { 
+				show: false,
+				radius:2
+			}
+		},
+		grid: {
+			hoverable: true,
+			autoHighlight: true,
+			clickable: true
+		},
+		xaxis: {
+			show: false
+		},
+		yaxis: {
+			min: 0
+		},
+		colors: ["#2172A2", "#0022FF"]
 	};
 
 	difficultyPlot = $.plot(difficultyChart, [], options);
@@ -935,6 +1013,11 @@ window.onresize = function (evt) {
 		deadlinePlot.resize(0, 0);
 		deadlinePlot.setupGrid();
 		deadlinePlot.draw();
+	}
+	if (timePlot) {
+		timePlot.resize(0, 0);
+		timePlot.setupGrid();
+		timePlot.draw();
 	}
 	if (deadlineDistributionPlot) {
 		deadlineDistributionPlot.resize(0, 0);

@@ -24,65 +24,84 @@
 		</div>
 	</div>
 </div>
-<div class="col-lg-8 col-md-12">
+<div class="col-lg-8 col-md-12" style="padding-left:0px;padding-right:0px;">
 	<!-- Highscores -->
 	<div class="panel panel-primary">
 		<div class="panel-heading"><h4 style="color:white;margin:0px">Statistics</h4></div>
-		<div class="panel-body">
+		<div class="panel-body" style="margin:0px;padding:0px">
 			<div class="col-md-12"><h4>Deadline Stats</h4></div>
+			<div class="col-md-6" style="padding:0px">
+				<div class="col-xs-6">This block</div>
+				<div id="thisBlockBest" class="col-xs-6">---</div>
+				
+				<div class="col-xs-6">Best</div>
+				<div id="bestOverall" class="col-xs-6">---</div>
+				
+				<div class="col-xs-6">Average</div>
+				<div id="avgDeadline" class="col-xs-6">---</div>
+				
+				<div class="col-xs-6" title="If this value is significantly lower than your real plot size over longer periods of time, you may check your plots for overlaps or corruption.">Performance</div>
+				<div id="deadlinePerformance" class="col-xs-6" title="If this value is significantly lower than your real plot size over longer periods of time, you may check your plots for overlaps or corruption.">---</div>
+			</div>
+			<div class="col-md-6" style="padding:0px">
+				<div class="col-xs-6">Mined blocks</div>
+				<div id="minedBlocks" class="col-xs-6">---</div>
+				
+				<div class="col-xs-6" title="Number of blocks in which at least one deadline has been found and confirmed">Blocks w/ confs</div>
+				<div id="roundsSubmitted" class="col-xs-6" title="Number of blocks in which at least one deadline has been found and confirmed">---</div>
+				
+				<div class="col-xs-6">Confirmed dls</div>
+				<div id="confirmedDeadlines" class="col-xs-6">---</div>
+				
+				<div class="col-xs-6">Won blocks</div>
+				<div id="wonBlocks" class="col-xs-6">---</div>
+			</div>
+			<div class="col-md-12"><h4>Network and Round Stats</h4></div>
+			<div class="col-md-6" style="padding:0px">
+				<div class="col-xs-6">Lowest difficulty</div>
+				<div id="lowestDiff" class="col-xs-6">---</div>
 
-				<div class="col-md-3 col-xs-6">This block</div>
-				<div id="thisBlockBest" class="col-md-3 col-xs-6"></div>
+				<div class="col-xs-6">Highest difficulty</div>
+				<div id="highestDiff" class="col-xs-6">---</div>
+				
+				<div class="col-xs-6">Mean difficulty</div>
+				<div id="meanDiff" class="col-xs-6">---</div>
+			</div>
+			<div class="col-md-6" style="padding:0px">
+				<div class="col-xs-6">Avg. scan time</div>
+				<div id="avgRoundTime" class="col-xs-6">---</div>
 
-				<div class="col-md-3 col-xs-6">Confirmed deadlines</div>
-				<div id="confirmedDeadlines" class="col-md-3 col-xs-6"></div>
-
-				<div class="col-md-3 col-xs-6">Mined blocks</div>
-				<div id="minedBlocks" class="col-md-3 col-xs-6"></div>
-
-				<div class="col-md-3 col-xs-6">Won blocks</div>
-				<div id="wonBlocks" class="col-md-3 col-xs-6"></div>
-
-				<div class="col-md-3 col-xs-6">Best (overall)</div>
-				<div id="bestOverall" class="col-md-3 col-xs-6"></div>
-
-				<div class="col-md-3 col-xs-6">Best (Historical Data)</div>
-				<div id="bestHistorical" class="col-md-3 col-xs-6"></div>
-
-				<div class="col-md-3 col-xs-6">Average deadline</div>
-				<div id="avgDeadline" class="col-md-3 col-xs-6"></div>
-
-				<div class="col-md-3 col-xs-6">Deadline performance</div>
-				<div id="avgDeadline" class="col-md-3 col-xs-6"></div>
+				<div class="col-xs-6">Avg. block time</div>
+				<div id="avgBlockTime" class="col-xs-6">---</div>
+			</div>
+			<div class="col-md-12"><h4>Charts</h4></div>				
 
 				<div class="col-md-6 col-xs-12">
-					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Deadline Chart</h4></div>
+					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Deadlines</h4></div>
 					<div class="col-md-12">
-						<div id="deadlinesChart" style="height: 150px; width: auto; margin: 10px"></div>
-						<div id="deadlinesInfo" class="alert alert-info"></div>
+						<div id="deadlinesChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
+						<div id="deadlinesInfo" class="alert alert-info">---</div>
 					</div>
 				</div>
 				<div class="col-md-6 col-xs-12">
-					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Deadline Distribution Chart</h4></div>
+					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Deadline Distribution</h4></div>
 					<div class="col-md-12">
-						<div id="deadlineDistributionChart" style="height: 150px; width: auto; margin: 10px"></div>
-						<div id="deadlineDistributionInfo" class="alert alert-info"></div>
+						<div id="deadlineDistributionChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
+						<div id="deadlineDistributionInfo" class="alert alert-info">---</div>
 					</div>
 				</div>
-
-				<div class="col-md-12"><h4>Network and Round Stats</h4></div>
-
-				<div class="col-md-3 col-xs-6">Lowest difficulty</div>
-				<div id="lowestDiff" class="col-md-3 col-xs-6"></div>
-
-				<div class="col-md-3 col-xs-6">Highest difficulty</div>
-				<div id="highestDiff" class="col-md-3 col-xs-6"></div>
-
 				<div class="col-md-6 col-xs-12">
-					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Difficulty Chart</h4></div>
+					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Difficulty</h4></div>
 					<div class="col-md-12">
-						<div id="difficultyChart" style="height: 150px; width: auto; margin: 10px"></div>
-						<div id="difficultyInfo" class="alert alert-info"></div>
+						<div id="difficultyChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
+						<div id="difficultyInfo" class="alert alert-info">---</div>
+					</div>
+				</div>
+				<div class="col-md-6 col-xs-12">
+					<div class="col-md-12" style="text-align:center"><h4 style="margin-bottom:0px">Block and Scan Times</h4></div>
+					<div class="col-md-12">
+						<div id="timeChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
+						<div id="timeInfo" class="alert alert-info">---</div>
 					</div>
 				</div>
 		</div>

@@ -52,7 +52,7 @@ function setProgress(progressBar, progress) {
 	}
 
 	progressBar.css("width", valueFixed + "%").attr("aria-valuenow", valueFixed);
-	progressBar.html(valueFixed + " % Read");
+	progressBar.html("");
 }
 
 function setProgressVerify(progressBar, progress) {
