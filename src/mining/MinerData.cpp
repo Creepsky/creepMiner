@@ -51,6 +51,7 @@ Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, s
 	hash.update(blockHeight);
 	hash.close(&newGenSig[0]);
 
+	roundTime_ = 0;
 	scoop_ = (static_cast<int>(newGenSig[newGenSig.size() - 2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size() - 1]);
 
 	refreshBlockEntry();
@@ -231,6 +232,11 @@ void Burst::BlockData::setProgress(const std::string& plotDir, float progress, P
 		parent_->blockDataChangedEvent.notify(this, *json);
 }
 
+void Burst::BlockData::setRoundTime(double rTime)
+{
+	roundTime_ = rTime;
+}
+
 void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
 {
 	{
@@ -260,6 +266,11 @@ Poco::UInt64 Burst::BlockData::getBasetarget() const
 Poco::UInt64 Burst::BlockData::getDifficulty() const
 {
 	return 18325193796 / getBasetarget();
+}
+
+double Burst::BlockData::getRoundTime() const
+{
+	return roundTime_;
 }
 
 Poco::UInt64 Burst::BlockData::getBlockTargetDeadline() const
@@ -567,6 +578,16 @@ const Poco::Timestamp& Burst::MinerData::getStartTime() const
 Poco::Timespan Burst::MinerData::getRunTime() const
 {
 	return Poco::Timestamp{} - getStartTime();
+}
+
+void Burst::BlockData::setBlockTime(int totRT)
+{
+	blockTime_ = totRT;
+}
+
+int Burst::BlockData::getBlockTime() const
+{
+	return blockTime_;
 }
 
 Poco::UInt64 Burst::MinerData::getBlocksMined() const
