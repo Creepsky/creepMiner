@@ -26,9 +26,8 @@ class Block {
 	}
 
 	newBlock(block) {
-		this.head.html("<h4 style='color:white;margin:0px'>Current Block: " + block["block"] + "</h4>");
+		this.head.html("<h4 style='color:white;margin:0px'>Current Block: " + block["block"] + "<p class='pull-right'><span class='label label-default' id='blockTimer'></span></p></h4>");
 		this.body.html("<div class='row'><div class='col-md-3 col-xs-5'>Start time</div><div class='col-md-9 col-xs-7'>" + block["time"] + "</div></div>");
-		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Time elapsed</div><div class='col-md-9 col-xs-7' id='blockTimer'></div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Scoop</div><div class='col-md-9 col-xs-7'>" + block["scoop"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Base target</div><div class='col-md-9 col-xs-7'>" + block["baseTarget"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Generation sig.</div><div class='col-md-9 col-xs-7'>" + block["gensigStr"] + "</div></div>"));
