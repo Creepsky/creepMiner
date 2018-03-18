@@ -28,12 +28,13 @@ class Block {
 	newBlock(block) {
 		this.head.html("<h4 style='color:white;margin:0px'>Current Block: " + block["block"] + "</h4>");
 		this.body.html("<div class='row'><div class='col-md-3 col-xs-5'>Start time</div><div class='col-md-9 col-xs-7'>" + block["time"] + "</div></div>");
+		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Time elapsed</div><div class='col-md-9 col-xs-7' id='blockTimer'></div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Scoop</div><div class='col-md-9 col-xs-7'>" + block["scoop"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Base target</div><div class='col-md-9 col-xs-7'>" + block["baseTarget"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Generation sig.</div><div class='col-md-9 col-xs-7'>" + block["gensigStr"] + "</div></div>"));
 		
 		
-
+		blockStartTime=block["startTime"];
 		var diffDifference = block['difficultyDifference'];
 		var diffDifferenceString = String(diffDifference);
 
@@ -60,6 +61,24 @@ class Block {
 	getData() {
 		return this.data;
 	}
+}
+
+$('#timePlotButton').on('click', function(event) {
+	if (timePlotMax == maxBlockTime*1.25) 
+		timePlotMax = maxScanTime*1.25;
+	else
+		timePlotMax = maxBlockTime*1.25;
+	timePlot.getAxes().yaxis.options.max = timePlotMax;
+	timePlot.setupGrid();
+	timePlot.draw();
+});
+
+var timerRefresh = setInterval(function(){ myTimer() }, 1000);
+
+function myTimer() {
+    var d = new Date() / 1000;
+    var t = Math.round(d - blockStartTime);
+    document.getElementById("blockTimer").innerHTML = deadlineFormat(t);
 }
 
 var system;
@@ -91,6 +110,9 @@ var highestDiff;
 var bestDeadlinesChart;
 var deadlinePlot;
 var deadlinesInfo;
+var maxScanTime=10;
+var maxBlockTime=10;
+var timePlotMax=10;
 var timeChart;
 var timePlot;
 var timeInfo;
@@ -103,6 +125,8 @@ var difficultyPlot;
 var difficultyInfo;
 var miningData = new Block();
 var settingsDlComboboxes;
+var maxHistoricalBlocks;
+var blockStartTime = new Date() / 1000;
 
 // ******************************************
 var logSettings = {};
@@ -229,16 +253,21 @@ function newBlock(json) {
 	lastWinnerContainer.hide();
 	avgDeadline.html(json["deadlinesAvg"]);
 	deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
-	roundsSubmitted.html(json["nRoundsSubmitted"]);
+	roundsSubmitted.html(json["nRoundsSubmitted"] + " / " + maxHistoricalBlocks);
 	wonBlocks.html(json["blocksWon"]);
 	lowestDiff.html(json["lowestDifficulty"]["value"] + " <small>@" + json["lowestDifficulty"]["blockheight"] + "</small>");
 	highestDiff.html(json["highestDifficulty"]["value"] + " <small>@" + json["highestDifficulty"]["blockheight"] + "</small>");
 	meanDiff.html(Math.round(json["meanDifficulty"]));
+	maxRoundTime.html(Math.round(json["maxRoundTime"]*1000)/1000 + " s");
 	avgRoundTime.html(Math.round(json["meanRoundTime"]*1000)/1000 + " s");
 	avgBlockTime.html(Math.round(json["meanBlockTime"]*1000)/1000 + " s");
 	deadlinePlot.setData([json["bestDeadlines"]]);
 	deadlinePlot.setupGrid();
 	deadlinePlot.draw();
+	maxBlockTime=json["maxBlockTime"];
+	maxScanTime=json["maxRoundTime"];
+	timePlotMax=maxBlockTime*1.25;
+	initTimePlot();
 	timePlot.setData([	{data: json["roundTimeHistory"], label:"Scan time"},
 						{data: json["blockTimeHistory"], label:"Block time",lines:{show:false},points:{show:true}}]);
 	timePlot.setupGrid();
@@ -462,6 +491,7 @@ function addLinkWithLabel(label, link) {
 }
 
 function config(cfg) {
+	maxHistoricalBlocks = cfg["maxHistoricalBlocks"];
 	system.html("");
 	addSystemEntry("Pool-URL", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
 	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
@@ -745,7 +775,7 @@ function showTimeInfo(timeObj) {
 	timePlot.unhighlight();
 
 	if (timeObj) {
-		var infos = "block <b>" + timeObj.datapoint[0] + "</b>: " + timeObj.datapoint[1];
+		var infos = "block <b>" + timeObj.datapoint[0] + "</b>: " + deadlineFormat(timeObj.datapoint[1]);
 
 		timePlot.highlight(timeObj.series, timeObj.datapoint);
 	}
@@ -809,6 +839,7 @@ function initBlock() {
 	lowestDiff = $("#lowestDiff");
 	highestDiff = $("#highestDiff");
 	meanDiff = $("#meanDiff");
+	maxRoundTime = $("#maxRoundTime");
 	avgRoundTime = $("#avgRoundTime");
 	avgBlockTime = $("#avgBlockTime");
 	bestDeadlinesChart = $("#deadlinesChart");
@@ -948,10 +979,13 @@ function initTimePlot() {
 			show: false
 		},
 		yaxis: {
-			min: 0
+			min: 0,
+			max: timePlotMax
 		},
 		legend: {
-			position:"nw"
+			position:"nw",
+			backgroundOpacity: 0,
+			noColumns: 2
 		},
 		colors: ["#2172A2", "#FE9E28"]
 	};

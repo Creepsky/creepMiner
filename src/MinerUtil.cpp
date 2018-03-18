@@ -514,6 +514,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	json.set("baseTarget", std::to_string(block.getBasetarget()));
 	json.set("gensigStr", block.getGensigStr());
 	json.set("time", getTime());
+	json.set("startTime", std::to_string( std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() ));
 	json.set("blocksMined", std::to_string(data.getBlocksMined()));
 	json.set("blocksWon", std::to_string(data.getBlocksWon()));
 	
@@ -535,8 +536,10 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	Poco::JSON::Array blockTimeHistory;
 	int nRTimes = 0;
 	double sumRTimes = 0;
+	double maxRoundTime = 0;
 	int nBTimes = 0;
 	double sumBTimes = 0;
+	double maxBlockTime = 0;
 
 	for (auto& historicalRoundTime : data.getAllHistoricalBlockData())
 	{
@@ -549,6 +552,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 			roundTimeHistory.add(jsonRoundTimeHistory);
 			nRTimes++;
 			sumRTimes += roundTime;
+			if (roundTime > maxRoundTime) maxRoundTime = roundTime;
 		}
 		double blockTime = historicalRoundTime->getBlockTime();
 		Poco::JSON::Array jsonBlockTimeHistory;
@@ -557,12 +561,15 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 		blockTimeHistory.add(jsonBlockTimeHistory);
 		nBTimes++;
 		sumBTimes += blockTime;
+		if (blockTime > maxBlockTime) maxBlockTime = blockTime;
 	}
 	double meanRoundTime = sumRTimes / static_cast<double>(nRTimes);
 
 	json.set("meanBlockTime", std::to_string(sumBTimes / static_cast<double>(nBTimes)));
+	json.set("maxBlockTime", std::to_string(maxBlockTime));
 	json.set("blockTimeHistory", blockTimeHistory);
 	json.set("meanRoundTime", std::to_string(meanRoundTime));
+	json.set("maxRoundTime", std::to_string(maxRoundTime));
 	json.set("roundTimeHistory", roundTimeHistory);
 		
 	//get deadlines from blockdata
@@ -700,6 +707,7 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("bufferSizeRaw", std::to_string(MinerConfig::getConfig().getMaxBufferSizeRaw()));
 	json.set("targetDeadline", deadlineFormat(targetDeadline));
 	json.set("submitProbability", MinerConfig::getConfig().getSubmitProbability());
+	json.set("maxHistoricalBlocks", MinerConfig::getConfig().getMaxHistoricalBlocks());
 	json.set("maxPlotReaders", std::to_string(MinerConfig::getConfig().getMaxPlotReaders()));
 	json.set("maxPlotReadersRaw", std::to_string(MinerConfig::getConfig().getMaxPlotReaders(false)));
 	json.set("miningIntensity", std::to_string(MinerConfig::getConfig().getMiningIntensity()));
