@@ -458,7 +458,7 @@ function setLastWinner(winner) {
 		var address = lastWinner.find("#lastWinnerAddress");
 		var name = lastWinner.find("#lastWinnerName");
 
-		var link = "https://explore.burst.cryptoguru.org/account/BURST-" + burstAddress;
+		var link = "https://explore.burst.cryptoguru.org/account/" + numeric;
 
 		if (winner["name"]) {
 			name.html(winner["name"]);
