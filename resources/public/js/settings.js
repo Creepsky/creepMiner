@@ -10,6 +10,7 @@ function update_settings(config) {
     plot_readers.val(config['maxPlotReadersRaw']);
     submission_max_retry.val(config['submissionMaxRetry']);
 	submit_probability.val(config['submitProbability']);
+	max_historical_blocks.val(config['maxHistoricalBlocks']);
     target_deadline.val(config['targetDeadlineLocal']);
 
     timeout.val(config['timeout']);
@@ -54,6 +55,7 @@ window.onload = function (evt) {
     plot_readers = $("#plot-readers");
     submission_max_retry = $("#submission-max-retry");
 	submit_probability = $("#submit-probability");
+	max_historical_blocks = $("#max-historical-blocks");
     target_deadline = $("#target-deadline");
     timeout = $("#timeout");
 

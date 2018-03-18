@@ -707,6 +707,8 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned(value));
 				else if (key == "submit-probability")
 					MinerConfig::getConfig().setSubmitProbability(np::parseFloat(value));
+				else if (key == "max-historical-blocks")
+					MinerConfig::getConfig().setMaxHistoricalBlocks(np::parseUnsigned(value));
 				else if (key == "target-deadline")
 					MinerConfig::getConfig().setTargetDeadline(value, TargetDeadlineType::Local);
 				else if (key == "timeout")
