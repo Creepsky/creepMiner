@@ -563,9 +563,19 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 		sumBTimes += blockTime;
 		if (blockTime > maxBlockTime) maxBlockTime = blockTime;
 	}
-	double meanRoundTime = sumRTimes / static_cast<double>(nRTimes);
+	double meanRoundTime;
+	if (nRTimes > 0)
+		meanRoundTime = sumRTimes / static_cast<double>(nRTimes);
+	else
+		meanRoundTime = 0.0f;
 
-	json.set("meanBlockTime", std::to_string(sumBTimes / static_cast<double>(nBTimes)));
+	double meanBlockTime;
+	if (nBTimes > 0)
+		meanBlockTime = sumBTimes / static_cast<double>(nBTimes);
+	else
+		meanBlockTime = 0.0f;
+
+	json.set("meanBlockTime", std::to_string(meanBlockTime));
 	json.set("maxBlockTime", std::to_string(maxBlockTime));
 	json.set("blockTimeHistory", blockTimeHistory);
 	json.set("meanRoundTime", std::to_string(meanRoundTime));
