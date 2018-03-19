@@ -75,9 +75,11 @@ $('#timePlotButton').on('click', function(event) {
 var timerRefresh = setInterval(function(){ myTimer() }, 1000);
 
 function myTimer() {
-    var d = new Date() / 1000;
-    var t = Math.round(d - blockStartTime);
-    document.getElementById("blockTimer").innerHTML = deadlineFormat(t);
+	var d = new Date() / 1000;
+	var t = Math.round(d - blockStartTime);
+	var timerElement=document.getElementById("blockTimer");
+	if (timerElement)
+		timerElement.innerHTML = deadlineFormat(t);
 }
 
 var system;
