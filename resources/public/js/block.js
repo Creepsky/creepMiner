@@ -791,8 +791,10 @@ function showDeadlineDistributionInfo(deadlineDistObj) {
 	deadlineDistributionPlot.unhighlight();
 
 	if (deadlineDistObj) {
-		var barMax = deadlineFormat(Number(deadlineDistObj.datapoint[0]) + Number(deadlineDistributionBarWidth)/0.99);
-		var infos = "<b>" + deadlineFormat(deadlineDistObj.datapoint[0]) + " - " + barMax.toString() + "</b>: " + deadlineDistObj.datapoint[1] + " Deadlines";
+		var barMax = deadlineFormat(Number(deadlineDistObj.datapoint[0]) + 
+			Number(deadlineDistributionBarWidth)/0.99);
+		var infos = "<b>" + deadlineFormat(deadlineDistObj.datapoint[0]) + " - " + 
+			barMax.toString() + "</b>: " + deadlineDistObj.datapoint[1] + " Deadlines";
 
 		deadlineDistributionPlot.highlight(deadlineDistObj.series, deadlineDistObj.datapoint);
 	}

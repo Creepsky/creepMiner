@@ -580,9 +580,9 @@ Poco::Timespan Burst::MinerData::getRunTime() const
 	return Poco::Timestamp{} - getStartTime();
 }
 
-void Burst::BlockData::setBlockTime(int totRT)
+void Burst::BlockData::setBlockTime(int bTime)
 {
-	blockTime_ = totRT;
+	blockTime_ = bTime;
 }
 
 int Burst::BlockData::getBlockTime() const
