@@ -283,8 +283,8 @@ function newBlock(json) {
 	maxScanTime=json["maxRoundTime"];
 	timePlotMax=maxBlockTime*1.25;
 	initTimePlot();
-	timePlot.setData([	{data: json["roundTimeHistory"], label:"Scan time"},
-						{data: json["blockTimeHistory"], label:"Block time",lines:{show:false},points:{show:true}}]);
+	timePlot.setData([	{data: json["roundTimeHistory"], label:"&nbsp;&nbsp;<b>Scan time</b>&nbsp;&nbsp;&nbsp;"},
+						{data: json["blockTimeHistory"], label:"&nbsp;&nbsp;<b>Block time</b>",lines:{show:false},points:{show:true}}]);
 	timePlot.setupGrid();
 	timePlot.draw();
 	deadlineDistributionBarWidth = json["dlDistBarWidth"]*0.99;
