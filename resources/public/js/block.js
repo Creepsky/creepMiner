@@ -67,9 +67,20 @@ $('#timePlotButton').on('click', function(event) {
 		timePlotMax = maxScanTime*1.25;
 	else
 		timePlotMax = maxBlockTime*1.25;
+	if (timePlotMax < 30) timePlotMax = 30;
 	timePlot.getAxes().yaxis.options.max = timePlotMax;
 	timePlot.setupGrid();
 	timePlot.draw();
+});
+
+$('#deadlinePlotButton').on('click', function(event) {
+	if (deadlinePlotMax) 
+		deadlinePlotMax = null;
+	else
+		deadlinePlotMax = deadlinePlotSmallMax;
+	deadlinePlot.getAxes().yaxis.options.max = deadlinePlotMax;
+	deadlinePlot.setupGrid();
+	deadlinePlot.draw();
 });
 
 var timerRefresh = setInterval(function(){ myTimer() }, 1000);
@@ -108,6 +119,8 @@ var avgDeadline;
 var wonBlocks;
 var lowestDiff;
 var highestDiff;
+var deadlinePlotSmallMax=86400;
+var deadlinePlotMax=null;
 var bestDeadlinesChart;
 var deadlinePlot;
 var deadlinesInfo;
@@ -262,6 +275,7 @@ function newBlock(json) {
 	maxRoundTime.html(Math.round(json["maxRoundTime"]*1000)/1000 + " s");
 	avgRoundTime.html(Math.round(json["meanRoundTime"]*1000)/1000 + " s");
 	avgBlockTime.html(Math.round(json["meanBlockTime"]*1000)/1000 + " s");
+	deadlinePlotSmallMax = -Math.log(0.95)*240*json["meanDifficulty"]/json["deadlinePerformance"];
 	deadlinePlot.setData([json["bestDeadlines"]]);
 	deadlinePlot.setupGrid();
 	deadlinePlot.draw();
@@ -905,6 +919,7 @@ function initDeadlinePlot() {
 		yaxis: {
 			mode: "time",
 			min: 0,
+			max: deadlinePlotMax,
 			timeformat: "%Yy %mm %dd %H:%M:%S",
 			tickFormatter: function (val, axis) {
 				return deadlineFormat(val);
