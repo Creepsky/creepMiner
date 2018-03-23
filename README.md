@@ -35,6 +35,8 @@ Alternatively their is a [![Join the chat at https://gitter.im/creepminer/lobby]
 - [Solo mining](https://github.com/Creepsky/creepMiner/wiki/Solo-mining)
 - [Mining & Optimization](https://github.com/Creepsky/creepMiner/wiki/Mining-&-Optimization)
 
+*remember* Creepsky works on this all free of charge, so even if you don't need help with the most wicked miner you could still donate to show your appreciation, his address is `BURST-JBKL-ZUAV-UXMB-2G795`
+
 ### Build Status
 
 | Platform | Master | Development |
