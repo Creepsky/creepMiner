@@ -926,6 +926,12 @@ float Burst::MinerConfig::getTargetDLFactor() const
 	return targetDLFactor_;
 }
 
+float Burst::MinerConfig::getDeadlinePerformanceFac() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return deadlinePerformanceFac_;
+}
+
 float Burst::MinerConfig::getSubmitProbability() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
@@ -1225,7 +1231,12 @@ void Burst::MinerConfig::setSubmitProbability(float subP)
 	else
 		submitProbability_ = subP;
 
-	targetDLFactor_ = -log( 1.0f - submitProbability_ ) * 240.0f;
+	if (submitProbability_ > 0)
+		deadlinePerformanceFac_ = (1.0f + (1.0f - subP) / subP * log(1.0f - subP)) * 240.0f;
+	else
+		deadlinePerformanceFac_ = 1.0f * 240.0f;
+
+	targetDLFactor_ = -log(1.0f - submitProbability_) * 240.0f;
 }
 
 

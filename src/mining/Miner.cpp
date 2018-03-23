@@ -302,19 +302,21 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 			MinerConfig::getConfig().setTargetDeadline(poolDeadline, TargetDeadlineType::Local);
 	}
 
+	// Set total run time of previous block
+	if (startPoint_.time_since_epoch().count() > 0)
+	{
+		const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint_;
+		const auto timeDiffSeconds = std::chrono::duration_cast<std::chrono::seconds>(timeDiff);
+		log_unimportant(MinerLogger::miner, "Block %s ended in %s", numberToString(blockHeight - 1),
+			deadlineFormat(timeDiffSeconds.count()));
+		data_.getBlockData()->setBlockTime(timeDiffSeconds.count());
+	}
+
 	// setup new block-data
 	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr, MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local));
 
 	// printing block info and transfer it to local server
 	{
-		if (startPoint_.time_since_epoch().count() > 0)
-		{
-			const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint_;
-			const auto timeDiffSeconds = std::chrono::duration_cast<std::chrono::seconds>(timeDiff);
-			log_unimportant(MinerLogger::miner, "Block %s ended in %s", numberToString(blockHeight - 1),
-				deadlineFormat(timeDiffSeconds.count()));
-		}
-
 		const auto difficulty = block->getDifficulty();
 		const auto difficultyDifference = data_.getDifficultyDifference();
 		std::string diffiultyDifferenceToString;
@@ -689,6 +691,7 @@ void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 	if (block == nullptr || block->getBlockheight() != blockHeight)
 		return;
 
+	block->setRoundTime(roundTime);
 	const auto bestDeadline = block->getBestDeadline(BlockData::DeadlineSearchType::Found);
 
 	log_information(MinerLogger::miner, "Processed block %s\n"

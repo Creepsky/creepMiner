@@ -13,7 +13,7 @@ class Deadline {
 
 class Block {
 	constructor() {
-		this.panel = $("<div class='panel panel-primary'></div>");
+		this.panel = $("<div class='panel panel-success'></div>");
 		this.head = $("<div class='panel-heading'></div>");
 		this.body = $("<div class='panel-body'></div>");
 		this.data = $("<ul id='blkdata' class='list-group'></ul>");
@@ -26,14 +26,14 @@ class Block {
 	}
 
 	newBlock(block) {
-		this.head.html("Block " + block["block"]);
+		this.head.html("<h4 style='color:white;margin:0px'>Current Block: " + block["block"] + "<p class='pull-right'><span class='label label-default' id='blockTimer'></span></p></h4>");
 		this.body.html("<div class='row'><div class='col-md-3 col-xs-5'>Start time</div><div class='col-md-9 col-xs-7'>" + block["time"] + "</div></div>");
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Scoop</div><div class='col-md-9 col-xs-7'>" + block["scoop"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Base target</div><div class='col-md-9 col-xs-7'>" + block["baseTarget"] + "</div></div>"));
 		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Generation sig.</div><div class='col-md-9 col-xs-7'>" + block["gensigStr"] + "</div></div>"));
 		
 		
-
+		blockStartTime=block["startTime"];
 		var diffDifference = block['difficultyDifference'];
 		var diffDifferenceString = String(diffDifference);
 
@@ -62,6 +62,37 @@ class Block {
 	}
 }
 
+$('#timePlotButton').on('click', function(event) {
+	if (timePlotMax == maxBlockTime*1.25) 
+		timePlotMax = maxScanTime*1.25;
+	else
+		timePlotMax = maxBlockTime*1.25;
+	if (timePlotMax < 30) timePlotMax = 30;
+	timePlot.getAxes().yaxis.options.max = timePlotMax;
+	timePlot.setupGrid();
+	timePlot.draw();
+});
+
+$('#deadlinePlotButton').on('click', function(event) {
+	if (deadlinePlotMax) 
+		deadlinePlotMax = null;
+	else
+		deadlinePlotMax = deadlinePlotSmallMax;
+	deadlinePlot.getAxes().yaxis.options.max = deadlinePlotMax;
+	deadlinePlot.setupGrid();
+	deadlinePlot.draw();
+});
+
+var timerRefresh = setInterval(function(){ myTimer() }, 1000);
+
+function myTimer() {
+	var d = new Date() / 1000;
+	var t = Math.round(d - blockStartTime);
+	var timerElement=document.getElementById("blockTimer");
+	if (timerElement)
+		timerElement.innerHTML = deadlineFormat(t);
+}
+
 var system;
 var thisBlockBest;
 var thisBlockBestElement;
@@ -78,6 +109,7 @@ var noncesFound;
 var noncesSent;
 var noncesConfirmed;
 var progressBar;
+var progressBarVerify;
 var lastWinnerContainer;
 var lastWinner;
 var confirmedSound = new Audio("sounds/sms-alert-1-daniel_simon.mp3");
@@ -87,11 +119,28 @@ var avgDeadline;
 var wonBlocks;
 var lowestDiff;
 var highestDiff;
+var deadlinePlotSmallMax=86400;
+var deadlinePlotMax=null;
 var bestDeadlinesChart;
-var plot;
+var deadlinePlot;
 var deadlinesInfo;
+var maxScanTime=10;
+var maxBlockTime=10;
+var timePlotMax=10;
+var timeChart;
+var timePlot;
+var timeInfo;
+var deadlineDistributionChart;
+var deadlineDistributionBarWidth = 1;
+var deadlineDistributionPlot;
+var deadlineDistributionInfo;
+var difficultyChart;
+var difficultyPlot;
+var difficultyInfo;
 var miningData = new Block();
 var settingsDlComboboxes;
+var maxHistoricalBlocks;
+var blockStartTime = new Date() / 1000;
 
 // ******************************************
 var logSettings = {};
@@ -214,15 +263,41 @@ function newBlock(json) {
 
 	setConfirmedDeadlines(BigInteger(json["deadlinesConfirmed"]));
 	setOverallProgress(0);
+	setOverallProgressVerify(0);
 	lastWinnerContainer.hide();
 	avgDeadline.html(json["deadlinesAvg"]);
+	deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
+	roundsSubmitted.html(json["nRoundsSubmitted"] + " / " + maxHistoricalBlocks);
 	wonBlocks.html(json["blocksWon"]);
 	lowestDiff.html(json["lowestDifficulty"]["value"] + " <small>@" + json["lowestDifficulty"]["blockheight"] + "</small>");
 	highestDiff.html(json["highestDifficulty"]["value"] + " <small>@" + json["highestDifficulty"]["blockheight"] + "</small>");
-	plot.setData([json["bestDeadlines"]]);
-	plot.setupGrid();
-	plot.draw();
+	meanDiff.html(Math.round(json["meanDifficulty"]));
+	maxRoundTime.html(Math.round(json["maxRoundTime"]*1000)/1000 + " s");
+	avgRoundTime.html(Math.round(json["meanRoundTime"]*1000)/1000 + " s");
+	avgBlockTime.html(Math.round(json["meanBlockTime"]*1000)/1000 + " s");
+	deadlinePlotSmallMax = -Math.log(0.95)*240*json["meanDifficulty"]/json["deadlinePerformance"];
+	deadlinePlot.setData([json["bestDeadlines"]]);
+	deadlinePlot.setupGrid();
+	deadlinePlot.draw();
+	maxBlockTime=json["maxBlockTime"];
+	maxScanTime=json["maxRoundTime"];
+	timePlotMax=maxBlockTime*1.25;
+	initTimePlot();
+	timePlot.setData([	{data: json["roundTimeHistory"], label:"&nbsp;&nbsp;<b>Scan time</b>&nbsp;&nbsp;&nbsp;"},
+						{data: json["blockTimeHistory"], label:"&nbsp;&nbsp;<b>Block time</b>",lines:{show:false},points:{show:true}}]);
+	timePlot.setupGrid();
+	timePlot.draw();
+	deadlineDistributionBarWidth = json["dlDistBarWidth"]*0.99;
+	initDeadlineDistributionPlot();
+	deadlineDistributionPlot.setData([json["deadlineDistribution"]]);
+	deadlineDistributionPlot.setupGrid();
+	deadlineDistributionPlot.draw();
+	difficultyPlot.setData([json["difficultyHistory"]]);
+	difficultyPlot.setupGrid();
+	difficultyPlot.draw();
 	showDeadlinesInfo(null);
+	showDeadlineDistributionInfo(null);
+	showDifficultyInfo(null);
 }
 
 function getNewLine(type, id) {
@@ -431,6 +506,7 @@ function addLinkWithLabel(label, link) {
 }
 
 function config(cfg) {
+	maxHistoricalBlocks = cfg["maxHistoricalBlocks"];
 	system.html("");
 	addSystemEntry("Pool-URL", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
 	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
@@ -457,6 +533,10 @@ function setConfirmedDeadlines(deadlines) {
 
 function setOverallProgress(value) {
 	setProgress(progressBar, value);
+}
+
+function setOverallProgressVerify(valueVerify) {
+	setProgressVerify(progressBarVerify, valueVerify);
 }
 
 function setLastWinner(winner) {
@@ -645,7 +725,8 @@ function connectBlock() {
 					config(response);
 					break;
 				case "progress":
-					setOverallProgress(response["value"]);
+					setOverallProgress(response["value"] - response["valueVerification"]);
+					setOverallProgressVerify(response["valueVerification"]);
 					break;
 				case "lastWinner":
 					setLastWinner(response);
@@ -690,17 +771,65 @@ function deadlineFormat(val) {
 function showDeadlinesInfo(deadlineObj) {
 	var infos = "---";
 
-	plot.unhighlight();
+	deadlinePlot.unhighlight();
 
 	if (deadlineObj) {
 		var infos = "block <b>" + deadlineObj.datapoint[0] + "</b>: " +
 			deadlineFormat(deadlineObj.datapoint[1]);
 
-		plot.highlight(deadlineObj.series, deadlineObj.datapoint);
+		deadlinePlot.highlight(deadlineObj.series, deadlineObj.datapoint);
 	}
 
 	deadlinesInfo.html(infos);
 	lastDeadlineInfo = deadlineObj;
+}
+
+function showTimeInfo(timeObj) {
+	var infos = "---";
+
+	timePlot.unhighlight();
+
+	if (timeObj) {
+		var infos = "block <b>" + timeObj.datapoint[0] + "</b>: " + deadlineFormat(timeObj.datapoint[1]);
+
+		timePlot.highlight(timeObj.series, timeObj.datapoint);
+	}
+
+	timeInfo.html(infos);
+	lastTimeInfo = timeObj;
+}
+
+function showDeadlineDistributionInfo(deadlineDistObj) {
+	var infos = "---";
+
+	deadlineDistributionPlot.unhighlight();
+
+	if (deadlineDistObj) {
+		var barMax = deadlineFormat(Number(deadlineDistObj.datapoint[0]) + 
+			Number(deadlineDistributionBarWidth)/0.99);
+		var infos = "<b>" + deadlineFormat(deadlineDistObj.datapoint[0]) + " - " + 
+			barMax.toString() + "</b>: " + deadlineDistObj.datapoint[1] + " Deadlines";
+
+		deadlineDistributionPlot.highlight(deadlineDistObj.series, deadlineDistObj.datapoint);
+	}
+
+	deadlineDistributionInfo.html(infos);
+	lastDeadlineDistributionInfo = deadlineDistObj;
+}
+
+function showDifficultyInfo(difficultyObj) {
+	var infos = "---";
+
+	difficultyPlot.unhighlight();
+
+	if (difficultyObj) {
+		var infos = "block <b>" + difficultyObj.datapoint[0] + "</b>: " + difficultyObj.datapoint[1];
+
+		difficultyPlot.highlight(difficultyObj.series, difficultyObj.datapoint);
+	}
+
+	difficultyInfo.html(infos);
+	lastDifficultyInfo = difficultyObj;
 }
 
 function initBlock() {
@@ -709,29 +838,45 @@ function initBlock() {
 	bestDeadlineOverallElement = $("#bestOverall");
 	bestHistorical = $("#bestHistorical");
 	minedBlocksElement = $("#minedBlocks");
+	roundsSubmitted = $("#roundsSubmitted");
 	confirmedDeadlinesElement = $("#confirmedDeadlines");
 	hideSameNonces = $("#cbHideSameNonces");
 	noncesFound = $("#cbNoncesFound");
 	noncesSent = $("#cbNoncesSent");
 	noncesConfirmed = $("#cbNoncesConfirmed");
 	progressBar = $("#progressBar");
+	progressBarVerify = $("#progressBarVerify");
 	lastWinnerContainer = $("#lastWinnerContainer");
 	lastWinner = $("#lastWinner");
 	iconConfirmationSound = $("#iconConfirmationSound");
 	avgDeadline = $("#avgDeadline");
+	deadlinePerformance = $("#deadlinePerformance");
 	connectionStatus = $("#connectionStatus");
 	wonBlocks = $("#wonBlocks");
 	lowestDiff = $("#lowestDiff");
 	highestDiff = $("#highestDiff");
+	meanDiff = $("#meanDiff");
+	maxRoundTime = $("#maxRoundTime");
+	avgRoundTime = $("#avgRoundTime");
+	avgBlockTime = $("#avgBlockTime");
 	bestDeadlinesChart = $("#deadlinesChart");
 	deadlinesInfo = $("#deadlinesInfo");
+	timeChart = $("#timeChart");
+	timeInfo = $("#timeInfo");
+	deadlineDistributionChart = $("#deadlineDistributionChart");
+	deadlineDistributionInfo = $("#deadlineDistributionInfo");
+	difficultyChart = $("#difficultyChart");
+	difficultyInfo = $("#difficultyInfo");
 	settingsDlComboboxes = $("#settingsDlComboboxes");
 
 	// ******************************************
 	localInitCheckBoxes();
 	// ******************************************
 
-	initPlot();
+	initDeadlinePlot();
+	initTimePlot();
+	initDeadlineDistributionPlot();
+	initDifficultyPlot();
 	bestDeadlineOverallElement.html(nullDeadline);
 	bestHistorical.html(nullDeadline);
 	connectBlock();
@@ -742,6 +887,8 @@ function initBlock() {
 	// ******************************************
 	
 	showDeadlinesInfo(null);
+	showDeadlineDistributionInfo(null);
+	showDifficultyInfo(null);
 	$("#container").append(miningData.panel);
 
 	hideSameNonces.change(reparseMessages);
@@ -756,14 +903,51 @@ function initBlock() {
 	// ******************************************
 }
 
-function initPlot() {
+function initDeadlinePlot() {
 	var options = {
 		series: {
-			lines: {
-				show: true,
-				fill: true
-			},
-			points: { show: true }
+			points: { show: true, radius:2 }
+		},
+		grid: {
+			hoverable: true,
+			autoHighlight: true,
+			clickable: true
+		},
+		xaxis: {
+			show: false,
+		},
+		yaxis: {
+			mode: "time",
+			min: 0,
+			max: deadlinePlotMax,
+			timeformat: "%Yy %mm %dd %H:%M:%S",
+			tickFormatter: function (val, axis) {
+				return deadlineFormat(val);
+			}
+		},
+		colors: ["#2172A2", "#0022FF"]
+	};
+
+	deadlinePlot = $.plot(bestDeadlinesChart, [], options);
+
+	bestDeadlinesChart.bind("plotclick", function (event, pos, item) {
+		if (item)
+			showDeadlinesInfo(item);
+	});
+
+	bestDeadlinesChart.bind("plothover", function (event, pos, item) {
+		if (item)
+			showDeadlinesInfo(item);
+	});
+}
+
+function initDeadlineDistributionPlot() {
+	var options = {
+		series: {
+			bars: { show: true }
+		},
+		bars: {
+			barWidth: deadlineDistributionBarWidth
 		},
 		grid: {
 			hoverable: true,
@@ -774,33 +958,128 @@ function initPlot() {
 			show: false
 		},
 		yaxis: {
-			mode: "time",
-			min: 0,
-			timeformat: "%Yy %mm %dd %H:%M:%S",
-			tickFormatter: function (val, axis) {
-				return deadlineFormat(val);
-			}
-		}
+			min: 0
+		},
+		colors: ["#2172A2", "#0022FF"]
 	};
 
-	plot = $.plot($("#deadlinesChart"), [], options);
+	deadlineDistributionPlot = $.plot(deadlineDistributionChart, [], options);
 
-	$("#deadlinesChart").bind("plotclick", function (event, pos, item) {
+	deadlineDistributionChart.bind("plotclick", function (event, pos, item) {
 		if (item)
-			showDeadlinesInfo(item);
+			showDeadlineDistributionInfo(item);
 	});
 
-	$("#deadlinesChart").bind("plothover", function (event, pos, item) {
+	deadlineDistributionChart.bind("plothover", function (event, pos, item) {
 		if (item)
-			showDeadlinesInfo(item);
+			showDeadlineDistributionInfo(item);
+	});
+}
+
+function initTimePlot() {
+	var options = {
+		series: {
+			lines: {
+				show: true,
+				fill: true
+			},
+			points: { 
+				show: false,
+				radius:2
+			}
+		},
+		grid: {
+			hoverable: true,
+			autoHighlight: true,
+			clickable: true
+		},
+		xaxis: {
+			show: false
+		},
+		yaxis: {
+			min: 0,
+			max: timePlotMax
+		},
+		legend: {
+			position:"nw",
+			backgroundOpacity: 0,
+			noColumns: 2
+		},
+		colors: ["#2172A2", "#FE9E28"]
+	};
+
+	timePlot = $.plot(timeChart, [], options);
+
+	timeChart.bind("plotclick", function (event, pos, item) {
+		if (item)
+			showTimeInfo(item);
+	});
+
+	timeChart.bind("plothover", function (event, pos, item) {
+		if (item)
+			showTimeInfo(item);
+	});
+}
+
+function initDifficultyPlot() {
+	var options = {
+		series: {
+			lines: {
+				show: true,
+				fill: true
+			},
+			points: { 
+				show: false,
+				radius:2
+			}
+		},
+		grid: {
+			hoverable: true,
+			autoHighlight: true,
+			clickable: true
+		},
+		xaxis: {
+			show: false
+		},
+		yaxis: {
+			min: 0
+		},
+		colors: ["#2172A2", "#0022FF"]
+	};
+
+	difficultyPlot = $.plot(difficultyChart, [], options);
+
+	difficultyChart.bind("plotclick", function (event, pos, item) {
+		if (item)
+			showDifficultyInfo(item);
+	});
+
+	difficultyChart.bind("plothover", function (event, pos, item) {
+		if (item)
+			showDifficultyInfo(item);
 	});
 }
 
 window.onresize = function (evt) {
-	if (plot) {
-		plot.resize(0, 0);
-		plot.setupGrid();
-		plot.draw();
+	if (deadlinePlot) {
+		deadlinePlot.resize(0, 0);
+		deadlinePlot.setupGrid();
+		deadlinePlot.draw();
+	}
+	if (timePlot) {
+		timePlot.resize(0, 0);
+		timePlot.setupGrid();
+		timePlot.draw();
+	}
+	if (deadlineDistributionPlot) {
+		deadlineDistributionPlot.resize(0, 0);
+		deadlineDistributionPlot.setupGrid();
+		deadlineDistributionPlot.draw();
+	}
+	if (difficultyPlot) {
+		difficultyPlot.resize(0, 0);
+		difficultyPlot.setupGrid();
+		difficultyPlot.draw();
 	}
 }
 
