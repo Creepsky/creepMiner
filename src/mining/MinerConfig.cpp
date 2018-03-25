@@ -104,7 +104,9 @@ void Burst::MinerConfig::checkPlotOverlaps()
 		}
 	}
 	if (totalOverlap > 0)
-	log_error(MinerLogger::miner, "Total Overlap: " + std::to_string(static_cast<float>(totalOverlap) / static_cast<float>(totalNonces)*100.0f) + "%.");
+		log_error(MinerLogger::miner, "Total Overlap: " + std::to_string(static_cast<float>(totalOverlap) / static_cast<float>(totalNonces)*100.0f) + "%.");
+	else
+		log_system(MinerLogger::config, "No overlaps found.");
 	//std::cout << "Total Overlap: " << static_cast<float>(totalOverlap) / static_cast<float>(totalNonces)*100.0f << "%." << std::endl;
 }
 
