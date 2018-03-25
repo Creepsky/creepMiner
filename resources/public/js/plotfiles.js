@@ -6,6 +6,8 @@ var activePlotDir = null;
 var confirmedPlotfiles = [];
 var current_selected = null;
 
+var isChecking=false;
+
 window.onload = function (evt) {
     $("#btnPlotfiles").addClass('active');
     parsePlots();
@@ -38,6 +40,9 @@ function connectCallback(msg) {
             case "plotdirs-rescan":
                 plotdirs = response["plotdirs"];
                 parsePlots();
+                break;
+			case "plotcheck-result":
+                setPlotIntegrity(response);
                 break;
             default:
                 break;
@@ -97,7 +102,7 @@ function parsePlots() {
             var nonces = filename_tokens[2];
             var staggersize = filename_tokens[3];
             var size = plotFile["size"];
-            var lineFile = createPlotfileLine(account, start_nonce, nonces, staggersize, size);
+            var lineFile = createPlotfileLine(account, start_nonce, nonces, staggersize, size, path);
 
             var fileElement = {
                 "path": path,
@@ -139,13 +144,38 @@ function parsePlots() {
     });
 }
 
-function createPlotfileLine(account, start_nonce, nonces, staggersize, size) {
+function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
+	if(!isChecking)
+	{
+		isChecking=true;
+		var butId= account + "_" + start_nonce + "_" + nonces + "_" + staggersize;
+		document.getElementById("shid").innerHTML=path;
+		var buttonElement=document.getElementById(butId);
+		buttonElement.innerHTML="<span style='width=100%'>...</span>";
+		$.get("/checkPlotFile/" + path);
+	}
+	}
+	
+function setPlotIntegrity(checkPlotResult) {
+	isChecking=false;
+	var buttonElement=document.getElementById(checkPlotResult["plotID"]);
+	var integrity = Math.floor(Number(checkPlotResult["plotIntegrity"])*100)/100;
+	if (integrity==100)
+		buttonElement.innerHTML="<b style='color:green'>" + integrity + "%</b>";
+	else
+		buttonElement.innerHTML="<b style='color:red'>" + integrity + "%</b>";
+	}
+
+function createPlotfileLine(account, start_nonce, nonces, staggersize, size, path) {
     var line = $("<tr></tr>");
     line.append("<td>" + account + "</td>");
     line.append("<td>" + start_nonce + "</td>");
     line.append("<td>" + nonces + "</td>");
     line.append("<td>" + staggersize + "</td>");
     line.append("<td>" + size + "</td>");
+	line.append("<td style='padding-bottom:0px;' id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "'><button title='Check the integrity of 32 random scoops in 10 random nonces of the plot file' type='button' class='btn btn-primary' " +
+		"style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," + 
+		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'>Check</button></td>");
 
     return line;
 }
