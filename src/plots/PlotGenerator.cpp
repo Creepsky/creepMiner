@@ -94,10 +94,6 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 	std::uniform_int_distribution<> randInt(0, nonceCount);
 
 	std::cout << "Checking file " << plotPath << " for corruption ..." << std::endl;
-	/*std::cout << "Account: " << account << std::endl;
-	std::cout << "Starting Nonce: " << startNonce << std::endl;
-	std::cout << "Nonce Count: " << nonceCount << std::endl;
-	std::cout << "Stagger Size: " << staggerSize << std::endl;*/
 
 	float totalIntegrity = 0;
 	int checkNonces = 30;		//number of nonces to check
@@ -155,7 +151,7 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 		Poco::UInt64 bytesChecked = 0;
 
 		int scoopStep = Settings::ScoopPerPlot / checkScoops;
-
+		// read scoops from nonce and compare to generated nonce
 		for (int scoopInterval = 0; scoopInterval < Settings::ScoopPerPlot; scoopInterval += scoopStep)
 		{
 			int scoop = scoopInterval + randInt(gen) % scoopStep;
@@ -169,6 +165,7 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 				bytesChecked++;
 			}
 		}
+		//calculate and output of integrity of this nonce
 		float intact = static_cast<float>(isIntact) / static_cast<float>(bytesChecked) * 100.0f;
 		std::cout << "Nonce " << nonce << ": " << intact << "% intact." << std::endl;
 		totalIntegrity += intact;
