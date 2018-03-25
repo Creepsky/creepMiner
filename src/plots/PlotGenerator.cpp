@@ -102,7 +102,7 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 	float totalIntegrity = 0;
 	int checkNonces = 30;		//number of nonces to check
 	int checkScoops = 32;		//number of scoops to check per nonce
-	int noncesChecked = 0;		//counter for the case of nonceCount not devisible by 10
+	int noncesChecked = 0;		//counter for the case of nonceCount not devisible by checkNonces
 
 	for (Poco::UInt64 nonceInterval = startNonce; nonceInterval < startNonce + nonceCount; nonceInterval += nonceCount / checkNonces) {
 
