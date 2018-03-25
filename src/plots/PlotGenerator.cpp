@@ -26,6 +26,7 @@
 #include "PlotVerifier.hpp"
 #include "MinerUtil.hpp"
 #include <fstream>
+#include <random>
 
 Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner)
 {
@@ -88,6 +89,10 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 	Poco::UInt64 nonceCount = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(plotPath));
 	Poco::UInt64 staggerSize = Poco::NumberParser::parseUnsigned64(getStaggerSizeFromPlotFile(plotPath));
 
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> randInt(0, nonceCount);
+
 	std::cout << "Checking file " << plotPath << " for corruption ..." << std::endl;
 	/*std::cout << "Account: " << account << std::endl;
 	std::cout << "Starting Nonce: " << startNonce << std::endl;
@@ -97,10 +102,12 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 	float totalIntegrity = 0;
 	int checkNonces = 10;		//number of nonces to check
 	int checkScoops = 32;		//number of scoops to check per nonce
+	int noncesChecked = 0;		//counter for the case of nonceCount not devisible by 10
 
 	for (Poco::UInt64 nonceInterval = startNonce; nonceInterval < startNonce + nonceCount; nonceInterval += nonceCount / checkNonces) {
 
-		Poco::UInt64 nonce = nonceInterval + rand() % (nonceCount / checkNonces);
+		Poco::UInt64 nonce = nonceInterval + randInt(gen) % (nonceCount / checkNonces);
+		if (nonce >= startNonce + nonceCount) nonce = startNonce + nonceCount - 1;
 
 		char final[32];
 		char gendata[16 + Settings::PlotSize];
@@ -145,26 +152,29 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 		char readNonce[16 + Settings::PlotSize];
 		char buffer[scoopSize];
 		int isIntact = 0;
+		int bytesChecked = 0;
 
 		int scoopStep = Settings::ScoopPerPlot / checkScoops;
 
 		for (int scoopInterval = 0; scoopInterval < Settings::ScoopPerPlot; scoopInterval += scoopStep)
 		{
-			int scoop = scoopInterval + rand() % scoopStep;
+			int scoop = scoopInterval + randInt(gen) % scoopStep;
+			if (scoop >= Settings::ScoopPerPlot) scoop = Settings::ScoopPerPlot - 1;
 			plotFile.seekg(nonceStaggerOffset + scoop * nonceScoopOffset);
 			plotFile.read(buffer, scoopSize);
 			for (int byte = 0; byte < scoopSize; byte++)
 			{
 				readNonce[scoop*scoopSize + byte] = buffer[byte];
-				if (readNonce[scoop*scoopSize + byte] == gendata[scoop*scoopSize + byte]) isIntact += 1;
+				if (readNonce[scoop*scoopSize + byte] == gendata[scoop*scoopSize + byte]) isIntact++;
+				bytesChecked++;
 			}
 		}
-		float intact = static_cast<float>(isIntact) / static_cast<float>(checkScoops) / static_cast<float>(scoopSize) * 100.0f;
+		float intact = static_cast<float>(isIntact) / static_cast<float>(bytesChecked) * 100.0f;
 		std::cout << "Nonce " << nonce << ": " << intact << "% intact." << std::endl;
 		totalIntegrity += intact;
-
+		noncesChecked++;
 		plotFile.close();
 	}
-	std::cout << "Total Integrity: " << totalIntegrity / checkNonces << "%" << std::endl;
-	return totalIntegrity / checkNonces;
+	std::cout << "Total Integrity: " << totalIntegrity / noncesChecked << "%" << std::endl;
+	return totalIntegrity / noncesChecked;
 }
