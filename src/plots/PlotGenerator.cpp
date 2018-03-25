@@ -100,7 +100,7 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 	std::cout << "Stagger Size: " << staggerSize << std::endl;*/
 
 	float totalIntegrity = 0;
-	int checkNonces = 10;		//number of nonces to check
+	int checkNonces = 30;		//number of nonces to check
 	int checkScoops = 32;		//number of scoops to check per nonce
 	int noncesChecked = 0;		//counter for the case of nonceCount not devisible by 10
 
@@ -151,8 +151,8 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 
 		char readNonce[16 + Settings::PlotSize];
 		char buffer[scoopSize];
-		int isIntact = 0;
-		int bytesChecked = 0;
+		Poco::UInt64 isIntact = 0;
+		Poco::UInt64 bytesChecked = 0;
 
 		int scoopStep = Settings::ScoopPerPlot / checkScoops;
 
