@@ -72,6 +72,42 @@ bool Burst::MinerConfig::rescanPlotfiles()
 	return false;
 }
 
+void Burst::MinerConfig::checkPlotOverlaps() 
+{
+	log_system(MinerLogger::config, "Checking plots for overlaps...");
+
+	Poco::Mutex::ScopedLock lock(mutex_);
+	Poco::UInt64 totalNonces = 0;
+	Poco::UInt64 totalOverlap = 0;
+	for (auto& plotFiles : getPlotFiles()) 
+	{
+		std::string pathOne = plotFiles->getPath();
+		for (auto& plotFilesTwo : getPlotFiles())
+		{
+			Poco::UInt64 startNonceOne = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathOne));
+			Poco::UInt64 nonceCountOne = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathOne));
+			std::string pathTwo = plotFilesTwo->getPath();
+			totalNonces += nonceCountOne;
+			if (pathOne != pathTwo && getAccountIdFromPlotFile(pathOne) == getAccountIdFromPlotFile(pathTwo))
+			{
+				Poco::UInt64 startNonceTwo = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathTwo));
+				Poco::UInt64 nonceCountTwo = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathTwo));
+				if (startNonceTwo >= startNonceOne && startNonceTwo < startNonceOne + nonceCountOne)
+				{
+					Poco::UInt64 overlap = startNonceOne + nonceCountOne - startNonceTwo;
+					if (nonceCountTwo < overlap) overlap = nonceCountTwo;
+					//std::cout << pathOne << " and " << pathTwo << " overlap by " << overlap << " nonces." << std::endl;
+					log_error(MinerLogger::miner, pathOne + " and " + pathTwo + " overlap by " + std::to_string(overlap) + " nonces.");
+					totalOverlap += overlap;
+				}
+			}
+		}
+	}
+	if (totalOverlap > 0)
+	log_error(MinerLogger::miner, "Total Overlap: " + std::to_string(static_cast<float>(totalOverlap) / static_cast<float>(totalNonces)*100.0f) + "%.");
+	//std::cout << "Total Overlap: " << static_cast<float>(totalOverlap) / static_cast<float>(totalNonces)*100.0f << "%." << std::endl;
+}
+
 void Burst::MinerConfig::printConsole() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);

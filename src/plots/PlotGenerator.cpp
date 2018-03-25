@@ -93,7 +93,7 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 	std::mt19937 gen(rd());
 	std::uniform_int_distribution<> randInt(0, nonceCount);
 
-	std::cout << "Checking file " << plotPath << " for corruption ..." << std::endl;
+	log_information(MinerLogger::general, "Checking file " + plotPath + " for corruption ...");
 
 	float totalIntegrity = 0;
 	int checkNonces = 30;		//number of nonces to check
@@ -167,11 +167,11 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 		}
 		//calculate and output of integrity of this nonce
 		float intact = static_cast<float>(isIntact) / static_cast<float>(bytesChecked) * 100.0f;
-		std::cout << "Nonce " << nonce << ": " << intact << "% intact." << std::endl;
+		log_information(MinerLogger::general, "Nonce " + std::to_string(nonce) + ": " + std::to_string(intact) + "% intact.");
 		totalIntegrity += intact;
 		noncesChecked++;
 		plotFile.close();
 	}
-	std::cout << "Total Integrity: " << totalIntegrity / noncesChecked << "%" << std::endl;
+	log_information(MinerLogger::general, "Total Integrity: " + std::to_string(totalIntegrity / noncesChecked) + "%");
 	return totalIntegrity / noncesChecked;
 }
