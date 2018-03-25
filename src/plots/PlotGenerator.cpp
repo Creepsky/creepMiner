@@ -24,6 +24,7 @@
 #include "shabal/MinerShabal.hpp"
 #include "mining/Miner.hpp"
 #include "PlotVerifier.hpp"
+#include "MinerUtil.hpp"
 #include <fstream>
 
 Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner)
@@ -82,10 +83,10 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 
 float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 {
-	Poco::UInt64 account = Poco::NumberParser::parse64(getAccountIdFromPlotFile(plotPath));
-	Poco::UInt64 startNonce = Poco::NumberParser::parse64(getStartNonceFromPlotFile(plotPath));
-	Poco::UInt64 nonceCount = Poco::NumberParser::parse64(getNonceCountFromPlotFile(plotPath));
-	Poco::UInt64 staggerSize = Poco::NumberParser::parse64(getStaggerSizeFromPlotFile(plotPath));
+	Poco::UInt64 account = Poco::NumberParser::parseUnsigned64(getAccountIdFromPlotFile(plotPath));
+	Poco::UInt64 startNonce = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(plotPath));
+	Poco::UInt64 nonceCount = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(plotPath));
+	Poco::UInt64 staggerSize = Poco::NumberParser::parseUnsigned64(getStaggerSizeFromPlotFile(plotPath));
 
 	std::cout << "Checking file " << plotPath << " for corruption ..." << std::endl;
 	/*std::cout << "Account: " << account << std::endl;

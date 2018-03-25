@@ -278,9 +278,6 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		// check plot file
 		if (path_segments.front() == "checkPlotFile")
 			if (path_segments.size() > 1) {
-				//std::string plotPath = path_segments[1];
-				//for (int seg = 2; seg < path_segments.size(); seg++) { plotPath.append("\\" + path_segments[seg]); }
-				//std::cout << "Checking file " << plotPath << " for corruption" << std::endl;
 				return new LambdaRequestHandler([&](req_t& req, res_t& res)
 			{
 				RequestHandler::checkPlotfile(req, res, *server_->miner_, *server_);

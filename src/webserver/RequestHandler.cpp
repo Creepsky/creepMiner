@@ -471,9 +471,6 @@ void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request,
 
 	std::string plotID = getAccountIdFromPlotFile(plotPath) + "_" + getStartNonceFromPlotFile(plotPath) + "_" + getNonceCountFromPlotFile(plotPath) + "_" + getStaggerSizeFromPlotFile(plotPath);
 
-	//std::cout << "Sending plotID: " << plotID << " and integrity: " << plotIntegrity << std::endl;
-
-
 	//response
 	Poco::JSON::Object json;
 	json.set("type", "plotcheck-result");
