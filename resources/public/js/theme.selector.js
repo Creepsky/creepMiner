@@ -5,7 +5,7 @@
 		
 		var el = document.getElementById('themeSelector'),
 		elChild = document.createElement("div");
-		elChild.innerHTML = '<select id="css-selector" class="selectpicker form-control"></select>';
+		elChild.innerHTML = '<select id="css-selector" class="selectpicker form-control" style="margin:0px;padding:0px"></select>';
 		
 		var options= '<option value="">cerulean</option>';
 		$links.each(function(index,value){
