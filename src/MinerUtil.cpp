@@ -680,6 +680,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 		sumDiffs += blockDiff;
 	}
 
+	json.set("numHistoricals", std::to_string(nDiffs));
 	json.set("meanDifficulty",std::to_string(sumDiffs/static_cast<double>(nDiffs)));
 	json.set("difficultyHistory", difficultyHistory);
 	json.set("bestDeadlines", bestDeadlines);

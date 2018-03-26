@@ -267,7 +267,7 @@ function newBlock(json) {
 	lastWinnerContainer.hide();
 	avgDeadline.html(json["deadlinesAvg"]);
 	deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
-	roundsSubmitted.html(json["nRoundsSubmitted"] + " / " + maxHistoricalBlocks);
+	roundsSubmitted.html(json["nRoundsSubmitted"] + " / " + json["numHistoricals"] + " ( " + maxHistoricalBlocks +" max. )");
 	wonBlocks.html(json["blocksWon"]);
 	lowestDiff.html(json["lowestDifficulty"]["value"] + " <small>@" + json["lowestDifficulty"]["blockheight"] + "</small>");
 	highestDiff.html(json["highestDifficulty"]["value"] + " <small>@" + json["highestDifficulty"]["blockheight"] + "</small>");
