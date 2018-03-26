@@ -35,7 +35,7 @@ namespace Burst
 	{
 	public:
 		static Poco::UInt64 generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner);
-		static float checkPlotfile(std::string plotPath);
+		static float checkPlotfileIntegrity(std::string plotPath);
 	};
 
 	/*template <typename TShabal>
