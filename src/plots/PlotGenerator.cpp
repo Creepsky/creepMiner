@@ -82,7 +82,7 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 }
 
 
-float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
+float Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath)
 {
 	Poco::UInt64 account = Poco::NumberParser::parseUnsigned64(getAccountIdFromPlotFile(plotPath));
 	Poco::UInt64 startNonce = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(plotPath));
@@ -147,8 +147,8 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 
 		char readNonce[16 + Settings::PlotSize];
 		char buffer[scoopSize];
-		Poco::UInt64 isIntact = 0;
-		Poco::UInt64 bytesChecked = 0;
+		Poco::UInt64 scoopsIntact = 0;
+		Poco::UInt64 scoopsChecked = 0;
 
 		int scoopStep = Settings::ScoopPerPlot / checkScoops;
 		// read scoops from nonce and compare to generated nonce
@@ -158,15 +158,17 @@ float Burst::PlotGenerator::checkPlotfile(std::string plotPath)
 			if (scoop >= Settings::ScoopPerPlot) scoop = Settings::ScoopPerPlot - 1;
 			plotFile.seekg(nonceStaggerOffset + scoop * nonceScoopOffset);
 			plotFile.read(buffer, scoopSize);
+			Poco::UInt64 bytesIntact = 0;
 			for (int byte = 0; byte < scoopSize; byte++)
 			{
 				readNonce[scoop*scoopSize + byte] = buffer[byte];
-				if (readNonce[scoop*scoopSize + byte] == gendata[scoop*scoopSize + byte]) isIntact++;
-				bytesChecked++;
+				if (readNonce[scoop*scoopSize + byte] == gendata[scoop*scoopSize + byte]) bytesIntact++;
 			}
+			if (bytesIntact == scoopSize) scoopsIntact++;
+			scoopsChecked++;
 		}
 		//calculate and output of integrity of this nonce
-		float intact = static_cast<float>(isIntact) / static_cast<float>(bytesChecked) * 100.0f;
+		float intact = static_cast<float>(scoopsIntact) / static_cast<float>(scoopsChecked) * 100.0f;
 		log_information(MinerLogger::general, "Nonce " + std::to_string(nonce) + ": " + std::to_string(intact) + "% intact.");
 		totalIntegrity += intact;
 		noncesChecked++;

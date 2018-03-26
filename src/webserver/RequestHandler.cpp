@@ -453,21 +453,22 @@ void Burst::RequestHandler::rescanPlotfiles(Poco::Net::HTTPServerRequest& reques
 	response.send();
 }
 
-void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
-	Miner& miner, MinerServer& server)
+void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, MinerServer& server)
 {
 	// first check the credentials
 	if (!checkCredentials(request, response))
 		return;
 
-	log_information(MinerLogger::server, "Got request to check a file for corruption...");
+	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+	response.setContentLength(0);
+	response.send();
 
-	//miner.rescanPlotfiles();
+	log_information(MinerLogger::server, "Got request to check a file for corruption...");
 
 	std::string plotPath = request.getURI();
 	plotPath = plotPath.erase(0, 15);
 
-	float plotIntegrity = PlotGenerator::checkPlotfile(plotPath);
+	float plotIntegrity = PlotGenerator::checkPlotfileIntegrity(plotPath);
 
 	std::string plotID = getAccountIdFromPlotFile(plotPath) + "_" + getStartNonceFromPlotFile(plotPath) + "_" + getNonceCountFromPlotFile(plotPath) + "_" + getStaggerSizeFromPlotFile(plotPath);
 
@@ -478,10 +479,6 @@ void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request,
 	json.set("plotIntegrity", std::to_string(plotIntegrity));
 
 	server.sendToWebsockets(json);
-
-	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-	response.setContentLength(0);
-	response.send();
 
 }
 
