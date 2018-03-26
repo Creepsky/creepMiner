@@ -72,6 +72,46 @@ bool Burst::MinerConfig::rescanPlotfiles()
 	return false;
 }
 
+void Burst::MinerConfig::checkPlotOverlaps() 
+{
+	log_system(MinerLogger::config, "Checking local plots for overlaps...");
+
+	Poco::Mutex::ScopedLock lock(mutex_);
+	Poco::UInt64 totalOverlaps = 0;
+	int numPlots = getPlotFiles().size();
+
+	for (int plotFileOne = 0; plotFileOne < numPlots; plotFileOne++) 
+	{
+		std::string pathOne = (getPlotFiles().at(plotFileOne))->getPath();
+		Poco::UInt64 startNonceOne = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathOne));
+		Poco::UInt64 nonceCountOne = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathOne));
+		for (int plotFileTwo = plotFileOne+1; plotFileTwo < numPlots; plotFileTwo++)
+		{
+			std::string pathTwo = (getPlotFiles().at(plotFileTwo))->getPath();
+			if (pathOne != pathTwo && getAccountIdFromPlotFile(pathOne) == getAccountIdFromPlotFile(pathTwo))
+			{
+				Poco::UInt64 startNonceTwo = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathTwo));
+				Poco::UInt64 nonceCountTwo = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathTwo));
+				if (startNonceTwo >= startNonceOne && startNonceTwo < startNonceOne + nonceCountOne)
+				{
+					Poco::UInt64 overlap = startNonceOne + nonceCountOne - startNonceTwo;
+					if (nonceCountTwo < overlap) overlap = nonceCountTwo;
+					//std::cout << pathOne << " and " << pathTwo << " overlap by " << overlap << " nonces." << std::endl;
+					log_error(MinerLogger::miner, pathOne + " and " + pathTwo + " overlap by " + std::to_string(overlap) + " nonces.");
+					totalOverlaps++;
+				}
+			}
+		}
+	}
+	if (totalOverlaps > 0)
+	{
+		log_error(MinerLogger::miner, "Total overlaps found: " + std::to_string(totalOverlaps));
+	}
+	else
+		log_system(MinerLogger::config, "No overlaps found.");
+	//std::cout << "Total Overlap: " << static_cast<float>(totalOverlap) / static_cast<float>(totalNonces)*100.0f << "%." << std::endl;
+}
+
 void Burst::MinerConfig::printConsole() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);

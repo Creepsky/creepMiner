@@ -267,6 +267,7 @@ int main(const int argc, const char* argv[])
 				}
 
 				Burst::MinerLogger::setChannelMinerData(&miner.getData());
+				Burst::MinerConfig::getConfig().checkPlotOverlaps();
 
 				miner.run();
 				server.stop();

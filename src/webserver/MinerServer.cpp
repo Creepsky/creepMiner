@@ -275,6 +275,16 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 				});
 		}
 
+		// check plot file
+		if (path_segments.front() == "checkPlotFile")
+			if (path_segments.size() > 1) {
+				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			{
+				RequestHandler::checkPlotfile(req, res, *server_->miner_, *server_);
+			});
+			}
+
+
 		// show/change plot files
 		if (path_segments.front() == "plotdir")
 			if (path_segments.size() > 1)

@@ -98,6 +98,7 @@ namespace Burst
 		 * Does NOT read new plot dirs from the configuration file!
 		 */
 		bool rescanPlotfiles();
+		void checkPlotOverlaps();
 		void printConsole() const;
 		void printConsolePlots() const;
 		void printUrl(HostType type) const;
@@ -117,7 +118,7 @@ namespace Burst
 		 * \brief Saves the current settings by creating a JSON object for it and saving it
 		 * into a file.
 		 * \param path The path to the file, where the setting is written into.
-		 * \return true, if saved, false otherwise.
+		 * \return true, if saved, false otherwise
 		 */
 		bool save(const std::string& path) const;
 
