@@ -453,7 +453,7 @@ void Burst::RequestHandler::rescanPlotfiles(Poco::Net::HTTPServerRequest& reques
 	response.send();
 }
 
-void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, MinerServer& server)
+void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, MinerServer& server, std::string plotPathEnc)
 {
 	// first check the credentials
 	if (!checkCredentials(request, response))
@@ -465,8 +465,8 @@ void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request,
 
 	log_information(MinerLogger::server, "Got request to check a file for corruption...");
 
-	std::string plotPath = request.getURI();
-	plotPath = plotPath.erase(0, 15);
+	std::string plotPath = "";
+	Poco::URI::decode(plotPathEnc, plotPath, false);
 
 	float plotIntegrity = PlotGenerator::checkPlotfileIntegrity(plotPath);
 
