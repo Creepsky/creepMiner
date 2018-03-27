@@ -280,7 +280,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 			if (path_segments.size() > 1) {
 				return new LambdaRequestHandler([&, plotPathEnc = move(path_segments[1])](req_t& req, res_t& res)
 			{
-				RequestHandler::checkPlotfile(req, res, *server_, plotPathEnc);
+				RequestHandler::checkPlotfile(req, res, *server_->miner_, *server_, plotPathEnc);
 			});
 			}
 

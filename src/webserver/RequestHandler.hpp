@@ -229,7 +229,7 @@ namespace Burst
 		* \param miner The miner, which will propagate the changed config to his connected users.
 		* \param path The path of the plot file to check for corruption.
 		*/
-		void checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
+		void checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner,
 			MinerServer& server, std::string plotPathEnc);
 
 		/**

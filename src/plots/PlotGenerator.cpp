@@ -82,7 +82,7 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 }
 
 
-float Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath)
+float Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner& miner)
 {
 	Poco::UInt64 account = Poco::NumberParser::parseUnsigned64(getAccountIdFromPlotFile(plotPath));
 	Poco::UInt64 startNonce = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(plotPath));
@@ -101,6 +101,8 @@ float Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath)
 	int noncesChecked = 0;		//counter for the case of nonceCount not devisible by checkNonces
 
 	for (Poco::UInt64 nonceInterval = startNonce; nonceInterval < startNonce + nonceCount; nonceInterval += nonceCount / checkNonces) {
+
+		while (miner.isProcessing()) Poco::Thread::sleep(1000);
 
 		Poco::UInt64 nonce = nonceInterval + randInt(gen) % (nonceCount / checkNonces);
 		if (nonce >= startNonce + nonceCount) nonce = startNonce + nonceCount - 1;
