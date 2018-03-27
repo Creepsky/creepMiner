@@ -278,7 +278,7 @@ namespace Burst
 		Url urlMiningInfo_;
 		Url urlWallet_;
 		bool startServer_ = true;
-		Url serverUrl_{"http://127.0.0.1:8080"};
+		Url serverUrl_{"http://0.0.0.0:8124"};
 		float targetDLFactor_ = 1.0f;
 		float deadlinePerformanceFac_ = 1.0f;
 		float submitProbability_ = 0.999f;

@@ -789,7 +789,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			webserverObj.assign(new Poco::JSON::Object);
 
 		startServer_ = getOrAdd(webserverObj, "start", true);
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://127.0.0.1:8080", startServer_);
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8124, "http://0.0.0.0:8124", startServer_);
 		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 64u);
 		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 32u);
 		cumulatePlotsizes_ = getOrAdd(webserverObj, "cumulatePlotsizes", true);
