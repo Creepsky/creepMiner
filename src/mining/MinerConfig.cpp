@@ -96,8 +96,14 @@ void Burst::MinerConfig::checkPlotOverlaps()
 				{
 					Poco::UInt64 overlap = startNonceOne + nonceCountOne - startNonceTwo;
 					if (nonceCountTwo < overlap) overlap = nonceCountTwo;
-					//std::cout << pathOne << " and " << pathTwo << " overlap by " << overlap << " nonces." << std::endl;
 					log_error(MinerLogger::miner, pathOne + " and " + pathTwo + " overlap by " + std::to_string(overlap) + " nonces.");
+					totalOverlaps++;
+				}
+				else if (startNonceOne >= startNonceTwo && startNonceOne < startNonceTwo + nonceCountTwo)
+				{
+					Poco::UInt64 overlap = startNonceTwo + nonceCountTwo - startNonceOne;
+					if (nonceCountOne < overlap) overlap = nonceCountOne;
+					log_error(MinerLogger::miner, pathTwo + " and " + pathOne + " overlap by " + std::to_string(overlap) + " nonces.");
 					totalOverlaps++;
 				}
 			}
