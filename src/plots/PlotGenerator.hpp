@@ -26,6 +26,7 @@
 #include <vector>
 #include <condition_variable>
 #include "Declarations.hpp"
+#include "webserver/MinerServer.hpp"
 
 namespace Burst
 {
@@ -35,7 +36,7 @@ namespace Burst
 	{
 	public:
 		static Poco::UInt64 generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner);
-		static float checkPlotfileIntegrity(std::string plotPath, Miner& miner);
+		static void checkPlotfileIntegrity(std::string plotPath, Miner& miner, MinerServer& server);
 	};
 
 	/*template <typename TShabal>

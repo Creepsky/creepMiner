@@ -45,6 +45,7 @@
 #include <utility>
 #include <Poco/Net/NetException.h>
 #include <Poco/Delegate.h>
+#include "plots/Plot.hpp"
 
 const std::string cookieUserName = "creepminer-webserver-user";
 const std::string cookiePassName = "creepminer-webserver-pass";
@@ -465,18 +466,29 @@ void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request,
 
 	log_information(MinerLogger::server, "Got request to check a file for corruption...");
 
-	float plotIntegrity = PlotGenerator::checkPlotfileIntegrity(plotPath, miner );
+	PlotGenerator::checkPlotfileIntegrity(plotPath, miner, server);
 
-	std::string plotID = getAccountIdFromPlotFile(plotPath) + "_" + getStartNonceFromPlotFile(plotPath) + "_" + getNonceCountFromPlotFile(plotPath) + "_" + getStaggerSizeFromPlotFile(plotPath);
+}
 
-	//response
-	Poco::JSON::Object json;
-	json.set("type", "plotcheck-result");
-	json.set("plotID", plotID);
-	json.set("plotIntegrity", std::to_string(plotIntegrity));
+void Burst::RequestHandler::checkAllPlotfiles(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner, MinerServer& server)
+{
+	// first check the credentials
+	if (!checkCredentials(request, response))
+		return;
 
-	server.sendToWebsockets(json);
+	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+	response.setContentLength(0);
+	response.send();
 
+	log_information(MinerLogger::server, "Got request to check all files for corruption...");
+
+	const auto plotFiles = MinerConfig::getConfig().getPlotFiles();
+
+	for (const auto& plotFile : plotFiles)
+	{
+		const auto& plotPath = plotFile->getPath();
+		PlotGenerator::checkPlotfileIntegrity(plotPath, miner, server);
+	}
 }
 
 bool Burst::RequestHandler::checkCredentials(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)

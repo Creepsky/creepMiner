@@ -278,13 +278,19 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		// check plot file
 		if (path_segments.front() == "checkPlotFile")
 			if (path_segments.size() > 1) {
+				if (path_segments[1] == "all") {
+					return new LambdaRequestHandler([&](req_t& req, res_t& res)
+					{
+						RequestHandler::checkAllPlotfiles(req, res, *server_->miner_, *server_);
+					});
+				}
 				using Poco::replace;
 				std::string plotPath = "";
 				Poco::URI::decode(replace(request.getURI(), "/" + path_segments[0] + "/", plotPath), plotPath, false);
 				return new LambdaRequestHandler([&, pPath = move(plotPath)](req_t& req, res_t& res)
-			{
-				RequestHandler::checkPlotfile(req, res, *server_->miner_, *server_, pPath);
-			});
+				{
+					RequestHandler::checkPlotfile(req, res, *server_->miner_, *server_, pPath);
+				});
 			}
 
 
