@@ -1,0 +1,42 @@
+<div class="col-md-3">
+	<!-- Plot-Dirs -->
+	<div class="panel panel-default">
+		<div class="panel-heading">Dirs</div>
+		<!--<ul id="plotDirList" class="list-group">
+		</ul>-->
+		<div class="panel-body">
+			<!-- Command Buttons -->
+			<div class="btn-group btn-group-justified" role="group" aria-label="commands">
+				<div class="btn-group" role="group">
+					<button type="button" class="btn btn-default" onclick="$.get('/rescanPlotfiles');">
+						<span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+						rescan
+					</button>
+				</div>
+			</div>
+			<br />
+			<div id="plotDirList" class="list-group">
+			</div>
+		</div>
+	</div>
+</div>
+<div class="col-md-9">
+	<!-- Plot Files -->
+	<div class="panel panel-default">
+		<div class="panel-heading">Files</div>
+		<table class="table table-hover">
+			<thead>
+				<tr>
+					<th>Account</th>
+					<th>Start nonce</th>
+					<th>Nonces</th>
+					<th>Staggersize</th>
+					<th>Size</th>
+					<th>Integrity</th>
+				</tr>
+			</thead>
+			<tbody id="plotFileDiv">
+			</tbody>
+		</table>
+	</div>
+</div>

@@ -13,9 +13,9 @@ class Deadline {
 
 class Block {
 	constructor() {
-		this.panel = $("<div class='card mb-12'></div>");
-		this.head = $("<h4 class='card-header bg-success text-white'>");
-		this.body = $("<div class='card-body'></div>");
+		this.panel = $("<div class='panel panel-success'></div>");
+		this.head = $("<div class='panel-heading'></div>");
+		this.body = $("<div class='panel-body'></div>");
 		this.data = $("<ul id='blkdata' class='list-group'></ul>");
 
 		this.panel.append(this.head);
@@ -26,12 +26,12 @@ class Block {
 	}
 
 	newBlock(block) {
-		this.head.html("Current block: " + block["block"] + "</h4><span class='badge badge-light float-sm-right' id='blockTimer'></span>");
-		this.body.html("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Start time <span class='badge badge-secondary float-sm-right'>" + block["time"] + "</span></li>");
-		this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Scoop <span>" + block["scoop"] + "</span></li>"));
-		this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Base target<span>" + block["baseTarget"] + "</span></li>"));
-
-
+		this.head.html("<h4 style='color:white;margin:0px'>Current Block: " + block["block"] + "<p class='pull-right'><span class='label label-default' id='blockTimer'></span></p></h4>");
+		this.body.html("<div class='row'><div class='col-md-3 col-xs-5'>Start time</div><div class='col-md-9 col-xs-7'>" + block["time"] + "</div></div>");
+		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Scoop</div><div class='col-md-9 col-xs-7'>" + block["scoop"] + "</div></div>"));
+		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Base target</div><div class='col-md-9 col-xs-7'>" + block["baseTarget"] + "</div></div>"));
+		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Generation sig.</div><div class='col-md-9 col-xs-7'>" + block["gensigStr"] + "</div></div>"));
+		
 		
 		blockStartTime=block["startTime"];
 		var diffDifference = block['difficultyDifference'];
@@ -42,11 +42,9 @@ class Block {
 		else if (diffDifference > 0)
 			diffDifferenceString = "+" + String(diffDifference);
 
-		this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Difficulty <span>" + block["difficulty"] + " (" + diffDifferenceString + ")</span></li>"));
-		this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Target <span class='badge badge-primary badge-pill'>" + deadlineFormat(block["targetDeadline"]) + "</span></li>"));
+		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Difficulty</div><div class='col-md-9 col-xs-7'>" + block["difficulty"] + " (" + diffDifferenceString + ")</div></div>"));
+		this.body.append($("<div class='row'><div class='col-md-3 col-xs-5'>Target deadline</div><div class='col-md-9 col-xs-7'>" + deadlineFormat(block["targetDeadline"]) + "</div></div>"));
 
-		//this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center'>Generation signature</li>"));
-		//this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center'><small>" + block["gensigStr"] + "</small></li>"));
 		this.data.empty();
 	}
 
@@ -114,7 +112,7 @@ var progressBar;
 var progressBarVerify;
 var lastWinnerContainer;
 var lastWinner;
-var confirmedSound = new Audio("sounds/alert.mp3");
+var confirmedSound = new Audio("sounds/sms-alert-1-daniel_simon.mp3");
 var playConfirmationSound = true;
 var iconConfirmationSound;
 var avgDeadline;
@@ -271,8 +269,8 @@ function newBlock(json) {
 	deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
 	roundsSubmitted.html(json["nRoundsSubmitted"] + " / " + maxHistoricalBlocks);
 	wonBlocks.html(json["blocksWon"]);
-	lowestDiff.html("<small>@" + json["lowestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["lowestDifficulty"]["value"]);
-	highestDiff.html("<small>@" + json["highestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["highestDifficulty"]["value"]);
+	lowestDiff.html(json["lowestDifficulty"]["value"] + " <small>@" + json["lowestDifficulty"]["blockheight"] + "</small>");
+	highestDiff.html(json["highestDifficulty"]["value"] + " <small>@" + json["highestDifficulty"]["blockheight"] + "</small>");
 	meanDiff.html(Math.round(json["meanDifficulty"]));
 	maxRoundTime.html(Math.round(json["maxRoundTime"]*1000)/1000 + " s");
 	avgRoundTime.html(Math.round(json["meanRoundTime"]*1000)/1000 + " s");
@@ -331,7 +329,6 @@ function createNonceLine(deadline, glyphIconId, lineType, nonceType) {
 	var hiddenInfos = $("<dl class='dl'></dl>");
 	hiddenInfos.append("<dt>Nonce</dt><dd>" + deadline.nonce + "</dd>");
 	hiddenInfos.append("<dt>Plotfile</dt><dd>" + deadline.plotfile + "</dd>");
-	hiddenInfos.append("<span class='badge badge-secondary float-sm-right'>" + deadline.time + "</span>");
 	hiddenInfos.hide();
 
 	hiddenInfosDiv.append(hiddenInfos);
@@ -353,9 +350,9 @@ function createNonceLine(deadline, glyphIconId, lineType, nonceType) {
 
 	message.append("<span class='glyphicon " + glyphIconId + "' aria-hidden='true'></span> ");
 	message.append("<b><a href='https://explore.burst.cryptoguru.org/account/" + deadline.accountId.toString() + "' target='_blank'>" +
-		deadline.accountName + "</a></b>:&nbsp;" + nonceTypeStr + "&nbsp;");
-	message.append("<span class='badge badge-primary badge-pill'>" + deadline.deadlineStr + "</span>");
-
+		deadline.accountName + "</a></b>: " + nonceTypeStr);
+	message.append(" (" + deadline.deadlineStr + ")");
+	message.append("<p class='pull-right'><span class='label label-default'>" + deadline.time + "</span></p>");
 
 	message.append(hiddenInfosDiv);
 
@@ -411,7 +408,7 @@ function checkAddBestRound(deadlineNum, deadline) {
 function checkAddBestOverall(deadlineNum, deadline, blockheight) {
 	if (deadline != null && (!bestDeadlineOverall || bestDeadlineOverall > deadlineNum)) {
 		bestDeadlineOverall = deadlineNum;
-		bestDeadlineOverallElement.html("<small>@" + blockheight + "</small>&nbsp;&nbsp;<span class='badge badge-primary badge-pill'>" + deadline + "</span>");
+		bestDeadlineOverallElement.html(deadline + " <small>@" + blockheight + "</small>");
 	}
 }
 
@@ -511,9 +508,9 @@ function addLinkWithLabel(label, link) {
 function config(cfg) {
 	maxHistoricalBlocks = cfg["maxHistoricalBlocks"];
 	system.html("");
-	addSystemEntry("Pool", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
-	addSystemEntry("Mining", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
-	addSystemEntry("Wallet", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
+	addSystemEntry("Pool-URL", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
+	addSystemEntry("Mining-URL", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
+	addSystemEntry("Wallet-URL", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
 	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
 	addSystemEntry("Buffersize", cfg["bufferSize"]);
 	if (cfg["submitProbability"] != 0) {
