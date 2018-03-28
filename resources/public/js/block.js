@@ -96,16 +96,12 @@ function myTimer() {
 }
 
 var system;
-var thisBlockBest;
-var thisBlockBestElement;
 var bestDeadlineOverall;
 var bestDeadlineOverallElement;
 var bestHistorical;
 var minedBlocks = -1;
 var minedBlocksElement;
 var name = document.title;
-var confirmedDeadlines = 0;
-var confirmedDeadlinesElement;
 var hideSameNonces;
 var noncesFound;
 var noncesSent;
@@ -249,8 +245,6 @@ function localGet(item) {
 
 function newBlock(json) {
 	miningData.newBlock(json);
-	thisBlockBest = null;
-	thisBlockBestElement.html(nullDeadline);
 	setMinedBlocks(json["blocksMined"]);
 	document.title = name + " (" + json["block"] + ")";
 	checkAddBestOverall(BigInteger(json["bestOverall"]["deadlineNum"]),
@@ -263,13 +257,14 @@ function newBlock(json) {
 	if (bestHistoricalJson != null && bestHistoricalHeightJson != null)
 		bestHistorical.html(bestHistoricalJson + " <small>@" + bestHistoricalHeightJson + "</small>");
 
-	setConfirmedDeadlines(BigInteger(json["deadlinesConfirmed"]));
 	setOverallProgress(0);
 	setOverallProgressVerify(0);
 	lastWinnerContainer.hide();
 	avgDeadline.html(json["deadlinesAvg"]);
 	deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
-	roundsSubmitted.html(json["nRoundsSubmitted"] + " / " + json["numHistoricals"] + " ( " + maxHistoricalBlocks +" max. )");
+	var roundsSub=json["nRoundsSubmitted"]
+	var numHistor=json["numHistoricals"]
+	roundsSubmitted.html(roundsSub + " / " + numHistor + " ( " + Math.round(roundsSub/numHistor*1000)/10 +"% )");
 	wonBlocks.html(json["blocksWon"]);
 	lowestDiff.html("<small>@" + json["lowestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["lowestDifficulty"]["value"]);
 	highestDiff.html("<small>@" + json["highestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["highestDifficulty"]["value"]);
@@ -400,14 +395,6 @@ function createMessageLine(lineType, logger, level, file, lineNumber, time, text
 	return line;
 }
 
-function checkAddBestRound(deadlineNum, deadline) {
-	if (!thisBlockBest ||
-		thisBlockBest > deadlineNum) {
-		thisBlockBest = deadlineNum;
-		thisBlockBestElement.html(deadline);
-	}
-}
-
 function checkAddBestOverall(deadlineNum, deadline, blockheight) {
 	if (deadline != null && (!bestDeadlineOverall || bestDeadlineOverall > deadlineNum)) {
 		bestDeadlineOverall = deadlineNum;
@@ -492,8 +479,6 @@ function addOrConfirm(json) {
 		if (confirmedSound && playConfirmationSound)
 			confirmedSound.play();
 	}
-
-	setConfirmedDeadlines(confirmedDeadlines + 1);
 }
 
 function addSystemEntry(key, value) {
@@ -529,10 +514,6 @@ function config(cfg) {
 	addSystemEntry("Submission retry", cfg["submissionMaxRetry"]);
 }
 
-function setConfirmedDeadlines(deadlines) {
-	confirmedDeadlines = deadlines;
-	confirmedDeadlinesElement.html(confirmedDeadlines.toString());
-}
 
 function setOverallProgress(value) {
 	setProgress(progressBar, value);
@@ -718,7 +699,6 @@ function connectBlock() {
 					break;
 				case "nonce confirmed":
 					addOrConfirm(response);
-					checkAddBestRound(BigInteger(response["deadlineNum"]), response["deadline"]);
 					checkAddBestOverall(BigInteger(response["deadlineNum"]), response["deadline"]);
 					break;
 				case "nonce submitted":
@@ -770,6 +750,41 @@ function deadlineFormat(val) {
 
 	return msg;
 }
+
+function deadlineFormatPlot(val) {
+	var secs = Math.floor(val);
+	var mins = Math.floor(secs / 60);
+	var hours = Math.floor(mins / 60);
+	var day = Math.floor(hours / 24);
+	var months = Math.floor(day / 30);
+	var years = Math.floor(months / 12);
+	var msg = "";
+
+	if (years > 0)
+	{
+		msg += years.toFixed() + "y ";
+		msg += (months % 12).toFixed() + "m ";
+		return msg;
+	}
+	if (months > 0)
+	{
+		msg += (months % 12).toFixed() + "m ";
+		msg += day % 30 + "d ";
+		return msg;
+	}
+	if (day > 0)
+	{
+		msg += day % 30 + "d ";
+		msg += (hours % 24) + "h ";
+		return msg;
+	}
+	msg += ("00" + (hours % 24)).slice(-2) + ':';
+	msg += ("00" + (mins % 60)).slice(-2) + ':';
+	msg += ("00" + (secs % 60)).slice(-2);
+
+	return msg;
+}
+
 
 function showDeadlinesInfo(deadlineObj) {
 	var infos = "---";
@@ -826,7 +841,7 @@ function showDifficultyInfo(difficultyObj) {
 	difficultyPlot.unhighlight();
 
 	if (difficultyObj) {
-		var infos = "block <b>" + difficultyObj.datapoint[0] + "</b>: " + difficultyObj.datapoint[1];
+		var infos = "block <b>" + difficultyObj.datapoint[0] + "</b>: " + Math.floor(difficultyObj.datapoint[1]);
 
 		difficultyPlot.highlight(difficultyObj.series, difficultyObj.datapoint);
 	}
@@ -837,12 +852,10 @@ function showDifficultyInfo(difficultyObj) {
 
 function initBlock() {
 	system = $("#system");
-	thisBlockBestElement = $("#thisBlockBest");
 	bestDeadlineOverallElement = $("#bestOverall");
 	bestHistorical = $("#bestHistorical");
 	minedBlocksElement = $("#minedBlocks");
 	roundsSubmitted = $("#roundsSubmitted");
-	confirmedDeadlinesElement = $("#confirmedDeadlines");
 	hideSameNonces = $("#cbHideSameNonces");
 	noncesFound = $("#cbNoncesFound");
 	noncesSent = $("#cbNoncesSent");
@@ -923,9 +936,8 @@ function initDeadlinePlot() {
 			mode: "time",
 			min: 0,
 			max: deadlinePlotMax,
-			timeformat: "%Yy %mm %dd %H:%M:%S",
 			tickFormatter: function (val, axis) {
-				return deadlineFormat(val);
+				return deadlineFormatPlot(val);
 			}
 		},
 		colors: ["#2172A2", "#0022FF"]
@@ -1045,7 +1057,12 @@ function initDifficultyPlot() {
 			show: false
 		},
 		yaxis: {
-			min: 0
+			min: 0,
+			tickFormatter: function (val, axis) {
+				if (val < 1000) return val;
+				if (val < 1000000) return val/1000 + "K";
+				if (val < 1000000000) return val/1000000 + "M";
+			}
 		},
 		colors: ["#2172A2", "#0022FF"]
 	};
