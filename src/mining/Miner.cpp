@@ -314,6 +314,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 
 	// setup new block-data
 	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr, MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local));
+	setIsProcessing(true);
 
 	// printing block info and transfer it to local server
 	{
@@ -412,6 +413,11 @@ bool Burst::Miner::hasBlockData() const
 Poco::UInt64 Burst::Miner::getScoopNum() const
 {
 	return data_.getCurrentScoopNum();
+}
+
+bool Burst::Miner::isProcessing() const
+{
+	return isProcessing_;
 }
 
 Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight,
@@ -687,6 +693,7 @@ void Burst::Miner::onBenchmark(Poco::Timer& timer)
 void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 {
 	const auto block = data_.getBlockData();
+	setIsProcessing(false);
 
 	if (block == nullptr || block->getBlockheight() != blockHeight)
 		return;
@@ -851,4 +858,11 @@ void Burst::Miner::rescanPlotfiles()
 		// then we send all plot dirs and files
 		data_.getBlockData()->refreshPlotDirs();
 	}
+}
+
+void Burst::Miner::setIsProcessing(bool isProc)
+{
+	Poco::Mutex::ScopedLock lock(worker_mutex_);
+
+	isProcessing_ = isProc;
 }

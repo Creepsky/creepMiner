@@ -151,7 +151,7 @@ function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
 		var butId = account + "_" + start_nonce + "_" + nonces + "_" + staggersize;
 		var buttonElement=document.getElementById(butId);
 		buttonElement.innerHTML="<span style='width=100%'>...</span>";
-		$.get("/checkPlotFile/" + path);
+		$.get(encodeURI("/checkPlotFile/" + path));
 	}
 	}
 	
