@@ -1,25 +1,52 @@
 <div class="row bs-component">
     <!-- current block -->
-    <div class="col-lg-4" id="container">
-        <div class="btn-group d-flex" role="group">
-            <!-- refresh btn -->
-            <button type="button" class="btn btn-secondary w-100" onclick="connectBlock();">
-                <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
-                refresh
-            </button>
-            <!-- sound btn -->
-            <button type="button" class="btn btn-secondary w-100" onclick="toggleConfirmationSound();">
-                <span id="iconConfirmationSound" class="glyphicon" aria-hidden="true"></span>
-                toggle sound
-            </button>
-        </div>
-        <!-- progress bar -->
-        <div class="progress" style="margin-bottom:0">
-            <label class="progress-label" style="font-size:x-small;"></label>
-            <div id="progressBarVerify" class="progress-bar progress-bar-success progress-bar-striped bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-            <div id="progressBar" class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-    </div>
+	<div class="col-lg-4" style="margin:0;padding:0">
+		<div class="col-lg-12" id="container">
+			<div class="btn-group d-flex" role="group">
+				<!-- refresh btn -->
+				<button type="button" class="btn btn-secondary w-100" onclick="connectBlock();">
+					<span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+					refresh
+				</button>
+				<!-- sound btn -->
+				<button type="button" class="btn btn-secondary w-100" onclick="toggleConfirmationSound();">
+					<span id="iconConfirmationSound" class="glyphicon" aria-hidden="true"></span>
+					toggle sound
+				</button>
+			</div>
+			<!-- progress bar -->
+			<div class="progress" style="margin-bottom:0">
+				<label class="progress-label" style="font-size:x-small;"></label>
+				<div id="progressBarVerify" class="progress-bar progress-bar-success progress-bar-striped bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+				<div id="progressBar" class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+			</div>
+		</div>
+		<!-- Nonce Display Options -->
+		<div class="col-lg-12">
+			<div class=row>
+				<div class="col-lg-3 col-md-6 col-xs-6">
+					<div class="checkbox">
+						<label><input id="cbHideSameNonces" type="checkbox" checked> Hide same</label>
+					</div>
+				</div>
+				<div class="col-lg-3 col-md-6 col-xs-6">
+					<div class="checkbox">
+						<label><input id="cbNoncesFound" type="checkbox" checked> Found</label>
+					</div>
+				</div>
+				<div class="col-lg-3 col-md-6 col-xs-6">
+					<div class="checkbox">
+						<label><input id="cbNoncesSent" type="checkbox" checked> Sent</label>
+					</div>
+				</div>
+				<div class="col-lg-3 col-md-6 col-xs-6">
+					<div class="checkbox">
+						<label><input id="cbNoncesConfirmed" type="checkbox" checked> Confirmed</label>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
     <!-- stats block -->
     <div class="col-lg-8">
         <div class="card mb-12">
@@ -110,7 +137,7 @@
                         <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Deadlines</h5></div>
                         <div class="col-md-12">
                             <div id="deadlinesChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
-                            <div class="alert alert-info"><span id="deadlinesInfo">---</span><bspan class="glyphicon glyphicon-transfer float-sm-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer"></span></div>
+                            <div class="alert alert-info"><span id="deadlinesInfo">---</span><bspan class="glyphicon glyphicon-resize-vertical float-sm-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer"></span></div>
                         </div>
                     </div>
                     <div class="col-lg-6">
@@ -132,7 +159,7 @@
                         <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Block and Scan Times</h5></div>
                         <div class="col-md-12">
                             <div id="timeChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
-                            <div class="alert alert-info"><span id="timeInfo">---</span><span class="glyphicon glyphicon-transfer float-sm-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer"></span> </div>
+                            <div class="alert alert-info"><span id="timeInfo">---</span><span class="glyphicon glyphicon-resize-vertical float-sm-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer"></span> </div>
                         </div>
                     </div>
                 </div>
@@ -141,37 +168,70 @@
         <!-- system block -->
         <div class="card mb-12">
             <h4 class="card-header">System</h4>
-            <div class="card-body">
-                <div class=row>
-                    <!-- System -->
-                    <div class="col-lg-6" id="system"></div>
-                    <!-- Settings -->
-                    <div class="col-lg-6">
-                        <div class="bs-component">
-                            <div class=row>
-                                <div class="col-lg-6">
-                                    <div class="checkbox">
-                                        <label><input id="cbHideSameNonces" type="checkbox" checked>Hide same nonces</label>
-                                    </div>
-                                    <div class="checkbox">
-                                        <label><input id="cbNoncesFound" type="checkbox" checked>Found nonces</label>
-                                    </div>
-                                </div>
-                                <div class="col-lg-6">
-                                    <div class="checkbox">
-                                        <label><input id="cbNoncesSent" type="checkbox" checked>Sent nonces</label>
-                                    </div>
-                                    <div class="checkbox">
-                                        <label><input id="cbNoncesConfirmed" type="checkbox" checked>Confirmed nonces</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-default btn-sm float-sm-right" onclick="resetLogSettings(); reparseMessages();">Reset</button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
+				<div class="card-body">
+					<div class="row">
+						<!-- System -->
+						<div class="row col-xs-12 col-md-12 col-lg-12" id="system">
+							<div class="col-lg-6 col-md-12">
+								<h5 class="card-title">URLs</h5>
+								<div class="bs-component">
+									<ul class="list-group">
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Pool
+											<div id="poolURL">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Mining
+											<div id="miningURL">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
+											Wallet
+											<div id="walletURL">---</div>
+										</li>
+									</ul>
+								</div>
+							</div>
+							<div class="col-lg-3 col-md-6">
+								<h5 class="card-title">Mining</h5>
+								<div class="bs-component">
+									<ul class="list-group">
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Plot size
+											<div id="plotSize">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" id="submitProbDL">
+											submitProb/targetDL
+											<div id="plotSize">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
+											Pool DL limit
+											<span class="badge badge-primary badge-pill"><div id="poolDL">---</div></span>
+										</li>
+									</ul>
+								</div>
+							</div>		
+							<div class="col-lg-3 col-md-6">
+								<h5 class="card-title">Processing</h5>
+								<div class="bs-component">
+									<ul class="list-group">
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Readers
+											<div id="readers">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Intensity
+											<div id="intensity">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
+											Buffer size
+											<div id="bufferSize">---</div>
+										</li>
+									</ul>
+								</div>
+							</div>									
+						</div>
+					</div>
+				</div>
         </div>
     </div>
 </div>

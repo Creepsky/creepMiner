@@ -481,37 +481,24 @@ function addOrConfirm(json) {
 	}
 }
 
-function addSystemEntry(key, value) {
-	var html = "<div class='row'>";
-	html += "	<div class='col-md-5 col-xs-5'>" + key + "</div>";
-	html += "	<div class='col-md-7 col-xs-7'>" + value + "</div>";
-	html += "</div>";
-	system.append(html);
-}
-
 function addLinkWithLabel(label, link) {
 	return "<a href='" + link + "' target='_blank'>" + label + "</a>";
 }
 
 function config(cfg) {
 	maxHistoricalBlocks = cfg["maxHistoricalBlocks"];
-	system.html("");
-	addSystemEntry("Pool", addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
-	addSystemEntry("Mining", addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
-	addSystemEntry("Wallet", addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
-	addSystemEntry("Plotsize", cfg["totalPlotSize"]);
-	addSystemEntry("Buffersize", cfg["bufferSize"]);
-	if (cfg["submitProbability"] != 0) {
-		addSystemEntry("Submit probability", cfg["submitProbability"]);
-		addSystemEntry("Pool deadline limit", cfg["targetDeadlinePool"] );
-	} else {
-	addSystemEntry("Target deadline", cfg["targetDeadlineCombined"] + " (lowest)<br />" +
-									  cfg["targetDeadlineLocal"] + " (local)<br />" +
-									  cfg["targetDeadlinePool"] + " (pool)");
-	}
-	addSystemEntry("Plot readers", cfg["maxPlotReaders"]);
-	addSystemEntry("Mining intensity", cfg["miningIntensity"]);
-	addSystemEntry("Submission retry", cfg["submissionMaxRetry"]);
+	$("#poolURL").html(addLinkWithLabel(cfg['poolUrl'] + ':' + cfg['poolUrlPort'], cfg["poolUrl"]));
+	$("#miningURL").html(addLinkWithLabel(cfg["miningInfoUrl"] + ':' + cfg["miningInfoUrlPort"], cfg["miningInfoUrl"]));
+	$("#walletURL").html(addLinkWithLabel(cfg["walletUrl"] + ':' + cfg["walletUrlPort"], cfg["walletUrl"] + ":" + cfg["walletUrlPort"]));
+	$("#plotSize").html(cfg["totalPlotSize"]);
+	if (cfg["submitProbability"] != 0)
+		$("#submitProbDL").html("Submit probability<div>"+cfg["submitProbability"]+"</div>");
+	else
+		$("#submitProbDL").html("Target DL<span class='badge badge-primary badge-pill'><div>"+cfg["targetDeadlineCombined"]+"</div></span>");
+	$("#poolDL").html(cfg["targetDeadlinePool"]);
+	$("#readers").html(cfg["maxPlotReaders"]);
+	$("#intensity").html(cfg["miningIntensity"]);
+	$("#bufferSize").html(cfg["bufferSize"]);
 }
 
 
