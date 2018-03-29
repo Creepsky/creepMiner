@@ -186,16 +186,15 @@ function setPlotIntegrity(checkPlotResult) {
 }
 
 function createPlotfileLine(account, start_nonce, nonces, staggersize, size, path) {
-    var line = $("<tr></tr>");
-    line.append("<td>" + account + "</td>");
-    line.append("<td>" + start_nonce + "</td>");
-    line.append("<td>" + nonces + "</td>");
-    line.append("<td>" + staggersize + "</td>");
-    line.append("<td>" + size + "</td>");
-	line.append("<td style='padding-bottom:0px;'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "' type='button' class='btn btn-default' title='Check the integrity of 32 random scoops in 30 random nonces of the plot file' " +
+    var line = $("<li class='list-group-item d-md-flex align-items-center' style='padding:4px'></li>");
+    line.append("<div class='col-xs-3 col-md-3'>" + account + "</div>");
+    line.append("<div class='col-xs-2 col-md-2'>" + start_nonce + "</div>");
+    line.append("<div class='col-xs-2 col-md-2'>" + nonces + "</div>");
+    line.append("<div class='col-xs-2 col-md-2'>" + staggersize + "</div>");
+    line.append("<div class='col-xs-1 col-md-1'>" + size + "</div>");
+		line.append("<div class='col-xs-2 col-md-2 style='padding-bottom:0px;'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "' type='button' class='btn btn-default' title='Check the integrity of 32 random scoops in 30 random nonces of the plot file' " +
 		"style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," + 
-		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'>Check</button></td>");
-
+		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'>Check</button></div>");
     return line;
 }
 
