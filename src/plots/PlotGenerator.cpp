@@ -82,7 +82,7 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 }
 
 
-void Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner& miner, MinerServer& server)
+double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner& miner, MinerServer& server)
 {
 	Poco::UInt64 account = Poco::NumberParser::parseUnsigned64(getAccountIdFromPlotFile(plotPath));
 	Poco::UInt64 startNonce = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(plotPath));
@@ -187,4 +187,6 @@ void Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner& m
 	json.set("plotIntegrity", std::to_string(totalIntegrity / noncesChecked));
 
 	server.sendToWebsockets(json);
+
+	return totalIntegrity / noncesChecked;
 }

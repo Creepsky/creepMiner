@@ -7,6 +7,7 @@ var confirmedPlotfiles = [];
 var current_selected = null;
 
 var isChecking=false;
+var isCheckingAll=false;
 
 window.onload = function (evt) {
     $("#btnPlotfiles").addClass('active');
@@ -44,6 +45,9 @@ function connectCallback(msg) {
 			case "plotcheck-result":
                 setPlotIntegrity(response);
                 break;
+			case "totalPlotcheck-result":
+                $("#CheckAllButton").html(response["totalPlotIntegrity"] + " Integrity")
+                break;
             default:
                 break;
         }
@@ -68,7 +72,7 @@ function createDirLine(dirElement, index) {
     line.click(function () {
         plotDirList.find('.active').removeClass('active');
         line.addClass('active');
-        showPlotfiles(dirElement["plotfiles"]);
+        showPlotfiles(plotDirElements[index]["plotfiles"]); // Old version: showPlotfiles(dirElement["plotfiles"]);
         activePlotDir = dirElement;
         colorConfirmedPlotfiles();
         current_selected = dirElement;
@@ -153,17 +157,34 @@ function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
 		buttonElement.innerHTML="<span style='width=100%'>...</span>";
 		$.get(encodeURI("/checkPlotFile/" + path));
 	}
+}
+
+function checkAllPlotFiles(account, start_nonce, nonces, staggersize, path) {
+	if(!isCheckingAll)
+	{
+		isCheckingAll=true;
+		$("#CheckAllButton").html("Checking...");
+		$.get('/checkPlotFile/all');
 	}
-	
+}
+		
 function setPlotIntegrity(checkPlotResult) {
 	isChecking=false;
-	var buttonElement=document.getElementById(checkPlotResult["plotID"]);
-	var integrity = Math.floor(Number(checkPlotResult["plotIntegrity"])*100)/100;
-	if (integrity==100)
-		buttonElement.innerHTML="<b style='color:green'>" + integrity + "%</b>";
-	else
-		buttonElement.innerHTML="<b title='This file is corrupt' style='color:red'>" + integrity + "%</b>";
-	}
+   	var integrity = Math.floor(Number(checkPlotResult["plotIntegrity"])*100)/100;
+	//find the corresponding element in the plotDirElements and write the integrity into it.
+	plotDirElements.forEach(function (element, indexDir, arrayFold) {
+        element["plotfiles"].forEach( function(fileElement, index, array) {
+			if(fileElement["element"].find("#"+checkPlotResult["plotID"])[0]){
+				if (integrity==100)
+					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+						html("<b style='color:green'>" + integrity + "%</b>");
+				else
+					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+						html("<b title='This file is corrupt' style='color:red'>" + integrity + "%</b>");
+			}
+		});
+   });		
+}
 
 function createPlotfileLine(account, start_nonce, nonces, staggersize, size, path) {
     var line = $("<tr></tr>");

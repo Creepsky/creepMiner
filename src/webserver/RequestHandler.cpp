@@ -483,12 +483,24 @@ void Burst::RequestHandler::checkAllPlotfiles(Poco::Net::HTTPServerRequest& requ
 	log_information(MinerLogger::server, "Got request to check all files for corruption...");
 
 	const auto plotFiles = MinerConfig::getConfig().getPlotFiles();
+	auto totalSize = 0ull;
+	auto totalWeightedIntegrity = 0.0;
 
 	for (const auto& plotFile : plotFiles)
 	{
 		const auto& plotPath = plotFile->getPath();
-		PlotGenerator::checkPlotfileIntegrity(plotPath, miner, server);
+		auto integrity = PlotGenerator::checkPlotfileIntegrity(plotPath, miner, server);
+		totalWeightedIntegrity += integrity * plotFile->getSize();
+		totalSize += plotFile->getSize();
 	}
+	log_information(MinerLogger::general, "Overall miner plot integrity: " + std::to_string(totalWeightedIntegrity / totalSize) + "%");
+	//response
+	Poco::JSON::Object json;
+	json.set("type", "totalPlotcheck-result");
+	json.set("totalPlotIntegrity", std::to_string(totalWeightedIntegrity / totalSize) + "%");
+
+	server.sendToWebsockets(json);
+
 }
 
 bool Burst::RequestHandler::checkCredentials(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
