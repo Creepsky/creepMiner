@@ -153,8 +153,7 @@ function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
 	{
 		isChecking=true;
 		var butId = account + "_" + start_nonce + "_" + nonces + "_" + staggersize;
-		var buttonElement=document.getElementById(butId);
-		buttonElement.innerHTML="<span style='width=100%'>...</span>";
+		$("#"+butId).html("...");
 		$.get(encodeURI("/checkPlotFile/" + path));
 	}
 }
@@ -193,7 +192,7 @@ function createPlotfileLine(account, start_nonce, nonces, staggersize, size, pat
     line.append("<td>" + nonces + "</td>");
     line.append("<td>" + staggersize + "</td>");
     line.append("<td>" + size + "</td>");
-	line.append("<td style='padding-bottom:0px;' id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "'><button title='Check the integrity of 32 random scoops in 30 random nonces of the plot file' type='button' class='btn btn-primary' " +
+	line.append("<td style='padding-bottom:0px;'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "' type='button' class='btn btn-default' title='Check the integrity of 32 random scoops in 30 random nonces of the plot file' " +
 		"style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," + 
 		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'>Check</button></td>");
 
