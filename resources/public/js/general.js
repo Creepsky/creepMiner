@@ -85,12 +85,13 @@ function initSettings(container, onChange) {
 				onChange();
 			});
 
-		var div = $("<div class='form-group input-group'></div>");
-		var label = $("<span class='input-group-addon'>" + element[1] + "</span>");
+		var div = $("<div class='form-group row'></div>");
+		var label = $("<label for='cmb_" + element[0] + "' class='col-md-12 col-lg-3 col-form-label'>" + element[1] + "</label>");
 
 		div.append(label);
-		div.append(cmb);
-
+		div.append("<div class='col-md-12 col-lg-9'>")
+		div.find("div").append(cmb);
+		
 		cmb.val(element[2]);
 		output[element[0]] = cmb;
 

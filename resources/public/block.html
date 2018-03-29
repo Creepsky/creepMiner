@@ -23,25 +23,25 @@
 		</div>
 		<!-- Nonce Display Options -->
 		<div class="col-lg-12">
-			<div class=row>
+			<div class="row form-group">
 				<div class="col-lg-3 col-md-6 col-xs-6">
-					<div class="checkbox">
-						<label><input id="cbHideSameNonces" type="checkbox" checked> Hide same</label>
+					<div class="custom-control custom-checkbox">
+						<input type="checkbox" class="custom-control-input" id="cbHideSameNonces" checked><label class="custom-control-label" for="cbHideSameNonces""> Hide same</label>
 					</div>
 				</div>
 				<div class="col-lg-3 col-md-6 col-xs-6">
-					<div class="checkbox">
-						<label><input id="cbNoncesFound" type="checkbox" checked> Found</label>
+					<div class="custom-control custom-checkbox">
+						<input type="checkbox" class="custom-control-input" id="cbNoncesFound"  checked><label class="custom-control-label" for="cbNoncesFound"> Found</label>
 					</div>
 				</div>
 				<div class="col-lg-3 col-md-6 col-xs-6">
-					<div class="checkbox">
-						<label><input id="cbNoncesSent" type="checkbox" checked> Sent</label>
+					<div class="custom-control custom-checkbox">
+						<input type="checkbox" class="custom-control-input" id="cbNoncesSent"  checked><label class="custom-control-label" for="cbNoncesSent"> Sent</label>
 					</div>
 				</div>
 				<div class="col-lg-3 col-md-6 col-xs-6">
-					<div class="checkbox">
-						<label><input id="cbNoncesConfirmed" type="checkbox" checked> Confirmed</label>
+					<div class="custom-control custom-checkbox">
+						<input type="checkbox" class="custom-control-input" id="cbNoncesConfirmed""  checked><label class="custom-control-label" for="cbNoncesConfirmed"> Confirmed</label>
 					</div>
 				</div>
 			</div>
@@ -137,7 +137,7 @@
                         <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Deadlines</h5></div>
                         <div class="col-md-12">
                             <div id="deadlinesChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
-                            <div class="alert alert-info"><span id="deadlinesInfo">---</span><bspan class="glyphicon glyphicon-resize-vertical float-sm-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer"></span></div>
+                            <div class="alert alert-info"><span id="deadlinesInfo">---</span><span class="glyphicon glyphicon-resize-vertical float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer"></span></div>
                         </div>
                     </div>
                     <div class="col-lg-6">
@@ -159,7 +159,7 @@
                         <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Block and Scan Times</h5></div>
                         <div class="col-md-12">
                             <div id="timeChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
-                            <div class="alert alert-info"><span id="timeInfo">---</span><span class="glyphicon glyphicon-resize-vertical float-sm-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer"></span> </div>
+                            <div class="alert alert-info"><span id="timeInfo">---</span><span class="glyphicon glyphicon-resize-vertical float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer"></span> </div>
                         </div>
                     </div>
                 </div>

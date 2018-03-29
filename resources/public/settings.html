@@ -1,61 +1,81 @@
-<div class="container" style="width:100%">
+<div class="container col-md-12">
 	<div class="row">
 	<div class="col-md-6">
 		<h2>Miner</h2>
 		<form method="POST" action="/settings/urls">
 			<div class="col-md-12">
-				<div class="form-group input-group">
-					<span class="input-group-addon">Mining-Info-URL</span>
-					<input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
+				<div class="form-group row">
+					<label for="mining-info-url" class="col-md-12 col-lg-3 col-form-label">Mining-Info-URL</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Submission-URL</span>
-					<input class="form-control" type="url" id="submission-url" name="submission-url">
+				<div class="form-group row">
+					<label for="submission-url" class="col-md-12 col-lg-3 col-form-label">Submission-URL</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="url" id="submission-url" name="submission-url">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Wallet-URL</span>
-					<input class="form-control" type="url" id="wallet-url" name="wallet-url">
+				<div class="form-group row">
+					<label for="wallet-url" class="col-md-12 col-lg-3 col-form-label">Wallet-URL</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="text" id="wallet-url" name="wallet-url">
+					</div>
 				</div>
-				<button type="submit" class="btn btn-primary pull-right" style="margin-bottom:15px">Submit URLs</button>
+				<button type="submit" class="btn btn-primary float-right">Submit URLs</button>
 			</div>
 		</form> <br><br><br>
 		<form method="POST" action="/settings/mining">
 			<div class="col-md-12">
-				<div class="form-group input-group">
-					<span class="input-group-addon">Intensity</span>
-					<input class="form-control" type="number" id="intensity" name="intensity">
+				<div class="form-group row">
+					<label for="intensity" class="col-md-12 col-lg-3 col-form-label">Intensity</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="number" id="intensity" name="intensity">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Buffer size</span>
-					<input class="form-control" type="number" id="buffer-size" name="buffer-size">
-					<span class="input-group-addon">MB</span>
+				<div class="form-group row">
+					<label for="plot-readers" class="col-md-12 col-lg-3 col-form-label">Plot reader</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="number" id="plot-readers" name="plot-readers">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Plot reader</span>
-					<input class="form-control" type="number" id="plot-readers" name="plot-readers">
+				<div class="form-group row">
+					<label for="buffer-size" class="col-md-12 col-lg-3 col-form-label">Buffer size (MB)</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="number" id="buffer-size" name="buffer-size">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Submit probability</span>
-					<input class="form-control" type="text" id="submit-probability"  name="submit-probability">
+				<div class="form-group row">
+					<label for="submit-probability" class="col-md-12 col-lg-3 col-form-label">Submit probabilty</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="text" id="submit-probability"  name="submit-probability">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Submission max retry</span>
-					<input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
+				<div class="form-group row">
+					<label for="target-deadline" class="col-md-12 col-lg-3 col-form-label">Target deadline</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="text" id="target-deadline" name="target-deadline">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Target deadline</span>
-					<input class="form-control" type="text" id="target-deadline"  name="target-deadline">
+				<div class="form-group row">
+					<label for="submission-max-retry" class="col-md-12 col-lg-3 col-form-label">Submission max retry</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Timeout</span>
-					<input class="form-control" type="number" id="timeout" name="timeout">
-					<span class="input-group-addon">seconds</span>
+				<div class="form-group row">
+					<label for="timeout" class="col-md-12 col-lg-3 col-form-label">Timeout (seconds)</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="number" id="timeout" name="timeout">
+					</div>
 				</div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Max historical blocks</span>
-					<input class="form-control" type="number" id="max-historical-blocks" name="max-historical-blocks">
+				<div class="form-group row">
+					<label for="max-historical-blocks" class="col-md-12 col-lg-3 col-form-label">Max historical blocks</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="number" id="max-historical-blocks" name="max-historical-blocks">
+					</div>
 				</div>
-				<button type="submit" class="btn btn-primary pull-right">Submit Miner Config</button>
+				<button type="submit" class="btn btn-primary float-right">Submit Miner Config</button>
 			</div>
 	
 		</form> <br><br>
@@ -71,11 +91,13 @@
 		<h2>Console</h2>
 		<form method="POST" action="/settings/logging">
 				<div id="settingsDlComboboxes"></div>
-				<div class="form-group input-group">
-					<span class="input-group-addon">Logfile directory</span>
-					<input class="form-control" type="text" id="log-dir" name="log-dir">
+				<div class="form-group row">
+					<label for="log-dir" class="col-md-12 col-lg-3 col-form-label">Logfile directory</label>
+					<div class="col-md-12 col-lg-9">
+						<input class="form-control" type="text" id="log-dir" name="log-dir">
+					</div>
 				</div>
-			<button type="submit" class="btn btn-primary pull-right">Submit Console Config</button>
+			<button type="submit" class="btn btn-primary float-right">Submit Console Config</button>
 		</form>
 	</div>
 	<br />
