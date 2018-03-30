@@ -497,7 +497,7 @@ void Burst::RequestHandler::checkAllPlotfiles(Poco::Net::HTTPServerRequest& requ
 	//response
 	Poco::JSON::Object json;
 	json.set("type", "totalPlotcheck-result");
-	json.set("totalPlotIntegrity", std::to_string(totalWeightedIntegrity / totalSize) + "%");
+	json.set("totalPlotIntegrity", std::to_string(totalWeightedIntegrity / totalSize));
 
 	server.sendToWebsockets(json);
 
