@@ -46,7 +46,7 @@ function connectCallback(msg) {
                 setPlotIntegrity(response);
                 break;
 			case "totalPlotcheck-result":
-                $("#CheckAllButton").html(Math.round(Number(response["totalPlotIntegrity"])*100)/100 + "% Integrity")
+                $("#CheckAllButton").html(Math.round(Number(response["totalPlotIntegrity"])*100)/100 + "%&nbsp;&nbsp;<i class='fa fa-check-circle-o'></i>")
                 break;
             default:
                 break;
@@ -152,7 +152,7 @@ function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
 	{
 		isChecking=true;
 		var butId = account + "_" + start_nonce + "_" + nonces + "_" + staggersize;
-		$("#"+butId).html("...");
+		$("#"+butId).html("<i class='fa fa-spinner fa-pulse fa-fw'></i>");
 		$.get(encodeURI("/checkPlotFile/" + path));
 	}
 }
@@ -161,7 +161,7 @@ function checkAllPlotFiles(account, start_nonce, nonces, staggersize, path) {
 	if(!isCheckingAll)
 	{
 		isCheckingAll=true;
-		$("#CheckAllButton").html("validating...");
+		$("#CheckAllButton").html("<i class='fa fa-spinner fa-pulse fa-fw'></i>");
 		$.get('/checkPlotFile/all');
 	}
 }
@@ -175,10 +175,10 @@ function setPlotIntegrity(checkPlotResult) {
 			if(fileElement["element"].find("#"+checkPlotResult["plotID"])[0]){
 				if (integrity==100)
 					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						html("<b class='text-white'>" + integrity + "%</b>");
+						html("<b>" + integrity + "%&nbsp;&nbsp;<i class='fa fa-check-circle-o'></i></b>");
 				else
 					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						html("<b class='text-red'>" + integrity + "%</b>");
+						html("<b>" + integrity + "%&nbsp;&nbsp;<i class='fa fa-exclamation-triangle'></i></b>");
 			}
 		});
    });
@@ -191,9 +191,9 @@ function createPlotfileLine(account, start_nonce, nonces, staggersize, size, pat
     line.append("<div class='col-xs-2 col-md-1'>" + nonces + "</div>");
     line.append("<div class='col-xs-2 col-md-1'>" + staggersize + "</div>");
     line.append("<div class='col-xs-1 col-md-2'>" + size + "</div>");
-		line.append("<div class='col-xs-2 col-md-2'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "' type='button' class='btn btn-info' title='Checks the integrity of 32 random scoops in 30 random nonces of the plot file' " +
+		line.append("<div class='col-xs-2 col-md-3'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "' type='button' class='btn btn-info' title='Checks the integrity of 32 random scoops in 30 random nonces of the plot file' " +
 		"style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," +
-		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='glyphicon glyphicon-saved'></span>&nbsp;Validate</button></div>");
+		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='fa fa-superpowers'></span>&nbsp;Validate</button></div>");
     return line;
 }
 
