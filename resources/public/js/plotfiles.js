@@ -41,12 +41,13 @@ function connectCallback(msg) {
             case "plotdirs-rescan":
                 plotdirs = response["plotdirs"];
                 parsePlots();
+				fillDirs();
                 break;
 			case "plotcheck-result":
                 setPlotIntegrity(response);
                 break;
 			case "totalPlotcheck-result":
-                $("#CheckAllButton").html(Math.round(Number(response["totalPlotIntegrity"])*100)/100 + "%&nbsp;&nbsp;<i class='fa fa-check-circle-o'></i>")
+				setTotalPlotIntegrity(response);
                 break;
             default:
                 break;
@@ -56,7 +57,7 @@ function connectCallback(msg) {
 
 function createProgressBar(id) {
     var progresStr = '<div class="progress">';
-    progresStr += '<div id="pb-' + id + '" class="progress-bar progress-bar-success progress-bar-striped bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">';
+    progresStr += '<div id="pb-' + id + '" class="progress-bar progress-bar-success progress-bar-striped bg-success" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%">';
     progresStr += '</div></div>';
     return progresStr;
 }
@@ -81,6 +82,7 @@ function createDirLine(dirElement, index) {
 }
 
 function fillDirs() {
+	plotDirList.empty();
     plotDirElements.forEach(function (plotDirElement, index, array) {
         plotDirList.append(plotDirElement["element"]);
     });
@@ -128,18 +130,17 @@ function parsePlots() {
         });
 
         element["element"] = createDirLine(element, index);
-        element["progressBar"] = $("#pb-" + index);
         element["setProgress"] = function (progress) {
-            setProgress(element["progressBar"], progress);
+            setProgress($("#pb-" + index), progress);
         };
         element["progressBarType"] = "";
         element["resetProgressBarType"] = function () {
             if (element["progressBarType"].length > 0)
-                element.progressBar.removeClass(element["progressBarType"]);
+                $("#pb-" + index).removeClass(element["progressBarType"]);
         };
         element["setProgressBarType"] = function (type) {
             element.resetProgressBarType();
-            element.progressBar.addClass(type);
+            $("#pb-" + index).addClass(type);
             element["progressBarType"] = type;
         }
 
@@ -148,7 +149,7 @@ function parsePlots() {
 }
 
 function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
-	if(!isChecking)
+	if(!isChecking && !isCheckingAll)
 	{
 		isChecking=true;
 		var butId = account + "_" + start_nonce + "_" + nonces + "_" + staggersize;
@@ -174,14 +175,43 @@ function setPlotIntegrity(checkPlotResult) {
         element["plotfiles"].forEach( function(fileElement, index, array) {
 			if(fileElement["element"].find("#"+checkPlotResult["plotID"])[0]){
 				if (integrity==100)
+				{
 					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						html("<b>" + integrity + "%&nbsp;&nbsp;<i class='fa fa-check-circle-o'></i></b>");
+						html("<i class='fa fa-check-circle-o'></i>&nbsp;&nbsp;" + integrity + "%");
+					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+						toggleClass('btn-info btn-danger',false);
+					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+						toggleClass('btn-success',true);
+				}
 				else
+				{
 					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						html("<b>" + integrity + "%&nbsp;&nbsp;<i class='fa fa-exclamation-triangle'></i></b>");
+						html("<i class='fa fa-exclamation-triangle'></i>&nbsp;&nbsp;" + integrity + "%");
+					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+						toggleClass('btn-info btn-success',false);
+					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+						toggleClass('btn-danger',true);
+				}
 			}
 		});
    });
+}
+
+function setTotalPlotIntegrity(totalCheckResult) {
+	isCheckingAll=false;
+	var totIntegrity = Math.round(Number(totalCheckResult["totalPlotIntegrity"])*100)/100;
+	if (totIntegrity==100)
+	{
+		$("#CheckAllButton").html("<i class='fa fa-check-circle-o'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
+		$("#CheckAllButton").toggleClass('btn-info btn-danger',false);
+		$("#CheckAllButton").toggleClass('btn-success',true);
+	}
+	else
+	{
+		$("#CheckAllButton").html("<i class='fa fa-exclamation-triangle'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
+		$("#CheckAllButton").toggleClass('btn-info btn-success',false);
+		$("#CheckAllButton").toggleClass('btn-danger',true);
+	}
 }
 
 function createPlotfileLine(account, start_nonce, nonces, staggersize, size, path) {
