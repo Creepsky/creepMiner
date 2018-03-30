@@ -46,6 +46,7 @@
 #include <Poco/Net/NetException.h>
 #include <Poco/Delegate.h>
 #include "plots/Plot.hpp"
+#include <Poco/Net/HTTPRequest.h>
 
 const std::string cookieUserName = "creepminer-webserver-user";
 const std::string cookiePassName = "creepminer-webserver-pass";
@@ -831,4 +832,31 @@ void Burst::RequestHandler::notFound(Poco::Net::HTTPServerRequest& request, Poco
 {
 	response.setStatus(Poco::Net::HTTPResponse::HTTP_NOT_FOUND);
 	response.send();
+}
+
+std::string Burst::RequestHandler::fetchOnlineVersion() {
+	try
+	{
+		// fetch the online version file
+		const std::string host = "https://github.com/Creepsky/creepMiner";
+		const std::string versionPrefix = "version:";
+		//
+		Burst::Url url{ "https://raw.githubusercontent.com" };
+		//
+		Poco::Net::HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
+		//
+		Burst::Request request{ url.createSession() };
+		auto response = request.send(getRequest);
+		//
+		std::string responseString;
+		//
+		if (response.receive(responseString))
+			return responseString;
+		else
+			return "CouldNotFetch";
+	}
+	// just skip if version could not be determined
+	catch (...)
+	{
+	}
 }

@@ -275,6 +275,29 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 				});
 		}
 
+		// show about
+		if (path_segments.front() == "about")
+		{
+			return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			{
+				auto variables = server_->variables_ + TemplateVariables({ 
+					{ 
+						"includes", []() {
+							using Poco::replace;
+							Burst::Version onlineVersion(replace(Burst::RequestHandler::fetchOnlineVersion(),"version:",""));
+							std::stringstream sstrContent;
+							sstrContent << "<script src='js/about.js'></script>";
+							sstrContent << std::endl;
+							sstrContent << "<script>var onlineVersion = '" << onlineVersion.literal << "';" <<
+								"var runningVersion = '" << Settings::Project.version.literal << "';</script>";
+							return sstrContent.str();
+						}
+					}
+				});
+				RequestHandler::loadSecuredTemplate(req, res, "index.html", "about.html", variables);
+			});
+		}
+
 		// check plot file
 		if (path_segments.front() == "checkPlotFile")
 			if (path_segments.size() > 1) {

@@ -40,6 +40,7 @@
 #include "mining/MinerCL.hpp"
 #include "gpu/impl/gpu_cuda_impl.hpp"
 #include <Poco/Util/OptionSet.h>
+#include "webserver/RequestHandler.hpp"
 #include <Poco/Util/OptionProcessor.h>
 #include <Poco/Util/HelpFormatter.h>
 #include <Poco/Util/Validator.h>
@@ -149,17 +150,10 @@ int main(const int argc, const char* argv[])
 			// fetch the online version file
 			const std::string host = "https://github.com/Creepsky/creepMiner";
 			const std::string versionPrefix = "version:";
+
+			std::string responseString = Burst::RequestHandler::fetchOnlineVersion();
 			//
-			Burst::Url url{ "https://raw.githubusercontent.com" };
-			//
-			HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
-			//
-			Burst::Request request{ url.createSession() };
-			auto response = request.send(getRequest);
-			//
-			std::string responseString;
-			//
-			if (response.receive(responseString))
+			if (responseString!="CouldNotFetch")
 			{
 				// first we check if the online version begins with the prefix
 				if (Poco::icompare(responseString, 0, versionPrefix.size(), versionPrefix) == 0)

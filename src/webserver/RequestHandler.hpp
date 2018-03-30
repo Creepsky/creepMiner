@@ -315,5 +315,10 @@ namespace Burst
 		 * \param response The HTTP response.
 		 */
 		void notFound(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response);
+
+		/*
+		 * fetches the Online Version from github
+		 */
+		std::string fetchOnlineVersion();
 	}
 }
