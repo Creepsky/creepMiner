@@ -46,7 +46,7 @@ function connectCallback(msg) {
                 setPlotIntegrity(response);
                 break;
 			case "totalPlotcheck-result":
-                $("#CheckAllButton").html(response["totalPlotIntegrity"] + " Integrity")
+                $("#CheckAllButton").html(Math.round(Number(response["totalPlotIntegrity"])*100)/100 + "% Integrity")
                 break;
             default:
                 break;
@@ -56,13 +56,12 @@ function connectCallback(msg) {
 
 function createProgressBar(id) {
     var progresStr = '<div class="progress">';
-    progresStr += '<div id="pb-' + id + '" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">';
+    progresStr += '<div id="pb-' + id + '" class="progress-bar progress-bar-success progress-bar-striped bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width:0%">';
     progresStr += '</div></div>';
     return progresStr;
 }
 
 function createDirLine(dirElement, index) {
-    //var line = $('<li class="list-group-item"></li>');
     var line = $('<a href="#" class="list-group-item"></a>');
 
     line.append(dirElement["path"]);
@@ -162,11 +161,11 @@ function checkAllPlotFiles(account, start_nonce, nonces, staggersize, path) {
 	if(!isCheckingAll)
 	{
 		isCheckingAll=true;
-		$("#CheckAllButton").html("Checking...");
+		$("#CheckAllButton").html("validating...");
 		$.get('/checkPlotFile/all');
 	}
 }
-		
+
 function setPlotIntegrity(checkPlotResult) {
 	isChecking=false;
    	var integrity = Math.floor(Number(checkPlotResult["plotIntegrity"])*100)/100;
@@ -176,25 +175,25 @@ function setPlotIntegrity(checkPlotResult) {
 			if(fileElement["element"].find("#"+checkPlotResult["plotID"])[0]){
 				if (integrity==100)
 					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						html("<b style='color:green'>" + integrity + "%</b>");
+						html("<b class='text-white'>" + integrity + "%</b>");
 				else
 					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						html("<b title='This file is corrupt' style='color:red'>" + integrity + "%</b>");
+						html("<b class='text-red'>" + integrity + "%</b>");
 			}
 		});
-   });		
+   });
 }
 
 function createPlotfileLine(account, start_nonce, nonces, staggersize, size, path) {
     var line = $("<li class='list-group-item d-md-flex align-items-center' style='padding:4px'></li>");
     line.append("<div class='col-xs-3 col-md-3'>" + account + "</div>");
     line.append("<div class='col-xs-2 col-md-2'>" + start_nonce + "</div>");
-    line.append("<div class='col-xs-2 col-md-2'>" + nonces + "</div>");
-    line.append("<div class='col-xs-2 col-md-2'>" + staggersize + "</div>");
-    line.append("<div class='col-xs-1 col-md-1'>" + size + "</div>");
-		line.append("<div class='col-xs-2 col-md-2 style='padding-bottom:0px;'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "' type='button' class='btn btn-default' title='Check the integrity of 32 random scoops in 30 random nonces of the plot file' " +
-		"style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," + 
-		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'>Check</button></div>");
+    line.append("<div class='col-xs-2 col-md-1'>" + nonces + "</div>");
+    line.append("<div class='col-xs-2 col-md-1'>" + staggersize + "</div>");
+    line.append("<div class='col-xs-1 col-md-2'>" + size + "</div>");
+		line.append("<div class='col-xs-2 col-md-2'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "' type='button' class='btn btn-info' title='Checks the integrity of 32 random scoops in 30 random nonces of the plot file' " +
+		"style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," +
+		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='glyphicon glyphicon-saved'></span>&nbsp;Validate</button></div>");
     return line;
 }
 
