@@ -1,3 +1,28 @@
+<!-- Modal -->
+<div class="modal fade" id="soundModal" tabindex="-1" role="dialog" aria-labelledby="soundModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="soundModalLabel">Enable nonce notifications</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+	        <div>
+	        	<p><i class="fa fa-info fa fa-2x pull-right"></i></p>
+	        	<p>
+	        	If you wish to use a custom notification <pre>alert.mp3</pre> please place it into the <b>public\sounds\<b> directory.
+        		</p>
+	        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-info" data-dismiss="modal">Okay</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row bs-component">
     <!-- current block -->
 	<div class="col-lg-4" style="margin:0;padding:0">
@@ -9,7 +34,7 @@
 					Refresh
 				</button>
 				<!-- sound btn -->
-				<button type="button" class="btn btn-info" onclick="toggleConfirmationSound();">
+				<button type="button" class="btn btn-info" onclick="toggleConfirmationSound();" data-toggle="modal" data-target="#soundModal">
 					<span id="iconConfirmationSound" class="glyphicon"></span>
 					Sound
 				</button>
