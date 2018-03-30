@@ -41,13 +41,13 @@ function connectCallback(msg) {
             case "plotdirs-rescan":
                 plotdirs = response["plotdirs"];
                 parsePlots();
-				fillDirs();
+                fillDirs();
                 break;
-			case "plotcheck-result":
+            case "plotcheck-result":
                 setPlotIntegrity(response);
                 break;
-			case "totalPlotcheck-result":
-				setTotalPlotIntegrity(response);
+            case "totalPlotcheck-result":
+                setTotalPlotIntegrity(response);
                 break;
             default:
                 break;
@@ -82,7 +82,7 @@ function createDirLine(dirElement, index) {
 }
 
 function fillDirs() {
-	plotDirList.empty();
+    plotDirList.empty();
     plotDirElements.forEach(function (plotDirElement, index, array) {
         plotDirList.append(plotDirElement["element"]);
     });
@@ -149,69 +149,69 @@ function parsePlots() {
 }
 
 function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
-	if(!isChecking && !isCheckingAll)
-	{
-		isChecking=true;
-		var butId = account + "_" + start_nonce + "_" + nonces + "_" + staggersize;
-		$("#"+butId).html("<i class='fa fa-spinner fa-pulse fa-fw'></i>");
-		$.get(encodeURI("/checkPlotFile/" + path));
-	}
+    if(!isChecking && !isCheckingAll)
+    {
+        isChecking=true;
+        var butId = account + "_" + start_nonce + "_" + nonces + "_" + staggersize;
+        $("#"+butId).html("<i class='fa fa-spinner fa-pulse fa-fw'></i>");
+        $.get(encodeURI("/checkPlotFile/" + path));
+    }
 }
 
 function checkAllPlotFiles(account, start_nonce, nonces, staggersize, path) {
-	if(!isCheckingAll)
-	{
-		isCheckingAll=true;
-		$("#CheckAllButton").html("<i class='fa fa-spinner fa-pulse fa-fw'></i>");
-		$.get('/checkPlotFile/all');
-	}
+    if(!isCheckingAll)
+    {
+        isCheckingAll=true;
+        $("#CheckAllButton").html("<i class='fa fa-spinner fa-pulse fa-fw'></i>");
+        $.get('/checkPlotFile/all');
+    }
 }
 
 function setPlotIntegrity(checkPlotResult) {
-	isChecking=false;
-   	var integrity = Math.floor(Number(checkPlotResult["plotIntegrity"])*100)/100;
-	//find the corresponding element in the plotDirElements and write the integrity into it.
-	plotDirElements.forEach(function (element, indexDir, arrayFold) {
+    isChecking=false;
+    var integrity = Math.floor(Number(checkPlotResult["plotIntegrity"])*100)/100;
+    //find the corresponding element in the plotDirElements and write the integrity into it.
+    plotDirElements.forEach(function (element, indexDir, arrayFold) {
         element["plotfiles"].forEach( function(fileElement, index, array) {
-			if(fileElement["element"].find("#"+checkPlotResult["plotID"])[0]){
-				if (integrity==100)
-				{
-					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						html("<i class='fa fa-check-circle-o'></i>&nbsp;&nbsp;" + integrity + "%");
-					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						toggleClass('btn-info btn-danger',false);
-					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						toggleClass('btn-success',true);
-				}
-				else
-				{
-					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						html("<i class='fa fa-exclamation-triangle'></i>&nbsp;&nbsp;" + integrity + "%");
-					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						toggleClass('btn-info btn-success',false);
-					plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-						toggleClass('btn-danger',true);
-				}
-			}
-		});
-   });
+            if(fileElement["element"].find("#"+checkPlotResult["plotID"])[0]){
+                if (integrity==100)
+                {
+                    plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+                        html("<i class='fa fa-check-circle-o'></i>&nbsp;&nbsp;" + integrity + "%");
+                    plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+                        toggleClass('btn-info btn-danger',false);
+                    plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+                        toggleClass('btn-success',true);
+                }
+                else
+                {
+                    plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+                        html("<i class='fa fa-exclamation-triangle'></i>&nbsp;&nbsp;" + integrity + "%");
+                    plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+                        toggleClass('btn-info btn-success',false);
+                    plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
+                        toggleClass('btn-danger',true);
+                }
+            }
+        });
+});
 }
 
 function setTotalPlotIntegrity(totalCheckResult) {
-	isCheckingAll=false;
-	var totIntegrity = Math.round(Number(totalCheckResult["totalPlotIntegrity"])*100)/100;
-	if (totIntegrity==100)
-	{
-		$("#CheckAllButton").html("<i class='fa fa-check-circle-o'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
-		$("#CheckAllButton").toggleClass('btn-info btn-danger',false);
-		$("#CheckAllButton").toggleClass('btn-success',true);
-	}
-	else
-	{
-		$("#CheckAllButton").html("<i class='fa fa-exclamation-triangle'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
-		$("#CheckAllButton").toggleClass('btn-info btn-success',false);
-		$("#CheckAllButton").toggleClass('btn-danger',true);
-	}
+    isCheckingAll=false;
+    var totIntegrity = Math.round(Number(totalCheckResult["totalPlotIntegrity"])*100)/100;
+    if (totIntegrity==100)
+    {
+        $("#CheckAllButton").html("<i class='fa fa-check-circle-o'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
+        $("#CheckAllButton").toggleClass('btn-info btn-danger',false);
+        $("#CheckAllButton").toggleClass('btn-success',true);
+    }
+    else
+    {
+        $("#CheckAllButton").html("<i class='fa fa-exclamation-triangle'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
+        $("#CheckAllButton").toggleClass('btn-info btn-success',false);
+        $("#CheckAllButton").toggleClass('btn-danger',true);
+    }
 }
 
 function createPlotfileLine(account, start_nonce, nonces, staggersize, size, path) {
@@ -221,9 +221,10 @@ function createPlotfileLine(account, start_nonce, nonces, staggersize, size, pat
     line.append("<div class='col-xs-2 col-md-1'>" + nonces + "</div>");
     line.append("<div class='col-xs-2 col-md-1'>" + staggersize + "</div>");
     line.append("<div class='col-xs-1 col-md-2'>" + size + "</div>");
-		line.append("<div class='col-xs-2 col-md-3'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize + "' type='button' class='btn btn-info' title='Checks the integrity of 32 random scoops in 30 random nonces of the plot file' " +
-		"style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," +
-		nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='fa fa-superpowers'></span>&nbsp;Validate</button></div>");
+    line.append("<div class='col-xs-2 col-md-3'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize +
+        "' type='button' class='btn btn-info' title='Checks the integrity of 32 random scoops in 30 random nonces of the plot file' " +
+        "style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," +
+        nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='fa fa-superpowers'></span>&nbsp;Validate</button></div>");
     return line;
 }
 
