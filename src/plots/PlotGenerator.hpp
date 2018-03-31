@@ -26,91 +26,69 @@
 #include <vector>
 #include <condition_variable>
 #include "Declarations.hpp"
-#include "webserver/MinerServer.hpp"
+#include "shabal/MinerShabal.hpp"
 
 namespace Burst
 {
 	class Miner;
+	class MinerServer;
 
 	class PlotGenerator
 	{
 	public:
 		static Poco::UInt64 generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner);
 		static double checkPlotfileIntegrity(std::string plotPath, Miner& miner, MinerServer& server);
-	};
 
-	/*template <typename TShabal>
-	class PlotGeneratorQueue
-	{
-	public:
-		struct QueueSlot
-		{
-			Poco::UInt64 account;
-			Poco::UInt64 nonce;
-			Poco::UInt64 deadline;
-		};
+		static std::array<std::vector<char>, Shabal256_SSE2::HashSize> generateSse2(Poco::UInt64 account, Poco::UInt64 startNonce);
+		static std::array<std::vector<char>, Shabal256_AVX::HashSize> generateAvx(Poco::UInt64 account, Poco::UInt64 startNonce);
+		static std::array<std::vector<char>, Shabal256_SSE4::HashSize> generateSse4(Poco::UInt64 account, Poco::UInt64 startNonce);
+		static std::array<std::vector<char>, Shabal256_AVX2::HashSize> generateAvx2(Poco::UInt64 account, Poco::UInt64 startNonce);
 
-	public:
-		PlotGeneratorQueue()
-		{
-			queue_.reserve(TShabal::HashSize);
-		}
+		static Poco::UInt64 calculateDeadlineSse2(std::vector<char>& gendata,
+			GensigData& generationSignature, Poco::UInt64 scoop, Poco::UInt64 baseTarget);
 
-		static Poco::UInt64 add(Poco::UInt64 account, Poco::UInt64 nonce)
-		{
-			std::unique_lock<std::mutex> lock(mutex_);
-			
-			queue_[index_].account = account;
-			queue_[index_].nonce = nonce;
-			queue_[index_].deadline = 0;
+		static std::array<Poco::UInt64, Shabal256_AVX::HashSize> calculateDeadlineAvx(
+			std::array<std::vector<char>, Shabal256_AVX::HashSize>& gendatas,
+			GensigData& generationSignature, Poco::UInt64 scoop, Poco::UInt64 baseTarget);
 
-			const auto thisIndex = index_++;
+		static std::array<Poco::UInt64, Shabal256_SSE4::HashSize> calculateDeadlineSse4(
+			std::array<std::vector<char>, Shabal256_SSE4::HashSize>& gendatas,
+			GensigData& generationSignature, Poco::UInt64 scoop, Poco::UInt64 baseTarget);
 
-			if (index_ == TShabal::HashSize)
-			{
-				index_ = 0;
-				condition_.notify_all();
-				auto lastDeadline = queue_.back().deadline;
-				std::lock_guard<std::mutex> lock(mutex_);
-				return lastDeadline;
-			}
-
-			condition_.wait(lock);
-
-			return queue_[thisIndex].deadline;
-		}
-
-		static void setMiner(const Miner& miner)
-		{
-			std::lock_guard<std::mutex> lock(mutex_);
-			miner_ = &miner;
-		}
+		static std::array<Poco::UInt64, Shabal256_AVX2::HashSize> calculateDeadlineAvx2(
+			std::array<std::vector<char>, Shabal256_AVX2::HashSize>& gendatas,
+			GensigData& generationSignature, Poco::UInt64 scoop, Poco::UInt64 baseTarget);
 
 	private:
-		static std::mutex mutex_;
-		static std::condition_variable condition_;
-		static const Miner* miner_;
-		static int index_;
-		static std::vector<QueueSlot> queue_;
-	};
-
-	template <typename TShabal>
-	struct PlotGenerator_Algorithm
-	{
-		Poco::UInt64 generate(Poco::UInt64 account, Poco::UInt64 nonce)
+		template <typename TShabal, typename TOperations>
+		static std::array<std::vector<char>, TShabal::HashSize> generate(const Poco::UInt64 account, const Poco::UInt64 startNonce)
 		{
-			char final[32];
-			char gendata[16 + Settings::PlotSize];
+			std::array<std::array<char, 32>, TShabal::HashSize> finals{};
+			std::array<std::vector<char>, TShabal::HashSize> gendatas{};
 
-			auto xv = reinterpret_cast<char*>(&account);
+			for (auto& gendata : gendatas)
+				gendata.resize(16 + Settings::PlotSize);
 
-			for (auto j = 0u; j <= 7; ++j)
-				gendata[Settings::PlotSize + j] = xv[7 - j];
+			auto xv = reinterpret_cast<const char*>(&account);
 
-			xv = reinterpret_cast<char*>(&nonce);
+			for (auto& gendata : gendatas)
+				for (auto j = 0u; j <= 7; ++j)
+					gendata[Settings::PlotSize + j] = xv[7 - j];
 
-			for (auto j = 0u; j <= 7; ++j)
-				gendata[Settings::PlotSize + 8 + j] = xv[7 - j];
+			auto nonce = startNonce;
+
+			for (auto& gendata : gendatas)
+			{
+				xv = reinterpret_cast<char*>(&nonce);
+				
+				for (auto j = 0u; j <= 7; ++j)
+					gendata[Settings::PlotSize + 8 + j] = xv[7 - j];
+
+				++nonce;
+			}
+
+			std::array<unsigned char*, TShabal::HashSize> gendataUpdatePtr{};
+			std::array<unsigned char*, TShabal::HashSize> gendataClosePtr{};
 
 			for (auto i = Settings::PlotSize; i > 0; i -= Settings::HashSize)
 			{
@@ -121,33 +99,117 @@ namespace Burst
 				if (len > Settings::ScoopPerPlot)
 					len = Settings::ScoopPerPlot;
 
-				x.update(&gendata[i], len);
-				x.close(&gendata[i - Settings::HashSize]);
+				for (size_t j = 0; j < TShabal::HashSize; ++j)
+				{
+					gendataUpdatePtr[j] = reinterpret_cast<unsigned char*>(gendatas[j].data() + i);
+					gendataClosePtr[j] = reinterpret_cast<unsigned char*>(gendatas[j].data() + i - Settings::HashSize);
+				}
+
+				TOperations::update(x, gendataUpdatePtr, len);
+				TOperations::close(x, gendataClosePtr);
 			}
 
 			TShabal x;
-			x.update(&gendata[0], 16 + Settings::PlotSize);
-			x.close(&final[0]);
+
+			for (size_t i = 0; i < TShabal::HashSize; ++i)
+			{
+				gendataUpdatePtr[i] = reinterpret_cast<unsigned char*>(gendatas[i].data());
+				gendataClosePtr[i] = reinterpret_cast<unsigned char*>(&finals[i][0]);
+			}
+
+			TOperations::update(x, gendataUpdatePtr, 16 + Settings::PlotSize);
+			TOperations::close(x, gendataClosePtr);
 
 			// XOR with final
-			for (auto i = 0; i < Settings::PlotSize; i++)
-				gendata[i] ^= final[i % 32];
+			for (size_t i = 0; i < TShabal::HashSize; ++i)
+				for (size_t j = 0; j < Settings::PlotSize; j++)
+					gendatas[i][j] ^= finals[i][j % Settings::HashSize];
 
-			std::array<uint8_t, 32> target;
-			Poco::UInt64 result;
-
-			const auto generationSignature = miner.getGensig();
-			const auto scoop = miner.getScoopNum();
-			const auto basetarget = miner.getBaseTarget();
-
-			TShabal y;
-			y.update(generationSignature.data(), Settings::HashSize);
-			y.update(&gendata[scoop * Settings::ScoopSize], Settings::ScoopSize);
-			y.close(target.data());
-
-			memcpy(&result, target.data(), sizeof(Poco::UInt64));
-
-			return result / basetarget;
+			return std::move(gendatas);
 		}
-	};*/
+
+		template <typename TShabal, typename TOperations, typename TContainer>
+		static std::array<Poco::UInt64, TShabal::HashSize> calculateDeadline(TContainer& container,
+			GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
+		{
+			std::array<std::array<uint8_t, 32>, TShabal::HashSize> targets{};
+			std::array<Poco::UInt64, TShabal::HashSize> results{};
+
+			std::array<char*, TShabal::HashSize> gensigPtr{};
+			std::array<char*, TShabal::HashSize> updatePtr{};
+			std::array<char*, TShabal::HashSize> closePtr{};
+
+			for (size_t i = 0; i < TShabal::HashSize; ++i)
+			{
+				gensigPtr[i] = reinterpret_cast<char*>(generationSignature.data());
+				updatePtr[i] = &container[i].at(scoop * Settings::ScoopSize);
+				closePtr[i] = reinterpret_cast<char*>(targets[i].data());
+			}
+
+			TShabal x;
+			TOperations::update(x, gensigPtr, Settings::HashSize);
+			TOperations::update(x, updatePtr, Settings::ScoopSize);
+			TOperations::close(x, closePtr);
+			
+			std::array<Poco::UInt64, TShabal::HashSize> deadlines{};
+
+			for (size_t i = 0; i < TShabal::HashSize; ++i)
+			{
+				memcpy(&deadlines[i], targets[i].data(), sizeof(Poco::UInt64));
+				deadlines[i] /= baseTarget;
+			}
+
+			return deadlines;
+		}
+	};
+
+	template <typename TShabal>
+	struct PlotGeneratorOperations1
+	{
+		template <typename TContainer>
+		static void update(TShabal& shabal, const TContainer& container, const Poco::UInt64 length)
+		{
+			shabal.update(container[0], length);
+		}
+
+		template <typename TContainer>
+		static void close(TShabal& shabal, const TContainer& container)
+		{
+			shabal.close(container[0]);
+		}
+	};
+
+	template <typename TShabal>
+	struct PlotGeneratorOperations4
+	{
+		template <typename TContainer>
+		static void update(TShabal& shabal, const TContainer& container, const Poco::UInt64 length)
+		{
+			shabal.update(container[0], container[1], container[2], container[3], length);
+		}
+
+		template <typename TContainer>
+		static void close(TShabal& shabal, const TContainer& container)
+		{
+			shabal.close(container[0], container[1], container[2], container[3]);
+		}
+	};
+
+	template <typename TShabal>
+	struct PlotGeneratorOperations8
+	{
+		template <typename TContainer>
+		static void update(TShabal& shabal, const TContainer& container, const Poco::UInt64 length)
+		{
+			shabal.update(container[0], container[1], container[2], container[3],
+				container[4], container[5], container[6], container[7], length);
+		}
+
+		template <typename TContainer>
+		static void close(TShabal& shabal, const TContainer& container)
+		{
+			shabal.close(container[0], container[1], container[2], container[3],
+				container[4], container[5], container[6], container[7]);
+		}
+	};
 }
