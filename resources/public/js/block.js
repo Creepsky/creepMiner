@@ -32,7 +32,7 @@ class Block {
 		this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Base target<span>" + block["baseTarget"] + "</span></li>"));
 
 
-		
+
 		blockStartTime=block["startTime"];
 		var diffDifference = block['difficultyDifference'];
 		var diffDifferenceString = String(diffDifference);
@@ -65,7 +65,7 @@ class Block {
 }
 
 $('#timePlotButton').on('click', function(event) {
-	if (timePlotMax == maxBlockTime*1.25) 
+	if (timePlotMax == maxBlockTime*1.25)
 		timePlotMax = maxScanTime*1.25;
 	else
 		timePlotMax = maxBlockTime*1.25;
@@ -76,7 +76,7 @@ $('#timePlotButton').on('click', function(event) {
 });
 
 $('#deadlinePlotButton').on('click', function(event) {
-	if (deadlinePlotMax) 
+	if (deadlinePlotMax)
 		deadlinePlotMax = null;
 	else
 		deadlinePlotMax = deadlinePlotSmallMax;
@@ -187,7 +187,7 @@ function localInitCheckBoxes() {
 	// Check if values exist in local or set true(default)
 
 	var temp = localGet('hideSameNonces');
-	
+
 	if (temp == null) temp = true;
 	hideSameNonces.prop('checked', temp);
 
@@ -232,7 +232,7 @@ function localSet(item, data) {
 	localStorage.setItem(item, JSON.stringify(data));
 }
 
-// Get from local storage 
+// Get from local storage
 // Item : name of local variable
 
 function localGet(item) {
@@ -346,7 +346,7 @@ function createNonceLine(deadline, glyphIconId, lineType, nonceType) {
 	else if (nonceType == NONCE_CONFIRMED)
 		nonceTypeStr = "nonce confirmed";
 
-	message.append("<span class='glyphicon " + glyphIconId + "' aria-hidden='true'></span> ");
+	message.append("<span class='fa " + glyphIconId + "'></span> ");
 	message.append("<b><a href='https://explore.burst.cryptoguru.org/account/" + deadline.accountId.toString() + "' target='_blank'>" +
 		deadline.accountName + "</a></b>:&nbsp;" + nonceTypeStr + "&nbsp;");
 	message.append("<span class='badge badge-primary badge-pill'>" + deadline.deadlineStr + "</span>");
@@ -464,17 +464,17 @@ function hideSameNonceLines(nonce) {
 
 function nonceFound(json) {
 	if (noncesFound.prop("checked"))
-		replaceOrAddNonceLine(json, "glyphicon-zoom-in", "list-group-item-default", NONCE_FOUND);
+		replaceOrAddNonceLine(json, "fa fa-compass", "list-group-item-default", NONCE_FOUND);
 }
 
 function addOrSubmit(json) {
 	if (noncesSent.prop("checked"))
-		replaceOrAddNonceLine(json, "glyphicon-share-alt", "list-group-item-success", NONCE_SENT);
+		replaceOrAddNonceLine(json, "fa-paper-plane", "list-group-item-success", NONCE_SENT);
 }
 
 function addOrConfirm(json) {
 	if (noncesConfirmed.prop("checked")) {
-		replaceOrAddNonceLine(json, "glyphicon-ok", "list-group-item-success", NONCE_CONFIRMED);
+		replaceOrAddNonceLine(json, "fa-check", "list-group-item-success", NONCE_CONFIRMED);
 
 		if (confirmedSound && playConfirmationSound)
 			confirmedSound.play();
@@ -544,13 +544,13 @@ function setLastWinner(winner) {
 function deActivateConfirmationSound(on) {
 	playConfirmationSound = on;
 
-	iconConfirmationSound.removeClass("glyphicon-volume-up");
-	iconConfirmationSound.removeClass("glyphicon-volume-off");
+	iconConfirmationSound.removeClass("fa-volume-up");
+	iconConfirmationSound.removeClass("fa-volume-off");
 
 	if (on)
-		iconConfirmationSound.addClass("glyphicon-volume-up");
+		iconConfirmationSound.addClass("fa-volume-up");
 	else
-		iconConfirmationSound.addClass("glyphicon-volume-off");
+		iconConfirmationSound.addClass("fa-volume-off");
 }
 
 function toggleConfirmationSound() {
@@ -636,7 +636,7 @@ function reparseMessages() {
 				$(this).hide();
 		}
 	});
-	
+
 	// ******************************************
 	var tempSettings = {
 		miner: logSettings['miner'].val(),
@@ -650,7 +650,7 @@ function reparseMessages() {
 		wallet: logSettings['wallet'].val(),
 		general: logSettings['general'].val(),
 	}
-	
+
 	localSet('logSettings', tempSettings);
 	// ******************************************
 }
@@ -810,9 +810,9 @@ function showDeadlineDistributionInfo(deadlineDistObj) {
 	deadlineDistributionPlot.unhighlight();
 
 	if (deadlineDistObj) {
-		var barMax = deadlineFormat(Number(deadlineDistObj.datapoint[0]) + 
+		var barMax = deadlineFormat(Number(deadlineDistObj.datapoint[0]) +
 			Number(deadlineDistributionBarWidth)/0.99);
-		var infos = "<b>" + deadlineFormat(deadlineDistObj.datapoint[0]) + " - " + 
+		var infos = "<b>" + deadlineFormat(deadlineDistObj.datapoint[0]) + " - " +
 			barMax.toString() + "</b>: " + deadlineDistObj.datapoint[1] + " Deadlines";
 
 		deadlineDistributionPlot.highlight(deadlineDistObj.series, deadlineDistObj.datapoint);
@@ -884,11 +884,11 @@ function initBlock() {
 	bestHistorical.html(nullDeadline);
 	connectBlock();
 	// deActivateConfirmationSound(true);
-	
+
 	// ******************************************
 	deActivateConfirmationSound(playConfirmationSound);
 	// ******************************************
-	
+
 	showDeadlinesInfo(null);
 	showDeadlineDistributionInfo(null);
 	showDifficultyInfo(null);
@@ -985,7 +985,7 @@ function initTimePlot() {
 				show: true,
 				fill: true
 			},
-			points: { 
+			points: {
 				show: false,
 				radius:2
 			}
@@ -1030,7 +1030,7 @@ function initDifficultyPlot() {
 				show: true,
 				fill: true
 			},
-			points: { 
+			points: {
 				show: false,
 				radius:2
 			}
