@@ -2,7 +2,7 @@ var onlineVersionNum="";
 var runningVersionNum="";
 
 window.onload = function (evt) {
-    $("#btnPlotfiles").addClass('active');
+    $("#btnAbout").addClass('active');
     printVersions();
 }
 
