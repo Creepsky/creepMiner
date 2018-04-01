@@ -1,104 +1,120 @@
-<div class="container col-md-12">
-	<div class="row">
-	<div class="col-md-6">
-		<h2>Miner</h2>
-		<form method="POST" action="/settings/urls">
-			<div class="col-md-12">
-				<div class="form-group row">
-					<label for="mining-info-url" class="col-md-12 col-lg-3 col-form-label">Mining-Info-URL</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="submission-url" class="col-md-12 col-lg-3 col-form-label">Submission-URL</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="url" id="submission-url" name="submission-url">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="wallet-url" class="col-md-12 col-lg-3 col-form-label">Wallet-URL</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="text" id="wallet-url" name="wallet-url">
-					</div>
-				</div>
-				<button type="submit" class="btn btn-primary float-right">Submit URLs</button>
-			</div>
-		</form> <br><br>
-		<form method="POST" action="/settings/mining" style="margin-top:5px">
-			<div class="col-md-12">
-				<div class="form-group row">
-					<label for="intensity" class="col-md-12 col-lg-3 col-form-label">Intensity</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="number" id="intensity" name="intensity">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="plot-readers" class="col-md-12 col-lg-3 col-form-label">Plot reader</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="number" id="plot-readers" name="plot-readers">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="buffer-size" class="col-md-12 col-lg-3 col-form-label">Buffer size (MB)</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="number" id="buffer-size" name="buffer-size">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="submit-probability" class="col-md-12 col-lg-3 col-form-label">Submit probabilty</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="text" id="submit-probability"  name="submit-probability">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="target-deadline" class="col-md-12 col-lg-3 col-form-label">Target deadline</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="text" id="target-deadline" name="target-deadline">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="submission-max-retry" class="col-md-12 col-lg-3 col-form-label">Submission max retry</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="timeout" class="col-md-12 col-lg-3 col-form-label">Timeout (seconds)</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="number" id="timeout" name="timeout">
-					</div>
-				</div>
-				<div class="form-group row">
-					<label for="max-historical-blocks" class="col-md-12 col-lg-3 col-form-label">Max historical blocks</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="number" id="max-historical-blocks" name="max-historical-blocks">
-					</div>
-				</div>
-				<button type="submit" class="btn btn-primary float-right">Submit Miner Config</button>
-			</div>
-
-		</form> <br><br>
-		<h2 class="text-danger">Danger Zone</h2>
-		<button type="button" class="btn btn-danger" onclick="$.get('/shutdown');">
-			<span class="fa fa-power-off" aria-hidden="true">shutdown</span>
-		</button>
-		<button type="button" class="btn btn-warning" onclick="$.get('/restart');">
-			<span class="fa fa-refresh" aria-hidden="true">restart</span>
-		</button>
-	</div>
-	<div class="col-md-6">
-		<h2>Console</h2>
-		<form method="POST" action="/settings/logging">
-				<div id="settingsDlComboboxes"></div>
-				<div class="form-group row">
-					<label for="log-dir" class="col-md-12 col-lg-3 col-form-label">Logfile directory</label>
-					<div class="col-md-12 col-lg-9">
-						<input class="form-control" type="text" id="log-dir" name="log-dir">
-					</div>
-				</div>
-			<button type="submit" class="btn btn-primary float-right">Submit Console Config</button>
-		</form>
-	</div>
-	<br />
+<div class="row bs-component">
+    <div class="col-md-6">
+        <div class="card mb-12">
+            <h4 class="card-header bg-success text-white">Mining / Processing</h4>
+            <div class="card-body">
+                <div class="col-lg-12">
+                    <form method="POST" action="/settings/urls">
+                        <div class="form-group row">
+                            <label for="mining-info-url" class="col-md-12 col-lg-3 col-form-label">Mining-Info-URL</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="url" id="mining-info-url" name="mining-info-url">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="submission-url" class="col-md-12 col-lg-3 col-form-label">Submission-URL</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="url" id="submission-url" name="submission-url">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="wallet-url" class="col-md-12 col-lg-3 col-form-label">Wallet-URL</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="text" id="wallet-url" name="wallet-url">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-info float-right" style="width:100%">Submit URLs</button>
+                    </form><br><br>
+                </div>
+                <div class="col-lg-12">
+                    <form method="POST" action="/settings/mining" style="margin-top:5px">           
+                        <div class="form-group row">
+                            <label for="intensity" class="col-md-12 col-lg-3 col-form-label">Intensity</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="number" id="intensity" name="intensity">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="plot-readers" class="col-md-12 col-lg-3 col-form-label">Plot reader</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="number" id="plot-readers" name="plot-readers">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="buffer-size" class="col-md-12 col-lg-3 col-form-label">Buffer size (MB)</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="number" id="buffer-size" name="buffer-size">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="submit-probability" class="col-md-12 col-lg-3 col-form-label">Submit probabilty</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="text" id="submit-probability"  name="submit-probability">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="target-deadline" class="col-md-12 col-lg-3 col-form-label">Target deadline</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="text" id="target-deadline" name="target-deadline">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="submission-max-retry" class="col-md-12 col-lg-3 col-form-label">Submission max retry</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="timeout" class="col-md-12 col-lg-3 col-form-label">Timeout (seconds)</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="number" id="timeout" name="timeout">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="max-historical-blocks" class="col-md-12 col-lg-3 col-form-label">Max historical blocks</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="number" id="max-historical-blocks" name="max-historical-blocks">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-info float-right" style="width:100%">Submit Miner Config</button>
+                    </form>
+                </div>          
+            </div>      
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-12">
+            <h4 class="card-header bg-primary text-white">Console</h4>
+            <div class="card-body">
+                <form method="POST" action="/settings/logging">
+                    <div id="settingsDlComboboxes"></div>
+                    <div class="form-group row">
+                        <label for="log-dir" class="col-md-12 col-lg-3 col-form-label">Logfile directory</label>
+                        <div class="col-md-12 col-lg-9">
+                            <input class="form-control" type="text" id="log-dir" name="log-dir">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-info float-right" style="width:100%">Submit Console Config</button>
+                </form>
+            </div>
+            <br />
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-12">
+            <h4 class="card-header bg-danger text-white">Danger Zone</h4>
+            <div class="card-body">
+                <div = class="col-md-12">
+                    <div class="row">
+                        <button type="button" class="btn btn-danger" onclick="$.get('/shutdown');" style="width:50%">
+                            <span class="fa fa-power-off" aria-hidden="true">shutdown</span>
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="$.get('/restart');" style="width:50%;">
+                            <span class="fa fa-refresh" aria-hidden="true">restart</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
