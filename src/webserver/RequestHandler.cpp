@@ -740,6 +740,7 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 			const auto& value = key_val.second;
 
 			using np = Poco::NumberParser;
+			while (miner.isProcessing()) Poco::Thread::sleep(1000);
 
 			try
 			{
