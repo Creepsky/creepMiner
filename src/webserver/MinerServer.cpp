@@ -284,7 +284,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 					{ 
 						"includes", []() {
 							using Poco::replace;
-							Burst::Version onlineVersion(replace(Burst::RequestHandler::fetchOnlineVersion(),"version:",""));
+							Burst::Version onlineVersion(replace(Burst::RequestHandler::fetchOnlineVersion(), "version:", ""));
 							std::stringstream sstrContent;
 							sstrContent << "<script src='js/about.js'></script>";
 							sstrContent << std::endl;

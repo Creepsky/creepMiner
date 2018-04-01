@@ -36,6 +36,24 @@ function connect(onMessage) {
 	}
 }
 
+function checkVersion(runningVer, onlineVer) {
+	var onlineVersionSplit = onlineVer.split(".");
+    var runningVersionSplit = runningVer.split(".");
+	var current=true;
+    if (Number(onlineVersionSplit[0]) > Number(runningVersionSplit[0])) 
+        current=false;
+    else if (Number(onlineVersionSplit[1]) > Number(runningVersionSplit[1])) 
+        current=false;
+    else if (Number(onlineVersionSplit[2]) > Number(runningVersionSplit[2])) 
+        current=false;
+	if(!current) 
+	{
+		$("#btnAbout").find("a").css({"color": "red"});
+		$("#btnAbout").find("a").attr({"data-original-title": "A new release of creepMiner is available"});
+	}
+	return current
+}
+
 function setProgress(progressBar, progress) {
 	var valueFixed = parseFloat(progress).toFixed();
 

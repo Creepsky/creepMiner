@@ -264,7 +264,7 @@ function newBlock(json) {
 	deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
 	var roundsSub=json["nRoundsSubmitted"]
 	var numHistor=json["numHistoricals"]
-	roundsSubmitted.html(roundsSub + " / " + numHistor + " ( " + Math.round(roundsSub/numHistor*1000)/10 +"% )");
+	roundsSubmitted.html(roundsSub + " / " + numHistor + " (" + Math.round(roundsSub/numHistor*1000)/10 +"%)");
 	wonBlocks.html(json["blocksWon"]);
 	lowestDiff.html("<small>@" + json["lowestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["lowestDifficulty"]["value"]);
 	highestDiff.html("<small>@" + json["highestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["highestDifficulty"]["value"]);
@@ -679,6 +679,7 @@ function connectBlock() {
 			switch (response["type"]) {
 				case "new block":
 					newBlock(response);
+					checkVersion(response["runningVersion"], response["onlineVersion"]);
 					break;
 				case "nonce found":
 				case "nonce found (too high)":

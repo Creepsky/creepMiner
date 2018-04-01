@@ -20,6 +20,8 @@
 // ==========================================================================
 
 #include "MinerUtil.hpp"
+#include "webserver/RequestHandler.hpp"
+#include <Poco/String.h>
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
@@ -517,6 +519,10 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	json.set("startTime", std::to_string( std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() ));
 	json.set("blocksMined", std::to_string(data.getBlocksMined()));
 	json.set("blocksWon", std::to_string(data.getBlocksWon()));
+	using Poco::replace;
+	Burst::Version onlineVersion(replace(Burst::RequestHandler::fetchOnlineVersion(), "version:", ""));
+	json.set("onlineVersion", onlineVersion.literal);
+	json.set("runningVersion", Settings::Project.version.literal);
 	
 	if (bestOverall != nullptr)
 		json.set("bestOverall", createJsonDeadline(*bestOverall));
