@@ -29,49 +29,49 @@
                 <div class="col-lg-12">
                     <form method="POST" action="/settings/mining" style="margin-top:5px">           
                         <div class="form-group row">
-                            <label for="intensity" class="col-md-12 col-lg-3 col-form-label">Intensity</label>
+                            <label for="intensity" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top" title="The mining intensity sets the amount of verifier threads, that verify plot files asynchronously read by the plotfile-readers.">Intensity</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="intensity" name="intensity">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="plot-readers" class="col-md-12 col-lg-3 col-form-label">Plot reader</label>
+                            <label for="plot-readers" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="This value sets the amount of asynchronous plot readers. Every plot reader reads a list of plot files inside a plot directory (or device). If this value is 0 (default), as many plot readers will be created as plot devices exist.">Plot reader</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="plot-readers" name="plot-readers">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="buffer-size" class="col-md-12 col-lg-3 col-form-label">Buffer size (MB)</label>
+                            <label for="buffer-size" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="This is the maximal global amount of RAM used during the mining process.">Buffer size (MB)</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="buffer-size" name="buffer-size">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="submit-probability" class="col-md-12 col-lg-3 col-form-label">Submit probabilty</label>
+                            <label for="submit-probability" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="This value determines your target deadline of each round such that you submit with a certain probability. E.g. a submit probability of 0.7 causes you to submit in 70% of rounds.">Submit probabilty</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="text" id="submit-probability"  name="submit-probability">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="target-deadline" class="col-md-12 col-lg-3 col-form-label">Target deadline</label>
+                            <label for="target-deadline" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="Fixed target deadline that is only used if submit probability is set to 0.">Target deadline</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="text" id="target-deadline" name="target-deadline">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="submission-max-retry" class="col-md-12 col-lg-3 col-form-label">Submission max retry</label>
+                            <label for="submission-max-retry" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="When the pool doesn't confirm a sent nonce in (timeout) seconds, the miner will retry to send it and wait for another confirmation maximum this many times.">Submission max retry</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="timeout" class="col-md-12 col-lg-3 col-form-label">Timeout (seconds)</label>
+                            <label for="timeout" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="Every communication with the server has a maximum waiting time of this many seconds.">Timeout (seconds)</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="timeout" name="timeout">
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="max-historical-blocks" class="col-md-12 col-lg-3 col-form-label">Max historical blocks</label>
+                            <label for="max-historical-blocks" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="The number of blocks that are kept in memory to calculate the statistics and graphs on the blocks page.">Max historical blocks</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="max-historical-blocks" name="max-historical-blocks">
                             </div>
