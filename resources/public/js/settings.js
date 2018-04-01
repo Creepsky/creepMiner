@@ -7,6 +7,7 @@ function update_settings(config) {
 
     intensity.val(config['miningIntensityRaw']);
     buffer_size.val(config['bufferSizeRaw']);
+	buffer_chunks.val(config['bufferChunks']);
     plot_readers.val(config['maxPlotReadersRaw']);
     submission_max_retry.val(config['submissionMaxRetry']);
 	submit_probability.val(config['submitProbability']);
@@ -52,6 +53,7 @@ window.onload = function (evt) {
 
     intensity = $("#intensity");
     buffer_size = $("#buffer-size");
+	buffer_chunks = $("#buffer-chunks");
     plot_readers = $("#plot-readers");
     submission_max_retry = $("#submission-max-retry");
 	submit_probability = $("#submit-probability");

@@ -716,6 +716,7 @@ Poco::JSON::Object Burst::createJsonConfig()
 	json.set("timeout", MinerConfig::getConfig().getTimeout());
 	json.set("bufferSize", memToString(MinerConfig::getConfig().getMaxBufferSize(), 0));
 	json.set("bufferSizeRaw", std::to_string(MinerConfig::getConfig().getMaxBufferSizeRaw()));
+	json.set("bufferChunks", std::to_string(MinerConfig::getConfig().getBufferChunkCount()));
 	json.set("targetDeadline", deadlineFormat(targetDeadline));
 	json.set("submitProbability", MinerConfig::getConfig().getSubmitProbability());
 	json.set("maxHistoricalBlocks", MinerConfig::getConfig().getMaxHistoricalBlocks());

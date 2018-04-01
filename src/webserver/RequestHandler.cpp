@@ -753,6 +753,8 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 					miner.setMiningIntensity(np::parseUnsigned(value));
 				else if (key == "buffer-size")
 					Miner::setMaxBufferSize(np::parseUnsigned64(value));
+				else if (key == "buffer-chunks")
+					MinerConfig::getConfig().setBufferChunkCount(np::parseUnsigned64(value));
 				else if (key == "plot-readers")
 					miner.setMaxPlotReader(np::parseUnsigned(value));
 				else if (key == "submission-max-retry")

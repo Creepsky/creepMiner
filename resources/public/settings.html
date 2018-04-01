@@ -46,6 +46,12 @@
                                 <input class="form-control" type="number" id="buffer-size" name="buffer-size">
                             </div>
                         </div>
+						<div class="form-group row">
+                            <label for="buffer-size" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="This is the amount of chunks, in which the buffer is split. Every chunk is only used by one memory unit (plot data).">Buffer chunks</label>
+                            <div class="col-md-12 col-lg-9">
+                                <input class="form-control" type="number" id="buffer-chunks" name="buffer-chunks">
+                            </div>
+                        </div>
                         <div class="form-group row">
                             <label for="submit-probability" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="This value determines your target deadline of each round such that you submit with a certain probability. E.g. a submit probability of 0.7 causes you to submit in 70% of rounds.">Submit probabilty</label>
                             <div class="col-md-12 col-lg-9">

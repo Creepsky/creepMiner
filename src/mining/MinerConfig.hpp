@@ -106,6 +106,7 @@ namespace Burst
 		void printSubmitProbability() const;
 		static void printUrl(const Url& url, const std::string& url_name);
 		void printBufferSize() const;
+		void printBufferChunks() const;
 
 		/**
 		 * \brief Saves the current settings by creating a JSON Object for it and saving it

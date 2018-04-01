@@ -126,6 +126,7 @@ void Burst::MinerConfig::printConsole() const
 		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()) + " seconds");
 	
 	printBufferSize();
+	printBufferChunks();
 
 	printUrl(HostType::Pool);
 	printUrl(HostType::MiningInfo);
@@ -190,6 +191,12 @@ void Burst::MinerConfig::printBufferSize() const
 	Poco::Mutex::ScopedLock lock(mutex_);
 	log_system(MinerLogger::config, "Buffer Size : %s",
 		std::to_string(getMaxBufferSizeRaw()) + " (" + memToString(getMaxBufferSize(), 0) + ")");
+}
+
+void Burst::MinerConfig::printBufferChunks() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	log_system(MinerLogger::config, "Buffer Chunks : %s", std::to_string(getBufferChunkCount()));
 }
 
 template <typename T>
