@@ -31,7 +31,7 @@ function connectCallback(msg) {
                 resetProgress();
                 resetLineTypes();
                 confirmedPlotfiles = [];
-				checkVersion(response["runningVersion"], response["onlineVersion"]);
+                checkVersion(response["runningVersion"], response["onlineVersion"]);
                 break;
             case "plotdir-progress":
                 setDirProgress(response["dir"], response["value"]);
