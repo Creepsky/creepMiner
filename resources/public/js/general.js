@@ -1,5 +1,5 @@
 var websocket;
-
+var servername = 'creepMiner';
 var loggers = [
 	["miner", "Miner", 6],
 	["config", "Config", 6],
@@ -12,7 +12,6 @@ var loggers = [
 	["wallet", "Wallet", 1],
 	["general", "General", 6]
 ];
-
 var levels = [
 	"off", "fatal", "critical", "error", "warning",
 	"notice", "information", "debug", "trace", "all"
@@ -36,6 +35,7 @@ function connect(onMessage) {
 	}
 }
 
+// version checker and update about btn
 function checkVersion(runningVer, onlineVer) {
 	var onlineVersionSplit = onlineVer.split(".");
     var runningVersionSplit = runningVer.split(".");
@@ -54,6 +54,7 @@ function checkVersion(runningVer, onlineVer) {
 	return current
 }
 
+// progress bar
 function setProgress(progressBar, progress) {
 	var valueFixed = parseFloat(progress).toFixed();
 
@@ -73,6 +74,7 @@ function setProgress(progressBar, progress) {
 	progressBar.html("");
 }
 
+// verify progress bar
 function setProgressVerify(progressBar, progress) {
 	var valueFixed = parseFloat(progress).toFixed();
 
@@ -92,6 +94,7 @@ function setProgressVerify(progressBar, progress) {
 	progressBar.html(valueFixed + " % Verified");
 }
 
+// initializing settings
 function initSettings(container, onChange) {
 	output = {};
 	loggers.forEach(function (element, index, array) {
@@ -118,27 +121,27 @@ function initSettings(container, onChange) {
 	return output;
 }
 
+// create combo boxes for logger
 function createLoggerCombobox(cmb) {
 	cmb.empty();
-
 	levels.forEach(function (element, index, array) {
 		cmb.append("<option value=" + index + ">" + element + "</option>");
 	});
 }
 
-//initializing tooltip
+// initializing tooltip
 $(document).ready(function() {
   $('[data-toggle="tooltip"]').tooltip();
 });
 
-//initializing about
+// initializing about
 $(window).on('load',function(){
     $('#aboutModal').modal('show');
 });
 
+//  stylesheet selector
 (function($)
 	{
-		//  Stylesheets Selector
 		var $links = $('link[rel*=alternate][title]');
 
 		var el = document.getElementById('themeSelector'),
@@ -161,3 +164,7 @@ $(window).on('load',function(){
 
 	}
 )(jQuery);
+
+// set the title in header and replace the server-name element with server name
+document.getElementById('server-name').innerHTML = servername;
+document.title = servername;

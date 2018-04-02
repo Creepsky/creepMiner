@@ -32,46 +32,44 @@
     <div class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary">
         <div class="container">
             <!-- logo & title -->
-            <img src="img/icon.png" alt="%title%" class="img-responsive" style="height: 20px">
-            <a href="../" class="navbar-brand">&nbsp;%title%</a>
-
+            <img src="img/icon.png" alt="%title%" class="img-responsive" style="height: 20px">&nbsp;<a href="../" class="navbar-brand" id="server-name"></a>
             <!-- mobile navigation -->
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
+            <!-- main nav bar -->
             <div class="collapse navbar-collapse" id="navbarResponsive">
-                <!-- main responsive nav bar -->
                 <ul class="navbar-nav">
-                    <li id="btnBlock" class="nav-item">
+                    <li class="nav-item" id="btnBlock">
                         <a class="nav-link" href="/">Block</a>
                     </li>
-                    <li id="btnPlotfiles" class="nav-item">
+                    <li class="nav-item" id="btnPlots">
                         <a class="nav-link" href="/plotfiles">Plots</a>
                     </li>
-                    <li id="btnSettings" class="nav-item">
+                    <li class="nav-item" id="btnSettings">
                         <a class="nav-link" href="/settings">Settings</a>
                     </li>
-                    <li id="btnAbout" class="nav-item">
+                    <li class="nav-item" id="btnAbout">
                         <a class="nav-link" href="/about">About</a>
                     </li>
                 </ul>
-                <!-- second nav -->
+                <!-- right nav bar-->
                 <ul class="nav navbar-nav ml-auto">
-                <!-- theme selector -->
-                    <li class="nav-item" >
+                		<!-- theme selector -->
+                    <li class="nav-item" id="btnThemeSelector">
                         <a id="themeSelector"></a>
                     </li>
-                    <li class="nav-item" id="btnSettings">
-                        <a class="nav-link" href="/logout"><i class="fa fa-sign-out"></i>Logout</a>
+                    <!-- sign out btn -->
+                    <li class="nav-item" id="btnSignOut">
+                        <a class="nav-link" href="/logout"><i class="fa fa-sign-out"></i>Sign Out</a>
                     </li>
+
                 </ul>
             </div>
         </div>
     </div>
     <!-- render page content -->
     <div class="container-fluid">%content%</div>
-
     <!-- CDN plugins, or local js -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
