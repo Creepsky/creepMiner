@@ -27,7 +27,7 @@ function connect(onMessage) {
 			protocol ="wss"
 		else
 			protocol = "ws"
-		
+
 		websocket = new WebSocket(protocol + "://" + window.location.host);
 		websocket.onmessage = onMessage;
 	}
@@ -40,13 +40,13 @@ function checkVersion(runningVer, onlineVer) {
 	var onlineVersionSplit = onlineVer.split(".");
     var runningVersionSplit = runningVer.split(".");
 	var current=true;
-    if (Number(onlineVersionSplit[0]) > Number(runningVersionSplit[0])) 
+    if (Number(onlineVersionSplit[0]) > Number(runningVersionSplit[0]))
         current=false;
-    else if (Number(onlineVersionSplit[1]) > Number(runningVersionSplit[1])) 
+    else if (Number(onlineVersionSplit[1]) > Number(runningVersionSplit[1]))
         current=false;
-    else if (Number(onlineVersionSplit[2]) > Number(runningVersionSplit[2])) 
+    else if (Number(onlineVersionSplit[2]) > Number(runningVersionSplit[2]))
         current=false;
-	if(!current) 
+	if(!current)
 	{
 		$("#btnAbout").find("a").css({"color": "red"});
 		$("#btnAbout").find("a").attr({"data-original-title": "A new release of creepMiner is available"});
@@ -109,7 +109,7 @@ function initSettings(container, onChange) {
 		div.append(label);
 		div.append("<div class='col-md-12 col-lg-9'>")
 		div.find("div").append(cmb);
-		
+
 		cmb.val(element[2]);
 		output[element[0]] = cmb;
 
@@ -126,26 +126,31 @@ function createLoggerCombobox(cmb) {
 	});
 }
 
+//initializing tooltip
 $(document).ready(function() {
-  //initializing tooltip
   $('[data-toggle="tooltip"]').tooltip();
+});
+
+//initializing about
+$(window).on('load',function(){
+    $('#aboutModal').modal('show');
 });
 
 (function($)
 	{
 		//  Stylesheets Selector
 		var $links = $('link[rel*=alternate][title]');
-		
+
 		var el = document.getElementById('themeSelector'),
 		elChild = document.createElement("div");
 		elChild.innerHTML = '<select id="css-selector" class="nav-item dropdown selectpicker form-control" style="margin:0px;padding:0px"></select>';
-		
+
 		var options= '<option value="">cerulean</option>';
 		$links.each(function(index,value){
 			options +='<option value="'+$(this).attr('href')+'">'+$(this).attr('title')+'</option>';
 		});
 		$links.remove();
-		
+
 		el.appendChild(elChild);
 
 		$('#css-selector').append(options)
@@ -153,6 +158,6 @@ $(document).ready(function() {
 			$('link[rel*=jquery]').remove();
 			$('head').append('<link rel="stylesheet jquery" href="'+$(this).val()+'" type="text/css" />');
 		});
-		
+
 	}
 )(jQuery);

@@ -9,19 +9,16 @@ function printVersions() {
     //show accordingly
     if(currentVersion)
     {
-        $("#runningVer").html("creepMiner " + runningVersion);
-        $("#latestVer").html("creepMiner " + onlineVersion);
-        $("#versionCard").append("<div class='alert alert-success' role='alert'><strong>Good!</strong>"+
-            " You are running a current version of creepMiner.</div>");         
+        $("#runningVer").html("<i class='fa fa-check text-success'></i>&nbsp;v&nbsp;" + runningVersion);
+        $("#latestVer").html("&nbsp;v&nbsp;" + onlineVersion);
     }else
-    {  
-        $("#runningVer").html("creepMiner " + runningVersion);
-        $("#latestVer").html("creepMiner " + onlineVersion);
+    {
+        $("#runningVer").html("&nbsp;v&nbsp;" + runningVersion);
+        $("#latestVer").html("&nbsp;v&nbsp;" + onlineVersion);
         $("#versionCardHeader").toggleClass("bg-success",false);
         $("#versionCardHeader").toggleClass("bg-danger",true);
-        $("#versionCard").append("<div class='alert alert-danger' role='alert'><strong>Bad!</strong>"+
-            " You are running an old version of creepMiner. Make sure to get the latest release from <br>"
-            +"<a href='https://github.com/Creepsky/creepMiner/releases'>https://github.com/Creepsky/creepMiner/releases</a></div>");            
+        $("#versionCard").append("<div class='alert alert-danger' role='alert'><i class='fa fa-exclamation-triangle text-warning'></i>&nbsp;&nbsp;<strong>Out of date!</strong>"+
+					" Download the latest from <a href='https://github.com/Creepsky/creepMiner/releases'> github</a></div>");
     }
 }
 
