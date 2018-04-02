@@ -26,6 +26,7 @@
 #include <string>
 #include <Poco/Platform.h>
 #include <Poco/Types.h>
+#include <Poco/Timer.h>
 
 namespace Burst
 {
@@ -56,12 +57,17 @@ namespace Burst
 	{
 		ProjectData(std::string&& name, Version version);
 		void refreshNameAndVersion();
+		void refreshAndCheckOnlineVersion(Poco::Timer& timer);
+		std::string getOnlineVersion();
+		std::string getVersion();
 
 		std::string name;
 		Version version;
+		Version onlineVersion;
 
 		std::string nameAndVersion;
 		std::string nameAndVersionVerbose;
+		mutable Poco::Mutex mutex_;
 	};
 
 	namespace Settings
