@@ -264,7 +264,7 @@ function newBlock(json) {
     deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
     var roundsSub=json["nRoundsSubmitted"]
     var numHistor=json["numHistoricals"]
-    roundsSubmitted.html(roundsSub + " / " + numHistor + " (" + Math.round(roundsSub/numHistor*1000)/10 +"%)");
+    roundsSubmitted.html("<small>" + Math.round(roundsSub/numHistor*1000)/10 +"%</small>&nbsp;" + roundsSub + "/" + numHistor);
     wonBlocks.html(json["blocksWon"]);
     lowestDiff.html("<small>@" + json["lowestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["lowestDifficulty"]["value"]);
     highestDiff.html("<small>@" + json["highestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["highestDifficulty"]["value"]);
