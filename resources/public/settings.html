@@ -29,7 +29,7 @@
                 <div class="col-lg-12">
                     <form method="POST" action="/settings/mining" style="margin-top:5px">           
                         <div class="form-group row">
-                            <label for="intensity" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top" title="The mining intensity sets the amount of verifier threads, that verify plot files asynchronously read by the plotfile-readers.">Intensity</label>
+                            <label for="intensity" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top" title="The mining intensity sets the amount of verifier threads that verify plot files asynchronously. It is read by the plot file readers.">Intensity</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="intensity" name="intensity">
                             </div>
@@ -47,7 +47,7 @@
                             </div>
                         </div>
 						<div class="form-group row">
-                            <label for="buffer-size" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="This is the amount of chunks, in which the buffer is split. Every chunk is only used by one memory unit (plot data).">Buffer chunks</label>
+                            <label for="buffer-size" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="The number of chunks that the buffer is split into. Every chunk is only used by one memory unit (plot data).">Buffer chunks</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="buffer-chunks" name="buffer-chunks">
                             </div>
@@ -65,7 +65,7 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <label for="submission-max-retry" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="When the pool doesn't confirm a sent nonce in (timeout) seconds, the miner will retry to send it and wait for another confirmation maximum this many times.">Submission max retry</label>
+                            <label for="submission-max-retry" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="When the pool doesn't confirm a sent nonce in (timeout) seconds, the miner will retry to send it and wait for another confirmation. This setting determines the maximum number of times it will be retried.">Submission max retry</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="submission-max-retry" name="submission-max-retry">
                             </div>
