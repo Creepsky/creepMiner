@@ -1,5 +1,6 @@
 var websocket;
 var servername = 'creepMiner';
+var MasterMiner = 'false';
 var loggers = [
 	["miner", "Miner", 6],
 	["config", "Config", 6],
@@ -168,3 +169,11 @@ $(window).on('load',function(){
 // set the title in header and replace the server-name element with server name
 document.getElementById('server-name').innerHTML = servername;
 document.title = servername;
+
+// if master miner is set hide some elements
+if (MasterMiner == 'true') {
+	var mmHideElements = document.getElementsByClassName('mm-hide'), i;
+	for (var i = 0; i < mmHideElements.length; i ++) {
+	    mmHideElements[i].style.display = 'none';
+	}
+}

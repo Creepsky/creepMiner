@@ -1,3 +1,4 @@
+var MasterMiner = 'false';
 class Deadline {
     constructor(deadline) {
         this.accountName = deadline["account"];
@@ -52,7 +53,6 @@ class Block {
 
     addLine(line) {
         this.data.prepend(line);
-        //window.scrollTo(0, document.body.scrollHeight);
     }
 
     getLine(id) {
@@ -155,12 +155,9 @@ var NONCE_FOUND = 1 << 0;
 var NONCE_SENT = 1 << 1;
 var NONCE_CONFIRMED = 1 << 2;
 
-
-
 // ******************************************
 
 // Set on click event of elements
-
 $("#cbHideSameNonces").on('click', function () {
     localSet('hideSameNonces', this.checked);
 })
@@ -177,15 +174,11 @@ $("#cbNoncesConfirmed").on('click', function () {
     localSet('noncesConfirmed', this.checked);
 })
 
-
-
 // Retrieve any possible local variable and set in js vars
-
 function localInitCheckBoxes() {
     playConfirmationSound = localGet('playConfirmationSound');
 
     // Check if values exist in local or set true(default)
-
     var temp = localGet('hideSameNonces');
 
     if (temp == null) temp = true;
@@ -205,7 +198,6 @@ function localInitCheckBoxes() {
 }
 
 // I break in 2 functions because must initialized in different points of initBlock
-
 function localInitLogSettings() {
     var temp = localGet('logSettings');
 
@@ -227,21 +219,17 @@ function localInitLogSettings() {
 // Saves in local storage - no expiration
 // Item : name of local variable
 // Data : content of item variable
-
 function localSet(item, data) {
     localStorage.setItem(item, JSON.stringify(data));
 }
 
 // Get from local storage
 // Item : name of local variable
-
 function localGet(item) {
     return JSON.parse(localStorage.getItem(item));
 }
 
-
 // ******************************************
-
 
 function newBlock(json) {
     miningData.newBlock(json);
@@ -319,7 +307,7 @@ function setMinedBlocks(blocks) {
     minedBlocksElement.html(minedBlocks);
 }
 
-function createNonceLine(deadline, glyphIconId, lineType, nonceType) {
+function createNonceLine(deadline, iconId, lineType, nonceType) {
     var line = getNewLine(lineType, deadline.nonce);
 
     var hiddenInfosDiv = $("<small></small>");
@@ -340,16 +328,21 @@ function createNonceLine(deadline, glyphIconId, lineType, nonceType) {
     var nonceTypeStr = "";
 
     if (nonceType == NONCE_FOUND)
-        nonceTypeStr = "nonce found";
+        nonceTypeStr = "found";
     else if (nonceType == NONCE_SENT)
-        nonceTypeStr = "nonce submitted";
+        nonceTypeStr = "submitted";
     else if (nonceType == NONCE_CONFIRMED)
-        nonceTypeStr = "nonce confirmed";
+        nonceTypeStr = "confirmed";
 
-    message.append("<span class='fa " + glyphIconId + "'></span> ");
-    message.append("<b><a href='https://explore.burst.cryptoguru.org/account/" + deadline.accountId.toString() + "' target='_blank'>" +
-        deadline.accountName + "</a></b>:&nbsp;" + nonceTypeStr + "&nbsp;");
-    message.append("<span class='badge badge-primary badge-pill'>" + deadline.deadlineStr + "</span>");
+    message.append("<span class='fa " + iconId + "'></span> ");
+    if (MasterMiner == 'true') {
+	    message.append(nonceTypeStr);
+	    message.append("&nbsp;<span class='badge badge-primary badge-pill''>" + deadline.deadlineStr + "</span><small>&nbsp;(" + deadline.nonce + ")</small>");
+  	} else {
+			message.append("<small><a href='https://explore.burst.cryptoguru.org/account/" + deadline.accountId.toString() + "' target='_blank'>" +
+				deadline.accountName + "</a>&nbsp;" + nonceTypeStr + "</small>");
+			message.append("&nbsp;<span class='badge badge-primary badge-pill'>" + deadline.deadlineStr + "</span>");
+  	}
 
 
     message.append(hiddenInfosDiv);
