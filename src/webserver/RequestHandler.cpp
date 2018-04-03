@@ -837,11 +837,11 @@ void Burst::RequestHandler::notFound(Poco::Net::HTTPServerRequest& request, Poco
 	response.send();
 }
 
-std::string Burst::RequestHandler::fetchOnlineVersion() {
+Burst::Version Burst::RequestHandler::fetchOnlineVersion() 
+{
 	try
 	{
 		// fetch the online version file
-		const std::string host = "https://github.com/Creepsky/creepMiner";
 		const std::string versionPrefix = "version:";
 		//
 		Burst::Url url{ "https://raw.githubusercontent.com" };
@@ -854,12 +854,24 @@ std::string Burst::RequestHandler::fetchOnlineVersion() {
 		std::string responseString;
 		//
 		if (response.receive(responseString))
-			return responseString;
+		{
+			// first we check if the online version begins with the prefix
+			if (Poco::icompare(responseString, 0, versionPrefix.size(), versionPrefix) == 0)
+			{
+				const auto onlineVersionStr = responseString.substr(versionPrefix.size());
+
+				Burst::Version onlineVersion{ onlineVersionStr };
+				return onlineVersion;
+			}
+		}
 		else
-			return "CouldNotFetch";
+		{
+			return Settings::Project.onlineVersion; // if no response, just keep the latest Version we have fetched.
+		}
 	}
 	// just skip if version could not be determined
 	catch (...)
 	{
+		return Settings::Project.onlineVersion; // if it fails somehow, also just keep the latest Version we have fetched.
 	}
 }

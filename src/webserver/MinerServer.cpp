@@ -283,13 +283,11 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 				auto variables = server_->variables_ + TemplateVariables({ 
 					{ 
 						"includes", []() {
-							using Poco::replace;
-							Burst::Version onlineVersion(replace(Burst::RequestHandler::fetchOnlineVersion(), "version:", ""));
 							std::stringstream sstrContent;
 							sstrContent << "<script src='js/about.js'></script>";
 							sstrContent << std::endl;
-							sstrContent << "<script>var onlineVersion = '" << onlineVersion.literal << "';" <<
-								"var runningVersion = '" << Settings::Project.version.literal << "';</script>";
+							sstrContent << "<script>var onlineVersion = '" << Settings::Project.getOnlineVersion() << "';" <<
+								"var runningVersion = '" << Settings::Project.getVersion() << "';</script>";
 							return sstrContent.str();
 						}
 					}

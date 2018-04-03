@@ -319,6 +319,6 @@ namespace Burst
 		/*
 		 * fetches the Online Version from github
 		 */
-		std::string fetchOnlineVersion();
+		Burst::Version fetchOnlineVersion();
 	}
 }

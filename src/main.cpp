@@ -144,32 +144,9 @@ int main(const int argc, const char* argv[])
 		HTTPSessionInstantiator::registerInstantiator();
 		HTTPSSessionInstantiator::registerInstantiator();
 
-		// check for a new version
-		try
-		{
-			// fetch the online version file
-			const std::string host = "https://github.com/Creepsky/creepMiner";
-			const std::string versionPrefix = "version:";
-
-			std::string responseString = Burst::RequestHandler::fetchOnlineVersion();
-			//
-			if (responseString!="CouldNotFetch")
-			{
-				// first we check if the online version begins with the prefix
-				if (Poco::icompare(responseString, 0, versionPrefix.size(), versionPrefix) == 0)
-				{
-					const auto onlineVersionStr = responseString.substr(versionPrefix.size());
-
-					Burst::Version onlineVersion{ onlineVersionStr };
-
-					if (onlineVersion > Burst::Settings::Project.version)
-						log_system(general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
-				}
-			}
-		}
-		// just skip if version could not be determined
-		catch (...)
-		{ }
+		// start versionChecker timer thread , checking online version every 30 minutes
+		Poco::Timer checkVersionTimer(100, 1800000);
+		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(Burst::Settings::Project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
 
 		auto running = true;
 
@@ -189,7 +166,7 @@ int main(const int argc, const char* argv[])
 				File(minerRootPath).createDirectory();
 
 				Path minerHomePath(minerRootPath);
-				minerHomePath.pushDirectory(std::string(Project.version.literal));
+				minerHomePath.pushDirectory(std::string(Project.getVersion()));
 
 				if (File(minerHomePath).createDirectory())
 					log_information(general, "Home directory has created: %s", minerHomePath.toString());
