@@ -250,9 +250,12 @@ function newBlock(json) {
     lastWinnerContainer.hide();
     avgDeadline.html(json["deadlinesAvg"]);
     deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
-    var roundsSub=json["nRoundsSubmitted"]
-    var numHistor=json["numHistoricals"]
-    roundsSubmitted.html("<small>" + Math.round(roundsSub/numHistor*1000)/10 +"%</small>&nbsp;" + roundsSub + "/" + numHistor);
+    var roundsSub=json["nRoundsSubmitted"];
+    var numHistor=json["numHistoricals"];
+    var subPercent = 0;
+    if (numHistor!=0)
+        subPercent = Math.round(roundsSub/numHistor*1000)/10;
+    roundsSubmitted.html("<small>" + subPercent +"%</small>&nbsp;" + roundsSub + "/" + numHistor);
     wonBlocks.html(json["blocksWon"]);
     lowestDiff.html("<small>@" + json["lowestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["lowestDifficulty"]["value"]);
     highestDiff.html("<small>@" + json["highestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["highestDifficulty"]["value"]);
@@ -336,13 +339,13 @@ function createNonceLine(deadline, iconId, lineType, nonceType) {
 
     message.append("<span class='fa " + iconId + "'></span> ");
     if (MasterMiner == 'true') {
-	    message.append(nonceTypeStr);
-	    message.append("&nbsp;<span class='badge badge-primary badge-pill''>" + deadline.deadlineStr + "</span><small>&nbsp;(" + deadline.nonce + ")</small>");
-  	} else {
-			message.append("<small><a href='https://explore.burst.cryptoguru.org/account/" + deadline.accountId.toString() + "' target='_blank'>" +
-				deadline.accountName + "</a>&nbsp;" + nonceTypeStr + "</small>");
-			message.append("&nbsp;<span class='badge badge-primary badge-pill'>" + deadline.deadlineStr + "</span>");
-  	}
+        message.append(nonceTypeStr);
+        message.append("&nbsp;<span class='badge badge-primary badge-pill''>" + deadline.deadlineStr + "</span><small>&nbsp;(" + deadline.nonce + ")</small>");
+    } else {
+            message.append("<small><a href='https://explore.burst.cryptoguru.org/account/" + deadline.accountId.toString() + "' target='_blank'>" +
+                deadline.accountName + "</a>&nbsp;" + nonceTypeStr + "</small>");
+            message.append("&nbsp;<span class='badge badge-primary badge-pill'>" + deadline.deadlineStr + "</span>");
+    }
 
 
     message.append(hiddenInfosDiv);

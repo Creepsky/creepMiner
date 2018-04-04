@@ -223,7 +223,7 @@ function createPlotfileLine(account, start_nonce, nonces, staggersize, size, pat
     line.append("<div class='col-xs-2 col-md-1'>" + staggersize + "</div>");
     line.append("<div class='col-xs-1 col-md-2'>" + size + "</div>");
     line.append("<div class='col-xs-2 col-md-3'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize +
-        "' type='button' class='btn btn-info' title='Checks the integrity of 32 random scoops in 30 random nonces of the plot file' " +
+        "' type='button' class='btn btn-info' " +
         "style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," +
         nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='fa fa-superpowers'></span>&nbsp;Validate</button></div>");
     return line;

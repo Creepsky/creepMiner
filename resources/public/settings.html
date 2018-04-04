@@ -29,7 +29,7 @@
                 <div class="col-lg-12">
                     <form method="POST" action="/settings/mining" style="margin-top:5px">           
                         <div class="form-group row">
-                            <label for="intensity" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top" title="The mining intensity sets the amount of verifier threads that verify plot files asynchronously. It is read by the plot file readers.">Intensity</label>
+                            <label for="intensity" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top" title="The mining intensity sets the amount of verifier threads that verify plot files.">Intensity</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="intensity" name="intensity">
                             </div>
@@ -46,7 +46,7 @@
                                 <input class="form-control" type="number" id="buffer-size" name="buffer-size">
                             </div>
                         </div>
-						<div class="form-group row">
+                        <div class="form-group row">
                             <label for="buffer-size" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top"  title="The number of chunks that the buffer is split into. Every chunk is only used by one memory unit (plot data).">Buffer chunks</label>
                             <div class="col-md-12 col-lg-9">
                                 <input class="form-control" type="number" id="buffer-chunks" name="buffer-chunks">
