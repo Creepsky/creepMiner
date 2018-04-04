@@ -77,6 +77,7 @@ function createDirLine(dirElement, index) {
         activePlotDir = dirElement;
         colorConfirmedPlotfiles();
         current_selected = dirElement;
+		$("#plot-folder").val(dirElement["path"])
     });
 
     return line;
@@ -147,6 +148,14 @@ function parsePlots() {
 
         plotDirElements.push(element);
     });
+}
+
+function startPlotting() {
+	console.log("Plotting nonces " + $("#start-nonce").val() + "-" + (Number($("#start-nonce").val())+Number($("#num-nonces").val())-1).toString() + " for ID "+ $("#account-id").val() + " to folder " + $("#plot-folder").val());
+	var plotFolder=$("#plot-folder").val();
+	if(plotFolder[1]==":")
+		plotFolder=plotFolder.replace(/\//g,"\\");
+	$.post(encodeURI("/plotter/"+$("#account-id").val()+"/"+$("#start-nonce").val()+"/"+$("#num-nonces").val()+"/"+plotFolder));
 }
 
 function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
