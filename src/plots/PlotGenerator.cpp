@@ -122,7 +122,7 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 		{
 			while (miner.isProcessing()) Poco::Thread::sleep(1000);
 
-			int scoop = scoopInterval * scoopStep + scoops[scoopInterval];
+			auto scoop = scoopInterval * scoopStep + scoops[scoopInterval];
 			if (scoop >= Settings::ScoopPerPlot) scoop = Settings::ScoopPerPlot - 1;
 
 			std::ifstream plotFile(plotPath, std::ifstream::in | std::ifstream::binary);
