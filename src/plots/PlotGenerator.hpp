@@ -29,6 +29,7 @@
 #include "shabal/MinerShabal.hpp"
 #include "Poco/Runnable.h"
 #include <future>
+#include <cstring>
 
 namespace Burst
 {
