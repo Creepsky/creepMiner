@@ -227,7 +227,7 @@ namespace Burst
 		* \param request The HTTP request.
 		* \param response The HTTP response.
 		* \param miner The miner, which will propagate the changed config to his connected users.
-		* \param path The path of the plot file to check for corruption.
+		* \param plotPath The path of the plot file to check for corruption.
 		* \param server The server instance, that is shut down.
 		*/
 		void checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner,

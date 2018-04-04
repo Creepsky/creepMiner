@@ -31,9 +31,9 @@
 Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent, Poco::UInt64 blockTargetDeadline)
 	: blockHeight_ {blockHeight},
 	  baseTarget_ {baseTarget},
+	  blockTargetDeadline_{ blockTargetDeadline },
 	  genSigStr_ {genSigStr},
-	  parent_{parent},
-	  blockTargetDeadline_ {blockTargetDeadline}
+	  parent_{parent}
 {
 	entries_ = std::make_shared<std::vector<Poco::JSON::Object>>();
 	//deadlines_ = std::make_shared<std::unordered_map<AccountId, Deadlines>>();
@@ -580,12 +580,12 @@ Poco::Timespan Burst::MinerData::getRunTime() const
 	return Poco::Timestamp{} - getStartTime();
 }
 
-void Burst::BlockData::setBlockTime(int bTime)
+void Burst::BlockData::setBlockTime(Poco::UInt64 bTime)
 {
 	blockTime_ = bTime;
 }
 
-int Burst::BlockData::getBlockTime() const
+Poco::UInt64 Burst::BlockData::getBlockTime() const
 {
 	return blockTime_;
 }

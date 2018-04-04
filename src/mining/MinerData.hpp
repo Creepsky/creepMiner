@@ -66,7 +66,7 @@ namespace Burst
 		void refreshPlotDirs() const;
 		void setProgress(float progressRead, float progressVerification, Poco::UInt64 blockheight);
 		void setProgress(const std::string& plotDir, float progress, Poco::UInt64 blockheight);
-		void setBlockTime(int bTime);
+		void setBlockTime(Poco::UInt64 bTime);
 
 		Poco::UInt64 getBlockheight() const;
 		Poco::UInt64 getScoop() const;
@@ -75,7 +75,7 @@ namespace Burst
 		Poco::UInt64 getBlockTargetDeadline() const;
 		std::shared_ptr<Account> getLastWinner() const;
 		double getRoundTime() const;
-		int getBlockTime() const;
+		Poco::UInt64 getBlockTime() const;
 		
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
@@ -127,7 +127,7 @@ namespace Burst
 		GensigData genSig_;
 		std::string genSigStr_ = "";
 		double roundTime_;
-		int blockTime_;
+		Poco::UInt64 blockTime_;
 		std::shared_ptr<std::vector<Poco::JSON::Object>> entries_;
 		std::shared_ptr<Account> lastWinner_ = nullptr;
 		std::unordered_map<AccountId, std::shared_ptr<Deadlines>> deadlines_;

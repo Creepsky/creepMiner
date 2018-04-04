@@ -20,7 +20,6 @@
 // ==========================================================================
 
 #include "RequestHandler.hpp"
-#include <fstream>
 #include <Poco/Net/WebSocket.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/Net/HTTPServerRequest.h>
@@ -755,7 +754,7 @@ void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request
 				else if (key == "buffer-size")
 					Miner::setMaxBufferSize(np::parseUnsigned64(value));
 				else if (key == "buffer-chunks")
-					MinerConfig::getConfig().setBufferChunkCount(np::parseUnsigned64(value));
+					MinerConfig::getConfig().setBufferChunkCount(np::parseUnsigned(value));
 				else if (key == "plot-readers")
 					miner.setMaxPlotReader(np::parseUnsigned(value));
 				else if (key == "submission-max-retry")
@@ -863,15 +862,17 @@ Burst::Version Burst::RequestHandler::fetchOnlineVersion()
 				Burst::Version onlineVersion{ onlineVersionStr };
 				return onlineVersion;
 			}
+			else
+				return Settings::Project.getOnlineVersion();
 		}
 		else
 		{
-			return Settings::Project.onlineVersion; // if no response, just keep the latest Version we have fetched.
+			return Settings::Project.getOnlineVersion(); // if no response, just keep the latest Version we have fetched.
 		}
 	}
 	// just skip if version could not be determined
 	catch (...)
 	{
-		return Settings::Project.onlineVersion; // if it fails somehow, also just keep the latest Version we have fetched.
+		return Settings::Project.getOnlineVersion(); // if it fails somehow, also just keep the latest Version we have fetched.
 	}
 }

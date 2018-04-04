@@ -77,33 +77,33 @@ void Burst::MinerConfig::checkPlotOverlaps()
 	log_system(MinerLogger::config, "Checking local plots for overlaps...");
 
 	Poco::Mutex::ScopedLock lock(mutex_);
-	Poco::UInt64 totalOverlaps = 0;
-	int numPlots = getPlotFiles().size();
+	auto totalOverlaps = 0ull;
+	const auto numPlots = getPlotFiles().size();
 
-	for (int plotFileOne = 0; plotFileOne < numPlots; plotFileOne++) 
+	for (auto plotFileOne = 0; plotFileOne < numPlots; plotFileOne++) 
 	{
-		std::string pathOne = (getPlotFiles().at(plotFileOne))->getPath();
-		Poco::UInt64 startNonceOne = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathOne));
-		Poco::UInt64 nonceCountOne = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathOne));
-		for (int plotFileTwo = plotFileOne+1; plotFileTwo < numPlots; plotFileTwo++)
+		const auto pathOne = (getPlotFiles().at(plotFileOne))->getPath();
+		const auto startNonceOne = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathOne));
+		const auto nonceCountOne = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathOne));
+		for (auto plotFileTwo = plotFileOne+1; plotFileTwo < numPlots; plotFileTwo++)
 		{
-			std::string pathTwo = (getPlotFiles().at(plotFileTwo))->getPath();
+			const auto pathTwo = (getPlotFiles().at(plotFileTwo))->getPath();
 			if (pathOne != pathTwo && getAccountIdFromPlotFile(pathOne) == getAccountIdFromPlotFile(pathTwo))
 			{
-				Poco::UInt64 startNonceTwo = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathTwo));
-				Poco::UInt64 nonceCountTwo = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathTwo));
+				const auto startNonceTwo = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathTwo));
+				const auto nonceCountTwo = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathTwo));
 				if (startNonceTwo >= startNonceOne && startNonceTwo < startNonceOne + nonceCountOne)
 				{
-					Poco::UInt64 overlap = startNonceOne + nonceCountOne - startNonceTwo;
+					auto overlap = startNonceOne + nonceCountOne - startNonceTwo;
 					if (nonceCountTwo < overlap) overlap = nonceCountTwo;
-					log_error(MinerLogger::miner, pathOne + " and " + pathTwo + " overlap by " + std::to_string(overlap) + " nonces.");
+					log_error(MinerLogger::miner, "%s and %s overlap by %s nonces.", pathOne, pathTwo, std::to_string(overlap));
 					totalOverlaps++;
 				}
 				else if (startNonceOne >= startNonceTwo && startNonceOne < startNonceTwo + nonceCountTwo)
 				{
-					Poco::UInt64 overlap = startNonceTwo + nonceCountTwo - startNonceOne;
+					auto overlap = startNonceTwo + nonceCountTwo - startNonceOne;
 					if (nonceCountOne < overlap) overlap = nonceCountOne;
-					log_error(MinerLogger::miner, pathTwo + " and " + pathOne + " overlap by " + std::to_string(overlap) + " nonces.");
+					log_error(MinerLogger::miner, "%s and %s overlap by %s nonces.", pathTwo, pathOne,  std::to_string(overlap));
 					totalOverlaps++;
 				}
 			}
@@ -115,7 +115,6 @@ void Burst::MinerConfig::checkPlotOverlaps()
 	}
 	else
 		log_system(MinerLogger::config, "No overlaps found.");
-	//std::cout << "Total Overlap: " << static_cast<float>(totalOverlap) / static_cast<float>(totalNonces)*100.0f << "%." << std::endl;
 }
 
 void Burst::MinerConfig::printConsole() const
@@ -667,12 +666,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			if (!submitProbability.isEmpty())
 			{
-				setSubmitProbability( static_cast<float>(submitProbability) );
+				setSubmitProbability( static_cast<double>(submitProbability) );
 			}
 			else
 			{
 				miningObj->set("submitProbability", 0.999);
-				setSubmitProbability( 0.999f );
+				setSubmitProbability( 0.999 );
 			}
 		}
 
@@ -973,19 +972,19 @@ float Burst::MinerConfig::getTimeout() const
 	return timeout_;
 }
 
-float Burst::MinerConfig::getTargetDLFactor() const
+double Burst::MinerConfig::getTargetDLFactor() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return targetDLFactor_;
 }
 
-float Burst::MinerConfig::getDeadlinePerformanceFac() const
+double Burst::MinerConfig::getDeadlinePerformanceFac() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return deadlinePerformanceFac_;
 }
 
-float Burst::MinerConfig::getSubmitProbability() const
+double Burst::MinerConfig::getSubmitProbability() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return submitProbability_;
@@ -1275,21 +1274,21 @@ void Burst::MinerConfig::setMaxHistoricalBlocks(Poco::UInt64 maxHistData)
 		maxHistoricalBlocks_ = maxHistData;
 }
 
-void Burst::MinerConfig::setSubmitProbability(float subP)
+void Burst::MinerConfig::setSubmitProbability(double subP)
 {
 	if (subP < 0)
 		submitProbability_ = 0;
-	else if (subP >=0.999999f)
-		submitProbability_ = 0.999999f;
+	else if (subP >=0.999999)
+		submitProbability_ = 0.999999;
 	else
 		submitProbability_ = subP;
 
 	if (submitProbability_ > 0)
-		deadlinePerformanceFac_ = (1.0f + (1.0f - subP) / subP * log(1.0f - subP)) * 240.0f;
+		deadlinePerformanceFac_ = (1.0 + (1.0 - subP) / subP * log(1.0 - subP)) * 240.0;
 	else
-		deadlinePerformanceFac_ = 1.0f * 240.0f;
+		deadlinePerformanceFac_ = 1.0 * 240.0;
 
-	targetDLFactor_ = -log(1.0f - submitProbability_) * 240.0f;
+	targetDLFactor_ = -log(1.0 - submitProbability_) * 240.0;
 }
 
 

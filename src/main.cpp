@@ -35,12 +35,9 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "webserver/MinerServer.hpp"
 #include <Poco/Logger.h>
-#include "network/Request.hpp"
-#include <Poco/Net/HTTPRequest.h>
 #include "mining/MinerCL.hpp"
 #include "gpu/impl/gpu_cuda_impl.hpp"
 #include <Poco/Util/OptionSet.h>
-#include "webserver/RequestHandler.hpp"
 #include <Poco/Util/OptionProcessor.h>
 #include <Poco/Util/HelpFormatter.h>
 #include <Poco/Util/Validator.h>

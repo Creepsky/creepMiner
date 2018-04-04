@@ -158,9 +158,9 @@ namespace Burst
 		const std::string& getServerCertificatePass() const;
 
 		Url getServerUrl() const;
-		float getSubmitProbability() const;
-		float getTargetDLFactor() const;
-		float getDeadlinePerformanceFac() const;
+		double getSubmitProbability() const;
+		double getTargetDLFactor() const;
+		double getDeadlinePerformanceFac() const;
 		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		unsigned getMiningIntensity(bool real = true) const;
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
@@ -209,7 +209,7 @@ namespace Burst
 		void setMaxHistoricalBlocks(Poco::UInt64 maxHistData);
 		void setMaxSubmissionRetry(unsigned value);
 		void setTimeout(float value);
-		void setSubmitProbability(float subP);
+		void setSubmitProbability(double subP);
 		void setTargetDeadline(const std::string& target_deadline, TargetDeadlineType type);
 		void setTargetDeadline(Poco::UInt64 target_deadline, TargetDeadlineType type);
 		void setMininigIntensity(unsigned intensity);
@@ -280,9 +280,9 @@ namespace Burst
 		Url urlWallet_;
 		bool startServer_ = true;
 		Url serverUrl_{"http://0.0.0.0:8124"};
-		float targetDLFactor_ = 1.0f;
-		float deadlinePerformanceFac_ = 1.0f;
-		float submitProbability_ = 0.999f;
+		double targetDLFactor_ = 1.0;
+		double deadlinePerformanceFac_ = 1.0;
+		double submitProbability_ = 0.999;
 		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;
 		unsigned miningIntensity_ = 0;
 		std::string plotsHash_;

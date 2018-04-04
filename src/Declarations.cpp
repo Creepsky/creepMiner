@@ -190,13 +190,13 @@ void Burst::ProjectData::refreshAndCheckOnlineVersion(Poco::Timer& timer)
 		log_error(MinerLogger::general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
 }
 
-std::string Burst::ProjectData::getOnlineVersion()
+std::string Burst::ProjectData::getOnlineVersion() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return onlineVersion.literal;
 }
 
-std::string Burst::ProjectData::getVersion()
+std::string Burst::ProjectData::getVersion() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return version.literal;

@@ -282,19 +282,17 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	// clear the plot read queue
 	plotReadQueue_.clear();
 
-	// Get Difficulty, submitProbability and total Plotsize for targetDL calculation
-	const float difficultyFl = 18325193796.0f / static_cast<float>(baseTarget);
-	const float tarDLFac = MinerConfig::getConfig().getTargetDLFactor();
-	float totAccPlotsize = static_cast<float>(PlotSizes::getTotalBytes(PlotSizes::Type::Combined)) / 1024.f / 1024.f / 1024.f / 1024.f;
-	Poco::UInt64 blockTargetDeadline;
-	if (totAccPlotsize > 0 && MinerConfig::getConfig().getSubmitProbability() > 0.)
-		blockTargetDeadline = tarDLFac * difficultyFl / totAccPlotsize;
-	else
-		blockTargetDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local);
-	// Calculate targetDL for this round if a submitProbability is given
+	// Set dynamic targetDL for this round if a submitProbability is given
 	if (MinerConfig::getConfig().getSubmitProbability() > 0.)
 	{
-		const Poco::UInt64 poolDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool);
+		const auto difficultyFl = 18325193796.0 / static_cast<float>(baseTarget);
+		const auto tarDlFac = MinerConfig::getConfig().getTargetDLFactor();
+		const auto totAccPlotsize = static_cast<double>(PlotSizes::getTotalBytes(PlotSizes::Type::Combined)) / 1024.f / 1024.f / 1024.f / 1024.f;
+
+		auto blockTargetDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local);
+		if (totAccPlotsize > 0 && MinerConfig::getConfig().getSubmitProbability() > 0.)
+			blockTargetDeadline = static_cast<Poco::UInt64>(tarDlFac * difficultyFl / totAccPlotsize);
+		const auto poolDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool);
 
 		if (blockTargetDeadline < poolDeadline || poolDeadline == 0)
 			MinerConfig::getConfig().setTargetDeadline(blockTargetDeadline, TargetDeadlineType::Local);

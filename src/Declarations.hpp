@@ -58,15 +58,14 @@ namespace Burst
 		ProjectData(std::string&& name, Version version);
 		void refreshNameAndVersion();
 		void refreshAndCheckOnlineVersion(Poco::Timer& timer);
-		std::string getOnlineVersion();
-		std::string getVersion();
-
+		std::string getOnlineVersion() const;
+		std::string getVersion() const;
 		std::string name;
-		Version version;
-		Version onlineVersion;
-
 		std::string nameAndVersion;
 		std::string nameAndVersionVerbose;
+	private:
+		Version version;
+		Version onlineVersion;
 		mutable Poco::Mutex mutex_;
 	};
 
