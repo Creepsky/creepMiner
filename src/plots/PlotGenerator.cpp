@@ -183,9 +183,9 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 	}
 
 	if(totalIntegrity / noncesChecked < 100.0)
-		log_error(MinerLogger::general, "Total Integrity: " + std::to_string(totalIntegrity / noncesChecked) + "%");
+		log_error(MinerLogger::general, "Total Integrity of %s: %0.3f%%", plotPath, totalIntegrity / noncesChecked);
 	else
-		log_success(MinerLogger::general, "Total Integrity: " + std::to_string(totalIntegrity / noncesChecked) + "%");
+		log_success(MinerLogger::general, "Total Integrity of %s: %0.3f%%", plotPath, totalIntegrity / noncesChecked);
 
 	const auto plotId = getAccountIdFromPlotFile(plotPath) + "_" + getStartNonceFromPlotFile(plotPath) + "_" + getNonceCountFromPlotFile(plotPath) + "_" + getStaggerSizeFromPlotFile(plotPath);
 
