@@ -28,33 +28,12 @@
 #include "Declarations.hpp"
 #include "shabal/MinerShabal.hpp"
 #include "Poco/Runnable.h"
+#include <future>
 
 namespace Burst
 {
 	class Miner;
 	class MinerServer;
-
-	class PlotCheckReader : public Poco::Runnable
-	{
-	public:
-		PlotCheckReader(std::vector<Poco::UInt64> scoops, std::vector<Poco::UInt64> nonces, std::vector<char> &readNonce, 
-			Miner& miner, std::string plotPath, Poco::UInt64 checkNonces, Poco::UInt64 checkScoops)
-			: nonces{ nonces }, scoops{ scoops }, miner{ &miner }, readNonce{ &readNonce }, plotPath{ plotPath },
-			checkNonces{ checkNonces }, checkScoops{ checkScoops }
-		{
-		}
-
-	private:
-		Miner *miner;
-		std::vector<Poco::UInt64> nonces;
-		std::vector<Poco::UInt64> scoops;
-		std::vector<char> *readNonce;
-		std::string plotPath;
-		Poco::UInt64 checkNonces;
-		Poco::UInt64 checkScoops;
-
-		virtual void run();
-	};
 
 	class PlotGenerator
 	{
