@@ -16,13 +16,8 @@ creepMiner is written in C++ and is multi-threaded to get the best performance, 
 
 ## Quickstart
 
-Download and install the [latest release](https://github.com/Creepsky/creepMiner/releases/latest)
-
-The home dir for Linux is `~/.creepMiner/{version}`, for Windows `C:\Users\You\.creepMiner\{version}`.
-
-The install dir for Linux is `/opt/creepMiner-{version}`.
-
-Follow the [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) documentation.
+- Download and install the [latest release](https://github.com/Creepsky/creepMiner/releases/latest)
+- Follow the [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) documentation.
 
 If you need help and support then please review the [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ) and [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) else [![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt) chat and ask in the **#help** channel.
 
