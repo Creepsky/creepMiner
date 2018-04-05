@@ -152,8 +152,8 @@ $(document).ready(function() {
 
 		var el = document.getElementById('themeSelector'),
 		elChild = document.createElement("div");
-		elChild.innerHTML = '<select id="css-selector" class="nav-item dropdown selectpicker form-control" style="margin:0px;padding:0px"></select>';
-
+		elChild.innerHTML = '<select id="css-selector" class="nav-item dropdown selectpicker form-control" style="margin:0px;padding:0px;height:2.5rem"></select>';
+		
 		var options= '<option value="">cerulean</option>';
 		$links.each(function(index,value){
 			options +='<option value="'+$(this).attr('href')+'">'+$(this).attr('title')+'</option>';

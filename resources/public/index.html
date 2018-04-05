@@ -29,10 +29,10 @@
     <script> var nullDeadline = "%nullDeadline%";</script>
   </head>
   <body>
-    <div class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary">
+    <div class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary" style="padding:0.5rem 1rem">
         <div class="container">
             <!-- logo & title -->
-            <img src="img/icon.png" alt="%title%" class="img-responsive" style="height: 20px">&nbsp;<a href="../" class="navbar-brand" id="server-name"></a>
+            <img src="img/icon.png" alt="%title%" class="img-responsive" style="height: 20px">&nbsp;<a href="../" class="navbar-brand" id="server-name" style="padding:0.3rem"></a>
             <!-- mobile navigation -->
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle">
                 <span class="navbar-toggler-icon"></span>
@@ -41,16 +41,16 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav">
                     <li class="nav-item" id="btnBlock">
-                        <a class="nav-link" href="/">Block</a>
+                        <a class="nav-link" href="/" style="padding:0.3rem">Block</a>
                     </li>
                     <li class="nav-item" id="btnPlots">
-                        <a class="nav-link" href="/plotfiles">Plots</a>
+                        <a class="nav-link" href="/plotfiles" style="padding:0.3rem">Plots</a>
                     </li>
                     <li class="nav-item mm-hide" id="btnSettings">
-                        <a class="nav-link" href="/settings">Settings</a>
+                        <a class="nav-link" href="/settings" style="padding:0.3rem">Settings</a>
                     </li>
                     <li class="nav-item" id="btnAbout" data-toggle='tooltip' data-placement='bottom' data-original-title=''>
-                        <a href="" class="nav-link" data-toggle="modal" data-target="#aboutModal" onclick="printVersions();">About</a>
+                        <a href="" class="nav-link" data-toggle="modal" data-target="#aboutModal" onclick="printVersions();" style="padding:0.3rem">About</a>
                     </li>
                 </ul>
                 <!-- right nav bar-->
@@ -61,7 +61,7 @@
                     </li>
                     <!-- sign out btn -->
                     <li class="nav-item mm-hide" id="btnSignOut">
-                        <a class="nav-link" href="/logout"><i class="fa fa-sign-out"></i>Sign Out</a>
+                        <a class="nav-link" href="/logout" style="padding:0.3rem"><i class="fa fa-sign-out"></i>Sign Out</a>
                     </li>
 
                 </ul>
