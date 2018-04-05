@@ -96,7 +96,6 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 	try
 	{
 		WebSocket ws(request, response);
-		log_debug(MinerLogger::server, "WebSocket connection established.");
 
 		try
 		{
@@ -162,7 +161,6 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 		}
 		while (!close && (flags & WebSocket::FRAME_OP_BITMASK) != WebSocket::FRAME_OP_CLOSE);
 		ws.shutdown();
-		log_debug(MinerLogger::server, "WebSocket connection closed.");
 	}
 	catch (WebSocketException& exc)
 	{

@@ -224,8 +224,6 @@ bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::
 	if (!isActive())
 		return false;
 
-	log_debug(MinerLogger::wallet, "Sending wallet request '%s'", uri.toString());
-
 	HTTPRequest request{ HTTPRequest::HTTP_GET, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
 	request.setKeepAlive(false);
 		
@@ -237,8 +235,6 @@ bool Burst::Wallet::sendWalletRequest(const Poco::URI& uri, Poco::JSON::Object::
 	{
 		if (resp.receive(data))
 		{
-			log_debug(MinerLogger::wallet, "Got response for wallet request '%s'\n%s", uri.toString(), data);
-
 			try
 			{
 				Poco::JSON::Parser parser;
