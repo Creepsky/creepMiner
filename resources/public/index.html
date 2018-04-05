@@ -78,6 +78,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.time.min.js"></script>
     <script src="js/biginteger.min.js"></script>
     <script src="js/general.js"></script>
+	<script>
+	    if(getCookie("selectedTheme")){ 
+			$('link[rel*=jquery]').remove(); 
+			$('head').append('<link rel="stylesheet jquery" href="'+getCookie("selectedTheme")+'" type="text/css" />'); 
+		}
+	</script>
     <!-- About Modal -->
     <div class="modal fade bd-about-modal-lg" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true" aria-keyboard="false" bd-about-modal-lg id="aboutModal">
         <div class="modal-dialog modal-lg">

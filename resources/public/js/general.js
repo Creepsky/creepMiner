@@ -164,12 +164,29 @@ $(document).ready(function() {
 
 		$('#css-selector').append(options)
 			.bind('change',function(){
-			$('link[rel*=jquery]').remove();
-			$('head').append('<link rel="stylesheet jquery" href="'+$(this).val()+'" type="text/css" />');
+            $('link[rel*=jquery]').remove();
+            $('head').append('<link rel="stylesheet jquery" href="'+$(this).val()+'" type="text/css" />');
+            document.cookie = "selectedTheme = "+$(this).val()+";";
 		});
-
+		$('#css-selector')
 	}
 )(jQuery);
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
 
 // set the title in header and replace the server-name element with server name
 document.getElementById('server-name').innerHTML = servername;
