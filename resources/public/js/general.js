@@ -49,9 +49,19 @@ function checkVersion(runningVer, onlineVer) {
         current=false;
 	if(!current)
 	{
-		$("#btnAbout").find("a").css({"color": "red"});
-		$("#btnAbout").find("a").attr({"data-original-title": "A new release of creepMiner is available"});
-	}
+        $("#btnAbout").find("a").css({"color": "red"});
+        $("#btnAbout").find("a").attr({"data-original-title": "A new release of creepMiner is available"});
+        $("#runningVer").html("&nbsp;v&nbsp;" + runningVer);
+        $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
+        $("#versionCardHeader").toggleClass("bg-success",false);
+        $("#versionCardHeader").toggleClass("bg-danger",true);
+        $("#versionCard").append("<div class='alert alert-danger' role='alert'><i class='fa fa-exclamation-triangle text-warning'></i>&nbsp;&nbsp;<strong>Out of date!</strong>"+
+            " Download the latest from <a href='https://github.com/Creepsky/creepMiner/releases'> github</a></div>");
+    } else
+    {
+        $("#runningVer").html("<i class='fa fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer);
+        $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
+    }
 	return current
 }
 
@@ -133,11 +143,6 @@ function createLoggerCombobox(cmb) {
 // initializing tooltip
 $(document).ready(function() {
   $('[data-toggle="tooltip"]').tooltip();
-});
-
-// initializing about
-$(window).on('load',function(){
-    $('#aboutModal').modal('show');
 });
 
 //  stylesheet selector
