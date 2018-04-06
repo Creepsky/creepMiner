@@ -10,7 +10,7 @@ var isChecking=false;
 var isCheckingAll=false;
 
 window.onload = function (evt) {
-    $("#btnPlotfiles").addClass('active');
+    $("#btnPlots").addClass('active');
     parsePlots();
     fillDirs();
     connect(connectCallback);
