@@ -5,19 +5,27 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>%title%</title>
-    <link rel="stylesheet" href="https://bootswatch.com/4/cerulean/bootstrap.min.css" media="screen">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/custom.min.css">
+	<link rel="stylesheet" href="https://bootswatch.com/_vendor/bootstrap/dist/css/bootstrap.min.css" media="screen">
     <!-- Themes -->
+	<link rel="alternate stylesheet" title="cerulean" href="https://bootswatch.com/4/cerulean/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="cosmo" href="https://bootswatch.com/4/cosmo/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="cyborg" href="https://bootswatch.com/4/cyborg/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="darkly" href="https://bootswatch.com/4/darkly/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="flatly" href="https://bootswatch.com/4/flatly/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="journal" href="https://bootswatch.com/4/journal/bootstrap.min.css" type="text/css">
+	<link rel="alternate stylesheet" title="litera" href="https://bootswatch.com/4/litera/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="lumen" href="https://bootswatch.com/4/lumen/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="lux" href="https://bootswatch.com/4/lux/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="materia" href="https://bootswatch.com/4/materia/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="minty" href="https://bootswatch.com/4/minty/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="pulse" href="https://bootswatch.com/4/pulse/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="sandstone" href="https://bootswatch.com/4/sandstone/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="simplex" href="https://bootswatch.com/4/simplex/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="sketchy" href="https://bootswatch.com/4/sketchy/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="slate" href="https://bootswatch.com/4/slate/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="solar" href="https://bootswatch.com/4/solar/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="spacelab" href="https://bootswatch.com/4/spacelab/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="superhero" href="https://bootswatch.com/4/superhero/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="united" href="https://bootswatch.com/4/united/bootstrap.min.css" type="text/css">
@@ -56,9 +64,11 @@
                 <!-- right nav bar-->
                 <ul class="nav navbar-nav ml-auto">
                         <!-- theme selector -->
-                    <li class="nav-item mm-hide" id="btnThemeSelector">
-                        <a id="themeSelector"></a>
-                    </li>
+                     <li class="nav-item dropdown">
+					   <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Themes <span class="caret"></span></a>
+					   <div class="dropdown-menu" aria-labelledby="themes" id="themeSelector">
+					   </div>
+					 </li>
                     <!-- sign out btn -->
                     <li class="nav-item mm-hide" id="btnSignOut">
                         <a class="nav-link" href="/logout"><i class="fa fa-sign-out"></i>Sign Out</a>
@@ -79,9 +89,9 @@
     <script src="js/biginteger.min.js"></script>
     <script src="js/general.js"></script>
 	<script>
-	    if(getCookie("selectedTheme")){ 
+	    if(getCookie("theme")){ 
 			$('link[rel*=jquery]').remove(); 
-			$('head').append('<link rel="stylesheet jquery" href="'+getCookie("selectedTheme")+'" type="text/css" />'); <!-- Default bootsrap: https://bootswatch.com/_vendor/bootstrap/dist/css/bootstrap.min.css-->
+			$('head').append('<link rel="stylesheet jquery" href="'+getCookie("theme")+'" type="text/css" />');
 		}
 	</script>
     <!-- About Modal -->

@@ -50,7 +50,7 @@ function checkVersion(runningVer, onlineVer) {
 	if(!current)
 	{
         $("#btnAbout").find("a").css({"color": "red"});
-        $("#btnAbout").attr({"data-original-title": "A new release of creepMiner is available"});
+        $("#btnAbout").attr({"data-original-title": "A new version is available"});
         $("#runningVer").html("&nbsp;v&nbsp;" + runningVer);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
         $("#versionCardHeader").toggleClass("bg-success",false);
@@ -145,33 +145,30 @@ $(document).ready(function() {
   $('[data-toggle="tooltip"]').tooltip();
 });
 
-//  stylesheet selector
+// stylesheet selector
 (function($)
-	{
-		var $links = $('link[rel*=alternate][title]');
-
-		var el = document.getElementById('themeSelector'),
-		elChild = document.createElement("div");
-		elChild.innerHTML = '<select id="css-selector" class="nav-item dropdown selectpicker form-control" style="margin:0px;padding:0px;height:2.5rem"></select>';
-		
-		var options= '<option value="">cerulean</option>';
-		$links.each(function(index,value){
-			options +='<option value="'+$(this).attr('href')+'">'+$(this).attr('title')+'</option>';
-		});
-		$links.remove();
-
-		el.appendChild(elChild);
-
-		$('#css-selector').append(options)
-			.bind('change',function(){
-            $('link[rel*=jquery]').remove();
-            $('head').append('<link rel="stylesheet jquery" href="'+$(this).val()+'" type="text/css" />');
-            document.cookie = "selectedTheme = "+$(this).val()+";";
-		});
-		$('#css-selector')
-	}
+ {
+  var $links = $('link[rel*=alternate][title]');
+  var el = document.getElementById('themeSelector');
+  var options= '<a class="dropdown-item" onclick="eraseCookie(\'theme\');">Default</a><div class="dropdown-divider"></div>';
+  $links.each(function(index,value){
+   options +='<a class="dropdown-item" onclick="SwitchTheme(\''+$(this).attr('title')+'\')">'+$(this).attr('title')+'</a>';
+  });
+  $links.remove();
+  
+  el.innerHTML = options;
+ }
 )(jQuery);
 
+// dynamically switch bootswatch themes
+function SwitchTheme (name){
+ $('link[rel*=jquery]').remove();
+ console.log(name);
+ $('head').append('<link rel="stylesheet jquery" href="https://bootswatch.com/4/'+ name +'/bootstrap.min.css" type="text/css" />');
+ document.cookie = "theme = https://bootswatch.com/4/"+name+"/bootstrap.min.css;";
+}
+
+// fetch cookie
 function getCookie(cname) {
     var name = cname + "=";
     var decodedCookie = decodeURIComponent(document.cookie);
@@ -186,6 +183,23 @@ function getCookie(cname) {
         }
     }
     return "";
+}
+
+// to add new cookies, use this to create future cookies - will be used later on
+function createCookie(name,value,days) {
+	if (days) {
+		var date = new Date();
+		date.setTime(date.getTime()+(days*24*60*60*1000));
+		var expires = "; expires="+date.toGMTString();
+	}
+	else var expires = "";
+	document.cookie = name+"="+value+expires+"; path=/";
+}
+
+// remove cookie
+function eraseCookie(name) {
+	window.location.reload(false);
+	createCookie(name,"",-1);
 }
 
 // set the title in header and replace the server-name element with server name
