@@ -3,7 +3,10 @@ var logSetting = {};
 function update_settings(config) {
     mining_info_url.val(config['miningInfoUrl'] + ':' + config['miningInfoUrlPort']);
     submission_url.val(config['poolUrl'] + ':' + config['poolUrlPort']);
-    wallet_url.val(config['walletUrl'] + ':' + config['walletUrlPort']);
+	if (config['walletUrl'] + ':' + config['walletUrlPort']=="://:0")
+		wallet_url.val("");
+	else
+		wallet_url.val(config['walletUrl'] + ':' + config['walletUrlPort']);
 
     intensity.val(config['miningIntensityRaw']);
     buffer_size.val(config['bufferSizeRaw']);
