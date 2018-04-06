@@ -49,12 +49,12 @@ matrix:
       branch: master
   - os: linux
     addons:
-    apt:
-      sources:
-      - ubuntu-toolchain-r-test
-      packages:
-      - g++-5
-      - rpm
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-5
+        - rpm
     env:
     - NAME="linux g++-5 GPU" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     script:
