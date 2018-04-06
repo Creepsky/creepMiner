@@ -29,10 +29,10 @@
     <script> var nullDeadline = "%nullDeadline%";</script>
   </head>
   <body>
-    <div class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary" style="padding:0rem 1rem">
+    <div class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary navbar-cm">
         <div class="container">
             <!-- logo & title -->
-            <img src="img/icon.png" alt="%title%" class="img-responsive" style="height: 20px">&nbsp;<a href="../" class="navbar-brand" id="server-name" style="padding:0.7rem"></a>
+            <img src="img/icon.png" alt="%title%" class="img-responsive img-logo">&nbsp;<a href="../" class="navbar-brand brand-cm" id="server-name"></a>
             <!-- mobile navigation -->
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle">
                 <span class="navbar-toggler-icon"></span>
@@ -41,27 +41,27 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav">
                     <li class="nav-item" id="btnBlock">
-                        <a class="nav-link" href="/" style="padding:0.8rem">Block</a>
+                        <a class="nav-link" href="/">Block</a>
                     </li>
                     <li class="nav-item" id="btnPlots">
-                        <a class="nav-link" href="/plotfiles" style="padding:0.8rem">Plots</a>
+                        <a class="nav-link" href="/plotfiles">Plots</a>
                     </li>
                     <li class="nav-item mm-hide" id="btnSettings">
-                        <a class="nav-link" href="/settings" style="padding:0.8rem">Settings</a>
+                        <a class="nav-link" href="/settings">Settings</a>
                     </li>
                     <li class="nav-item" id="btnAbout" data-toggle='tooltip' data-placement='bottom' data-original-title=''>
-                        <a href="" class="nav-link" data-toggle="modal" data-target="#aboutModal" onclick="printVersions();" style="padding:0.8rem">About</a>
+                        <a href="" class="nav-link" data-toggle="modal" data-target="#aboutModal" onclick="printVersions();">About</a>
                     </li>
                 </ul>
                 <!-- right nav bar-->
                 <ul class="nav navbar-nav ml-auto">
-                        <!-- theme selector -->
+                    <!-- theme selector -->
                     <li class="nav-item mm-hide" id="btnThemeSelector">
                         <a id="themeSelector"></a>
                     </li>
                     <!-- sign out btn -->
                     <li class="nav-item mm-hide" id="btnSignOut">
-                        <a class="nav-link" href="/logout" style="padding:0.8rem"><i class="fa fa-sign-out"></i>Sign Out</a>
+                        <a class="nav-link" href="/logout"><i class="fa fa-sign-out"></i>Sign Out</a>
                     </li>
 
                 </ul>
@@ -70,7 +70,7 @@
     </div>
     <!-- render page content -->
     <div class="container-fluid">%content%</div>
-    <!-- CDN plugins, or local js -->
+    <!-- js CDN plugins, or local js -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
@@ -102,8 +102,8 @@
                                     <!-- Version -->
                                     <h4 class="card-header text-white bg-success" id="versionCardHeader">Version</h4>
                                     <div class="card-body" id="versionCard">
-                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px"><span class="badge badge-primary">Running</span><span id="runningVer"></span></li>
-                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px"><span class="badge badge-success">Latest</span><span id="latestVer"></span></li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center list-cm"><span class="badge badge-primary">Running</span><span id="runningVer"></span></li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center list-cm"><span class="badge badge-success">Latest</span><span id="latestVer"></span></li>
                                     </div>
                                     <!-- About creepMiner -->
                                     <h4 class="card-header text-white bg-primary" id="versionCardHeader">About creepMiner</h4>
@@ -148,13 +148,13 @@
                         </div>
                     </div>
                 </div>
-            <!--footer -->
+                <!--footer -->
                 <div class="modal-footer">
                     <button type="button" class="btn btn-info" data-dismiss="modal">Thanks</button>
                 </div>
             </div>
         </div>
     </div>
-     %includes%
+    %includes%
   </body>
 </html>
