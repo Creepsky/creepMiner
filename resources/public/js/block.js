@@ -139,6 +139,7 @@ var miningData = new Block();
 var settingsDlComboboxes;
 var maxHistoricalBlocks;
 var blockStartTime = new Date() / 1000;
+var flotFrameColor = "#888888";
 
 // ******************************************
 var logSettings = {};
@@ -286,6 +287,7 @@ function newBlock(json) {
     showDeadlinesInfo(null);
     showDeadlineDistributionInfo(null);
     showDifficultyInfo(null);
+    $(".flot-tick-label").css("color", flotFrameColor);
 }
 
 function getNewLine(type, id) {
@@ -911,7 +913,8 @@ function initDeadlinePlot() {
         grid: {
             hoverable: true,
             autoHighlight: true,
-            clickable: true
+            clickable: true,
+            color: flotFrameColor,
         },
         xaxis: {
             show: false,
@@ -951,7 +954,8 @@ function initDeadlineDistributionPlot() {
         grid: {
             hoverable: true,
             autoHighlight: true,
-            clickable: true
+            clickable: true,
+            color: flotFrameColor,
         },
         xaxis: {
             show: false
@@ -990,7 +994,8 @@ function initTimePlot() {
         grid: {
             hoverable: true,
             autoHighlight: true,
-            clickable: true
+            clickable: true,
+            color: flotFrameColor,
         },
         xaxis: {
             show: false
@@ -1035,7 +1040,8 @@ function initDifficultyPlot() {
         grid: {
             hoverable: true,
             autoHighlight: true,
-            clickable: true
+            clickable: true,
+            color: flotFrameColor,
         },
         xaxis: {
             show: false
