@@ -17,7 +17,7 @@
             </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-warning" data-dismiss="modal">Okay</button>
+        <button type="button" class="btn btn-warning" onclick="checkAllPlotFiles();" data-dismiss="modal">Okay, do it!</button>
       </div>
     </div>
   </div>
@@ -29,17 +29,19 @@
         <div class="col-lg-12" id="container">
             <div class="btn-group d-flex" role="group">
                 <!-- rescan btn -->
-                <button type="button" class="btn btn-info w-100" onclick="$.get('/rescanPlotfiles');" data-toggle='tooltip' data-placement='bottom' data-original-title='Rescan plot folders for new or removed plot files.'>
+                <button type="button" class="btn btn-info w-100" onclick="$.get('/rescanPlotfiles');">
+                <span data-toggle='tooltip' data-placement='bottom' data-original-title='Rescan plot folders for new or removed plot files.'>
                     <span class="fa fa-search"></span>
                     Rescan
+                </span>
                 </button>
                 <!-- validate btn, trigger modal -->
+                <button type="button" class="btn btn-info" id="CheckAllButton" data-toggle="modal" data-target="#checkAllModal">
                 <span data-toggle='tooltip' data-placement='bottom' data-original-title='Validate the integrity of all plot files. This may take a while.'>
-                <button type="button" class="btn btn-info" id="CheckAllButton" onclick="checkAllPlotFiles();" data-toggle="modal" data-target="#checkAllModal">
                     <span class="fa fa-superpowers"></span>
                     Validate all
-                </button>
                 </span>
+                </button>
             </div>
             <!-- Directories -->
             <div class="card mb-12">

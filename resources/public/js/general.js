@@ -150,9 +150,9 @@ $(document).ready(function() {
  {
   var $links = $('link[rel*=alternate][title]');
   var el = document.getElementById('themeSelector');
-  var options= '<a class="dropdown-item" onclick="eraseCookie(\'theme\');">Default</a><div class="dropdown-divider"></div>';
+  var options= '<a class="dropdown-item" onclick="eraseCookie(\'theme\');" style="cursor:pointer">Default</a><div class="dropdown-divider"></div>';
   $links.each(function(index,value){
-   options +='<a class="dropdown-item" onclick="SwitchTheme(\''+$(this).attr('title')+'\')">'+$(this).attr('title')+'</a>';
+   options +='<a class="dropdown-item" onclick="SwitchTheme(\''+$(this).attr('title')+'\')" style="cursor:pointer">'+$(this).attr('title')+'</a>';
   });
   $links.remove();
   

@@ -139,7 +139,7 @@ var miningData = new Block();
 var settingsDlComboboxes;
 var maxHistoricalBlocks;
 var blockStartTime = new Date() / 1000;
-var flotFrameColor = "#888888";
+var flotFrameColor = $("li").css("color");
 
 // ******************************************
 var logSettings = {};
