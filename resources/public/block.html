@@ -48,27 +48,28 @@
 		</div>
 		<!-- Nonce Display Options -->
 		<div class="col-lg-12 mm-hide">
-			<div class="row form-group">
-				<div class="col-lg-3 col-md-6 col-xs-6">
+			<div class="row">
+				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show found nonce">
 					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbHideSameNonces" checked><label class="custom-control-label" for="cbHideSameNonces"> Hide same</label>
+						<input type="checkbox" class="custom-control-input" id="cbNoncesFound" checked><label class="custom-control-label" for="cbNoncesFound"><i class="fa fa-compass" aria-hidden="true">&nbsp;Found</i></label>
 					</div>
 				</div>
-				<div class="col-lg-3 col-md-6 col-xs-6">
+				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show sent nonce">
 					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesFound"  checked><label class="custom-control-label" for="cbNoncesFound"> Found</label>
+						<input type="checkbox" class="custom-control-input" id="cbNoncesSent" checked><label class="custom-control-label" for="cbNoncesSent"><i class="fa fa-paper-plane" aria-hidden="true">&nbsp;Sent</i></label>
 					</div>
 				</div>
-				<div class="col-lg-3 col-md-6 col-xs-6">
+				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show confirmed nonce">
 					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesSent"  checked><label class="custom-control-label" for="cbNoncesSent"> Sent</label>
+						<input type="checkbox" class="custom-control-input" id="cbNoncesConfirmed" checked><label class="custom-control-label" for="cbNoncesConfirmed"><i class="fa fa-check" aria-hidden="true">&nbsp;Conf</i></label>
 					</div>
 				</div>
-				<div class="col-lg-3 col-md-6 col-xs-6">
-					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesConfirmed""  checked><label class="custom-control-label" for="cbNoncesConfirmed"> Confirmed</label>
-					</div>
-				</div>
+                <div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Hide same nonce">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="cbHideSameNonces" checked><label class="custom-control-label" for="cbHideSameNonces"><i class="fa fa-eye-slash" aria-hidden="true">&nbsp;Same</i></label>
+                    </div>
+                </div>
+                <br>
 			</div>
 		</div>
 	</div>
