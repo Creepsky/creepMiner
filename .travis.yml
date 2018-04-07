@@ -4,17 +4,19 @@ before_install:
 matrix:
   fast_finish: true
   include:
-#  - os: osx
-#    compiler: clang
-#    script:
-#    - conan install . --build=missing
-#    - cmake . -DNO_GPU=ON
-#    - make -j$(nproc)
-#    env:
-#    - NAME="osx clang" MATRIX_EVAL="brew install conan"
-#    cache:
-#      directories:
-#      - "$HOME/.conan"
+  - os: osx
+    sudo: false
+    compiler: clang
+    script:
+    - python -V
+    - conan install . --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
+    env:
+    - NAME="osx clang" MATRIX_EVAL="brew install conan"
+    cache:
+      directories:
+      - "$HOME/.conan"
   - os: linux
     sudo: false
     addons:
@@ -24,9 +26,11 @@ matrix:
         packages:
         - g++-5
         - rpm
+        - python-3.6
     env:
     - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     script:
+    - python -V
     - pip install conan --user
     - conan install . --build=missing
     - cmake . -DNO_GPU=ON
@@ -49,6 +53,8 @@ matrix:
       branch: master
   - os: linux
     sudo: required
+    python:
+    - "3.6"
     addons:
       apt:
         sources:
@@ -57,6 +63,7 @@ matrix:
         - g++-5
         - rpm
     before_install:
+    - python -V
     - pip install conan --user
     - conan install . --build=missing
     - wget https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64
@@ -96,6 +103,7 @@ matrix:
     env:
     - NAME="linux g++-6" MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
     script:
+    - python -V
     - pip install conan --user
     - conan install . --build=missing
     - cmake . -DNO_GPU=ON
@@ -113,6 +121,7 @@ matrix:
     env:
     - NAME="linux g++-7" - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     script:
+    - python -V
     - pip install conan --user
     - conan install . --build=missing
     - cmake . -DNO_GPU=ON
