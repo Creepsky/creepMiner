@@ -262,7 +262,9 @@ function newBlock(json) {
     highestDiff.html("<small>@" + json["highestDifficulty"]["blockheight"] + "</small>&nbsp;&nbsp;" + json["highestDifficulty"]["value"]);
     meanDiff.html(Math.round(json["meanDifficulty"]));
     maxRoundTime.html(Math.round(json["maxRoundTime"]*1000)/1000 + " s");
-    avgRoundTime.html(Math.round(json["meanRoundTime"]*1000)/1000 + " s");
+    var meanScan = Math.round(json["meanRoundTime"]*1000)/1000;
+    avgRoundTime.html(meanScan + " s");
+    avgRoundTime.attr({"data-original-title": "You are ~" + efficiency(meanScan) +"% efficient at mining blocks with this average scan time."});
     avgBlockTime.html(Math.round(json["meanBlockTime"]*1000)/1000 + " s");
     deadlinePlotSmallMax = -Math.log(0.95)*240*json["meanDifficulty"]/json["deadlinePerformance"];
     deadlinePlot.setData([json["bestDeadlines"]]);
@@ -1068,6 +1070,14 @@ function initDifficultyPlot() {
         if (item)
             showDifficultyInfo(item);
     });
+}
+
+// calculates an estimate for the miners efficiency based on the scan time (how many blocks is he going to win on the long run compared to a miner with 0s scan time)
+function efficiency(scantime) {
+    if ( scantime > 1 )
+        return Math.round(1000*(480.096+599760*Math.exp(-0.00416666666667*scantime)-600240.096384153*Math.exp(-0.004165*scantime))/scantime)/10;
+    else
+        return 100;
 }
 
 window.onresize = function (evt) {
