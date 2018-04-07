@@ -1,5 +1,4 @@
 language: cpp
-sudo: false
 before_install:
 - eval "${MATRIX_EVAL}"
 matrix:
@@ -60,9 +59,9 @@ matrix:
     script:
     - pip install conan --user
     - conan install . --build=missing
-    - curl cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64.deb
+    - wget https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64
     - sudo dpkg -i cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64.deb
-    - sudo apt-key add /var/cuda-repo-<version>/7fa2af80.pub
+    - sudo apt-key add /var/cuda-repo-9.1/7fa2af80.pub
     - sudo apt-get update
     - sudo apt-get install cuda
     - cmake .
