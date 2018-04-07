@@ -929,7 +929,7 @@ function initDeadlinePlot() {
                 return deadlineFormatPlot(val);
             }
         },
-        colors: ["#2172A2", "#0022FF"]
+        colors: [flotColorOne, flotColorTwo]
     };
 
     deadlinePlot = $.plot(bestDeadlinesChart, [], options);
@@ -965,7 +965,7 @@ function initDeadlineDistributionPlot() {
         yaxis: {
             min: 0
         },
-        colors: ["#2172A2", "#0022FF"]
+        colors: [flotColorOne, flotColorTwo]
     };
 
     deadlineDistributionPlot = $.plot(deadlineDistributionChart, [], options);
@@ -1011,7 +1011,7 @@ function initTimePlot() {
             backgroundOpacity: 0,
             noColumns: 2
         },
-        colors: ["#2172A2", "#FE9E28"]
+        colors: [flotColorOne, flotColorTwo]
     };
 
     timePlot = $.plot(timeChart, [], options);
@@ -1056,7 +1056,7 @@ function initDifficultyPlot() {
                 if (val < 1000000000) return val/1000000 + "M";
             }
         },
-        colors: ["#2172A2", "#0022FF"]
+        colors: [flotColorOne, flotColorTwo]
     };
 
     difficultyPlot = $.plot(difficultyChart, [], options);
@@ -1075,7 +1075,7 @@ function initDifficultyPlot() {
 // calculates an estimate for the miners efficiency based on the scan time (how many blocks is he going to win on the long run compared to a miner with 0s scan time)
 function efficiency(scantime) {
     if ( scantime > 1 )
-        return Math.round(1000*(480.096+599760*Math.exp(-0.00416666666667*scantime)-600240.096384153*Math.exp(-0.004165*scantime))/scantime)/10;
+        return Math.ceil(1000*(480.096+599760*Math.exp(-0.00416666666667*scantime)-600240.096384153*Math.exp(-0.004165*scantime))/scantime)/10;
     else
         return 100;
 }
@@ -1106,5 +1106,7 @@ window.onresize = function (evt) {
 window.onload = function (evt) {
     $("#btnBlock").addClass('active');
     flotFrameColor = $("#roundsSubmitted").css("color");
+	flotColorOne = $("#progressBarVerify").css("background-color");
+	flotColorTwo = $("#refreshButton").css("background-color");
     initBlock();
 }
