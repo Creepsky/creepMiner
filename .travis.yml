@@ -26,7 +26,6 @@ matrix:
         packages:
         - g++-5
         - rpm
-        - python-3.6
     env:
     - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     script:
@@ -53,8 +52,6 @@ matrix:
       branch: master
   - os: linux
     sudo: required
-    python:
-    - "3.6"
     addons:
       apt:
         sources:
@@ -63,7 +60,6 @@ matrix:
         - g++-5
         - rpm
     before_install:
-    - python -V
     - pip install conan --user
     - conan install . --build=missing
     - wget https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64
@@ -103,7 +99,6 @@ matrix:
     env:
     - NAME="linux g++-6" MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
     script:
-    - python -V
     - pip install conan --user
     - conan install . --build=missing
     - cmake . -DNO_GPU=ON
