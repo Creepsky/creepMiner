@@ -1105,7 +1105,7 @@ window.onresize = function (evt) {
 
 window.onload = function (evt) {
     $("#btnBlock").addClass('active');
-    flotFrameColor = $("#roundsSubmitted").css("color");
+    flotFrameColor = $("p").css("color");
 	flotColorOne = $("#progressBarVerify").css("background-color");
 	flotColorTwo = $("#refreshButton").css("background-color");
     initBlock();
