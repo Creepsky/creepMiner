@@ -876,7 +876,11 @@ function initBlock() {
     // ******************************************
     localInitCheckBoxes();
     // ******************************************
-
+    
+    flotFrameColor = $("p").css("color");
+    flotColorOne = $("#progressBarVerify").css("background-color");
+    flotColorTwo = $("#refreshButton").css("background-color");
+    
     initDeadlinePlot();
     initTimePlot();
     initDeadlineDistributionPlot();
@@ -1011,7 +1015,7 @@ function initTimePlot() {
             backgroundOpacity: 0,
             noColumns: 2
         },
-        colors: [flotColorOne, flotColorTwo]
+        colors: [flotColorTwo, flotColorOne]
     };
 
     timePlot = $.plot(timeChart, [], options);
@@ -1105,8 +1109,5 @@ window.onresize = function (evt) {
 
 window.onload = function (evt) {
     $("#btnBlock").addClass('active');
-    flotFrameColor = $("p").css("color");
-	flotColorOne = $("#progressBarVerify").css("background-color");
-	flotColorTwo = $("#refreshButton").css("background-color");
     initBlock();
 }
