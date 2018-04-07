@@ -54,16 +54,17 @@ matrix:
         packages:
         - g++-5
         - rpm
-    env:
-    - NAME="linux g++-5 GPU" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
-    script:
+    before_install:
     - pip install conan --user
     - conan install . --build=missing
     - wget https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64
-    - sudo dpkg -i cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64.deb
+    - sudo dpkg -i cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64
     - sudo apt-key add /var/cuda-repo-9.1/7fa2af80.pub
     - sudo apt-get update
     - sudo apt-get install cuda
+    env:
+    - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+    script:
     - cmake .
     - make -j$(nproc)
     - make package
