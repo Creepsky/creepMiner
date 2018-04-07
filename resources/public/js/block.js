@@ -879,7 +879,7 @@ function initBlock() {
     
     flotFrameColor = $("p").css("color");
     flotColorOne = $("#progressBarVerify").css("background-color");
-    flotColorTwo = $("#refreshButton").css("background-color");
+    flotColorTwo = $("#progressBar").css("background-color");
     
     initDeadlinePlot();
     initTimePlot();
