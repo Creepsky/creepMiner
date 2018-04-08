@@ -1,0 +1,242 @@
+﻿<Controls:MetroWindow x:Class="ConfigEditor.MainWindow"
+                      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+						xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+						xmlns:Behaviours="clr-namespace:MahApps.Metro.Behaviours;assembly=MahApps.Metro"
+                      Title="creepMiner settings"
+                      Height="450"
+                      Width="600">
+
+	<i:Interaction.Behaviors>
+		<Behaviours:BorderlessWindowBehavior />
+	</i:Interaction.Behaviors>
+	
+	<Grid>
+		<TabControl>
+			<!-- mining tab -->
+			<TabItem Header="mining">
+				<Grid Margin="5,0,5,0">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+						<RowDefinition Height="32" />
+					</Grid.RowDefinitions>
+					<!-- URI settings -->
+					<GroupBox Grid.Row="0">
+						<GroupBox.Header>
+							<TextBlock Text="URL's" />
+						</GroupBox.Header>
+						<StackPanel Orientation="Horizontal">
+							<Label Width="50" Content="Pool" />
+							<TextBox Name="miningInfo" Width="175" />
+							<Label Width="5" />
+							<Label Width="50" Content="Wallet" />
+							<TextBox Name="wallet" Width="175" />
+							<!-- If solo mining enabled, use miner address for submission else always use pool-->
+							<!--<Label Width="80">Submission</Label>
+							<TextBox Name="submission" Width="100"></TextBox>-->
+							<Label Width="5" />
+							<Label Width="80" Content="Solo mining" />
+							<CheckBox Width="20" VerticalAlignment="Center" Name="chPool"/>
+							<TextBox Name="submission" Width="0" />
+						</StackPanel>
+					</GroupBox>
+					<!-- Basic settings -->
+					<GroupBox Grid.Row="1" Margin="0,5,0,214">
+						<GroupBox.Header>
+							<TextBlock Text="Basic settings" />
+						</GroupBox.Header>
+						<WrapPanel>
+							<Label  Width="70" Content="CPU/GPU" />
+                            <ComboBox  Width="70"  IsEditable="True" Name="cbProcessorType" ItemsSource="{Binding ProcessorType}" DisplayMemberPath="Name" />
+                            <Label Width="70" Content="Instructions" />
+							<ComboBox Width="79" Name="cbCPU" ItemsSource="{Binding Path=CPUInstSet}" DisplayMemberPath="Name" SelectedItem="{Binding Name, Mode=TwoWay}" />
+							<Label Width="100" />
+							<Label Width="75" Content="GPU Device" />
+							<TextBox Name="gpuDevice" Width="20" />
+							<Label Width="55" Content="Platform" />
+							<TextBox Name="gpuPlatform" Width="20" />
+						</WrapPanel>
+					</GroupBox>
+					<!-- Basic settings -->
+					<GroupBox Grid.Row="1" Margin="0,72,0,87">
+						<GroupBox.Header>
+							<TextBlock Text="Advanced settings" />
+						</GroupBox.Header>
+						<WrapPanel>
+							<Label Width="85">Buffer Chunks</Label>
+							<TextBox Name="bufferChunkCount" Width="40" />
+							<Label Width="70">Intensity</Label>
+							<TextBox Name="intensity" Width="30" />
+							<Label Width="70"># Readers</Label>
+							<TextBox Name="maxPlotReaders" Width="30" />
+							<Label Width="55"># Retrys</Label>
+							<TextBox Name="submissionMaxRetry" Width="30" />
+							<Label Width="80">Info interval</Label>
+							<TextBox Name="getMiningInfoInterval" Width="30" />
+							<Label Width="85">Buffer size</Label>
+							<TextBox Name="maxBufferSizeMB" Width="40" />
+							<Label Width="70">HDD Wake</Label>
+							<TextBox Name="wakeUpTime" Width="30" />
+							<Label Width="70">Wallet retry</Label>
+							<TextBox Name="walletRequestTries" Width="30" /> 
+							<Label Width="55">Time</Label>
+							<TextBox Name="walletRequestRetryWaitTime" Width="30" />
+							<Label Width="80">Probability</Label>
+							<TextBox Name="submitProbability" Width="30" />
+							<Label Width="85" Content="Deadline" />
+							<TextBox Name="targetDeadline" Width="140" />
+						</WrapPanel>
+					</GroupBox>
+					<!-- Basic settings -->
+					<GroupBox Grid.Row="1" Margin="0,199,0,19">
+						<GroupBox.Header>
+							<TextBlock Text="x settings" />
+						</GroupBox.Header>
+						<WrapPanel>
+							<Label Width="60" Content="Timeout" />
+							<TextBox Name="timeout" Width="30" />
+							<Label Width="60" Content="Rescan" />
+							<CheckBox Width="30" VerticalAlignment="Center" Name="chRescanEveryBlock" />
+							<Label Width="60" Content="Insecure" />
+							<CheckBox Width="30" VerticalAlignment="Center" Name="chUseInsecurePlotfiles" />
+							<Label Width="100" />
+							<Label Width="70" Content="Benchmark" />
+							<CheckBox Width="30" VerticalAlignment="Center" Name="chBenchmark" />
+							<Label Width="50" Content="interval" />
+							<TextBox Name="interval" Width="30" />
+						</WrapPanel>
+					</GroupBox>
+				</Grid>
+			</TabItem>
+			<!-- logging tab -->
+			<TabItem Header="logging">
+				<Grid Margin="5,0,5,0">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+						<RowDefinition Height="32" />
+					</Grid.RowDefinitions>
+					<!-- Basic settings -->
+					<GroupBox Grid.Row="0">
+						<GroupBox.Header>
+							<TextBlock Text="Basic settings" />
+						</GroupBox.Header>
+						<StackPanel Orientation="Horizontal">
+							<Label Width="90" Content="Progress bar" />
+							<CheckBox Width="30" VerticalAlignment="Center" Name="chFancy"/>
+							<Label Width="90" Content="Enable colors" />
+							<CheckBox Width="30" VerticalAlignment="Center" Name="chuseColors"/>
+							<Label Width="110" Content="Always at bottom" />
+							<CheckBox Width="100" VerticalAlignment="Center" Name="chSteady"/>
+						</StackPanel>
+					</GroupBox>
+					<!-- Console settings -->
+					<GroupBox Grid.Row="1" Margin="0,5,0,134">
+						<GroupBox.Header>
+							<TextBlock Text="Console settings" />
+						</GroupBox.Header>
+						<WrapPanel>
+							<Label Width="70" Content="Config" />
+							<ComboBox Width="100" ItemsSource="{Binding Path=LogConfig }" DisplayMemberPath="Name"  Name="cbConfig" />
+							<Label Width="10" />
+							<Label  Width="70" Content="General" />
+							<ComboBox  Width="100" ItemsSource="{Binding LogGeneral, Mode=OneWay}" DisplayMemberPath="Name" Name="cbGeneral" />
+							<Label Width="10" />
+							<Label  Width="70" Content="Miner" />
+							<ComboBox Width="100" ItemsSource="{Binding LogMiner, Mode=OneWay}" DisplayMemberPath="Name" Name="cbMiner" />
+							<Label Width="10" />
+							<Label  Width="70" Content="Submitter" />
+							<ComboBox Width="100" ItemsSource="{Binding LogNonceSubmitter, Mode=OneWay}" DisplayMemberPath="Name" Name="cbNonceSubmitter" />
+							<Label Width="10" />
+							<Label  Width="70" Content="Reader" />
+							<ComboBox Width="100" ItemsSource="{Binding LogPlotReader, Mode=OneWay}" DisplayMemberPath="Name" Name="cbPlotReader" />
+							<Label Width="10" />
+							<Label  Width="70" Content="Verifier" />
+							<ComboBox Width="100" ItemsSource="{Binding LogPlotVerifier, Mode=OneWay}" DisplayMemberPath="Name" Name="cbPlotVerifier" />
+							<Label  Width="70" Content="Server" />
+							<ComboBox Width="100" ItemsSource="{Binding LogServer, Mode=OneWay}" DisplayMemberPath="Name" Name="cbServer" />
+							<Label Width="10" />
+							<Label  Width="70" Content="Sessions" />
+							<ComboBox Width="100" ItemsSource="{Binding LogSession, Mode=OneWay}" DisplayMemberPath="Name" Name="cbSession" />
+							<Label Width="10" />
+							<Label  Width="70" Content="Socket" />
+							<ComboBox Width="100" ItemsSource="{Binding LogSocket, Mode=OneWay}" DisplayMemberPath="Name" Name="cbSocket" />
+							<Label  Width="70" Content="Wallet" />
+							<ComboBox Width="100" ItemsSource="{Binding LogWallet, Mode=OneWay}" DisplayMemberPath="Name" Name="cbWallet" />
+						</WrapPanel>
+					</GroupBox>
+					<!-- Console settings -->
+					<GroupBox Grid.Row="1" Margin="0,152,0,64">
+						<GroupBox.Header>
+							<TextBlock Text="Log file" />
+						</GroupBox.Header>
+						<WrapPanel>
+							<Label  Width="70" Content="Enabled" />
+							<CheckBox Width="30" VerticalAlignment="Center" Name="chLogfile"/>
+							<Label  Width="70" Content="Directory" />
+							<TextBox Name="txtFirst" Width="300"></TextBox>
+							<Label Width="10" />
+							<Button Content="Browse" HorizontalAlignment="Center" />
+						</WrapPanel>
+					</GroupBox>
+				</Grid>
+			</TabItem>
+			<!-- webserver tab -->
+			<TabItem Header="webserver">
+				<Grid Margin="5,0,5,0">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+						<RowDefinition Height="32" />
+					</Grid.RowDefinitions>
+					<!-- Basic settings -->
+					<GroupBox Grid.Row="0">
+						<GroupBox.Header>
+							<TextBlock Text="Basic settings" />
+						</GroupBox.Header>
+						<StackPanel Orientation="Horizontal">
+							<Label  Width="100" Content="Enabled" />
+							<CheckBox Width="20" VerticalAlignment="Center" Name="chStart"/>
+							<Label Width="10" />
+							<Label  Width="75" Content="Listen" />
+							<TextBox Name="url" Width="200"></TextBox >
+							<Label Width="10" />
+							<Button Content="Credentials" HorizontalAlignment="Center" />
+						</StackPanel>
+					</GroupBox>
+					<!-- Advanced settings -->
+					<GroupBox Grid.Row="1" Margin="0,5,0,184">
+						<GroupBox.Header>
+							<TextBlock Text="Advanced settings" />
+						</GroupBox.Header>
+						<WrapPanel>
+							<Label  Width="100" Content="Cumulate Plots" />
+							<CheckBox Width="40" VerticalAlignment="Center" Name="chCumulatePlotsizes"/>
+							<Label Width="10" />
+							<Label  Width="100" Content="Forward names" />
+							<CheckBox Width="40" VerticalAlignment="Center" Name="chForwardMinerNames"/>
+							<Label Width="10" />
+							<Label  Width="100" Content="All Deadlines" />
+							<CheckBox Width="40" VerticalAlignment="Center" Name="chCalculateEveryDeadile"/>
+							<Label Width="100" />
+							<Label  Width="100" Content="Max connections" />
+							<TextBox Name="activeConnections" Width="40"></TextBox>
+							<Label  Width="40"></Label>
+							<Label  Width="70" Content="Username" />
+							<TextBox Name="user" Width="100">whumphrey</TextBox>
+							<Label Width="10" />
+							<Label  Width="70" Content="Password" />
+							<TextBox Name="pass" Width="100">*************</TextBox>
+						</WrapPanel>
+					</GroupBox>
+				</Grid>
+			</TabItem>
+
+		</TabControl>
+		<!--<Button Margin="4" Padding="2" Width="128" HorizontalAlignment="Right" Content="Save"/>
+		<Button Margin="4" Padding="2" HorizontalAlignment="Right" Content="Close"/>-->
+		<Button Content="Save" HorizontalAlignment="Left" Margin="507,382,0,0" VerticalAlignment="Top" Width="75" Click="Button_Click" />
+	</Grid>
+</Controls:MetroWindow>

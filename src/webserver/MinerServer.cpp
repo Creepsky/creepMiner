@@ -36,8 +36,8 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include <Poco/String.h>
 #include <Poco/Delegate.h>
-#include <Poco/Net/NetException.h>
 #include <Poco/Exception.h>
+#include <Poco/Net/SecureServerSocket.h>
 
 using namespace Poco;
 using namespace Net;
@@ -68,14 +68,19 @@ void Burst::MinerServer::run(uint16_t port)
 	
 	port_ = port;
 
-	ServerSocket socket;
+	std::unique_ptr<ServerSocket> socket;
+
+	if (MinerConfig::getConfig().getServerCertificatePath().empty())
+		socket = std::make_unique<ServerSocket>();
+	else
+		socket = std::make_unique<SecureServerSocket>();
 
 	try
 	{
-		socket.bind(port_, true);
-		socket.listen();
+		socket->bind(port_, true);
+		socket->listen();
 	}
-	catch (Poco::Exception& exc)
+	catch (Exception& exc)
 	{
 		log_fatal(MinerLogger::server, "Error while creating local http server on port %hu!", port_);
 		log_exception(MinerLogger::server, exc);
@@ -83,7 +88,6 @@ void Burst::MinerServer::run(uint16_t port)
 	}
 
 	auto params = new HTTPServerParams;
-
 
 	params->setMaxQueued(MinerConfig::getConfig().getMaxConnectionsQueued());
 	params->setMaxThreads(MinerConfig::getConfig().getMaxConnectionsActive());
@@ -95,7 +99,7 @@ void Burst::MinerServer::run(uint16_t port)
 	if (server_ != nullptr)
 		server_->stopAll(true);
 
-	server_ = std::make_unique<HTTPServer>(new RequestFactory{*this}, threadPool_, socket, params);
+	server_ = std::make_unique<HTTPServer>(new RequestFactory{*this}, threadPool_, *socket, params);
 
 	if (server_ != nullptr)
 	{
@@ -270,6 +274,25 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 					RequestHandler::changeSettings(req, res, *server_->miner_);
 				});
 		}
+
+		// check plot file
+		if (path_segments.front() == "checkPlotFile")
+			if (path_segments.size() > 1) {
+				if (path_segments[1] == "all") {
+					return new LambdaRequestHandler([&](req_t& req, res_t& res)
+					{
+						RequestHandler::checkAllPlotfiles(req, res, *server_->miner_, *server_);
+					});
+				}
+				using Poco::replace;
+				std::string plotPath = "";
+				Poco::URI::decode(replace(request.getURI(), "/" + path_segments[0] + "/", plotPath), plotPath, false);
+				return new LambdaRequestHandler([&, pPath = move(plotPath)](req_t& req, res_t& res)
+				{
+					RequestHandler::checkPlotfile(req, res, *server_->miner_, *server_, pPath);
+				});
+			}
+
 
 		// show/change plot files
 		if (path_segments.front() == "plotdir")

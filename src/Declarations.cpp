@@ -25,9 +25,10 @@
 #include <Poco/StringTokenizer.h>
 #include <Poco/NumberParser.h>
 #include "logging/MinerLogger.hpp"
+#include "webserver/RequestHandler.hpp"
 
 std::string Burst::Settings::Cpu_Instruction_Set = "";
-Burst::ProjectData Burst::Settings::Project = Burst::ProjectData("creepMiner",
+Burst::ProjectData Burst::Settings::Project("creepMiner",
 	Burst::Version(VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, 0));
 
 #ifdef USE_SSE4
@@ -170,6 +171,7 @@ bool Burst::Version::operator!=(const Version& rhs) const
 
 void Burst::ProjectData::refreshNameAndVersion()
 {
+	Poco::Mutex::ScopedLock lock(mutex_);
 	nameAndVersion = this->name + " " + this->version.literal;
 	nameAndVersionVerbose = this->name + " " +
 		(this->version.revision > 0 ? this->version.literalVerbose : this->version.literal) + " " +
@@ -179,8 +181,29 @@ void Burst::ProjectData::refreshNameAndVersion()
 		nameAndVersionVerbose += std::string(" ") + Settings::Cpu_Instruction_Set;
 }
 
+void Burst::ProjectData::refreshAndCheckOnlineVersion(Poco::Timer& timer)
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	const std::string host = "https://github.com/Creepsky/creepMiner";
+	onlineVersion = Burst::RequestHandler::fetchOnlineVersion();
+	if (onlineVersion > version)
+		log_error(MinerLogger::general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
+}
+
+std::string Burst::ProjectData::getOnlineVersion() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return onlineVersion.literal;
+}
+
+std::string Burst::ProjectData::getVersion() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return version.literal;
+}
+
 Burst::ProjectData::ProjectData(std::string&& name, Version version)
-	: name{std::move(name)}, version{std::move(version)}
+	: name{std::move(name)}, version{std::move(version)}, onlineVersion{ std::move(version) }
 {
 	refreshNameAndVersion();
 }

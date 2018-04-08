@@ -53,24 +53,29 @@ namespace Burst
 		};
 
 	public:
-		BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent = nullptr);
+		BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent = nullptr, Poco::UInt64 blockTargetDeadline = 0);
 
 		std::shared_ptr<Deadline> addDeadline(Poco::UInt64 nonce, Poco::UInt64 deadline,
 			std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile);
 		void setBaseTarget(Poco::UInt64 baseTarget);
 		void setLastWinner(std::shared_ptr<Account> account);
+		void setRoundTime(double rTime);
 		
 		void refreshBlockEntry() const;
 		void refreshConfig() const;
 		void refreshPlotDirs() const;
 		void setProgress(float progressRead, float progressVerification, Poco::UInt64 blockheight);
 		void setProgress(const std::string& plotDir, float progress, Poco::UInt64 blockheight);
+		void setBlockTime(Poco::UInt64 bTime);
 
 		Poco::UInt64 getBlockheight() const;
 		Poco::UInt64 getScoop() const;
 		Poco::UInt64 getBasetarget() const;
 		Poco::UInt64 getDifficulty() const;
+		Poco::UInt64 getBlockTargetDeadline() const;
 		std::shared_ptr<Account> getLastWinner() const;
+		double getRoundTime() const;
+		Poco::UInt64 getBlockTime() const;
 		
 		const GensigData& getGensig() const;
 		const std::string& getGensigStr() const;
@@ -118,8 +123,11 @@ namespace Burst
 		std::atomic<Poco::UInt64> blockHeight_;
 		std::atomic<Poco::UInt64> scoop_;
 		std::atomic<Poco::UInt64> baseTarget_;
+		std::atomic<Poco::UInt64> blockTargetDeadline_;
 		GensigData genSig_;
 		std::string genSigStr_ = "";
+		double roundTime_;
+		Poco::UInt64 blockTime_;
 		std::shared_ptr<std::vector<Poco::JSON::Object>> entries_;
 		std::shared_ptr<Account> lastWinner_ = nullptr;
 		std::unordered_map<AccountId, std::shared_ptr<Deadlines>> deadlines_;
@@ -145,7 +153,7 @@ namespace Burst
 		MinerData();
 		~MinerData() override;
 		
-		std::shared_ptr<BlockData> startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig);
+		std::shared_ptr<BlockData> startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig, Poco::UInt64 blockTargetDeadline);
 		void addMessage(const Poco::Message& message);
 
 		std::shared_ptr<Deadline> getBestDeadlineOverall(bool onlyHistorical = false) const;

@@ -42,9 +42,9 @@
 #include <Poco/StringTokenizer.h>
 #include "extlibs/json.hpp"
 
-const std::string Burst::MinerConfig::WebserverUserPassphrase = "ms7zKm7QjsSOQEP13wHAWnraSp7yP7YSQdPzAjvO";
-const std::string Burst::MinerConfig::WebserverPassPassphrase = "CAAwj6RTQqXZGxbNjLVqr5FwAqT7GM9Y1wppNLRp";
-const std::string Burst::MinerConfig::HASH_DELIMITER = "::::";
+const std::string Burst::MinerConfig::webserverUserPassphrase = "ms7zKm7QjsSOQEP13wHAWnraSp7yP7YSQdPzAjvO";
+const std::string Burst::MinerConfig::webserverPassPassphrase = "CAAwj6RTQqXZGxbNjLVqr5FwAqT7GM9Y1wppNLRp";
+const std::string Burst::MinerConfig::hashDelimiter = "::::";
 
 void Burst::MinerConfig::rescan()
 {
@@ -72,6 +72,51 @@ bool Burst::MinerConfig::rescanPlotfiles()
 	return false;
 }
 
+void Burst::MinerConfig::checkPlotOverlaps() 
+{
+	log_system(MinerLogger::config, "Checking local plots for overlaps...");
+
+	Poco::Mutex::ScopedLock lock(mutex_);
+	auto totalOverlaps = 0ull;
+	const auto numPlots = getPlotFiles().size();
+
+	for (auto plotFileOne = 0; plotFileOne < numPlots; plotFileOne++) 
+	{
+		const auto pathOne = (getPlotFiles().at(plotFileOne))->getPath();
+		const auto startNonceOne = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathOne));
+		const auto nonceCountOne = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathOne));
+		for (auto plotFileTwo = plotFileOne+1; plotFileTwo < numPlots; plotFileTwo++)
+		{
+			const auto pathTwo = (getPlotFiles().at(plotFileTwo))->getPath();
+			if (pathOne != pathTwo && getAccountIdFromPlotFile(pathOne) == getAccountIdFromPlotFile(pathTwo))
+			{
+				const auto startNonceTwo = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathTwo));
+				const auto nonceCountTwo = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathTwo));
+				if (startNonceTwo >= startNonceOne && startNonceTwo < startNonceOne + nonceCountOne)
+				{
+					auto overlap = startNonceOne + nonceCountOne - startNonceTwo;
+					if (nonceCountTwo < overlap) overlap = nonceCountTwo;
+					log_error(MinerLogger::miner, "%s and %s overlap by %s nonces.", pathOne, pathTwo, std::to_string(overlap));
+					totalOverlaps++;
+				}
+				else if (startNonceOne >= startNonceTwo && startNonceOne < startNonceTwo + nonceCountTwo)
+				{
+					auto overlap = startNonceTwo + nonceCountTwo - startNonceOne;
+					if (nonceCountOne < overlap) overlap = nonceCountOne;
+					log_error(MinerLogger::miner, "%s and %s overlap by %s nonces.", pathTwo, pathOne,  std::to_string(overlap));
+					totalOverlaps++;
+				}
+			}
+		}
+	}
+	if (totalOverlaps > 0)
+	{
+		log_error(MinerLogger::miner, "Total overlaps found: " + std::to_string(totalOverlaps));
+	}
+	else
+		log_system(MinerLogger::config, "No overlaps found.");
+}
+
 void Burst::MinerConfig::printConsole() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
@@ -80,13 +125,21 @@ void Burst::MinerConfig::printConsole() const
 		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()) + " seconds");
 	
 	printBufferSize();
+	printBufferChunks();
 
 	printUrl(HostType::Pool);
 	printUrl(HostType::MiningInfo);
 	printUrl(HostType::Wallet);
 	printUrl(HostType::Server);
 
-	printTargetDeadline();
+	if (MinerConfig::getConfig().getSubmitProbability() > 0.)
+	{
+		printSubmitProbability();
+	}
+	else {
+		printTargetDeadline();
+	}
+
 
 	if (isLogfileUsed())
 		log_system(MinerLogger::config, "Log path : %s", getConfig().getPathLogfile().toString());
@@ -139,6 +192,12 @@ void Burst::MinerConfig::printBufferSize() const
 		std::to_string(getMaxBufferSizeRaw()) + " (" + memToString(getMaxBufferSize(), 0) + ")");
 }
 
+void Burst::MinerConfig::printBufferChunks() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	log_system(MinerLogger::config, "Buffer Chunks : %s", std::to_string(getBufferChunkCount()));
+}
+
 template <typename T>
 T getOrAdd(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValue)
 {
@@ -172,14 +231,14 @@ void Burst::MinerConfig::recalculatePlotsHash()
 	Poco::SHA1Engine sha;
 	Poco::DigestOutputStream shaStream{sha};
 
-	for (const auto plotFile : getPlotFiles())
+	for (const auto& plotFile : getPlotFiles())
 		shaStream << plotFile->getPath();
 
 	shaStream << std::flush;
 	plotsHash_ = Poco::SHA1Engine::digestToHex(sha.digest());
 
 	// we remember our total plot size
-	PlotSizes::set(plotsHash_, getTotalPlotsize() / 1024 / 1024 / 1024);
+	PlotSizes::set(Poco::Net::IPAddress{"127.0.0.1"}, getTotalPlotsize(), true);
 }
 
 bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
@@ -272,7 +331,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		return false;
 	}
 
-	auto checkCreateUrlFunc = [&config](Poco::JSON::Object::Ptr urlsObj, const std::string& name, Url& url,
+	const auto checkCreateUrlFunc = [](Poco::JSON::Object::Ptr urlsObj, const std::string& name, Url& url,
 		const std::string& defaultScheme, unsigned short defaultPort, const std::string& createUrl, bool forceInsert = false)
 	{
 		auto var = getOrAdd(urlsObj, name, createUrl);
@@ -305,7 +364,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			// do we need to create a logfile
 			logfile_ = getOrAdd(loggingObj, "logfile", true);
 
-			auto logOutput = getOrAdd(loggingObj, "outputType", std::string("terminal"));
+			const auto logOutput = getOrAdd(loggingObj, "outputType", std::string("terminal"));
 
 			if (logOutput == "terminal")
 				logOutputType_ = LogOutputType::Terminal;
@@ -336,7 +395,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			try
 			{
-				auto dirLogFile = getOrAdd(loggingObj, "path", std::string(""));
+				const auto dirLogFile = getOrAdd(loggingObj, "path", std::string(""));
 				setLogDir(dirLogFile);
 			}
 			catch (Poco::Exception& exc)
@@ -401,12 +460,12 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (config->has("mining"))
 			miningObj = config->get("mining").extract<Poco::JSON::Object::Ptr>();
 		else
-			miningObj = new Poco::JSON::Object;
+			miningObj.assign(new Poco::JSON::Object);
 
-		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 10);
+		submissionMaxRetry_ = getOrAdd(miningObj, "submissionMaxRetry", 10);
 		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 0u);
 
-		auto timeout = getOrAdd(miningObj, "timeout", 30);
+		const auto timeout = getOrAdd(miningObj, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
 
 		miningIntensity_ = getOrAdd(miningObj, "intensity", 0);
@@ -487,7 +546,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		{
 			try
 			{
-				Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
+				const Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
 				auto plotsArr = getOrAddExtract(miningObj, "plots", arr);
 
 				auto plotsDyn = miningObj->get("plots");
@@ -583,6 +642,37 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 			// combining all plotfiles to lists of plotfiles on the same device
 			recalculatePlotsHash();
+		}
+
+
+		// max historical data
+		{
+		auto maxHistoricalBlocks = miningObj->get("maxHistoricalBlocks");
+
+		if (!maxHistoricalBlocks.isEmpty())
+		{
+			setMaxHistoricalBlocks(maxHistoricalBlocks.convert<Poco::UInt64>());
+		}
+		else
+		{
+			miningObj->set("maxHistoricalBlocks", 360);
+			setMaxHistoricalBlocks(360);
+		}
+		}
+
+		// submit probability
+		{
+			auto submitProbability = miningObj->get("submitProbability");
+
+			if (!submitProbability.isEmpty())
+			{
+				setSubmitProbability( static_cast<double>(submitProbability) );
+			}
+			else
+			{
+				miningObj->set("submitProbability", 0.999);
+				setSubmitProbability( 0.999 );
+			}
 		}
 
 		// target deadline
@@ -711,7 +801,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			webserverObj.assign(new Poco::JSON::Object);
 
 		startServer_ = getOrAdd(webserverObj, "start", true);
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8080, "http://127.0.0.1:8080", startServer_);
+		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8124, "http://0.0.0.0:8124", startServer_);
 		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 64u);
 		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 32u);
 		cumulatePlotsizes_ = getOrAdd(webserverObj, "cumulatePlotsizes", true);
@@ -761,16 +851,15 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			};
 
 			if (!user.empty())
-				serverUser_ = getOrHash(user, HASH_DELIMITER, userId, credentials, WebserverUserPassphrase);
+				serverUser_ = getOrHash(user, hashDelimiter, userId, credentials, webserverUserPassphrase);
 
 			if (!pass.empty())
-				serverPass_ = getOrHash(pass, HASH_DELIMITER, passId, credentials, WebserverPassPassphrase);
+				serverPass_ = getOrHash(pass, hashDelimiter, passId, credentials, webserverPassPassphrase);
 		}
-
 
 		// forwarding
 		{
-			Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
+			const Poco::JSON::Array::Ptr arr(new Poco::JSON::Array);
 			auto forwardUrls = getOrAddExtract(webserverObj, "forwardUrls", arr);
 
 			for (const auto& url : *forwardUrls)
@@ -784,7 +873,26 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 					log_error(MinerLogger::config, "Invalid forwarding rule in config: %s", url.toString());
 				}
 			}
+		}
 
+		// certificate
+		{
+			auto certificateJson = webserverObj->get("certificate");
+			Poco::JSON::Object::Ptr certificate;
+			
+			if (!certificateJson.isEmpty())
+				certificate = certificateJson.extract<Poco::JSON::Object::Ptr>();
+
+			if (certificate.isNull())
+			{
+				certificate.assign(new Poco::JSON::Object);
+				certificate->set("path", "");
+				certificate->set("pass", "");
+				webserverObj->set("certificate", certificate);
+			}
+
+			serverCertificatePath_ = getOrAdd(certificate, "path", std::string{});
+			serverCertificatePass_ = getOrAdd(certificate, "pass", std::string{});
 		}
 
 		config->set("webserver", webserverObj);
@@ -837,11 +945,11 @@ uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 
 	Poco::UInt64 sum = 0;
 
-	for (auto plotDir : plotDirs_)
+	for (const auto& plotDir : plotDirs_)
 	{
 		sum += plotDir->getSize();
 		
-		for (auto relatedDir : plotDir->getRelatedDirs())
+		for (const auto& relatedDir : plotDir->getRelatedDirs())
 			sum += relatedDir->getSize();
 	}
 
@@ -862,6 +970,24 @@ float Burst::MinerConfig::getTimeout() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return timeout_;
+}
+
+double Burst::MinerConfig::getTargetDLFactor() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return targetDLFactor_;
+}
+
+double Burst::MinerConfig::getDeadlinePerformanceFac() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return deadlinePerformanceFac_;
+}
+
+double Burst::MinerConfig::getSubmitProbability() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return submitProbability_;
 }
 
 Burst::Url Burst::MinerConfig::getPoolUrl() const
@@ -885,19 +1011,19 @@ Burst::Url Burst::MinerConfig::getWalletUrl() const
 unsigned Burst::MinerConfig::getReceiveMaxRetry() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return receive_max_retry_;
+	return receiveMaxRetry_;
 }
 
 unsigned Burst::MinerConfig::getSendMaxRetry() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return send_max_retry_;
+	return sendMaxRetry_;
 }
 
 unsigned Burst::MinerConfig::getSubmissionMaxRetry() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return submission_max_retry_;
+	return submissionMaxRetry_;
 }
 
 unsigned Burst::MinerConfig::getHttp() const
@@ -916,6 +1042,16 @@ bool Burst::MinerConfig::getStartServer() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return startServer_;
+}
+
+const std::string& Burst::MinerConfig::getServerCertificatePath() const
+{
+	return serverCertificatePath_;
+}
+
+const std::string& Burst::MinerConfig::getServerCertificatePass() const
+{
+	return serverCertificatePass_;
 }
 
 Poco::UInt64 Burst::MinerConfig::getTargetDeadline(TargetDeadlineType type) const
@@ -990,8 +1126,8 @@ Poco::JSON::Object::Ptr Burst::MinerConfig::readOutput(Poco::JSON::Object::Ptr j
 
 	for (auto& output : Output_Helper::Output_Names)
 	{
-		auto id = output.first;
-		auto name = output.second;
+		const auto id = output.first;
+		const auto name = output.second;
 
 		auto obj = json->get(name);
 
@@ -1033,11 +1169,11 @@ bool Burst::MinerConfig::forPlotDirs(std::function<bool(PlotDir&)> traverseFunct
 	return success;
 }
 
-const std::string& Burst::MinerConfig::getPlotsHash() const
-{
-	Poco::Mutex::ScopedLock lock{ mutex_ };
-	return plotsHash_;
-}
+//const std::string& Burst::MinerConfig::getPlotsHash() const
+//{
+//	Poco::Mutex::ScopedLock lock{ mutex_ };
+//	return plotsHash_;
+//}
 
 const std::string& Burst::MinerConfig::getPassphrase() const
 {
@@ -1119,7 +1255,7 @@ void Burst::MinerConfig::setBufferSize(Poco::UInt64 bufferSize)
 void Burst::MinerConfig::setMaxSubmissionRetry(unsigned value)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	submission_max_retry_ = value;
+	submissionMaxRetry_ = value;
 }
 
 void Burst::MinerConfig::setTimeout(float value)
@@ -1127,6 +1263,34 @@ void Burst::MinerConfig::setTimeout(float value)
 	Poco::Mutex::ScopedLock lock(mutex_);
 	timeout_ = value;
 }
+
+void Burst::MinerConfig::setMaxHistoricalBlocks(Poco::UInt64 maxHistData)
+{
+	if (maxHistData < 30)
+		maxHistoricalBlocks_ = 30;
+	else if (maxHistData > 3600)
+		maxHistoricalBlocks_ = 3600;
+	else
+		maxHistoricalBlocks_ = maxHistData;
+}
+
+void Burst::MinerConfig::setSubmitProbability(double subP)
+{
+	if (subP < 0)
+		submitProbability_ = 0;
+	else if (subP >=0.999999)
+		submitProbability_ = 0.999999;
+	else
+		submitProbability_ = subP;
+
+	if (submitProbability_ > 0)
+		deadlinePerformanceFac_ = (1.0 + (1.0 - subP) / subP * log(1.0 - subP)) * 240.0;
+	else
+		deadlinePerformanceFac_ = 1.0 * 240.0;
+
+	targetDLFactor_ = -log(1.0 - submitProbability_) * 240.0;
+}
+
 
 void Burst::MinerConfig::setTargetDeadline(const std::string& target_deadline, TargetDeadlineType type)
 {
@@ -1157,6 +1321,12 @@ Poco::UInt64 Burst::MinerConfig::getMaxBufferSize() const
 Poco::UInt64 Burst::MinerConfig::getMaxBufferSizeRaw() const
 {
 	return maxBufferSizeMB_;
+}
+
+Poco::UInt64 Burst::MinerConfig::getMaxHistoricalBlocks() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return maxHistoricalBlocks_;
 }
 
 void Burst::MinerConfig::setMininigIntensity(unsigned intensity)
@@ -1223,6 +1393,11 @@ void Burst::MinerConfig::printTargetDeadline() const
 		log_system(MinerLogger::config, "Target deadline : %s", deadlineFormat(getTargetDeadline(TargetDeadlineType::Local)));
 }
 
+void Burst::MinerConfig::printSubmitProbability() const
+{
+		log_system(MinerLogger::config, "Submit probability : %s", numberToString(getSubmitProbability()));
+}
+
 bool Burst::MinerConfig::save() const
 {
 	return save(configPath_);
@@ -1282,7 +1457,9 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		mining.set("intensity", miningIntensity_);
 		mining.set("maxBufferSizeMB", maxBufferSizeMB_);
 		mining.set("maxPlotReaders", maxPlotReaders_);
-		mining.set("submissionMaxRetry", submission_max_retry_);
+		mining.set("submissionMaxRetry", submissionMaxRetry_);
+		mining.set("maxHistoricalBlocks", maxHistoricalBlocks_);
+		mining.set("submitProbability", submitProbability_);
 		mining.set("targetDeadline", deadlineFormat(targetDeadline_));
 		mining.set("timeout", static_cast<Poco::UInt64>(timeout_));
 		mining.set("walletRequestRetryWaitTime", walletRequestRetryWaitTime_);
@@ -1345,8 +1522,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// credentials
 		{
 			Poco::JSON::Object credentials;
-			credentials.set("pass", serverPass_.empty() ? "" : HASH_DELIMITER + serverPass_);
-			credentials.set("user", serverUser_.empty() ? "" : HASH_DELIMITER + serverUser_);
+			credentials.set("pass", serverPass_.empty() ? "" : hashDelimiter + serverPass_);
+			credentials.set("user", serverUser_.empty() ? "" : hashDelimiter + serverUser_);
 			webserver.set("credentials", credentials);
 		}
 
@@ -1364,6 +1541,14 @@ bool Burst::MinerConfig::save(const std::string& path) const
 			for (const auto& forward : getForwardingWhitelist())
 				forwardUrls.add(forward);
 			webserver.set("forwardUrls", forwardUrls);
+		}
+
+		// certificate
+		{
+			Poco::JSON::Object certificate;
+			certificate.set("path", getServerCertificatePath());
+			certificate.set("pass", getServerCertificatePass());
+			webserver.set("certificate", certificate);
 		}
 
 		json.set("webserver", webserver);
@@ -1559,8 +1744,8 @@ void Burst::MinerConfig::setPassphrase(const std::string& passphrase)
 void Burst::MinerConfig::setWebserverCredentials(const std::string& user, const std::string& pass)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	serverUser_ = hash_HMAC_SHA1(user, WebserverUserPassphrase);
-	serverPass_ = hash_HMAC_SHA1(pass, WebserverPassPassphrase);
+	serverUser_ = hash_HMAC_SHA1(user, webserverUserPassphrase);
+	serverPass_ = hash_HMAC_SHA1(pass, webserverPassPassphrase);
 }
 
 void Burst::MinerConfig::setStartWebserver(bool start)
@@ -1578,7 +1763,7 @@ bool Burst::MinerConfig::removePlotDir(const std::string& dir)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
-	auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
+	const auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
 	{
 		// TODO: look in Burst::MinerConfig::addPlotDir
 		return element->getPath() == dir;

@@ -28,9 +28,10 @@
 #include "wallet/Wallet.hpp"
 #include "wallet/Account.hpp"
 
-Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent)
+Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, std::string genSigStr, MinerData* parent, Poco::UInt64 blockTargetDeadline)
 	: blockHeight_ {blockHeight},
 	  baseTarget_ {baseTarget},
+	  blockTargetDeadline_{ blockTargetDeadline },
 	  genSigStr_ {genSigStr},
 	  parent_{parent}
 {
@@ -50,6 +51,7 @@ Burst::BlockData::BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, s
 	hash.update(blockHeight);
 	hash.close(&newGenSig[0]);
 
+	roundTime_ = 0;
 	scoop_ = (static_cast<int>(newGenSig[newGenSig.size() - 2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size() - 1]);
 
 	refreshBlockEntry();
@@ -230,6 +232,11 @@ void Burst::BlockData::setProgress(const std::string& plotDir, float progress, P
 		parent_->blockDataChangedEvent.notify(this, *json);
 }
 
+void Burst::BlockData::setRoundTime(double rTime)
+{
+	roundTime_ = rTime;
+}
+
 void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
 {
 	{
@@ -259,6 +266,16 @@ Poco::UInt64 Burst::BlockData::getBasetarget() const
 Poco::UInt64 Burst::BlockData::getDifficulty() const
 {
 	return 18325193796 / getBasetarget();
+}
+
+double Burst::BlockData::getRoundTime() const
+{
+	return roundTime_;
+}
+
+Poco::UInt64 Burst::BlockData::getBlockTargetDeadline() const
+{
+	return blockTargetDeadline_.load();
 }
 
 std::shared_ptr<Burst::Account> Burst::BlockData::getLastWinner() const
@@ -438,17 +455,17 @@ Burst::MinerData::~MinerData()
 {
 }
 
-std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig)
+std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 block, Poco::UInt64 baseTarget, const std::string& genSig, Poco::UInt64 blockTargetDeadline)
 {
 	std::unique_lock<std::mutex> lock{ mutex_ };
 
 	// save the old data in the historical container
 	if (blockData_ != nullptr)
 	{
-		const auto maxSize = 30;
+		const auto maxSize = MinerConfig::getConfig().getMaxHistoricalBlocks();
 
 		// if we reached the maximum size of blocks, forget the oldest
-		if (historicalBlocks_.size() + 1 > maxSize)
+		while (historicalBlocks_.size() + 1 > maxSize)
 			historicalBlocks_.pop_front();
 
 		// we clear all entries, because it is also in the logfile
@@ -461,7 +478,7 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 	}
 
 	lock.unlock();
-	blockData_ = std::make_shared<BlockData>(block, baseTarget, genSig, this);
+	blockData_ = std::make_shared<BlockData>(block, baseTarget, genSig, this, blockTargetDeadline);
 
 	lock.lock();
 	currentBlockheight_ = block;
@@ -561,6 +578,16 @@ const Poco::Timestamp& Burst::MinerData::getStartTime() const
 Poco::Timespan Burst::MinerData::getRunTime() const
 {
 	return Poco::Timestamp{} - getStartTime();
+}
+
+void Burst::BlockData::setBlockTime(Poco::UInt64 bTime)
+{
+	blockTime_ = bTime;
+}
+
+Poco::UInt64 Burst::BlockData::getBlockTime() const
+{
+	return blockTime_;
 }
 
 Poco::UInt64 Burst::MinerData::getBlocksMined() const

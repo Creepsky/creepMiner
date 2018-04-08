@@ -98,12 +98,15 @@ namespace Burst
 		 * Does NOT read new plot dirs from the configuration file!
 		 */
 		bool rescanPlotfiles();
+		void checkPlotOverlaps();
 		void printConsole() const;
 		void printConsolePlots() const;
 		void printUrl(HostType type) const;
 		void printTargetDeadline() const;
+		void printSubmitProbability() const;
 		static void printUrl(const Url& url, const std::string& url_name);
 		void printBufferSize() const;
+		void printBufferChunks() const;
 
 		/**
 		 * \brief Saves the current settings by creating a JSON Object for it and saving it
@@ -116,7 +119,7 @@ namespace Burst
 		 * \brief Saves the current settings by creating a JSON object for it and saving it
 		 * into a file.
 		 * \param path The path to the file, where the setting is written into.
-		 * \return true, if saved, false otherwise.
+		 * \return true, if saved, false otherwise
 		 */
 		bool save(const std::string& path) const;
 
@@ -137,6 +140,7 @@ namespace Burst
 
 		Poco::UInt64 getMaxBufferSize() const;
 		Poco::UInt64 getMaxBufferSizeRaw() const;
+		Poco::UInt64 getMaxHistoricalBlocks() const;
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
 		float getTimeout() const;
@@ -150,13 +154,17 @@ namespace Burst
 		unsigned getHttp() const;
 		const std::string& getConfirmedDeadlinesPath() const;
 		bool getStartServer() const;
-
+		const std::string& getServerCertificatePath() const;
+		const std::string& getServerCertificatePass() const;
 
 		Url getServerUrl() const;
+		double getSubmitProbability() const;
+		double getTargetDLFactor() const;
+		double getDeadlinePerformanceFac() const;
 		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		unsigned getMiningIntensity(bool real = true) const;
 		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
-		const std::string& getPlotsHash() const;
+		//const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		bool useInsecurePlotfiles() const;
 		bool isLogfileUsed() const;
@@ -198,8 +206,10 @@ namespace Burst
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(Poco::UInt64 bufferSize);
+		void setMaxHistoricalBlocks(Poco::UInt64 maxHistData);
 		void setMaxSubmissionRetry(unsigned value);
 		void setTimeout(float value);
+		void setSubmitProbability(double subP);
 		void setTargetDeadline(const std::string& target_deadline, TargetDeadlineType type);
 		void setTargetDeadline(Poco::UInt64 target_deadline, TargetDeadlineType type);
 		void setMininigIntensity(unsigned intensity);
@@ -240,12 +250,12 @@ namespace Burst
 		/**
 		 * \brief The passphrase, used by the webserver to hash (hmac) the username.
 		 */
-		static const std::string WebserverUserPassphrase;
+		static const std::string webserverUserPassphrase;
 
 		/**
 		 * \brief The passphrase, used by the webserver to hash (hmac) the password.
 		 */
-		static const std::string WebserverPassPassphrase;
+		static const std::string webserverPassPassphrase;
 
 		/**
 		 * \brief Returns the singleton-instance of the configuration.
@@ -255,21 +265,24 @@ namespace Burst
 		
 	private:
 		static Poco::JSON::Object::Ptr readOutput(Poco::JSON::Object::Ptr json);
-		static const std::string HASH_DELIMITER;
+		static const std::string hashDelimiter;
 
 		std::string configPath_;
 		std::vector<std::shared_ptr<PlotDir>> plotDirs_;
 		float timeout_ = 45.f;
-		unsigned send_max_retry_ = 3;
-		unsigned receive_max_retry_ = 3;
-		unsigned submission_max_retry_ = 10;
+		unsigned sendMaxRetry_ = 3;
+		unsigned receiveMaxRetry_ = 3;
+		unsigned submissionMaxRetry_ = 10;
 		unsigned http_ = 1;
 		std::string confirmedDeadlinesPath_ = "";
 		Url urlPool_;
 		Url urlMiningInfo_;
 		Url urlWallet_;
 		bool startServer_ = true;
-		Url serverUrl_{"http://127.0.0.1:8080"};
+		Url serverUrl_{"http://0.0.0.0:8124"};
+		double targetDLFactor_ = 1.0;
+		double deadlinePerformanceFac_ = 1.0;
+		double submitProbability_ = 0.999;
 		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;
 		unsigned miningIntensity_ = 0;
 		std::string plotsHash_;
@@ -277,6 +290,7 @@ namespace Burst
 		unsigned maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
 		Poco::UInt64 maxBufferSizeMB_ = 0;
+		Poco::UInt64 maxHistoricalBlocks_ = 0;
 		unsigned bufferChunkCount_ = 16;
 		unsigned walletRequestTries_ = 3;
 		unsigned walletRequestRetryWaitTime_ = 3;
@@ -300,6 +314,8 @@ namespace Burst
 		bool cumulatePlotsizes_ = true;
 		bool minerNameForwarding_ = true;
 		bool calculateEveryDeadline_ = false;
+		std::string serverCertificatePath_;
+		std::string serverCertificatePass_;
 		mutable Poco::Mutex mutex_;
 	};
 }

@@ -1,128 +1,263 @@
-<div class="col-md-3">
-	<!-- Progress -->
-	<div class="progress">
-		<div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="0"
-			aria-valuemin="0" aria-valuemax="100" style="width:0%">
-		</div>
-	</div>
-	<!-- Command Buttons -->
-	<div class="btn-group btn-group-justified" role="group" aria-label="commands">
-		<div class="btn-group" role="group">
-			<button type="button" class="btn btn-default" onclick="connectBlock();">
-				<span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
-				refresh
-			</button>
-		</div>
-		<div class="btn-group" role="group">
-			<button type="button" class="btn btn-default" onclick="toggleConfirmationSound();">
-				<span id="iconConfirmationSound" class="glyphicon" aria-hidden="true"></span>
-				toggle sound
-			</button>
-		</div>
-	</div>
-	<br />
-	<!-- Highscores -->
-	<div class="panel panel-success">
-		<div class="panel-heading">Highscores</div>
-		<div class="panel-body">
-			<div class="row">
-				<div class="col-md-6 col-xs-6">This block</div>
-				<div id="thisBlockBest" class="col-md-6 col-xs-6"></div>
+<!-- Modal -->
+<div class="modal fade" id="soundModal" tabindex="-1" role="dialog" aria-labelledby="soundModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="soundModalLabel">Enable nonce notifications</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+	        <div>
+	        	<p><i class="fa fa-info fa fa-2x pull-right"></i></p>
+	        	<p>
+	        	If you wish to use a custom notification <pre>alert.mp3</pre> please place it into the <b>public\sounds\</b> directory.
+        		</p>
+	        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-info" data-dismiss="modal">Okay</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row bs-component">
+    <!-- current block -->
+	<div class="col-lg-4" style="margin:0;padding:0">
+		<div class="col-lg-12" id="container">
+			<div class="btn-group d-flex" role="group">
+				<!-- refresh btn -->
+				<button type="button" class="btn btn-info w-100" onclick="connectBlock();" id="refreshButton">
+					<span class="fa fa-refresh"></span>
+					Refresh
+				</button>
+				<!-- sound btn -->
+				<button type="button" class="btn btn-info" onclick="toggleConfirmationSound();" data-toggle="modal" data-target="#soundModal">
+					<span id="iconConfirmationSound" class="fa"></span>
+					Sound
+				</button>
 			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Best (overall)</div>
-				<div id="bestOverall" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Best (30 rounds)</div>
-				<div id="bestHistorical" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Confirmed deadlines</div>
-				<div id="confirmedDeadlines" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Won blocks</div>
-				<div id="wonBlocks" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Mined blocks</div>
-				<div id="minedBlocks" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Average deadline</div>
-				<div id="avgDeadline" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Lowest difficulty</div>
-				<div id="lowestDiff" class="col-md-6 col-xs-6"></div>
-			</div>
-			<div class="row">
-				<div class="col-md-6 col-xs-6">Highest difficulty</div>
-				<div id="highestDiff" class="col-md-6 col-xs-6"></div>
+			<!-- progress bar -->
+			<div class="progress" style="margin-bottom:0">
+				<label class="progress-label" style="font-size:x-small;"></label>
+				<div id="progressBarVerify" class="progress-bar progress-bar-success progress-bar-striped bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+				<div id="progressBar" class="progress-bar progress-bar-info progress-bar-striped bg-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
 			</div>
 		</div>
-	</div>
-	<!-- Last Winner -->
-	<div id="lastWinnerContainer" class="panel panel-default" hidden>
-		<div class="panel-heading">Last winner</div>
-		<div id="lastWinner" class="panel-body">
-			<div id="lastWinnerNameRow" class="row" hidden>
-				<div class="col-md-5 col-xs-4">Name</div>
-				<div class="col-md-7 col-xs-8">
-					<a id="lastWinnerName" target="_blank"></a>
+		<!-- Nonce Display Options -->
+		<div class="col-lg-12 mm-hide">
+			<div class="row">
+				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show found nonce">
+					<div class="custom-control custom-checkbox">
+						<input type="checkbox" class="custom-control-input" id="cbNoncesFound" checked><label class="custom-control-label" for="cbNoncesFound"><i class="fa fa-compass" aria-hidden="true">&nbsp;Found</i></label>
+					</div>
 				</div>
-			</div>
-			<div class="row">
-				<div class="col-md-5 col-xs-4">Numeric</div>
-				<div class="col-md-7 col-xs-8">
-					<a id="lastWinnerNumeric" target="_blank"></a>
+				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show sent nonce">
+					<div class="custom-control custom-checkbox">
+						<input type="checkbox" class="custom-control-input" id="cbNoncesSent" checked><label class="custom-control-label" for="cbNoncesSent"><i class="fa fa-paper-plane" aria-hidden="true">&nbsp;Sent</i></label>
+					</div>
 				</div>
-			</div>
-			<div class="row">
-				<div class="col-md-5 col-xs-4">Address</div>
-				<div class="col-md-7 col-xs-8">
-					<a id="lastWinnerAddress" target="_blank"></a>
+				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show confirmed nonce">
+					<div class="custom-control custom-checkbox">
+						<input type="checkbox" class="custom-control-input" id="cbNoncesConfirmed" checked><label class="custom-control-label" for="cbNoncesConfirmed"><i class="fa fa-check" aria-hidden="true">&nbsp;Conf</i></label>
+					</div>
 				</div>
+                <div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Hide same nonce">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="cbHideSameNonces" checked><label class="custom-control-label" for="cbHideSameNonces"><i class="fa fa-eye-slash" aria-hidden="true">&nbsp;Same</i></label>
+                    </div>
+                </div>
+                <br>
 			</div>
 		</div>
 	</div>
-	</div>
-	<!-- Block data -->
-	<div id="container" class="col-md-6">
-	</div>
-	<div class="col-md-3">
-	<!-- Chart -->
-	<div class="panel panel-default">
-		<div class="panel-heading">Deadlines</div>
-		<div id="deadlinesChart" style="height: 150px; width: auto; margin: 10px"></div>
-		<div id="deadlinesInfo" class="panel-footer"></div>
-	</div>
-	<!-- System -->
-	<div class="panel panel-warning">
-		<div class="panel-heading">System</div>
-		<div id="system" class="panel-body">
-		</div>
-	</div>
-	<!-- Settings -->
-	<div class="panel panel-info">
-		<div class="panel-heading">Settings</div>
-		<div class="panel-body">
-			<div class="checkbox">
-				<label><input id="cbHideSameNonces" type="checkbox" checked>Hide same nonces</label>
-			</div>
-			<div class="checkbox">
-				<label><input id="cbNoncesFound" type="checkbox" checked>Found nonces</label>
-			</div>
-			<div class="checkbox">
-				<label><input id="cbNoncesSent" type="checkbox" checked>Sent nonces</label>
-			</div>
-			<div class="checkbox">
-				<label><input id="cbNoncesConfirmed" type="checkbox" checked>Confirmed nonces</label>
-			</div>
-			<div id="settingsDlComboboxes">
-			</div>
-			<button type="button" class="btn btn-default btn-md btn-block" onclick="resetLogSettings(); reparseMessages();">Reset</button>
-		</div>
-	</div>
+    <!-- stats block -->
+    <div class="col-lg-8">
+        <div class="card mb-12">
+            <h4 class="card-header text-white bg-primary">Statistics</h4>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <h5 class="card-title">Deadlines</h5>
+                        <div class="bs-component">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Best
+                                    <div id="bestOverall">---</div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Average
+                                    <span class="badge badge-primary badge-pill"><div id="avgDeadline">---</div></span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
+                                    Performance
+                                    <div id="deadlinePerformance">---</div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <h5 class="card-title">Blocks</h5>
+                        <div class="bs-component">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Mined
+                                    <div id="minedBlocks">---</div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="Number of blocks in which at least one deadline has been found and confirmed">
+                                    Confirmed
+                                    <div id="roundsSubmitted">---</div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Won
+                                    <div id="wonBlocks">---</div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <h5 class="card-title">Difficulty</h5>
+                        <div class="bs-component">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Lowest
+                                    <div id="lowestDiff">---</div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Highest
+                                    <div id="highestDiff">---</div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Mean
+                                    <div id="meanDiff">---</div>
+                                </li>
+
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <h5 class="card-title">Times</h5>
+                        <div class="bs-component">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Maximum scan
+                                    <span class="badge badge-secondary" id="maxRoundTime">N/A</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Average scan
+                                    <span class="badge badge-secondary" id="avgRoundTime" data-toggle="tooltip" data-placement="top" title = "" >N/A</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                    Average block
+                                    <span class="badge badge-secondary" id="avgBlockTime">N/A</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-lg-6">
+                        <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Deadlines</h5></div>
+                        <div class="col-md-12">
+                            <div id="deadlinesChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
+                            <div class="alert alert-info"><span id="deadlinesInfo">---</span><span class="fa fa-expand float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer"></span></div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Distribution</h5></div>
+
+                        <div class="col-md-12">
+                            <div id="deadlineDistributionChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
+                            <div id="deadlineDistributionInfo" class="alert alert-info">---</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Difficulty</h5></div>
+                        <div class="col-md-12">
+                            <div id="difficultyChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
+                            <div id="difficultyInfo" class="alert alert-info">---</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Block and Scan Times</h5></div>
+                        <div class="col-md-12">
+                            <div id="timeChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
+                            <div class="alert alert-info"><span id="timeInfo">---</span><span class="fa fa-expand float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer"></span> </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- system block -->
+        <div class="card mb-12">
+            <h4 class="card-header">System</h4>
+				<div class="card-body">
+					<div class="row">
+						<!-- System -->
+						<div class="row col-xs-12 col-md-12 col-lg-12" id="system">
+							<div class="col-lg-6 col-md-6 mm-hide">
+								<h5 class="card-title">URLs</h5>
+								<div class="bs-component">
+									<ul class="list-group">
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Pool
+											<div id="poolURL">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Mining
+											<div id="miningURL">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
+											Wallet
+											<div id="walletURL">---</div>
+										</li>
+									</ul>
+								</div>
+							</div>
+							<div class="col-lg-3 col-md-3">
+								<h5 class="card-title">Mining</h5>
+								<div class="bs-component">
+									<ul class="list-group">
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Plot size
+											<div id="plotSize">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" id="submitProbDL">
+											submitProb/targetDL
+											<div id="plotSize">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
+											Pool DL limit
+											<span class="badge badge-primary badge-pill"><div id="poolDL">---</div></span>
+										</li>
+									</ul>
+								</div>
+							</div>
+							<div class="col-lg-3 col-md-3">
+								<h5 class="card-title">Processing</h5>
+								<div class="bs-component">
+									<ul class="list-group">
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Readers
+											<div id="readers">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+											Intensity
+											<div id="intensity">---</div>
+										</li>
+										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
+											Buffer size
+											<div id="bufferSize">---</div>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+        </div>
+    </div>
 </div>

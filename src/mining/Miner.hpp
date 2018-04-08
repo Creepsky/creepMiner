@@ -59,6 +59,8 @@ namespace Burst
 		void addPlotReadNotifications(bool wakeUpCall = false);
 		bool wantRestart() const;
 
+		bool hasBlockData() const;
+		bool isProcessing() const;
 		Poco::UInt64 getScoopNum() const;
 		Poco::UInt64 getBaseTarget() const;
 		Poco::UInt64 getBlockheight() const;
@@ -85,6 +87,7 @@ namespace Burst
 		void setMaxPlotReader(unsigned max_reader);
 		static void setMaxBufferSize(Poco::UInt64 size);
 		void rescanPlotfiles();
+		void setIsProcessing(bool isProc);
 
 	private:
 		bool getMiningInfo();
@@ -100,7 +103,7 @@ namespace Burst
 		void onBenchmark(Poco::Timer& timer);
 		void onRoundProcessed(Poco::UInt64 blockHeight, double roundTime);
 
-		bool running_ = false, restart_ = false;
+		bool running_ = false, restart_ = false, isProcessing_ = false;
 		MinerData data_;
 		std::shared_ptr<PlotReadProgress> progressRead_, progressVerify_;
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;

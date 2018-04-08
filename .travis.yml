@@ -1,22 +1,23 @@
 language: cpp
-sudo: false
 before_install:
 - eval "${MATRIX_EVAL}"
 matrix:
   fast_finish: true
   include:
-#  - os: osx
-#    compiler: clang
-#    script:
-#    - conan install . --build=missing
-#    - cmake . -DNO_GPU=ON
-#    - make -j$(nproc)
-#    env:
-#    - NAME="osx clang" MATRIX_EVAL="brew install conan"
-#    cache:
-#      directories:
-#      - "$HOME/.conan"
+  - os: osx
+    sudo: false
+    compiler: clang
+    script:
+    - conan install . --build=missing
+    - cmake . -DNO_GPU=ON
+    - make -j$(nproc)
+    env:
+    - NAME="osx clang" MATRIX_EVAL="brew install conan"
+    cache:
+      directories:
+      - "$HOME/.conan"
   - os: linux
+    sudo: false
     addons:
       apt:
         sources:
@@ -47,7 +48,46 @@ matrix:
       api_key:
         secure: xs3GCmymdo/fo46+ELma466ZdnYtYnQtV68EE3wbhXJD1Kc4Wq+rRiHXIpR+fhWhDFsbaiM0KIhjbMwwmphnXOhcVXvcufxqtvMxEySWx9uPOsIQ+LoeElmiU4AmmnEerVOEYDACj//KianI6Zm70PIwUBYGBaW41x97jhe4WLoQdKPj/ORsEGh/oZtJfI05qXzW1UdF6labSD/4jcx6CEsiFFCAh7EeAZjB0rhqfknp1IGn3N1G+rN43zYgMs9D3ww9PRDZdGlMqYk4cJglCQQAqQa0I71LtNcgkKNxfh4JBz8qyHRrTPr4tQXhtz9IPrQFLmSKtCvTJjjmUZ5RE2FqhVPXxswBKEv43tsDklqDt/qGjlcuMZwnn3c18R2gkBx2kXpyie6ujXIxrWaiao6Mp+OS2knzb5ebI4fqj6G8+mwQNheuR5qcmnZVfgv6CyCLxVgIOZEGaq6TBS9+6FiP6pqpKP3ySM/etmQB8GwDz53aUYirykL7sjunYMxiqf7T6XSwqHiZJWZUVZVPNxhEft2BVaxwhCf78KasZd0tzFfsEb0NM8vfKSAkj4zTdYTW3it6iSjH30PJbOjDuYSMC1Aje/T5q8JnPXJcIB2/i1BkAp37VXgC6ebOT/cSQsliVptzZx4ZXjuIN8zkuf6ka6NYNKVYOFRv5pChJoc=
       branch: master
+#  - os: linux
+#    sudo: required
+#    addons:
+#      apt:
+#        sources:
+#        - ubuntu-toolchain-r-test
+#        packages:
+#        - g++-5
+#        - rpm
+#    before_install:
+#    - pip install conan --user
+#    - conan install . --build=missing
+#    - wget https://developer.nvidia.com/compute/cuda/9.1/Prod/local_installers/cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64
+#    - sudo dpkg -i cuda-repo-ubuntu1604-9-1-local_9.1.85-1_amd64
+#    - sudo apt-key add /var/cuda-repo-9.1/7fa2af80.pub
+#    - sudo apt-get update
+#    - sudo apt-get install cuda
+#    env:
+#    - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+#    script:
+#    - cmake .
+#    - make -j$(nproc)
+#    - make package
+#    cache:
+#      directories:#
+#      - "$HOME/.conan"
+#    deploy:
+#      provider: releases
+#      skip_cleanup: true
+#      file_glob: true
+#      file:
+#      - "*.deb"
+#      - "*.tar.gz"
+#      on:
+#        tags: true
+#      api_key:
+#        secure: xs3GCmymdo/fo46+ELma466ZdnYtYnQtV68EE3wbhXJD1Kc4Wq+rRiHXIpR+fhWhDFsbaiM0KIhjbMwwmphnXOhcVXvcufxqtvMxEySWx9uPOsIQ+LoeElmiU4AmmnEerVOEYDACj//KianI6Zm70PIwUBYGBaW41x97jhe4WLoQdKPj/ORsEGh/oZtJfI05qXzW1UdF6labSD/4jcx6CEsiFFCAh7EeAZjB0rhqfknp1IGn3N1G+rN43zYgMs9D3ww9PRDZdGlMqYk4cJglCQQAqQa0I71LtNcgkKNxfh4JBz8qyHRrTPr4tQXhtz9IPrQFLmSKtCvTJjjmUZ5RE2FqhVPXxswBKEv43tsDklqDt/qGjlcuMZwnn3c18R2gkBx2kXpyie6ujXIxrWaiao6Mp+OS2knzb5ebI4fqj6G8+mwQNheuR5qcmnZVfgv6CyCLxVgIOZEGaq6TBS9+6FiP6pqpKP3ySM/etmQB8GwDz53aUYirykL7sjunYMxiqf7T6XSwqHiZJWZUVZVPNxhEft2BVaxwhCf78KasZd0tzFfsEb0NM8vfKSAkj4zTdYTW3it6iSjH30PJbOjDuYSMC1Aje/T5q8JnPXJcIB2/i1BkAp37VXgC6ebOT/cSQsliVptzZx4ZXjuIN8zkuf6ka6NYNKVYOFRv5pChJoc=
+#      branch: master
   - os: linux
+    sudo: false
     addons:
       apt:
         sources:
@@ -74,6 +114,7 @@ matrix:
     env:
     - NAME="linux g++-7" - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     script:
+    - python -V
     - pip install conan --user
     - conan install . --build=missing
     - cmake . -DNO_GPU=ON

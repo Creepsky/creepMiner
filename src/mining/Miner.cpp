@@ -282,19 +282,40 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	// clear the plot read queue
 	plotReadQueue_.clear();
 
+	// Set dynamic targetDL for this round if a submitProbability is given
+	if (MinerConfig::getConfig().getSubmitProbability() > 0.)
+	{
+		const auto difficultyFl = 18325193796.0 / static_cast<float>(baseTarget);
+		const auto tarDlFac = MinerConfig::getConfig().getTargetDLFactor();
+		const auto totAccPlotsize = static_cast<double>(PlotSizes::getTotalBytes(PlotSizes::Type::Combined)) / 1024.f / 1024.f / 1024.f / 1024.f;
+
+		auto blockTargetDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local);
+		if (totAccPlotsize > 0 && MinerConfig::getConfig().getSubmitProbability() > 0.)
+			blockTargetDeadline = static_cast<Poco::UInt64>(tarDlFac * difficultyFl / totAccPlotsize);
+		const auto poolDeadline = MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool);
+
+		if (blockTargetDeadline < poolDeadline || poolDeadline == 0)
+			MinerConfig::getConfig().setTargetDeadline(blockTargetDeadline, TargetDeadlineType::Local);
+		else
+			MinerConfig::getConfig().setTargetDeadline(poolDeadline, TargetDeadlineType::Local);
+	}
+
+	// Set total run time of previous block
+	if (startPoint_.time_since_epoch().count() > 0)
+	{
+		const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint_;
+		const auto timeDiffSeconds = std::chrono::duration_cast<std::chrono::seconds>(timeDiff);
+		log_unimportant(MinerLogger::miner, "Block %s ended in %s", numberToString(blockHeight - 1),
+			deadlineFormat(timeDiffSeconds.count()));
+		data_.getBlockData()->setBlockTime(timeDiffSeconds.count());
+	}
+
 	// setup new block-data
-	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr);
+	auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr, MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local));
+	setIsProcessing(true);
 
 	// printing block info and transfer it to local server
 	{
-		if (startPoint_.time_since_epoch().count() > 0)
-		{
-			const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint_;
-			const auto timeDiffSeconds = std::chrono::duration_cast<std::chrono::seconds>(timeDiff);
-			log_unimportant(MinerLogger::miner, "Block %s ended in %s", numberToString(blockHeight - 1),
-				deadlineFormat(timeDiffSeconds.count()));
-		}
-
 		const auto difficulty = block->getDifficulty();
 		const auto difficultyDifference = data_.getDifficultyDifference();
 		std::string diffiultyDifferenceToString;
@@ -311,11 +332,13 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 			"scoop#     \t%Lu\n"
 			"baseTarget#\t%s\n"
 			"gensig     \t%s\n"
-			"difficulty \t%s (%s)\n" +
+			"difficulty \t%s (%s)\n"
+			"targetDL \t%s\n" +
 			std::string(50, '-'),
 			numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
 			numberToString(difficulty),
-			diffiultyDifferenceToString
+			diffiultyDifferenceToString,
+			deadlineFormat(MinerConfig::getConfig().getTargetDeadline())
 		);
 
 		data_.getBlockData()->refreshBlockEntry();
@@ -328,7 +351,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	progressVerify_->reset(blockHeight, MinerConfig::getConfig().getTotalPlotsize());
 
 	PlotSizes::nextRound();
-	PlotSizes::refresh(MinerConfig::getConfig().getPlotsHash());
+	PlotSizes::refresh(Poco::Net::IPAddress{"127.0.0.1"});
 	startPoint_ = std::chrono::high_resolution_clock::now();
 
 	addPlotReadNotifications();
@@ -380,9 +403,19 @@ Poco::UInt64 Burst::Miner::getBlockheight() const
 	return data_.getCurrentBlockheight();
 }
 
+bool Burst::Miner::hasBlockData() const
+{
+	return data_.getBlockData() != nullptr;
+}
+
 Poco::UInt64 Burst::Miner::getScoopNum() const
 {
 	return data_.getCurrentScoopNum();
+}
+
+bool Burst::Miner::isProcessing() const
+{
+	return isProcessing_;
 }
 
 Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight,
@@ -533,17 +566,29 @@ bool Burst::Miner::getMiningInfo()
 						MinerConfig::getConfig().setTargetDeadline(target_deadline_pool, TargetDeadlineType::Pool);
 
 						// if its changed, print it
-						if (target_deadline_pool_before != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
-							log_system(MinerLogger::config,
-								"got new target deadline from pool\n"
-								"\told pool target deadline:    %s\n"
-								"\tnew pool target deadline:    %s\n"
-								"\ttarget deadline from config: %s\n"
-								"\tlowest target deadline:      %s",
-								deadlineFormat(target_deadline_pool_before),
-								deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)),
-								deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
-								deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+						if (MinerConfig::getConfig().getSubmitProbability() == 0.)
+						{
+							if (target_deadline_pool_before != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
+								log_system(MinerLogger::config,
+									"got new target deadline from pool\n"
+									"\told pool target deadline:    %s\n"
+									"\tnew pool target deadline:    %s\n"
+									"\ttarget deadline from config: %s\n"
+									"\tlowest target deadline:      %s",
+									deadlineFormat(target_deadline_pool_before),
+									deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)),
+									deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
+									deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+						}
+						else {
+							if (target_deadline_pool_before != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
+								log_system(MinerLogger::config,
+									"got new target deadline from pool\n"
+									"\told pool target deadline:    %s\n"
+									"\tnew pool target deadline:    %s",
+									deadlineFormat(target_deadline_pool_before),
+									deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)));
+						}
 					}
 
 					updateGensig(gensig, newBlockHeight, std::stoull(baseTargetStr));
@@ -646,10 +691,12 @@ void Burst::Miner::onBenchmark(Poco::Timer& timer)
 void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 {
 	const auto block = data_.getBlockData();
+	setIsProcessing(false);
 
 	if (block == nullptr || block->getBlockheight() != blockHeight)
 		return;
 
+	block->setRoundTime(roundTime);
 	const auto bestDeadline = block->getBestDeadline(BlockData::DeadlineSearchType::Found);
 
 	log_information(MinerLogger::miner, "Processed block %s\n"
@@ -809,4 +856,11 @@ void Burst::Miner::rescanPlotfiles()
 		// then we send all plot dirs and files
 		data_.getBlockData()->refreshPlotDirs();
 	}
+}
+
+void Burst::Miner::setIsProcessing(bool isProc)
+{
+	Poco::Mutex::ScopedLock lock(worker_mutex_);
+
+	isProcessing_ = isProc;
 }

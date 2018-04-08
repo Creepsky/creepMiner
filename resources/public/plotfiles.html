@@ -1,41 +1,74 @@
-<div class="col-md-3">
-	<!-- Plot-Dirs -->
-	<div class="panel panel-default">
-		<div class="panel-heading">Dirs</div>
-		<!--<ul id="plotDirList" class="list-group">
-		</ul>-->
-		<div class="panel-body">
-			<!-- Command Buttons -->
-			<div class="btn-group btn-group-justified" role="group" aria-label="commands">
-				<div class="btn-group" role="group">
-					<button type="button" class="btn btn-default" onclick="$.get('/rescanPlotfiles');">
-						<span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
-						rescan
-					</button>
-				</div>
-			</div>
-			<br />
-			<div id="plotDirList" class="list-group">
-			</div>
-		</div>
-	</div>
+<!-- Modal -->
+<div class="modal fade" id="checkAllModal" tabindex="-1" role="dialog" aria-labelledby="checkAllModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="checkAllModalLabel">Validating all plot files!</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+            <div>
+                <p><i class="fa fa-info fa fa-2x pull-right"></i></p>
+                <p>
+                Validating all plots is a intense process and can take a while to run. You may observe the progress by selecting the plot directory.
+                </p>
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-warning" onclick="checkAllPlotFiles();" data-dismiss="modal">Okay, do it!</button>
+      </div>
+    </div>
+  </div>
 </div>
-<div class="col-md-9">
-	<!-- Plot Files -->
-	<div class="panel panel-default">
-		<div class="panel-heading">Files</div>
-		<table class="table table-hover">
-			<thead>
-				<tr>
-					<th>Account</th>
-					<th>Start nonce</th>
-					<th>Nonces</th>
-					<th>Staggersize</th>
-					<th>Size</th>
-				</tr>
-			</thead>
-			<tbody id="plotFileDiv">
-			</tbody>
-		</table>
-	</div>
+
+<div class="row bs-component">
+    <!-- plot locations -->
+    <div class="col-md-3" style="margin:0;padding:0">
+        <div class="col-lg-12" id="container">
+            <div class="btn-group d-flex" role="group">
+                <!-- rescan btn -->
+                <button type="button" class="btn btn-info w-100" onclick="$.get('/rescanPlotfiles');">
+                <span data-toggle='tooltip' data-placement='bottom' data-original-title='Rescan plot folders for new or removed plot files.'>
+                    <span class="fa fa-search"></span>
+                    Rescan
+                </span>
+                </button>
+                <!-- validate btn, trigger modal -->
+                <button type="button" class="btn btn-info" id="CheckAllButton" data-toggle="modal" data-target="#checkAllModal">
+                <span data-toggle='tooltip' data-placement='bottom' data-original-title='Validate the integrity of all plot files. This may take a while.'>
+                    <span class="fa fa-superpowers"></span>
+                    Validate all
+                </span>
+                </button>
+            </div>
+            <!-- Directories -->
+            <div class="card mb-12">
+                <h4 class="card-header bg-success text-white">Directories</h4>
+                <div class="card-body">
+                    <div id="plotDirList" class="list-group"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- plot files -->
+    <div class="col-md-9">
+        <div class="card mb-12">
+            <h4 class="card-header text-white bg-primary">Files</h4>
+            <div class="col-lg-12">
+                <div class="row card-header" style="padding-left:0;padding-right:0">
+                    <div class="col-xs-3 col-md-3">Account</div>
+                    <div class="col-xs-2 col-md-2">Start nonce</div>
+                    <div class="col-xs-2 col-md-1">Nonces</div>
+                    <div class="col-xs-2 col-md-1">Stagger</div>
+                    <div class="col-xs-1 col-md-2">Size</div>
+                    <div class="col-xs-2 col-md-3" data-toggle='tooltip' data-placement='top' data-original-title='Pressing the button will Validate the integrity of 32 random scoops of 32 random nonces in the plot file'>Integrity</div>
+                </div>
+            </div>
+            <ul class="list-group" id="plotFileDiv">
+            </ul>
+        </div>
+    </div>
 </div>

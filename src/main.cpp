@@ -1,22 +1,22 @@
 // ==========================================================================
-// 
+//
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
 // Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301  USA
-// 
+//
 // ==========================================================================
 
 #define CUDA_API_PER_THREAD_DEFAULT_STREAM
@@ -35,8 +35,6 @@
 #include <Poco/NestedDiagnosticContext.h>
 #include "webserver/MinerServer.hpp"
 #include <Poco/Logger.h>
-#include "network/Request.hpp"
-#include <Poco/Net/HTTPRequest.h>
 #include "mining/MinerCL.hpp"
 #include "gpu/impl/gpu_cuda_impl.hpp"
 #include <Poco/Util/OptionSet.h>
@@ -55,11 +53,19 @@ public:
 	~SslInitializer();
 };
 
+class KeyConfigHandler: public Poco::Net::PrivateKeyPassphraseHandler
+{
+public:
+	explicit KeyConfigHandler(bool server);
+	~KeyConfigHandler() override;
+	void onPrivateKeyRequested(const void*, std::string& privateKey) override;
+};
+
 struct Arguments
 {
 	Arguments();
 	bool process(int argc, const char* argv[]);
-	
+
 	bool helpRequested = false;
 	std::string confPath = "mining.conf";
 
@@ -84,14 +90,14 @@ int main(const int argc, const char* argv[])
 		return EXIT_SUCCESS;
 
 	Burst::MinerLogger::setup();
-	
+
 	// create a message dispatcher..
 	//auto messageDispatcher = Burst::Message::Dispatcher::create();
 	// ..and start it in its own thread
 	//Poco::ThreadPool::defaultPool().start(*messageDispatcher);
 
 	const auto general = &Poco::Logger::get("general");
-	
+
 #ifdef NDEBUG
 	std::string mode = "Release";
 #else
@@ -105,7 +111,7 @@ int main(const int argc, const char* argv[])
 	const auto checkAndPrint = [&](bool flag, const std::string& text) {
 		sstream << ' ' << (flag ? '+' : '-') << text;
 	};
-	
+
 	checkAndPrint(Cuda, "CUDA");
 	checkAndPrint(OpenCl, "OpenCL");
 	checkAndPrint(Sse4, "SSE4");
@@ -119,55 +125,25 @@ int main(const int argc, const char* argv[])
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
 	log_information(general, "Burst :   BURST-JBKL-ZUAV-UXMB-2G795");
 	log_information(general, "----------------------------------------------");
-	
+
 	try
 	{
 		using namespace Poco;
 		using namespace Net;
-		
+
 		SslInitializer sslInitializer;
 		HTTPSStreamFactory::registerFactory();
 
-		const SharedPtr<InvalidCertificateHandler> ptrCert = new AcceptCertificateHandler(false); // ask the user via console
-		const Context::Ptr ptrContext = new Context(Context::CLIENT_USE, "");
-		SSLManager::instance().initializeClient(nullptr, ptrCert, ptrContext);
+		const SharedPtr<InvalidCertificateHandler> ptrCert(new AcceptCertificateHandler(false));
+		const Context::Ptr clientContext(new Context(Context::CLIENT_USE, ""));
+		SSLManager::instance().initializeClient(nullptr, ptrCert, clientContext);
 
 		HTTPSessionInstantiator::registerInstantiator();
 		HTTPSSessionInstantiator::registerInstantiator();
 
-		// check for a new version
-		try
-		{
-			// fetch the online version file
-			const std::string host = "https://github.com/Creepsky/creepMiner";
-			const std::string versionPrefix = "version:";
-			//
-			Burst::Url url{ "https://raw.githubusercontent.com" };
-			//
-			HTTPRequest getRequest{ "GET", "/Creepsky/creepMiner/master/version.id" };
-			//
-			Burst::Request request{ url.createSession() };
-			auto response = request.send(getRequest);
-			//
-			std::string responseString;
-			//
-			if (response.receive(responseString))
-			{
-				// first we check if the online version begins with the prefix
-				if (Poco::icompare(responseString, 0, versionPrefix.size(), versionPrefix) == 0)
-				{
-					const auto onlineVersionStr = responseString.substr(versionPrefix.size());
-
-					Burst::Version onlineVersion{ onlineVersionStr };
-
-					if (onlineVersion > Burst::Settings::Project.version)
-						log_system(general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
-				}
-			}
-		}
-		// just skip if version could not be determined
-		catch (...)
-		{ }
+		// start versionChecker timer thread , checking online version every 30 minutes
+		Poco::Timer checkVersionTimer(100, 1800000);
+		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(Burst::Settings::Project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
 
 		auto running = true;
 
@@ -179,7 +155,7 @@ int main(const int argc, const char* argv[])
 			// the config could not be loaded, look for a config in the creepMiner home dir
 			if (!configLoaded)
 			{
-				log_information(general, "Could not load config file %s", arguments.confPath);
+				log_information(general, "Could not load config %s", arguments.confPath);
 
 				Path minerRootPath(Path::home());
 				minerRootPath.pushDirectory(".creepMiner");
@@ -187,16 +163,16 @@ int main(const int argc, const char* argv[])
 				File(minerRootPath).createDirectory();
 
 				Path minerHomePath(minerRootPath);
-				minerHomePath.pushDirectory(std::string(Project.version.literal));
+				minerHomePath.pushDirectory(std::string(Project.getVersion()));
 
 				if (File(minerHomePath).createDirectory())
-					log_information(general, "Miner home directory created: %s", minerHomePath.toString());
+					log_information(general, "Home directory has created: %s", minerHomePath.toString());
 
 				Path homeConfigPath(minerHomePath);
 				homeConfigPath.append("mining.conf");
 				const auto homeConfig = homeConfigPath.toString();
 
-				log_information(general, "Trying to load the config file %s", homeConfig);
+				log_information(general, "Trying to load config %s", homeConfig);
 				configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
 
 				// if there is also no config in the home dir, create one in the home dir
@@ -210,9 +186,9 @@ int main(const int argc, const char* argv[])
 					// and save it in the config
 					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
 					Burst::MinerConfig::getConfig().useLogfile(true);
-					
+
 					if (!Burst::MinerConfig::getConfig().save(homeConfig))
-						log_error(Burst::MinerLogger::general, "Could not save the current settings!");
+						log_error(Burst::MinerLogger::general, "Could not save current settings!");
 
 					// load the freshly created config in the home dir
 					configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
@@ -221,7 +197,23 @@ int main(const int argc, const char* argv[])
 
 			if (configLoaded)
 			{
-				log_information(general, "Config file loaded: %s", Burst::MinerConfig::getConfig().getPath());
+				log_information(general, "Config loaded: %s", Burst::MinerConfig::getConfig().getPath());
+
+				if (!Burst::MinerConfig::getConfig().getServerCertificatePath().empty())
+				{
+#ifdef _WIN32
+					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
+						Burst::MinerConfig::getConfig().getServerCertificatePath(),
+						Context::VERIFY_RELAXED, Context::OPT_LOAD_CERT_FROM_FILE | Context::OPT_USE_STRONG_CRYPTO));
+#elif defined __linux__ || defined __APPLE__
+					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
+						Burst::MinerConfig::getConfig().getServerCertificatePath(),
+						Context::VERIFY_RELAXED));
+#endif
+
+					const SharedPtr<PrivateKeyPassphraseHandler> privateKeyPassphraseHandler(new KeyConfigHandler(true));
+					SSLManager::instance().initializeServer(privateKeyPassphraseHandler, ptrCert, serverContext);
+				}
 
 				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL" &&
 					!Burst::MinerCL::getCL().initialized())
@@ -243,6 +235,7 @@ int main(const int argc, const char* argv[])
 				}
 
 				Burst::MinerLogger::setChannelMinerData(&miner.getData());
+				Burst::MinerConfig::getConfig().checkPlotOverlaps();
 
 				miner.run();
 				server.stop();
@@ -294,12 +287,15 @@ Arguments::Arguments()
 {
 	using Poco::Util::Option;
 
-	options_.addOption(Option("help", "h", "Display help information")
+	options_.addOption(Option("help", "h", "Display this help information")
 		.required(false)
 		.repeatable(false)
 		.callback(Poco::Util::OptionCallback<Arguments>(this, &Arguments::displayHelp)));
 
-	options_.addOption(Option("config", "c", "Path to the config file")
+	options_.addOption(Option("config", "c", "Path to miner config file\n"
+        "e.g. Windows -c d:\\creepMiner\\miner.config\n"
+        "     or      --config=c:\\creepMiner\\miner.config\n"
+        "e.g. linux   -c /path/miner.config")
 		.required(false)
 		.repeatable(false)
 		.argument("path")
@@ -349,7 +345,7 @@ void Arguments::displayHelp(const std::string& name, const std::string& value)
 	helpFormatter.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
 	helpFormatter.setCommand("creepMiner");
 	helpFormatter.setUsage("<options>");
-	helpFormatter.setHeader("Burstcoin cryptocurrency CPU and GPU miner.");
+	helpFormatter.setHeader("Burstcoin Proof-of-Capacity CPU and GPU miner.");
 	helpFormatter.setFooter("Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)");
 	helpFormatter.setAutoIndent();
 	helpFormatter.format(std::cout);
@@ -360,4 +356,16 @@ void Arguments::displayHelp(const std::string& name, const std::string& value)
 void Arguments::setConfPath(const std::string& name, const std::string& value)
 {
 	confPath = value;
+}
+
+KeyConfigHandler::KeyConfigHandler(bool server)
+	: PrivateKeyPassphraseHandler{server}
+{}
+
+KeyConfigHandler::~KeyConfigHandler()
+{};
+
+void KeyConfigHandler::onPrivateKeyRequested(const void*, std::string& privateKey)
+{
+	privateKey = Burst::MinerConfig::getConfig().getServerCertificatePass();
 }

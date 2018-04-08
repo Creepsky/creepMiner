@@ -4,67 +4,161 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
     <title>%title%</title>
-
-    <!-- Bootstrap -->
-    <link href="css/cerulean.min.css" rel="stylesheet">
-	<!-- Custom css -->
-    <link href="css/creepMiner.css" rel="stylesheet">			
- 	<script>
- 		var nullDeadline = "%nullDeadline%";
- 	</script>	
-	<style>
-	body
-	{
-		word-wrap: break-word;
-	}
-	</style>
-		
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <link rel="stylesheet" href="css/custom.min.css">
+	<link rel="stylesheet" href="https://bootswatch.com/_vendor/bootstrap/dist/css/bootstrap.min.css" media="screen">
+    <!-- Themes -->
+	<link rel="alternate stylesheet" title="cerulean" href="https://bootswatch.com/4/cerulean/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="cosmo" href="https://bootswatch.com/4/cosmo/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="cyborg" href="https://bootswatch.com/4/cyborg/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="darkly" href="https://bootswatch.com/4/darkly/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="flatly" href="https://bootswatch.com/4/flatly/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="journal" href="https://bootswatch.com/4/journal/bootstrap.min.css" type="text/css">
+	<link rel="alternate stylesheet" title="litera" href="https://bootswatch.com/4/litera/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="lumen" href="https://bootswatch.com/4/lumen/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="lux" href="https://bootswatch.com/4/lux/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="materia" href="https://bootswatch.com/4/materia/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="minty" href="https://bootswatch.com/4/minty/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="pulse" href="https://bootswatch.com/4/pulse/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="sandstone" href="https://bootswatch.com/4/sandstone/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="simplex" href="https://bootswatch.com/4/simplex/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="sketchy" href="https://bootswatch.com/4/sketchy/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="slate" href="https://bootswatch.com/4/slate/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="solar" href="https://bootswatch.com/4/solar/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="spacelab" href="https://bootswatch.com/4/spacelab/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="superhero" href="https://bootswatch.com/4/superhero/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="united" href="https://bootswatch.com/4/united/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="yeti" href="https://bootswatch.com/4/yeti/bootstrap.min.css" type="text/css">
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->	
+    <![endif]-->
+    <script> var nullDeadline = "%nullDeadline%";</script>
   </head>
   <body>
-	<br />
-    <div class="container-fluid">
-		<nav class="navbar navbar-default">
-			<div class="container-fluid">
-				<div class="navbar-header">
-					<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-						<span class="sr-only">Toggle navigation</span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-						<span class="icon-bar"></span>
-					</button>
-					<a class="navbar-brand" href="/" target="_self">
-						<img src="images/icon.png" alt="%title%" class="img-responsive" style="height: 20px">
-					</a>
-					<a class="navbar-brand">%title%</a>
-				</div>
-				<div id="navbar" class="collapse navbar-collapse">
-					<ul class="nav navbar-nav">
-						<li id="btnBlock"><a href="/">Block</a></li>
-						<li id="btnPlotfiles"><a href="/plotfiles">Plot-Files</a></li>
-						<li id="btnSettings"><a href="/settings">Settings</a></li>
-						<li id="btnSettings"><a href="/logout">Logout</a></li>
-					</ul>
-				</div>
-			</div>
-		</nav>
-		%content%
-	</div>
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="js/bootstrap.min.js"></script>
-	<script src="js/jquery.flot.min.js"></script>
-	<script src="js/jquery.flot.time.min.js"></script>
-	<script src="js/biginteger.js"></script>
-	<script src="js/general.js"></script>
-	%includes%
+    <div class="navbar navbar-expand-lg fixed-top navbar-dark bg-primary" style="padding:0rem 1rem">
+        <div class="container">
+            <!-- logo & title -->
+            <img src="img/icon.png" alt="%title%" class="img-responsive img-logo">&nbsp;<a href="../" class="navbar-brand brand-cm" id="server-name"></a>
+            <!-- mobile navigation -->
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <!-- main nav bar -->
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav">
+                    <li class="nav-item" id="btnBlock">
+                        <a class="nav-link" href="/">Block</a>
+                    </li>
+                    <li class="nav-item" id="btnPlots">
+                        <a class="nav-link" href="/plotfiles">Plots</a>
+                    </li>
+                    <li class="nav-item mm-hide" id="btnSettings">
+                        <a class="nav-link" href="/settings">Settings</a>
+                    </li>
+                    <li class="nav-item" id="btnAbout" data-toggle='tooltip' data-placement='bottom' data-original-title=''>
+                        <a href="" class="nav-link" data-toggle="modal" data-target="#aboutModal">About</a>
+                    </li>
+                </ul>
+                <!-- right nav bar-->
+                <ul class="nav navbar-nav ml-auto">
+                        <!-- theme selector -->
+                     <li class="nav-item dropdown">
+					   <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Themes <span class="caret"></span></a>
+					   <div class="dropdown-menu" aria-labelledby="themes" id="themeSelector">
+					   </div>
+					 </li>
+                    <!-- sign out btn -->
+                    <li class="nav-item mm-hide" id="btnSignOut">
+                        <a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i>Sign Out</a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!-- render page content -->
+    <div class="container-fluid">%content%</div>
+    <!-- js CDN plugins, or local js -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.time.min.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/v4-shims.js"></script>
+    <script src="js/biginteger.min.js"></script>
+    <script src="js/general.js"></script>
+	<script>
+	    if(getCookie("theme")){ 
+			$('link[rel*=jquery]').remove(); 
+			$('head').append('<link rel="stylesheet jquery" href="'+getCookie("theme")+'" type="text/css" />');
+		}
+	</script>
+    <!-- About Modal -->
+    <div class="modal fade bd-about-modal-lg" tabindex="-1" role="dialog" aria-labelledby="aboutModalLabel" aria-hidden="true" aria-keyboard="false" bd-about-modal-lg id="aboutModal">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+            <!-- head -->
+                <div class="modal-header">
+                    <h5 class="modal-title" id="aboutModalLabel">About creepMiner</h5>
+                    <a class="btn btn-inf active close" data-dismiss="modal" role="button" data-pressed="true">&times;</a>
+                </div>
+            <!-- body -->
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row bs-component">
+                            <div class="col-lg-12">
+                                <div class="card mb-12">
+                                    <!-- Version -->
+                                    <h4 class="card-header text-white bg-success" id="versionCardHeader">Version</h4>
+                                    <div class="card-body" id="versionCard">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center list-cm"><span class="badge badge-primary">Running</span><span id="runningVer"></span></li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center list-cm"><span class="badge badge-success">Latest</span><span id="latestVer"></span></li>
+                                    </div>
+                                    <!-- About creepMiner -->
+                                    <h4 class="card-header text-white bg-primary" id="versionCardHeader">Information</h4>
+                                    <div class="card-body" id="versionCard">
+                                        <p>creepMiner is an open source client application for burst mining. You can access the project on Github:</p>
+                                        <ul class="fa-ul">
+                                          <li><span class="fa-li"><i class="fas fa-file-archive"></i></span><a href="https://github.com/Creepsky/creepMiner/releases" target="blank_">Releases</a></li>
+                                          <li><span class="fa-li"><i class="fas fa-file-code"></i></span><a href="https://github.com/Creepsky/creepMiner" target="blank_">Code</a></li>
+                                        </ul>
+                                        <p>If you would like to chat with us or are looking for help please join our 
+                                            <a href="https://discord.gg/YtwvuP" target="blank_" data-toggle="tooltip" data-placement="bottom" title="Discord server"><i class="fab fa-discord"></i></a>. Should you encounter any problems please speak to us first in Discord else open a <a href="https://github.com/Creepsky/creepMiner/issues" target="blank_" data-toggle="tooltip" data-placement="bottom" title="github issue"><i class="fab fa-github-square"></i></a> with the relevant information.
+                                        </p>
+                                    </div>
+                                    <!-- Donate -->
+                                    <h4 class="card-header text-white bg-info" id="versionCardHeader">Donate</h4>
+                                    <div class="card-body" id="versionCard">
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <b>Main author:</b>
+                                                <ul class="fa-ul">
+                                                  <li><span class="fa-li"><i class="fab fa-connectdevelop"></i></span><a href="https://github.com/Creepsky" target="blank_"><span class="badge badge-info">Creepsky</span></a><small>&nbsp;(core):<br><b>BURST-JBKL-ZUAV-UXMB-2G795</b></small></li>
+                                                </ul>
+                                                <b>Contributors:</b>
+                                                <ul class="fa-ul">
+                                                  <li><span class="fa-li"><i class="far fa-life-ring"></i></span><a href="https://github.com/nitr8" target="blank_"><span class="badge badge-primary">nitr8</span></a><small>&nbsp;(front-end)<br><b>BURST-2ZXJ-NC7Q-PM3W-GFU97</b></small></li>
+                                                  <li><span class="fa-li"><i class="far fa-life-ring"></i></span><a href="https://github.com/Herscht" target="blank_"><span class="badge badge-primary">Herscht</span></a><small>&nbsp;(front-end / back-end)<br><b>BURST-HWKA-CTBB-J69E-79YHU</b></small></li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <a href="https://github.com/Creepsky/creepMiner" target="blank_">
+                                                    <img class="float-right" alt="creepMiner" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADICAMAAACahl6sAAAA9lBMVEUAAAAAcOoZc9EadtkZddYZc9IZc9MUbMYXcdAadtkZd9oZc88ZctEZdNMKbMwacM8ZdNQaeNoZc9EZdNMZc9QZddcZddcZddYZdNQWcc4Zcc4Tb8oXbcUZddcZddcaddcZctAZddYZdNUZdNUacMsZddcZc9QZdNMab70ZdNUYctEZdNUZc9IZddcZddYZc9IZdNQYdNUZdNUZc9MZc9QZcM4WbckZddYZdNUYdNMYcs8ZdNUZddYZdNQZdNYZdNQYdNQZdtgZddYZdNUZdNUaeNwZeNsZc9Ibe+Ead9oaed4ZctIaeNwZddcaet8ZdNUZdtkcgeym21DbAAAAR3RSTlMAAvyaof39GivcyT5n9QUwWN9Ecvr37LR4Ix4OCvzW2zrfwa0S5G5iB+hJ/fnwpqWWfspbTicWzo9TNJzFoLqDafPTXoqj5r+BCxMAAA3oSURBVHja7JqLUtpAFIZ31wboSFOqIigKIspFRAG1WivFSxWy2U3i+79M2SA9ZRJzX2s6PdPptKOyfPzn33OJCKN/ImYYD48rEuMxj+zIyz3lASH0+MymssKYPpfnIOXn2X9kBX1+RAitsGMiK475fRZhIXz2nks8hq0IkCmZyApCxwgLEIzGVJnICjKVDEJ45xrhuRevO/z3OekDoSO8AMEfaGpBFPPuSHDMSY7uzEVypQ2EsFIb6lS7xBYHpQwkM+k+AAdGD92JPrEjZSCEDQ/+BDkYLiRJGUhGawoOIGlqLyZJFwjRalvLIFs1bX5UykCMK4QBRPz7ykghiMI395CKEISK9ja5nVypAiH0FM8FAUnw6bwopglEMYvnC0FAkvOiXRTTBELY/s7C6mD3nX37Bk4RiK7zFnAASYtLqIkyQYh2n3UDyd6LGzhFIAodCA4nyUCMJekBIdZhDqwOoaLcoUXSBEL7CLspglGfpghEMXtrIMiyJGs9U0kNCKElFWH39ZNaoiQtIPqkWBAc7iSFYpJjiVQQwoaV10EqMJbIBdFJ7NCabhwwlpDYEQTE1GIGn9a3vUC261Me9wwzAEiv9jFe1J4GyAsEDZ5iH9HzBSG0cZGLGxXkGZXYB1w0GPEDMVZQCmLF8AWhH1SE4wbyjPgvr36g/op8wO/94Q/sXz0V+VdA/ivyevwHSQwERwwVeYaKI8Zf8AgO8yX5Zs+tN1v58NE88m5Rjpr58NFqrucip1Z28OlZC9/gsWJ/e4HixNjuF1n4RlR7/jTIxkitvZJmHW90M6Fiw6TVAnbfouBClZobmZAveMyt0l4ss6P2eocqRA8VE4Vou6MtEAXk2BrtakSZhHs5kqGHzTbCOAoInH09E4WEHU6JadRuVYSXOdTbmmGGHQ8zxNJK1wjhiGYHUXaahzQT8nghitX4jJAK+xP0uWEJOcKFLccOyBEBBETJlSwQJfQ7iPN56EKOHMgREQREua0bUd6EbVFs/9mL9mEY9VuQI3ZBxCItNC2KKJvlingflfJmFDk0TaQnTrDXUlE7Xw//ViaEa/trCK3tazz8z2ZoPd8Gl8UFAaec8Ahe1WlvMOhRPcJtwU/AHUmAAEq+bujh84NrGo+SlR/zgJGMR4Dk4kRjoUVRZhH2RwjjJxcIqZLmEYzarRqbkInkIBNWa7URljHqQpNxajcZEkM0OKfQ4CQNAigPdSpTFDKh9QfAkJBa4JSRPFHsfhPcIQkERKmBKEnLUQM55KUWOOX7LiNK8nKw3e/gDukgSGwXzqrhO3L/3r96JnYT6C1AYGQFUZKTA0Zk+R4BlEJ1apIk5SgAxluAQHe/tVJkipKIHAor9rfEa74pCDjlfMigj4ocOuFseA7uSNoj2N916Osg7KDhPrYMvvpfVlFBsFdZAtS9khatPEIJ1Ep7IIfHUThKamF0kT8IYD4xB9dodNMTk9ZgmvWSI7sdSRGMrp9uViG/vMtjkSokEsbM5FACPeVYG54hHEmRz1+mvZ9wsXue8u2S8hAkYHI6/IaCyLF9dWcUIoOYE3pZwEFN72i/kjI5RmqrSrkeDsT4A0SbKc8bMDj7mD7oSA9Dub0twr6X/HXDYse6GV0RTbGng3VvL8Ly6yOYPojJPwYz+UG5Y3RFsYqjyPx2/AEPPHwGlaJv+wWVXIwdAZL2aN+uubFB7FS+E6ZXA6CcD6k4NYDJRSUPeiEqYpcdFoQ6QMSajd6fqYFMnx33aEbxkSNDe+NsEJO3W7+HBT0eCGTCLmzLvJ25WrK44snBrdKqf2OFhcnh/ogLAjOocViuBBKl3ezwzOscGd5pthEKYvJNA270+B6B25KJNa4firDSCI5xBqEjX79h7Gisk1AE6tenqyCVHp16g5wi7PtZbPXvoOtJThG4+6u+psdBQLBPH5qHPjRZEDC9/UANY2kg2DY5rJiTTS0I0qU+psfIHwRhL5MPOi6zWiZhEPupnjC9ihMFAXcc3YDJ5aQWzBC0CKZPBgS6nP4Gg4IqEQRMPz/YHcTwAjEAxFnJ4UG8ZBBYpp2Ip+juICOmeBR2NlqAONr1kmM7Lsvsf1b6zjqYfhmkMT1+HeR42nCA2HIcOGYzOWZ3mp79mJnejaTMYW/nvMB5GWG3xvmGWSDHWymyaO+vXJtYFdoLt02c6tau92F/8UYegdDn7b3bTZwdw95ueUgfZ11NDpX8jUEgUYTpsbM6r4rBLrOU5YSzfVgwLVVyC0z+5qkFv56wXnFDqax3lrxLJhSuh6VvHHRo1/Mk+YpApXf9/ZWTrkaU31NA16kdVu2Z3AI//RVF4Kl472fWTRTcqlKTLEpoC7tk1faLyd8DyEwUk12e2SSuuwNdV6hzMSo41LN7anrKAQ6Tm1pQ6bujnFOUeQ/Y7bKbI4RUF5O/VPJ3osiLlQ9hkbe0TB3v7o6/OuUQizcKd+5fNzuIYmk/nMsRIUq57CbH2r5dyd8diLiJ3U1v/+XcrvcYmDwQSIzdr6VMQgXh9PKb6jQ9drvOuDuGhKbx+ulXe9ffnTQMRWkkoLJ16hji0AmTORmI000Y28T9YJa2Ke2+/5eRgOyeCSlL2lSqvj93ztrd3ZeX5r378gJp2RtlRZ7SFRg2GF+6GuxSS7XQk+8PJSoeWPTPD8KlPZXNPUfhwYHdU1ojHMnJloJejgzL4UAKNmspKAM/lisKjMzOCAoVtVywGQ7kgOakcXhsUs9UrbNnxqRcSpLi5tgSIC+KvhwQQsclOlSY5RhBuD/HrvUwIHZcQHAY6+PrXxYIoHQG66h4xAREgmPijkrlOET+xjRl9nBSYmIEh4R+FekaNSA4+ozLUJQk6VoIVo1yfCJ/kx9cEb6SAIJEDVpgIgHBpyqyCfpdC3TggzomvRYXBPSxUnQyAjrQcxEfEPSAaI9aON+8R00pHiBQafTRN6YVCDq0NHUrvAYpelwLOaYL9OvFBkTQzKcLiMvpgLxDjziTd1jujVyixbVQ0ed0aBMwo50Q/Wtxhl+I/LPIx2hiBB2FoyaJmRH0XOzHrvsVrTX0eMYGBB1JWdHqUO7VNcKgfFjDcTU6EKyOt9ci5aGh3qu7/cJEIF/UzBcQGmPUomSx4BTfexuKea3T2lleSLOZMdZqWCkRgaBSbAgX5mZpXzlBN5ykpsU18XfQYCsDQbAS08EPqn1mqyfoPBtF6EWkfNhH35jaGkGw2ukJ1BT8p51xXjIXJYndspwGmskXqZHab+wWVQaC1XEYsjqMXpd5LcuPkPuls9S0MJIY17Vhk6i5FoLVFadDqM/81mSERk5i81zMoBMSTL5mfawUqZ0ddOTF/ynzgrtvLPUR4rFub/zEkL4x/ipJ10Kw6h4LV8ekn5/7bjxlBUpZMzSkbGfRNyblWqBDrM/MkVjqI2jyWOPnNSEpvBYoDYT4I06HEAekWzG4Fo5s4rYbw+DVWU6KjGsRytYHIXRsc30mjU9UAw1gqVwP2R57vBQtAYR4DkqkcyTzTgvmEx2lN5ff3wC1v5CUh7kWpexyHAwNUXpgI+vxh8ULBP7lXOJ6o8V9PT55ECNclvICe8d8wgZ3qMQMBF9214Z4pXROiowES4HkyFjlDzedl9dD1aGrzk6p7fOTqOhv4KQ475cAWbft83lxOmoyg48MdOgAAmVARexfnYH9OWOGAmE8amQMoX+ONMtlka1h4s8vTsrxEkZ2C2I6vn7C3qoPCEgpDfIiUpZ2AdTrwmBlQhOfABC0Fpki91hihrhbNkG5LA7YyHdEN5Nr4vmHVeJaFGLxz6+4oExaWJnXcpOUOUEO5L08hX8pGlpYEXMTA4JrvPD5pW789yeawT+moIMwMyIdj7M+Ym7CawRt3FBjSxsup7P+vFyW+M4Vsl8KXlXoM5u4K6Cgo4T5yDzLelWHV4tXRS47rZQBigQdB18m9fsVAYKDsBwd03tV+DtWR5zJIzGUSOEGYePb0erJZV3icZWyxN0wG+1ZYm91XGsWicX3/C7qZRhZknJZdUY8QiWMtCx2dfQAJJOYG3hE7umuumv9cHxPynx/FLRPl0ExuMBw6Ms+2wuUXettcV3evNr7SvgJ0eyd+1vyD26tK8plM5VqQcGqBwf1cErMwnFV6dGdxK9bNzJ6TBGIoWjLF7ui/R8Ssar2jwH5a1zrPxBZ079GTCOy6Qm/MBNA9M6xMnRvl2ej5Yy0O/motkSR+CHyCzptESMwv3H+NKJdXYQDubiK+obzhm8tA+L6LKLZw518mNY1vzO0WUTz3UTmIXr7YUD2PRLZ3GQmVDq7rzNCe70b09BQ/UD4AG2xrpMP0k4JEIuwtrgw12apmeJqUa9RFQGpNrz0zNW1iDMQedZJmiYdW8R+8mpxL86rJ3aagFiUbS4GsslSNQ2czwiuAwlw1L+wdM1nd603zxYBefbGcq2YTScQTgnmaM9N0E4TED7ZfA7IbKZ5moDwCzLngZxNCUkXkGBvI2PeV2ls7AXpA2IVne+Z3+y7U7S4pQsIsXemQ8ExBnzn12aYLiAWDdbuA1mb3bOSMiCE7VbuDQHfnW2GKQNCra1exgAhvS0rnYzwWe+GYdzlst7dxd60AaFeqZAxZ7G3ULo7iKQNiFUcHeI2p8PRXexNHRAS1B7PgDyuYTNMHRCLOOUZkLKD16QQiN3tTJXAna6tHQhrEX3WPJoCOWoSfdZiHMjNLRtqM+e2Ox1+2r11htqM3d6MgVzfPNJo2ZNtDmT7JPtIo91g0J1GMxJ5yU+QCIojvptMXwAAAABJRU5ErkJggg=="/>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+     %includes%
   </body>
 </html>

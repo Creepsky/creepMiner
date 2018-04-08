@@ -3,12 +3,18 @@ var logSetting = {};
 function update_settings(config) {
     mining_info_url.val(config['miningInfoUrl'] + ':' + config['miningInfoUrlPort']);
     submission_url.val(config['poolUrl'] + ':' + config['poolUrlPort']);
-    wallet_url.val(config['walletUrl'] + ':' + config['walletUrlPort']);
+	if (config['walletUrl'] + ':' + config['walletUrlPort']=="://:0")
+		wallet_url.val("");
+	else
+		wallet_url.val(config['walletUrl'] + ':' + config['walletUrlPort']);
 
     intensity.val(config['miningIntensityRaw']);
     buffer_size.val(config['bufferSizeRaw']);
+    buffer_chunks.val(config['bufferChunks']);
     plot_readers.val(config['maxPlotReadersRaw']);
     submission_max_retry.val(config['submissionMaxRetry']);
+    submit_probability.val(config['submitProbability']);
+    max_historical_blocks.val(config['maxHistoricalBlocks']);
     target_deadline.val(config['targetDeadlineLocal']);
 
     timeout.val(config['timeout']);
@@ -34,6 +40,9 @@ function connectCallback(msg) {
             case "config":
                 update_settings(response);
                 break;
+            case "new block":
+                checkVersion(response["runningVersion"], response["onlineVersion"]);
+                break;
             default:
                 break;
         }
@@ -50,8 +59,11 @@ window.onload = function (evt) {
 
     intensity = $("#intensity");
     buffer_size = $("#buffer-size");
+    buffer_chunks = $("#buffer-chunks");
     plot_readers = $("#plot-readers");
     submission_max_retry = $("#submission-max-retry");
+    submit_probability = $("#submit-probability");
+    max_historical_blocks = $("#max-historical-blocks");
     target_deadline = $("#target-deadline");
     timeout = $("#timeout");
 
