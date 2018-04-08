@@ -73,6 +73,7 @@ $('#timePlotButton').on('click', function(event) {
     timePlot.getAxes().yaxis.options.max = timePlotMax;
     timePlot.setupGrid();
     timePlot.draw();
+	$(".flot-tick-label").css("color", flotFrameColor);
 });
 
 $('#deadlinePlotButton').on('click', function(event) {
@@ -83,6 +84,7 @@ $('#deadlinePlotButton').on('click', function(event) {
     deadlinePlot.getAxes().yaxis.options.max = deadlinePlotMax;
     deadlinePlot.setupGrid();
     deadlinePlot.draw();
+	$(".flot-tick-label").css("color", flotFrameColor);
 });
 
 var timerRefresh = setInterval(function(){ myTimer() }, 1000);
