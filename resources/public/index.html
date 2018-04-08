@@ -5,7 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>%title%</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" media="screen">
     <link rel="stylesheet" href="css/custom.min.css">
 	<link rel="stylesheet" href="https://bootswatch.com/_vendor/bootstrap/dist/css/bootstrap.min.css" media="screen">
     <!-- Themes -->
@@ -71,7 +70,7 @@
 					 </li>
                     <!-- sign out btn -->
                     <li class="nav-item mm-hide" id="btnSignOut">
-                        <a class="nav-link" href="/logout"><i class="fa fa-sign-out"></i>Sign Out</a>
+                        <a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i>Sign Out</a>
                     </li>
 
                 </ul>
@@ -86,6 +85,8 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.time.min.js"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
+    <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/v4-shims.js"></script>
     <script src="js/biginteger.min.js"></script>
     <script src="js/general.js"></script>
 	<script>
@@ -120,10 +121,12 @@
                                     <div class="card-body" id="versionCard">
                                         <p>creepMiner is an open source client application for burst mining. You can access the project on Github:</p>
                                         <ul class="fa-ul">
-                                          <li><span class="fa-li"><i class="fa fa-file-archive-o"></i></span><a href="https://github.com/Creepsky/creepMiner/releases" target="blank_">Releases</a></li>
-                                          <li><span class="fa-li"><i class="fa fa-code"></i></span><a href="https://github.com/Creepsky/creepMiner" target="blank_">Code</a></li>
+                                          <li><span class="fa-li"><i class="fas fa-file-archive"></i></span><a href="https://github.com/Creepsky/creepMiner/releases" target="blank_">Releases</a></li>
+                                          <li><span class="fa-li"><i class="fas fa-file-code"></i></span><a href="https://github.com/Creepsky/creepMiner" target="blank_">Code</a></li>
                                         </ul>
-                                        <p>If you would like to chat with us or are looking for help please join our <a href="https://discord.gg/YtwvuP" target="blank_">Discord</a>. Should you encounter any problems please speak to us first in Discord else open a <a href="https://github.com/Creepsky/creepMiner/issues" target="blank_">github issue</a> with the relevant information.</p>
+                                        <p>If you would like to chat with us or are looking for help please join our 
+                                            <a href="https://discord.gg/YtwvuP" target="blank_" data-toggle="tooltip" data-placement="bottom" title="Discord server"><i class="fab fa-discord"></i></a>. Should you encounter any problems please speak to us first in Discord else open a <a href="https://github.com/Creepsky/creepMiner/issues" target="blank_" data-toggle="tooltip" data-placement="bottom" title="github issue"><i class="fab fa-github-square"></i></a> with the relevant information.
+                                        </p>
                                     </div>
                                     <!-- Donate -->
                                     <h4 class="card-header text-white bg-info" id="versionCardHeader">Donate</h4>
@@ -132,12 +135,12 @@
                                             <div class="col-lg-6">
                                                 <b>Main author:</b>
                                                 <ul class="fa-ul">
-                                                  <li><span class="fa-li"><i class="fa fa-flag"></i></span><a href="https://github.com/Creepsky" target="blank_"><span class="badge badge-info">Creepsky</span></a><small>&nbsp;(core):<br><b>BURST-JBKL-ZUAV-UXMB-2G795</b></small></li>
+                                                  <li><span class="fa-li"><i class="fab fa-connectdevelop"></i></span><a href="https://github.com/Creepsky" target="blank_"><span class="badge badge-info">Creepsky</span></a><small>&nbsp;(core):<br><b>BURST-JBKL-ZUAV-UXMB-2G795</b></small></li>
                                                 </ul>
                                                 <b>Contributors:</b>
                                                 <ul class="fa-ul">
-                                                  <li><span class="fa-li"><i class="fa fa-flask"></i></span><a href="https://github.com/nitr8" target="blank_"><span class="badge badge-primary">nitr8</span></a><small>&nbsp;(front-end)<br><b>BURST-2ZXJ-NC7Q-PM3W-GFU97</b></small></li>
-                                                  <li><span class="fa-li"><i class="fa fa-flask"></i></span><a href="https://github.com/Herscht" target="blank_"><span class="badge badge-primary">Herscht</span></a><small>&nbsp;(front-end / back-end)<br><b>BURST-HWKA-CTBB-J69E-79YHU</b></small></li>
+                                                  <li><span class="fa-li"><i class="far fa-life-ring"></i></span><a href="https://github.com/nitr8" target="blank_"><span class="badge badge-primary">nitr8</span></a><small>&nbsp;(front-end)<br><b>BURST-2ZXJ-NC7Q-PM3W-GFU97</b></small></li>
+                                                  <li><span class="fa-li"><i class="far fa-life-ring"></i></span><a href="https://github.com/Herscht" target="blank_"><span class="badge badge-primary">Herscht</span></a><small>&nbsp;(front-end / back-end)<br><b>BURST-HWKA-CTBB-J69E-79YHU</b></small></li>
                                                 </ul>
                                             </div>
                                             <div class="col-lg-6">
