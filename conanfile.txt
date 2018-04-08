@@ -1,6 +1,6 @@
 [requires]
 Poco/1.9.0@pocoproject/stable
-zlib/1.2.11@conan/stable
+zlib/1.2.9@lasote/stable
 
 [options]
 Poco:shared=True

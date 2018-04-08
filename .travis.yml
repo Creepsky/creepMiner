@@ -8,7 +8,6 @@ matrix:
     sudo: false
     compiler: clang
     script:
-    - python -V
     - conan install . --build=missing
     - cmake . -DNO_GPU=ON
     - make -j$(nproc)
@@ -29,7 +28,6 @@ matrix:
     env:
     - NAME="linux g++-5" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
     script:
-    - python -V
     - pip install conan --user
     - conan install . --build=missing
     - cmake . -DNO_GPU=ON
