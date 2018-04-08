@@ -55,12 +55,15 @@ function checkVersion(runningVer, onlineVer) {
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
         $("#versionCardHeader").toggleClass("bg-success",false);
         $("#versionCardHeader").toggleClass("bg-danger",true);
-        $("#versionCard").append("<div class='alert alert-danger' role='alert'><i class='fa fa-exclamation-triangle text-warning'></i>&nbsp;&nbsp;<strong>Out of date!</strong>"+
-            " Download the latest from <a href='https://github.com/Creepsky/creepMiner/releases'> github</a></div>");
+        $("#versionAlert").toggleClass("alert-success",false);
+        $("#versionAlert").toggleClass("alert-danger",true);
+        $("#versionAlert").html("<i class='fa fa-exclamation-triangle text-warning'></i>&nbsp;&nbsp;<strong>Out of date!</strong>"+
+            " Download the latest from <a href='https://github.com/Creepsky/creepMiner/releases'> github</a>");
     } else
     {
         $("#runningVer").html("<i class='fa fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
+        $("#versionAlert").html("<i class='fa fa-check text-success'></i>&nbsp;v&nbsp;You are running a current version of creepMiner.");
     }
 	return current
 }
