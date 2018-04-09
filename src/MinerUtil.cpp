@@ -1105,11 +1105,8 @@ Poco::Path Burst::getMinerHomeDir()
 {
 	Poco::Path minerRootPath(Poco::Path::home());
 	minerRootPath.pushDirectory(".creepMiner");
-
-	auto minerHomePath(minerRootPath);
-	minerHomePath.pushDirectory(std::string(Settings::Project.getVersion()));
-
-	return minerHomePath;
+	minerRootPath.pushDirectory(Settings::Project.getVersion());
+	return minerRootPath.parseDirectory(minerRootPath.toString());
 }
 
 Poco::Path Burst::getMinerHomeDir(const std::string& filename)

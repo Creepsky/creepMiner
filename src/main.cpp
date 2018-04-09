@@ -164,8 +164,8 @@ int main(const int argc, const char* argv[])
 				// create the home directory
 				const auto minerHomePath = Burst::getMinerHomeDir();
 
-				if (File{minerHomePath}.createDirectory())
-					log_information(general, "Home directory has been created: %s", minerHomePath.toString());
+				File minerHomeDir{minerHomePath};
+				minerHomeDir.createDirectories();
 
 				auto homeConfigPath(minerHomePath);
 				homeConfigPath.append("mining.conf");
