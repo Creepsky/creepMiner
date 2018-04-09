@@ -129,9 +129,16 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 		char buffer[1024];
 		int flags;
 		auto close = false;
-		ws.setReceiveTimeout(Timespan{10000}); // 10 ms
+		ws.setReceiveTimeout(Timespan{1, 0}); // 1 s
+		const auto sleepTime = std::chrono::milliseconds{10};
 		do
 		{
+			if (ws.available() == 0)
+			{
+				std::this_thread::sleep_for(sleepTime);
+				continue;
+			}
+
 			try
 			{
 				close = ws.receiveFrame(buffer, sizeof buffer, flags) == 0;
