@@ -153,7 +153,7 @@ int main(const int argc, const char* argv[])
 			auto configLoaded = Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath);
 
 			// the config could not be loaded, look for a config in the creepMiner home dir
-			if (!configLoaded)
+			if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 			{
 				log_information(general, "Could not load config %s", arguments.confPath);
 
@@ -176,7 +176,7 @@ int main(const int argc, const char* argv[])
 				configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
 
 				// if there is also no config in the home dir, create one in the home dir
-				if (!configLoaded)
+				if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 				{
 					// create the log dir
 					Path homeLogPath(minerHomePath);
@@ -195,7 +195,7 @@ int main(const int argc, const char* argv[])
 				}
 			}
 
-			if (configLoaded)
+			if (configLoaded == Burst::ReadConfigFileResult::Ok)
 			{
 				log_information(general, "Config loaded: %s", Burst::MinerConfig::getConfig().getPath());
 

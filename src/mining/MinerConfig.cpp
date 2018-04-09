@@ -241,7 +241,7 @@ void Burst::MinerConfig::recalculatePlotsHash()
 	PlotSizes::set(Poco::Net::IPAddress{"127.0.0.1"}, getTotalPlotsize(), true);
 }
 
-bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
+Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string& configPath)
 {
 	poco_ndc(readConfigFile);
 	std::ifstream inputFileStream;
@@ -254,11 +254,11 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	catch (...)
 	{
 		log_critical(MinerLogger::config, "Unable to open config %s", configPath);
-		return false;
+		return ReadConfigFileResult::Error;
 	}
 
 	if (!inputFileStream.is_open())
-		return false;
+		return ReadConfigFileResult::NotFound;
 
 	configPath_ = configPath;
 	plotDirs_.clear();
@@ -312,7 +312,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 			printBlock << "...";
 
 		printBlock.nextLine();
-		return false;
+		return ReadConfigFileResult::Invalid;
 	}
 	catch (Poco::Exception& exc)
 	{
@@ -328,7 +328,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		if (inputFileStream.is_open())
 			inputFileStream.close();
 
-		return false;
+		return ReadConfigFileResult::Invalid;
 	}
 
 	const auto checkCreateUrlFunc = [](Poco::JSON::Object::Ptr urlsObj, const std::string& name, Url& url,
@@ -909,7 +909,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 	if (!save(configPath_, *config))
 		log_error(MinerLogger::config, "Could not save new settings!");
 
-	return true;
+	return ReadConfigFileResult::Ok;
 }
 
 const std::string& Burst::MinerConfig::getPath() const

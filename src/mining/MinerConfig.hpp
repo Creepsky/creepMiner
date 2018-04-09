@@ -84,13 +84,21 @@ namespace Burst
 		const std::string& encrypt();
 	};
 
+	enum class ReadConfigFileResult
+	{
+		Ok,
+		NotFound,
+		Invalid,
+		Error
+	};
+
 	class Socket;
 
 	class MinerConfig
 	{
 	public:
 		void recalculatePlotsHash();
-		bool readConfigFile(const std::string& configPath);
+		ReadConfigFileResult readConfigFile(const std::string& configPath);
 		void rescan();
 
 		/**
