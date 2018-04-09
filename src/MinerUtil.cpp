@@ -1100,3 +1100,16 @@ void Burst::setStdInEcho(bool enable)
 	(void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
 #endif
 }
+
+Poco::Path Burst::getMinerHomeDir()
+{
+	Poco::Path minerRootPath(Poco::Path::home());
+	minerRootPath.pushDirectory(".creepMiner");
+	minerRootPath.pushDirectory(Settings::Project.getVersion());
+	return minerRootPath.parseDirectory(minerRootPath.toString());
+}
+
+Poco::Path Burst::getMinerHomeDir(const std::string& filename)
+{
+	return getMinerHomeDir().append(filename);
+}
