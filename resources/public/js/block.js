@@ -546,13 +546,13 @@ function setLastWinner(winner) {
 function deActivateConfirmationSound(on) {
     playConfirmationSound = on;
 
-    iconConfirmationSound.removeClass("fas fa-volume-up");
-    iconConfirmationSound.removeClass("fas fa-volume-mute");
+    iconConfirmationSound.removeClass("fa-volume-up");
+    iconConfirmationSound.removeClass("fa-volume-off");
 
     if (on)
-        iconConfirmationSound.addClass("fas fa-volume-up");
+        iconConfirmationSound.addClass("fa-volume-up");
     else
-        iconConfirmationSound.addClass("fas fa-volume-mute");
+        iconConfirmationSound.addClass("fa-volume-off");
 }
 
 function toggleConfirmationSound() {
