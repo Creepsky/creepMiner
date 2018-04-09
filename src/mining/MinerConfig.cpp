@@ -144,6 +144,8 @@ void Burst::MinerConfig::printConsole() const
 	if (isLogfileUsed())
 		log_system(MinerLogger::config, "Log path : %s", getConfig().getPathLogfile().toString());
 
+	log_system(MinerLogger::config, "Database path : %s", getConfig().getDatabasePath());
+
 	printConsolePlots();
 
 	log_system(MinerLogger::config, "Get mining info interval : %u seconds", getConfig().getMiningInfoInterval());
@@ -484,6 +486,8 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 		cpuInstructionSet_ = Poco::toUpper(getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2")));
 		cpuInstructionSet_ = Poco::trim(cpuInstructionSet_);
+
+		databasePath_ = getOrAdd(miningObj, "databasePath", std::string("data.db"));
 
 		// auto detect the max. cpu instruction set
 		if (cpuInstructionSet_ == "AUTO")
@@ -1054,6 +1058,11 @@ const std::string& Burst::MinerConfig::getServerCertificatePass() const
 	return serverCertificatePass_;
 }
 
+const std::string& Burst::MinerConfig::getDatabasePath() const
+{
+	return databasePath_;
+}
+
 Poco::UInt64 Burst::MinerConfig::getTargetDeadline(TargetDeadlineType type) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
@@ -1472,6 +1481,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		mining.set("processorType", getProcessorType());
 		mining.set("gpuDevice", getGpuDevice());
 		mining.set("gpuPlatform", getGpuPlatform());
+		mining.set("databasePath", getDatabasePath());
 
 		// benchmark
 		{
@@ -1752,6 +1762,11 @@ void Burst::MinerConfig::setStartWebserver(bool start)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	startServer_ = start;
+}
+
+void Burst::MinerConfig::setDatabasePath(std::string databasePath)
+{
+	databasePath_ = std::move(databasePath);
 }
 
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)

@@ -164,6 +164,7 @@ namespace Burst
 		bool getStartServer() const;
 		const std::string& getServerCertificatePath() const;
 		const std::string& getServerCertificatePass() const;
+		const std::string& getDatabasePath() const;
 
 		Url getServerUrl() const;
 		double getSubmitProbability() const;
@@ -236,6 +237,7 @@ namespace Burst
 		void setPassphrase(const std::string& passphrase);
 		void setWebserverCredentials(const std::string& user, const std::string& pass);
 		void setStartWebserver(bool start);
+		void setDatabasePath(std::string databasePath);
 
 		/**
 		 * \brief Instructs the miner wether he should use a logfile.
@@ -324,6 +326,7 @@ namespace Burst
 		bool calculateEveryDeadline_ = false;
 		std::string serverCertificatePath_;
 		std::string serverCertificatePass_;
+		std::string databasePath_;
 		mutable Poco::Mutex mutex_;
 	};
 }

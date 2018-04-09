@@ -45,6 +45,7 @@
 #include <Poco/File.h>
 #include <Poco/DirectoryIterator.h>
 #include <regex>
+#include <Poco/Data/SQLite/Connector.h>
 
 class SslInitializer
 {
@@ -146,6 +147,8 @@ int main(const int argc, const char* argv[])
 		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(Burst::Settings::Project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
 
 		auto running = true;
+		
+		Data::SQLite::Connector::registerConnector();
 
 		while (running)
 		{
@@ -178,9 +181,13 @@ int main(const int argc, const char* argv[])
 					homeLogPath.pushDirectory("logs");
 					homeLogPath.makeDirectory();
 
+					auto homeDatabasePath(minerHomePath);
+					homeDatabasePath.setFileName("data.db");
+
 					// and save it in the config
 					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
 					Burst::MinerConfig::getConfig().useLogfile(true);
+					Burst::MinerConfig::getConfig().setDatabasePath(homeDatabasePath.toString());
 
 					if (!Burst::MinerConfig::getConfig().save(homeConfig))
 						log_error(Burst::MinerLogger::general, "Could not save current settings!");
