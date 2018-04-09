@@ -696,7 +696,7 @@ std::shared_ptr<Burst::Deadline> Burst::MinerData::getBestDeadlineOverall(bool o
 	std::lock_guard<std::mutex> mutex{mutex_};
 	Poco::UInt64 from = 0, to = 0;
 
-	if (!onlyHistorical)
+	if (onlyHistorical)
 	{
 		if (blockData_ == nullptr)
 			*dbSession_ << "SELECT MAX(height) FROM block", into(to), now;
@@ -714,19 +714,28 @@ std::shared_ptr<Burst::Deadline> Burst::MinerData::getBestDeadlineOverall(bool o
 			from = to - MinerConfig::getConfig().getMaxHistoricalBlocks();
 	}
 
-	std::shared_ptr<Deadline> bestDeadline;
+	std::string query = "SELECT nonce, value, account, height, file, MIN(value) FROM deadline WHERE status = 3 ";
+	
+	if (onlyHistorical)
+		query += " AND height >= :from AND height < :to";
 
-	forAllBlocks(from, to, [&](const std::shared_ptr<BlockData>& block)
+	Poco::UInt64 nonce, value, account, height, minValue;
+	std::string file;
+
+	auto stmt = (*dbSession_ << query, into(nonce), into(value), into(account), into(height), into(file), into(minValue));
+
+	if (onlyHistorical)
 	{
-		auto blockBestDeadline = block->getBestDeadline();
+		stmt.bind(from);
+		stmt.bind(to);
+	}
 
-		if (bestDeadline == nullptr || blockBestDeadline->getDeadline() < bestDeadline->getDeadline())
-			bestDeadline = blockBestDeadline;
-		
-		return false;
-	});
+	stmt.execute();
 
-	return bestDeadline;
+	if (file.empty())
+		return nullptr;
+
+	return std::make_shared<Deadline>(nonce, value, std::make_shared<Account>(account), height, file);
 }
 
 const Poco::Timestamp& Burst::MinerData::getStartTime() const
