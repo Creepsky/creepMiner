@@ -131,10 +131,28 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 		auto close = false;
 		ws.setReceiveTimeout(Timespan{1, 0}); // 1 s
 		const auto sleepTime = std::chrono::milliseconds{10};
+
+		const auto send = [&]()
+		{
+			if (!close)
+			{
+				std::lock_guard<std::mutex> lock(mutex_);
+				if (!queue_.empty())
+				{
+					auto data = queue_.front();
+					queue_.pop_front();
+					const auto s = ws.sendFrame(data.data(), static_cast<int>(data.size()));
+					if (s != static_cast<int>(data.size()))
+						log_warning(MinerLogger::server, "Could not fully send: %s", data);
+				}
+			}
+		};
+
 		do
 		{
 			if (ws.available() == 0)
 			{
+				send();
 				std::this_thread::sleep_for(sleepTime);
 				continue;
 			}
@@ -153,18 +171,7 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 				close = true;
 			}
 
-			if (!close)
-			{
-				std::lock_guard<std::mutex> lock(mutex_);
-				if (!queue_.empty())
-				{
-					auto data = queue_.front();
-					queue_.pop_front();
-					const auto s = ws.sendFrame(data.data(), static_cast<int>(data.size()));
-					if (s != static_cast<int>(data.size()))
-						log_warning(MinerLogger::server, "Could not fully send: %s", data);
-				}
-			}
+			send();
 		}
 		while (!close && (flags & WebSocket::FRAME_OP_BITMASK) != WebSocket::FRAME_OP_CLOSE);
 		ws.shutdown();
