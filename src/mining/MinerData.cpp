@@ -832,7 +832,7 @@ Poco::UInt64 Burst::MinerData::getConfirmedDeadlines() const
 Poco::UInt64 Burst::MinerData::getAverageDeadline() const
 {
 	Poco::UInt64 avg = 0;
-	*dbSession_ << "SELECT AVG(value) FROM deadline", into(avg), now;
+	*dbSession_ << "SELECT AVG(value) FROM deadline WHERE status = 3", into(avg), now;
 	return avg;
 }
 
