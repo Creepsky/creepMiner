@@ -689,7 +689,7 @@ function connectBlock() {
                     break;
                 case "nonce confirmed":
                     addOrConfirm(response);
-                    checkAddBestOverall(BigInteger(response["deadlineNum"]), response["deadline"]);
+                    checkAddBestOverall(BigInteger(response["deadlineNum"]), response["deadline"], response["blockheight"]);
                     break;
                 case "nonce submitted":
                     addOrSubmit(response);
