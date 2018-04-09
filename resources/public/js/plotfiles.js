@@ -223,7 +223,7 @@ function createPlotfileLine(account, start_nonce, nonces, staggersize, size, pat
     line.append("<div class='col-xs-2 col-md-1'>" + staggersize + "</div>");
     line.append("<div class='col-xs-1 col-md-2'>" + size + "</div>");
     line.append("<div class='col-xs-2 col-md-3'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize +
-        "' type='button' class='btn btn-info' " +
+        "' type='button' class='btn btn-outline-primary' " +
         "style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," +
         nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='fab fa-superpowers'></span>&nbsp;Validate</button></div>");
     return line;

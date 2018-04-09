@@ -29,14 +29,14 @@
         <div class="col-lg-12" id="container">
             <div class="btn-group d-flex" role="group">
                 <!-- rescan btn -->
-                <button type="button" class="btn btn-info w-100" onclick="$.get('/rescanPlotfiles');">
+                <button type="button" class="btn btn-outline-primary w-100" onclick="$.get('/rescanPlotfiles');">
                 <span data-toggle='tooltip' data-placement='bottom' data-original-title='Rescan plot folders for new or removed plot files.'>
                     <span class="fas fa-sync"></span>
                     Rescan
                 </span>
                 </button>
                 <!-- validate btn, trigger modal -->
-                <button type="button" class="btn btn-info" id="CheckAllButton" data-toggle="modal" data-target="#checkAllModal">
+                <button type="button" class="btn btn-outline-primary w-100" id="CheckAllButton" data-toggle="modal" data-target="#checkAllModal">
                 <span data-toggle='tooltip' data-placement='bottom' data-original-title='Validate the integrity of all plot files. This may take a while.'>
                     <span class="fab fa-superpowers"></span>
                     Validate all
