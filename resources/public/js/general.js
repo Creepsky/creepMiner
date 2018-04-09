@@ -49,7 +49,7 @@ function checkVersion(runningVer, onlineVer) {
         current=false;
 	if(!current)
 	{
-        $("#btnAbout").find("a").css({"color": "red"});
+        $("#btnAbout").find("a").css({"color":"#dc3545"});
         $("#btnAbout").attr({"data-original-title": "A new version is available"});
         $("#runningVer").html("&nbsp;v&nbsp;" + runningVer);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
@@ -57,13 +57,13 @@ function checkVersion(runningVer, onlineVer) {
         $("#versionCardHeader").toggleClass("bg-danger",true);
         $("#versionAlert").toggleClass("alert-success",false);
         $("#versionAlert").toggleClass("alert-danger",true);
-        $("#versionAlert").html("<i class='fa fa-exclamation-triangle text-warning'></i>&nbsp;&nbsp;<strong>Out of date!</strong>"+
-            " Download the latest from <a href='https://github.com/Creepsky/creepMiner/releases'> github</a>");
+        $("#versionAlert").html("<i class='fas fa-wrench'></i>&nbsp;&nbsp;<strong>Update available!</strong>"+
+            " Download the latest from <i class='fab fa-github-square'></i>&nbsp;<a href='https://github.com/Creepsky/creepMiner/releases'>github</a>");
     } else
     {
-        $("#runningVer").html("<i class='fa fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer);
+        $("#runningVer").html("<i class='fas fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
-        $("#versionAlert").html("<i class='fa fa-check text-success'></i>&nbsp;v&nbsp;You are running a current version of creepMiner.");
+        $("#versionAlert").html("<i class='fas fa-check text-success'></i>&nbsp;v&nbsp;You are running a current version of creepMiner.");
     }
 	return current
 }
@@ -158,7 +158,7 @@ $(document).ready(function() {
    options +='<a class="dropdown-item" onclick="SwitchTheme(\''+$(this).attr('title')+'\'); location.reload();" style="cursor:pointer">'+$(this).attr('title')+'</a>';
   });
   $links.remove();
-  
+
   el.innerHTML = options;
  }
 )(jQuery);

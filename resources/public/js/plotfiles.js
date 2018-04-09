@@ -154,7 +154,7 @@ function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
     {
         isChecking=true;
         var butId = account + "_" + start_nonce + "_" + nonces + "_" + staggersize;
-        $("#"+butId).html("<i class='fa fa-spinner fa-pulse fa-fw'></i>");
+        $("#"+butId).html("<i class='fas fa-spinner fa-pulse'></i>");
         $.get(encodeURI("/checkPlotFile/" + path));
     }
 }
@@ -163,7 +163,7 @@ function checkAllPlotFiles(account, start_nonce, nonces, staggersize, path) {
     if(!isCheckingAll)
     {
         isCheckingAll=true;
-        $("#CheckAllButton").html("<i class='fa fa-spinner fa-pulse fa-fw'></i>");
+        $("#CheckAllButton").html("<i class='fas fa-spinner fa-pulse'></i>");
         $.get('/checkPlotFile/all');
     }
 }
@@ -178,7 +178,7 @@ function setPlotIntegrity(checkPlotResult) {
                 if (integrity==100)
                 {
                     plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-                        html("<i class='fa fa-check-circle-o'></i>&nbsp;&nbsp;" + integrity + "%");
+                        html("<i class='fas fa-check'></i>&nbsp;&nbsp;" + integrity + "%");
                     plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
                         toggleClass('btn-info btn-danger',false);
                     plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
@@ -187,7 +187,7 @@ function setPlotIntegrity(checkPlotResult) {
                 else
                 {
                     plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
-                        html("<i class='fa fa-exclamation-triangle'></i>&nbsp;&nbsp;" + integrity + "%");
+                        html("<i class='fas fa-exclamation'></i>&nbsp;&nbsp;" + integrity + "%");
                     plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
                         toggleClass('btn-info btn-success',false);
                     plotDirElements[indexDir]["plotfiles"][index]["element"].find("#"+checkPlotResult["plotID"]).
@@ -203,13 +203,13 @@ function setTotalPlotIntegrity(totalCheckResult) {
     var totIntegrity = Math.round(Number(totalCheckResult["totalPlotIntegrity"])*100)/100;
     if (totIntegrity==100)
     {
-        $("#CheckAllButton").html("<i class='fa fa-check-circle-o'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
+        $("#CheckAllButton").html("<i class='fas fa-check'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
         $("#CheckAllButton").toggleClass('btn-info btn-danger',false);
         $("#CheckAllButton").toggleClass('btn-success',true);
     }
     else
     {
-        $("#CheckAllButton").html("<i class='fa fa-exclamation-triangle'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
+        $("#CheckAllButton").html("<i class='fas fa-exclamation'></i>&nbsp;&nbsp;" + totIntegrity + "% Integrity");
         $("#CheckAllButton").toggleClass('btn-info btn-success',false);
         $("#CheckAllButton").toggleClass('btn-danger',true);
     }
@@ -225,7 +225,7 @@ function createPlotfileLine(account, start_nonce, nonces, staggersize, size, pat
     line.append("<div class='col-xs-2 col-md-3'><button id='" + account + "_" + start_nonce + "_" + nonces + "_" + staggersize +
         "' type='button' class='btn btn-info' " +
         "style='padding:2px; margin=0px; width:100%' onclick='checkPlotFile(\"" + account + "\"," + start_nonce + "," +
-        nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='fa fa-superpowers'></span>&nbsp;Validate</button></div>");
+        nonces + "," + staggersize + ",\"" + path.replace(/\\/g,"\\\\") + "\")'><span class='fab fa-superpowers'></span>&nbsp;Validate</button></div>");
     return line;
 }
 

@@ -343,7 +343,7 @@ function createNonceLine(deadline, iconId, lineType, nonceType) {
     else if (nonceType == NONCE_CONFIRMED)
         nonceTypeStr = "confirmed";
 
-    message.append("<span class='fa " + iconId + "'></span> ");
+    message.append("<span class='far " + iconId + "'></span> ");
     if (MasterMiner == 'true') {
         message.append(nonceTypeStr);
         message.append("&nbsp;<span class='badge badge-primary badge-pill''>" + deadline.deadlineStr + "</span><small>&nbsp;(" + deadline.nonce + ")</small>");
@@ -466,7 +466,7 @@ function hideSameNonceLines(nonce) {
 
 function nonceFound(json) {
     if (noncesFound.prop("checked"))
-        replaceOrAddNonceLine(json, "fa fa-compass", "list-group-item-default", NONCE_FOUND);
+        replaceOrAddNonceLine(json, "fa-compass", "list-group-item-default", NONCE_FOUND);
 }
 
 function addOrSubmit(json) {
@@ -546,13 +546,13 @@ function setLastWinner(winner) {
 function deActivateConfirmationSound(on) {
     playConfirmationSound = on;
 
-    iconConfirmationSound.removeClass("fa-volume-up");
-    iconConfirmationSound.removeClass("fa-volume-off");
+    iconConfirmationSound.removeClass("fas fa-volume-up");
+    iconConfirmationSound.removeClass("fas fa-volume-mute");
 
     if (on)
-        iconConfirmationSound.addClass("fa-volume-up");
+        iconConfirmationSound.addClass("fas fa-volume-up");
     else
-        iconConfirmationSound.addClass("fa-volume-off");
+        iconConfirmationSound.addClass("fas fa-volume-mute");
 }
 
 function toggleConfirmationSound() {
@@ -878,11 +878,11 @@ function initBlock() {
     // ******************************************
     localInitCheckBoxes();
     // ******************************************
-    
+
     flotFrameColor = $("p").css("color");
     flotColorOne = $("#progressBarVerify").css("background-color");
     flotColorTwo = $("#progressBar").css("background-color");
-    
+
     initDeadlinePlot();
     initTimePlot();
     initDeadlineDistributionPlot();
