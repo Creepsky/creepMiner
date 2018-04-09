@@ -27,7 +27,6 @@
 #include "MinerUtil.hpp"
 #include "wallet/Wallet.hpp"
 #include "wallet/Account.hpp"
-#include <Poco/Data/Session.h>
 
 using namespace Poco::Data::Keywords;
 

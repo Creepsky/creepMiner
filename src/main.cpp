@@ -46,6 +46,7 @@
 #include <Poco/DirectoryIterator.h>
 #include <regex>
 #include <Poco/Data/SQLite/Connector.h>
+#include "MinerUtil.hpp"
 
 class SslInitializer
 {

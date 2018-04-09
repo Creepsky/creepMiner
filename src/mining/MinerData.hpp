@@ -34,14 +34,7 @@
 #include <functional>
 #include <Poco/BasicEvent.h>
 #include <Poco/Message.h>
-
-namespace Poco
-{
-	namespace Data
-	{
-		class Session;
-	}
-}
+#include <Poco/Data/Session.h>
 
 namespace Burst
 {
