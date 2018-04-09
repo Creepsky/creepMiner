@@ -57,8 +57,6 @@ Burst::BlockData::BlockData(const Poco::UInt64 blockHeight, const Poco::UInt64 b
 
 	roundTime_ = 0;
 	scoop_ = (static_cast<int>(newGenSig[newGenSig.size() - 2] & 0x0F) << 8) | static_cast<int>(newGenSig[newGenSig.size() - 1]);
-
-	refreshBlockEntry();
 }
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadlineUnlocked(const Poco::UInt64 nonce, const Poco::UInt64 deadline,
