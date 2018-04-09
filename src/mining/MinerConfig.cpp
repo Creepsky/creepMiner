@@ -72,39 +72,44 @@ bool Burst::MinerConfig::rescanPlotfiles()
 	return false;
 }
 
-void Burst::MinerConfig::checkPlotOverlaps() 
+void Burst::MinerConfig::checkPlotOverlaps() const
 {
+	Poco::Mutex::ScopedLock lock(mutex_);
+	Poco::UInt64 totalOverlaps = 0;
+
+	const auto plotFiles = getPlotFiles();
+	const auto numPlots = plotFiles.size();
+
+	if (numPlots == 0)
+		return;
+
 	log_system(MinerLogger::config, "Checking local plots for overlaps...");
 
-	Poco::Mutex::ScopedLock lock(mutex_);
-	auto totalOverlaps = 0ull;
-	const auto numPlots = getPlotFiles().size();
-
-	for (auto plotFileOne = 0; plotFileOne < numPlots; plotFileOne++) 
+	for (auto iterOne = plotFiles.begin(); iterOne != plotFiles.end(); ++iterOne)
 	{
-		const auto pathOne = (getPlotFiles().at(plotFileOne))->getPath();
-		const auto startNonceOne = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathOne));
-		const auto nonceCountOne = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathOne));
-		for (auto plotFileTwo = plotFileOne+1; plotFileTwo < numPlots; plotFileTwo++)
+		const auto& fileOne = **iterOne;
+
+		for (auto iterTwo = iterOne + 1; iterTwo != plotFiles.end(); ++iterTwo)
 		{
-			const auto pathTwo = (getPlotFiles().at(plotFileTwo))->getPath();
-			if (pathOne != pathTwo && getAccountIdFromPlotFile(pathOne) == getAccountIdFromPlotFile(pathTwo))
+			const auto& fileTwo = **iterTwo;
+
+			if (fileOne.getPath() != fileTwo.getPath() && fileOne.getAccountId() == fileTwo.getAccountId())
 			{
-				const auto startNonceTwo = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(pathTwo));
-				const auto nonceCountTwo = Poco::NumberParser::parseUnsigned64(getNonceCountFromPlotFile(pathTwo));
-				if (startNonceTwo >= startNonceOne && startNonceTwo < startNonceOne + nonceCountOne)
+				if (fileTwo.getNonceStart() >= fileOne.getNonceStart() && fileTwo.getNonceStart() < fileOne.getNonceStart() + fileOne.getNonces())
 				{
-					auto overlap = startNonceOne + nonceCountOne - startNonceTwo;
-					if (nonceCountTwo < overlap) overlap = nonceCountTwo;
-					log_error(MinerLogger::miner, "%s and %s overlap by %s nonces.", pathOne, pathTwo, std::to_string(overlap));
-					totalOverlaps++;
+					auto overlap = fileOne.getNonceStart() + fileOne.getNonces() - fileTwo.getNonceStart();
+					if (fileTwo.getNonces() < overlap)
+						overlap = fileTwo.getNonces();
+					log_error(MinerLogger::miner, "%s and %s overlap by %s nonces.", fileOne.getPath(), fileTwo.getPath(), std::to_string(overlap));
+					++totalOverlaps;
 				}
-				else if (startNonceOne >= startNonceTwo && startNonceOne < startNonceTwo + nonceCountTwo)
+				else if (fileOne.getNonceStart() >= fileTwo.getNonceStart() && fileOne.getNonceStart() < fileTwo.getNonceStart() + fileTwo.getNonces())
 				{
-					auto overlap = startNonceTwo + nonceCountTwo - startNonceOne;
-					if (nonceCountOne < overlap) overlap = nonceCountOne;
-					log_error(MinerLogger::miner, "%s and %s overlap by %s nonces.", pathTwo, pathOne,  std::to_string(overlap));
-					totalOverlaps++;
+					auto overlap = fileTwo.getNonceStart() + fileTwo.getNonces() - fileOne.getNonceStart();
+					if (fileOne.getNonces() < overlap)
+						overlap = fileOne.getNonces();
+					log_error(MinerLogger::miner, "%s and %s overlap by %s nonces.", fileTwo.getPath(), fileOne.getPath(), std::to_string(overlap));
+					++totalOverlaps;
 				}
 			}
 		}
@@ -132,14 +137,10 @@ void Burst::MinerConfig::printConsole() const
 	printUrl(HostType::Wallet);
 	printUrl(HostType::Server);
 
-	if (MinerConfig::getConfig().getSubmitProbability() > 0.)
-	{
+	if (getConfig().getSubmitProbability() > 0.)
 		printSubmitProbability();
-	}
-	else {
+	else
 		printTargetDeadline();
-	}
-
 
 	if (isLogfileUsed())
 		log_system(MinerLogger::config, "Log path : %s", getConfig().getPathLogfile().toString());
