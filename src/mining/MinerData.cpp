@@ -94,7 +94,7 @@ void Burst::BlockData::setBaseTarget(Poco::UInt64 baseTarget)
 	baseTarget_ = baseTarget;
 }
 
-void Burst::BlockData::confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline)
+void Burst::BlockData::confirmedDeadlineEvent(const std::shared_ptr<Deadline>& deadline)
 {
 	if (deadline == nullptr)
 		return;
@@ -108,13 +108,6 @@ void Burst::BlockData::confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline
 		if (bestDeadline_ == nullptr ||
 			bestDeadline_->getDeadline() > deadline->getDeadline())
 			bestDeadline_ = deadline;
-	}
-
-	// set the best deadline overall
-	if (parent_ != nullptr)
-	{
-		parent_->setBestDeadline(deadline);
-		parent_->addConfirmedDeadline();
 	}
 }
 
@@ -171,9 +164,7 @@ std::shared_ptr<Burst::Account> Burst::BlockData::DataLoader::runGetLastWinner(c
 			numberToString(lastBlockheight), lastWinner, winnerAccount->getAddress(),
 			winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName()),
 			rewardRecipient
-		)
-
-;
+		);
 
 		blockdata.setLastWinner(winnerAccount);
 
@@ -198,7 +189,8 @@ void Burst::BlockData::setLastWinner(std::shared_ptr<Account> account)
 
 void Burst::BlockData::refreshBlockEntry() const
 {
-	addBlockEntry(createJsonNewBlock(*parent_));
+	if (parent_ != nullptr)
+		addBlockEntry(createJsonNewBlock(*parent_));
 }
 
 void Burst::BlockData::refreshConfig() const
@@ -474,14 +466,7 @@ bool Burst::BlockData::forDeadlines(const std::function<bool(const Deadline&)>& 
 }
 
 Burst::MinerData::MinerData()
-	: lowestDifficulty_{0, 0},
-	  highestDifficulty_ {0, 0},
-	  blocksMined_(0),
-	  blocksWon_(0),
-	  deadlinesConfirmed_(0),
-	  currentBlockheight_(0),
-	  currentBasetarget_(0),
-	  currentScoopNum_(0),
+	: blocksWon_(0),
 	  activityWonBlocks_{this, &MinerData::runGetWonBlocks}
 {
 	const auto databasePath = MinerConfig::getConfig().getDatabasePath();
@@ -522,90 +507,6 @@ Burst::MinerData::MinerData()
 	{
 		throw Poco::Exception{Poco::format("Could not load/create the database '%s'\n\tReason: %s", databasePath, e.displayText())};
 	}
-
-	try
-	{
-		Poco::UInt64 blocksMined;
-		Poco::UInt64 minDifficultyHeight, minDifficulty;
-		Poco::UInt64 maxDifficultyHeight, maxDifficulty;
-		Poco::UInt64 deadlinesConfirmed;
-		Poco::Tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, Poco::UInt64, Poco::UInt64> bestDeadline;
-
-		*dbSession_ << "SELECT COUNT(*) FROM block", into(blocksMined), now;
-		*dbSession_ << "SELECT height, MIN(difficulty) FROM block", into(minDifficultyHeight), into(minDifficulty), now;
-		*dbSession_ << "SELECT height, MAX(difficulty) FROM block", into(maxDifficultyHeight), into(maxDifficulty), now;
-		*dbSession_ << "SELECT COUNT(*) FROM deadline WHERE status = 3", into(deadlinesConfirmed), now;
-		const auto stmtBestDeadline = (*dbSession_ << "SELECT nonce, value, account, height, file, totalplotsize, MIN(value) FROM deadline", 
-			into(bestDeadline), now);
-
-		blocksMined_ = blocksMined;
-		lowestDifficulty_ = {minDifficultyHeight, minDifficulty};
-		highestDifficulty_ = {maxDifficultyHeight, maxDifficulty};
-		deadlinesConfirmed_ = deadlinesConfirmed;
-
-		if (!bestDeadline.get<4>().empty())
-		{
-			bestDeadlineOverall_ = std::make_shared<Deadline>(
-				bestDeadline.get<0>(),
-				bestDeadline.get<1>(),
-				std::make_shared<Account>(bestDeadline.get<2>()),
-				bestDeadline.get<3>(),
-				bestDeadline.get<4>(),
-				nullptr);
-
-			bestDeadlineOverall_->setTotalPlotsize(bestDeadline.get<5>());
-		}
-
-		// load historical blocks
-		Poco::UInt64 lastHeight;
-		*dbSession_ << "SELECT MAX(height) FROM block", into(lastHeight), now;
-
-		if (lastHeight > 0)
-		{
-			const auto firstHeight = lastHeight - MinerConfig::getConfig().getMaxHistoricalBlocks();
-
-			std::vector<Poco::UInt64> heights, baseTargets, targetDeadlines;
-			std::vector<std::string> gensigs;
-
-			*dbSession_ << "SELECT height, baseTarget, gensig, targetDeadline FROM block " <<
-				"			WHERE height >= :from AND height <= :to",
-				into(heights), into(baseTargets), into(gensigs), into(targetDeadlines),
-				bind(firstHeight), bind(lastHeight), now;
-
-			std::vector<Poco::UInt64> nonces, values, accounts, totalPlotSizes;
-			std::vector<std::string> files;
-			Poco::UInt64 height;
-
-			auto stmtDeadlines = (*dbSession_ << "SELECT nonce, value, account, file, totalplotsize " <<
-												 "FROM deadline " <<
-												 "WHERE height = :height",
-				into(nonces), into(values), into(accounts), into(files), into(totalPlotSizes), use(height));
-
-			for (size_t i = 0; i < heights.size() && i < MinerConfig::getConfig().getMaxHistoricalBlocks(); ++i)
-			{
-				height = heights[i];
-
-				auto historicBlock = std::make_shared<BlockData>(
-					height,
-					baseTargets[i],
-					gensigs[i],
-					this,
-					targetDeadlines[i]
-				);
-
-				stmtDeadlines.execute();
-
-				for (size_t j = 0; j < nonces.size(); ++j)
-					historicBlock->addDeadline(nonces[j], values[j], std::make_shared<Account>(accounts[j]), height, files[j]);
-
-				historicalBlocks_.emplace_back(std::move(historicBlock));
-			}
-		}
-	}
-	catch (Poco::Exception& e)
-	{
-		throw Poco::Exception{Poco::format("Could not load the data from '%s'\n\tReason: %s", databasePath, e.displayText())};
-	}
 }
 
 Burst::MinerData::~MinerData() = default;
@@ -614,23 +515,11 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
                                                                   const std::string& genSig,
                                                                   Poco::UInt64 blockTargetDeadline)
 {
-	std::unique_lock<std::mutex> lock{ mutex_ };
+	std::lock_guard<std::mutex> lock{mutex_};
 
 	// save the old data in the historical container
 	if (blockData_ != nullptr)
 	{
-		const auto maxSize = MinerConfig::getConfig().getMaxHistoricalBlocks();
-
-		// if we reached the maximum size of blocks, forget the oldest
-		while (historicalBlocks_.size() + 1 > maxSize)
-			historicalBlocks_.pop_front();
-
-		// we clear all entries, because it is also in the logfile
-		// and we dont need it in the ram anymore
-		blockData_->clearEntries();
-
-		historicalBlocks_.emplace_back(blockData_);
-
 		// add the block to the database
 		try
 		{
@@ -677,28 +566,89 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 			log_error(MinerLogger::general, "Could not insert block %Lu\n\tReason: %s",
 				blockData_->getBlockheight(), e.displayText());
 		}
-
-		++blocksMined_;
 	}
 
-	lock.unlock();
 	blockData_ = std::make_shared<BlockData>(block, baseTarget, genSig, this, blockTargetDeadline);
-
-	lock.lock();
-	currentBlockheight_ = block;
-	currentBasetarget_ = baseTarget;
-	currentScoopNum_ = blockData_->getScoop();
-
-	const auto lowestDiff = lowestDifficulty_;
-	const auto highestDiff = highestDifficulty_;
-
-	if (highestDiff.height == 0 || highestDiff.value < blockData_->getDifficulty())
-		highestDifficulty_ = {blockData_->getBlockheight(), blockData_->getDifficulty()};
-
-	if (lowestDiff.height == 0 || lowestDiff.value > blockData_->getDifficulty())
-		lowestDifficulty_ = {blockData_->getBlockheight(), blockData_->getDifficulty()};
-
 	return blockData_;
+}
+
+std::vector<std::shared_ptr<Burst::BlockData>> Burst::MinerData::getHistoricalBlocks(const Poco::UInt64 from, const Poco::UInt64 to) const
+{
+	std::vector<std::shared_ptr<BlockData>> historicalBlocks;
+	forAllBlocks(from, to, [&](const auto& block)
+	{
+		historicalBlocks.emplace_back(block);
+		return false;
+	});
+	return historicalBlocks;
+}
+
+void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 to,
+	const std::function<bool(std::shared_ptr<BlockData>&)>& traverseFunction) const
+{
+	Poco::UInt64 height, baseTarget, targetDeadline, blockTime;
+	double roundTime;
+	std::string gensig;
+	std::vector<Poco::UInt64> nonces, values, accounts, totalPlotSizes, status;
+	std::vector<std::string> files;
+
+	const auto fetchAll = from == 0 && to == 0;
+	std::string query = "SELECT height, baseTarget, gensig, targetDeadline, roundTime, blockTime FROM block";
+
+	if (!fetchAll)
+		query += " WHERE height >= :from AND height <= :to";
+
+	auto stmt = (*dbSession_ << query,	into(height), into(baseTarget), into(gensig),
+										into(targetDeadline), into(roundTime), into(blockTime), limit(1));
+
+	if (!fetchAll)
+	{
+		stmt.bind(from);
+		stmt.bind(to);
+	}
+
+	auto stmtDeadlines = (*dbSession_ << "SELECT nonce, value, account, file, totalplotsize, status " <<
+										 "FROM deadline WHERE height = :height",
+		into(nonces), into(values), into(accounts), into(files), into(totalPlotSizes), into(status), use(height));
+
+	auto stop = false;
+
+	while (!stmt.done() && !stop)
+	{
+		stmt.execute();
+		
+		auto historicBlock = std::make_shared<BlockData>(
+			height,
+			baseTarget,
+			gensig,
+			nullptr,
+			targetDeadline
+		);
+
+		historicBlock->setRoundTime(roundTime);
+		historicBlock->setBlockTime(blockTime);
+
+		stmtDeadlines.execute();
+
+		for (size_t j = 0; j < nonces.size(); ++j)
+		{
+			auto deadline = historicBlock->addDeadline(nonces[j], values[j], std::make_shared<Account>(accounts[j]), height, files[j]);
+
+			switch (status[j])
+			{
+			case 3:
+				deadline->confirm();
+			case 2:
+				deadline->send();
+			case 1:
+				deadline->onTheWay();
+			default:
+				break;
+			}
+		}
+
+		 stop = traverseFunction(historicBlock);
+	}
 }
 
 Poco::UInt64 Burst::MinerData::runGetWonBlocks(const std::pair<const Wallet*, const Accounts*>& args)
@@ -733,21 +683,6 @@ Poco::UInt64 Burst::MinerData::runGetWonBlocks(const std::pair<const Wallet*, co
 	return wonBlocks;
 }
 
-void Burst::MinerData::addConfirmedDeadline()
-{
-	++deadlinesConfirmed_;
-}
-
-void Burst::MinerData::setBestDeadline(std::shared_ptr<Deadline> deadline)
-{
-	std::lock_guard<std::mutex> lock{ mutex_ };
-
-	// we check if its the best deadline overall
-	if (bestDeadlineOverall_ == nullptr ||
-		deadline->getDeadline() < bestDeadlineOverall_->getDeadline())
-		bestDeadlineOverall_ = deadline;
-}
-
 void Burst::MinerData::addMessage(const Poco::Message& message)
 {
 	const auto blockData = getBlockData();
@@ -758,20 +693,40 @@ void Burst::MinerData::addMessage(const Poco::Message& message)
 
 std::shared_ptr<Burst::Deadline> Burst::MinerData::getBestDeadlineOverall(bool onlyHistorical) const
 {
+	std::lock_guard<std::mutex> mutex{mutex_};
+	Poco::UInt64 from = 0, to = 0;
+
 	if (!onlyHistorical)
-		return bestDeadlineOverall_;
+	{
+		if (blockData_ == nullptr)
+			*dbSession_ << "SELECT MAX(height) FROM block", into(to), now;
+		else
+			to = blockData_->getBlockheight();
 
-	std::lock_guard<std::mutex> lock(mutex_);
+		if (to == 0)
+			return nullptr;
 
-	std::shared_ptr<Deadline> bestHistoricalDeadline;
+		const auto maxHistoricalBlocks = MinerConfig::getConfig().getMaxHistoricalBlocks();
 
-	for (const auto& block : historicalBlocks_)
-		if (block != nullptr && block->getBestDeadline() != nullptr &&
-			(bestHistoricalDeadline == nullptr ||
-				block->getBestDeadline()->getDeadline() < bestHistoricalDeadline->getDeadline()))
-			bestHistoricalDeadline = block->getBestDeadline();
+		if (maxHistoricalBlocks > to)
+			from = 0;
+		else
+			from = to - MinerConfig::getConfig().getMaxHistoricalBlocks();
+	}
 
-	return bestHistoricalDeadline;
+	std::shared_ptr<Deadline> bestDeadline;
+
+	forAllBlocks(from, to, [&](const std::shared_ptr<BlockData>& block)
+	{
+		auto blockBestDeadline = block->getBestDeadline();
+
+		if (bestDeadline == nullptr || blockBestDeadline->getDeadline() < bestDeadline->getDeadline())
+			bestDeadline = blockBestDeadline;
+		
+		return false;
+	});
+
+	return bestDeadline;
 }
 
 const Poco::Timestamp& Burst::MinerData::getStartTime() const
@@ -796,7 +751,9 @@ Poco::UInt64 Burst::BlockData::getBlockTime() const
 
 Poco::UInt64 Burst::MinerData::getBlocksMined() const
 {
-	return blocksMined_;
+	Poco::UInt64 blocksMined;
+	*dbSession_ << "SELECT COUNT(*) FROM block", into(blocksMined), now;
+	return blocksMined;
 }
 
 Poco::UInt64 Burst::MinerData::getBlocksWon() const
@@ -814,6 +771,36 @@ std::shared_ptr<const Burst::BlockData> Burst::MinerData::getBlockData() const
 	return blockData_;
 }
 
+std::shared_ptr<const Burst::BlockData> Burst::MinerData::getHistoricalBlockData(const Poco::UInt32 roundsBefore) const
+{
+	if (blockData_ == nullptr)
+		return nullptr;
+
+	if (roundsBefore == 0)
+		return blockData_;
+
+	const auto currentHeight = getCurrentBlockheight();
+	const auto from = [&]()
+	{
+		const auto maxHistoricalBlocks = MinerConfig::getConfig().getMaxHistoricalBlocks();
+		
+		if (maxHistoricalBlocks > currentHeight)
+			return Poco::UInt64{0};
+		else
+			return currentHeight - maxHistoricalBlocks;
+	}();
+
+	std::shared_ptr<const BlockData> historicBlock;
+
+	forAllBlocks(from, currentHeight, [&](const auto& block)
+	{
+		historicBlock = block;
+		return true;
+	});
+
+	return historicBlock;
+}
+
 //std::shared_ptr<const Poco::JSON::Object> Burst::MinerData::getLastWinner() const
 //{
 //	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
@@ -828,69 +815,25 @@ std::shared_ptr<const Burst::BlockData> Burst::MinerData::getBlockData() const
 //	return blockData->getLastWinner();
 //}
 
-std::shared_ptr<const Burst::BlockData> Burst::MinerData::getHistoricalBlockData(Poco::UInt32 roundsBefore) const
+std::vector<std::shared_ptr<Burst::BlockData>> Burst::MinerData::getAllHistoricalBlockData() const
 {
-	if (roundsBefore == 0)
-		return getBlockData();
-
-	auto wantedBlock = getBlockData()->getBlockheight() - roundsBefore;
-
-	std::lock_guard<std::mutex> lock{ mutex_ };
-
-	const auto iter = std::find_if(historicalBlocks_.begin(), historicalBlocks_.end(), [wantedBlock](const std::shared_ptr<BlockData>& data)
-	{
-		return data->getBlockheight() == wantedBlock;
-	});
-
-	if (iter == historicalBlocks_.end())
-		return nullptr;
-
-	return (*iter);
-}
-
-std::vector<std::shared_ptr<const Burst::BlockData>> Burst::MinerData::getAllHistoricalBlockData() const
-{
-	std::lock_guard<std::mutex> lock{ mutex_ };
-	
-	std::vector<std::shared_ptr<const BlockData>> blocks;
-	blocks.reserve(historicalBlocks_.size());
-
-	for (auto& block : historicalBlocks_)
-		blocks.emplace_back(block);
-
-	return blocks;
+	const auto from = getCurrentBlockheight() - MinerConfig::getConfig().getMaxHistoricalBlocks();
+	const auto to = getCurrentBlockheight();
+	return getHistoricalBlocks(from, to);
 }
 
 Poco::UInt64 Burst::MinerData::getConfirmedDeadlines() const
 {
-	return deadlinesConfirmed_;
+	Poco::UInt64 deadlinesConfirmed;
+	*dbSession_ << "SELECT COUNT(*) FROM deadline WHERE status = 3", into(deadlinesConfirmed), now;
+	return deadlinesConfirmed;
 }
 
 Poco::UInt64 Burst::MinerData::getAverageDeadline() const
 {
-	std::lock_guard<std::mutex> lock{ mutex_ };
-	
 	Poco::UInt64 avg = 0;
-	size_t size = 0;
-
-	if (historicalBlocks_.empty())
-		return 0;
-
-	for (const auto& block : historicalBlocks_)
-	{
-		const auto bestDeadline = block->getBestDeadline();
-
-		if (bestDeadline != nullptr)
-		{
-			avg += bestDeadline->getDeadline();
-			++size;
-		}
-	}
-
-	if (size == 0)
-		return 0;
-
-	return avg / size;
+	*dbSession_ << "SELECT AVG(value) FROM deadline", into(avg), now;
+	return avg;
 }
 
 Poco::Int64 Burst::MinerData::getDifficultyDifference() const
@@ -909,29 +852,34 @@ Poco::Int64 Burst::MinerData::getDifficultyDifference() const
 
 Burst::HighscoreValue<Poco::UInt64> Burst::MinerData::getLowestDifficulty() const
 {
-	std::lock_guard<std::mutex> lock{ mutex_ };
-	return lowestDifficulty_;
+	Poco::UInt64 height, difficulty;
+	*dbSession_ << "SELECT height, MIN(difficulty) FROM block", into(height), into(difficulty), now;
+	return {height, difficulty};
 }
 
 Burst::HighscoreValue<Poco::UInt64> Burst::MinerData::getHighestDifficulty() const
 {
-	std::lock_guard<std::mutex> lock {mutex_};
-	return highestDifficulty_;
+	Poco::UInt64 height, difficulty;
+	*dbSession_ << "SELECT height, MAX(difficulty) FROM block", into(height), into(difficulty), now;
+	return {height, difficulty};
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentBlockheight() const
 {
-	return currentBlockheight_.load();
+	std::lock_guard<std::mutex> lock {mutex_};
+	return blockData_ == nullptr ? 0 : blockData_->getBlockheight();
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentBasetarget() const
 {
-	return currentBasetarget_.load();
+		std::lock_guard<std::mutex> lock {mutex_};
+	return blockData_ == nullptr ? 0 : blockData_->getBasetarget();
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentScoopNum() const
 {
-	return currentScoopNum_.load();
+		std::lock_guard<std::mutex> lock {mutex_};
+	return blockData_ == nullptr ? 0 : blockData_->getScoop();
 }
 
 Poco::ActiveResult<Poco::UInt64> Burst::MinerData::getWonBlocksAsync(const Wallet& wallet, const Accounts& accounts)

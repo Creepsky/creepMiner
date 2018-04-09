@@ -107,7 +107,7 @@ namespace Burst
 	protected:
 		
 		void addBlockEntry(Poco::JSON::Object entry) const;
-		void confirmedDeadlineEvent(std::shared_ptr<Deadline> deadline);
+		void confirmedDeadlineEvent(const std::shared_ptr<Deadline>& deadline);
 
 	private:
 		class DataLoader : public Poco::ActiveDispatcher
@@ -175,7 +175,7 @@ namespace Burst
 		std::shared_ptr<BlockData> getBlockData();
 		std::shared_ptr<const BlockData> getBlockData() const;
 		std::shared_ptr<const BlockData> getHistoricalBlockData(Poco::UInt32 roundsBefore) const;
-		std::vector<std::shared_ptr<const BlockData>> getAllHistoricalBlockData() const;
+		std::vector<std::shared_ptr<BlockData>> getAllHistoricalBlockData() const;
 		Poco::UInt64 getConfirmedDeadlines() const;
 		Poco::UInt64 getAverageDeadline() const;
 		Poco::Int64 getDifficultyDifference() const;
@@ -188,27 +188,18 @@ namespace Burst
 		Poco::ActiveResult<Poco::UInt64> getWonBlocksAsync(const Wallet& wallet, const Accounts& accounts);
 
 		Poco::BasicEvent<const Poco::JSON::Object> blockDataChangedEvent;
+		std::vector<std::shared_ptr<BlockData>> getHistoricalBlocks(Poco::UInt64 from, Poco::UInt64 to) const;
+
+		void forAllBlocks(Poco::UInt64 from, Poco::UInt64 to, const std::function<bool(std::shared_ptr<BlockData>&)>& traverseFunction) const;
 
 	protected:
 		Poco::UInt64 runGetWonBlocks(const std::pair<const Wallet*, const Accounts*>& args);
 
 	private:
-		void addConfirmedDeadline();
-		void setBestDeadline(std::shared_ptr<Deadline> deadline);
-
 		Poco::Timestamp startTime_ = {};
-		std::shared_ptr<Deadline> bestDeadlineOverall_ = nullptr;
-		HighscoreValue<Poco::UInt64> lowestDifficulty_, highestDifficulty_;
-		std::atomic<Poco::UInt64> blocksMined_;
 		std::atomic<Poco::UInt64> blocksWon_;
-		std::atomic<Poco::UInt64> deadlinesConfirmed_;
 		std::shared_ptr<BlockData> blockData_ = nullptr;
-		std::deque<std::shared_ptr<BlockData>> historicalBlocks_;
 		mutable std::mutex mutex_;
-
-		std::atomic<Poco::UInt64> currentBlockheight_;
-		std::atomic<Poco::UInt64> currentBasetarget_;
-		std::atomic<Poco::UInt64> currentScoopNum_;
 
 		std::unique_ptr<Poco::Data::Session> dbSession_ = nullptr;
 
