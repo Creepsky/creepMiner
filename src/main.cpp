@@ -142,7 +142,7 @@ int main(const int argc, const char* argv[])
 		HTTPSSessionInstantiator::registerInstantiator();
 
 		// start versionChecker timer thread , checking online version every 30 minutes
-		Poco::Timer checkVersionTimer(100, 1800000);
+		Timer checkVersionTimer(100, 1800000);
 		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(Burst::Settings::Project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
 
 		auto running = true;
@@ -157,18 +157,13 @@ int main(const int argc, const char* argv[])
 			{
 				log_information(general, "Could not load config %s", arguments.confPath);
 
-				Path minerRootPath(Path::home());
-				minerRootPath.pushDirectory(".creepMiner");
+				// create the home directory
+				const auto minerHomePath = Burst::getMinerHomeDir();
 
-				File(minerRootPath).createDirectory();
+				if (File{minerHomePath}.createDirectory())
+					log_information(general, "Home directory has been created: %s", minerHomePath.toString());
 
-				Path minerHomePath(minerRootPath);
-				minerHomePath.pushDirectory(std::string(Project.getVersion()));
-
-				if (File(minerHomePath).createDirectory())
-					log_information(general, "Home directory has created: %s", minerHomePath.toString());
-
-				Path homeConfigPath(minerHomePath);
+				auto homeConfigPath(minerHomePath);
 				homeConfigPath.append("mining.conf");
 				const auto homeConfig = homeConfigPath.toString();
 
@@ -179,7 +174,7 @@ int main(const int argc, const char* argv[])
 				if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 				{
 					// create the log dir
-					Path homeLogPath(minerHomePath);
+					auto homeLogPath(minerHomePath);
 					homeLogPath.pushDirectory("logs");
 					homeLogPath.makeDirectory();
 
