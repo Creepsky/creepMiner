@@ -26,6 +26,7 @@
 #include <Poco/Mutex.h>
 #include <atomic>
 #include <set>
+#include <vector>
 
 namespace Burst
 {
@@ -99,6 +100,8 @@ namespace Burst
 		std::shared_ptr<Deadline> getBestConfirmed() const;
 		std::shared_ptr<Deadline> getBestFound() const;
 		std::shared_ptr<Deadline> getBestSent() const;
+
+		std::vector<std::shared_ptr<Deadline>> getDeadlines() const;
 
 	private:
 		void deadlineEvent(const std::shared_ptr<Deadline>& deadline, const std::string& type) const;

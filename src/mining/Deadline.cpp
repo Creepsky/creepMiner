@@ -260,6 +260,17 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestSent() const
 	return nullptr;
 }
 
+std::vector<std::shared_ptr<Burst::Deadline>> Burst::Deadlines::getDeadlines() const
+{
+	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	std::vector<std::shared_ptr<Deadline>> deadlines;
+
+	for (auto& deadline : deadlines_)
+		deadlines.emplace_back(deadline);
+
+	return deadlines;
+}
+
 void Burst::Deadlines::deadlineEvent(const std::shared_ptr<Deadline>& deadline, const std::string& type) const
 {
 	if (parent_ != nullptr)
