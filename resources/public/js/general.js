@@ -63,7 +63,7 @@ function checkVersion(runningVer, onlineVer) {
     {
         $("#runningVer").html("<i class='fas fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
-        $("#versionAlert").html("<i class='fas fa-check text-success'></i>&nbsp;v&nbsp;You are running a current version of creepMiner.");
+        $("#versionAlert").html("<i class='fas fa-check text-success'></i>&nbsp;&nbsp;You are running a current version of creepMiner.");
     }
 	return current
 }
