@@ -616,6 +616,9 @@ void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 
 	while (!stmt.done() && !stop)
 	{
 		stmt.execute();
+
+		if (stmt.rowsExtracted() == 0)
+			continue;
 		
 		auto historicBlock = std::make_shared<BlockData>(
 			height,
