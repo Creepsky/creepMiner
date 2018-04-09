@@ -106,7 +106,7 @@ namespace Burst
 		 * Does NOT read new plot dirs from the configuration file!
 		 */
 		bool rescanPlotfiles();
-		void checkPlotOverlaps();
+		void checkPlotOverlaps() const;
 		void printConsole() const;
 		void printConsolePlots() const;
 		void printUrl(HostType type) const;
