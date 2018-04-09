@@ -476,7 +476,7 @@ function addOrSubmit(json) {
 
 function addOrConfirm(json) {
     if (noncesConfirmed.prop("checked")) {
-        replaceOrAddNonceLine(json, "fa-check", "list-group-item-success", NONCE_CONFIRMED);
+        replaceOrAddNonceLine(json, "fa-check-circle", "list-group-item-success", NONCE_CONFIRMED);
 
         if (confirmedSound && playConfirmationSound)
             confirmedSound.play();

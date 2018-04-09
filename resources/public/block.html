@@ -48,22 +48,22 @@
 			<div class="row">
 				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show found nonce">
 					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesFound" checked><label class="custom-control-label" for="cbNoncesFound"><i class="fas fa-compass"></i>&nbsp;Found</label>
+						<input type="checkbox" class="custom-control-input" id="cbNoncesFound" checked><label class="custom-control-label" for="cbNoncesFound"><i class="far fa-compass"></i>&nbsp;Found</label>
 					</div>
 				</div>
 				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show sent nonce">
 					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesSent" checked><label class="custom-control-label" for="cbNoncesSent"><i class="fas fa-paper-plane"></i>&nbsp;Sent</label>
+						<input type="checkbox" class="custom-control-input" id="cbNoncesSent" checked><label class="custom-control-label" for="cbNoncesSent"><i class="far fa-paper-plane"></i>&nbsp;Sent</label>
 					</div>
 				</div>
 				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show confirmed nonce">
 					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesConfirmed" checked><label class="custom-control-label" for="cbNoncesConfirmed"><i class="fas fa-check"></i>&nbsp;Conf</label>
+						<input type="checkbox" class="custom-control-input" id="cbNoncesConfirmed" checked><label class="custom-control-label" for="cbNoncesConfirmed"><i class="far fa-check-circle"></i>&nbsp;Conf</label>
 					</div>
 				</div>
                 <div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Hide same nonce">
                     <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="cbHideSameNonces" checked><label class="custom-control-label" for="cbHideSameNonces"><i class="fas fa-eye-slash"></i>&nbsp;Same</label>
+                        <input type="checkbox" class="custom-control-input" id="cbHideSameNonces" checked><label class="custom-control-label" for="cbHideSameNonces"><i class="far fa-eye-slash"></i>&nbsp;Same</label>
                     </div>
                 </div>
                 <br>
@@ -162,7 +162,10 @@
                             <div id="deadlinesChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
                             <div class="alert alert-info">
                             	<span id="deadlinesInfo">---</span>
-                            	<span class="fas fa-expand-arrows-alt float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer"></span></div>
+                            	<span class="float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer">
+                            		<i class="fas fa-expand-arrows-alt"></i>
+                            	</span>
+                            </div>
                         </div>
                     </div>
                     <div class="col-lg-6">
@@ -186,7 +189,9 @@
                             <div id="timeChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
                             <div class="alert alert-info">
                             	<span id="timeInfo">---</span>
-                            	<span class="fas fa-expand-arrows-alt float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer"></span>
+                            	<span class="float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer">
+                            		<i class="fas fa-expand-arrows-alt"></i>
+                            	</span>
                             </div>
                         </div>
                     </div>
