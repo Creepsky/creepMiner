@@ -617,6 +617,13 @@ void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 
 		if (stmt.rowsExtracted() == 0)
 			continue;
 		
+		nonces.clear();
+		values.clear();
+		accounts.clear();
+		files.clear();
+		totalPlotSizes.clear();
+		status.clear();
+
 		auto historicBlock = std::make_shared<BlockData>(
 			height,
 			baseTarget,
