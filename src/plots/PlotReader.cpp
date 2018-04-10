@@ -195,9 +195,6 @@ void Burst::PlotReader::runTask()
 						{
 							memory = globalBufferSize.reserve();
 							memoryAcquired = memory != nullptr;
-
-							if (!memoryAcquired)
-								std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
 						}
 						TAKE_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
 
