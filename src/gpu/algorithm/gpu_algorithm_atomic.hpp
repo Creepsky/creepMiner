@@ -30,10 +30,8 @@ namespace Burst
 	struct Gpu_Algorithm_Atomic
 	{
 		template <typename TGpu_Impl>
-		static bool run(std::vector<ScoopData>& scoops,
-			const GensigData& gensig,
-			Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, void* stream,
-			std::pair<Poco::UInt64, Poco::UInt64>& bestDeadline)
+		static bool run(ScoopData* scoops, const size_t size, const GensigData& gensig, Poco::UInt64 nonceStart,
+		                Poco::UInt64 baseTarget, void* stream, std::pair<Poco::UInt64, Poco::UInt64>& bestDeadline)
 		{
 			using shell = Gpu_Shell<TGpu_Impl>;
 
@@ -42,7 +40,7 @@ namespace Burst
 			GensigData* gpuGensig;
 			Poco::UInt64* gpuDeadlines;
 			std::string errorString;
-			const auto nonces = scoops.size();
+			const auto nonces = size;
 			Poco::UInt64 minDeadline;
 			Poco::UInt64 minDeadlineIndex;
 
@@ -54,7 +52,7 @@ namespace Burst
 			ok = allocated;
 
 			// copy the memory from RAM to gpu
-			ok = ok && shell::copyMemory(scoops.data(), gpuScoops, MemoryType::Buffer, nonces, MemoryCopyDirection::ToDevice, stream);
+			ok = ok && shell::copyMemory(scoops, gpuScoops, MemoryType::Buffer, nonces, MemoryCopyDirection::ToDevice, stream);
 			ok = ok && shell::copyMemory(&gensig, gpuGensig, MemoryType::Gensig, 1, MemoryCopyDirection::ToDevice, stream);
 
 			// calculate the deadlines on gpu

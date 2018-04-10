@@ -31,47 +31,61 @@
 #include "logging/Output.hpp"
 #include "Plot.hpp"
 #include "logging/Performance.hpp"
+#include <Poco/Event.h>
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
-void Burst::GlobalBufferSize::setMax(Poco::UInt64 max)
+void Burst::GlobalBufferSize::setMax(const Poco::UInt64 max)
 {
-	Poco::FastMutex::ScopedLock lock{ mutex_ };
-	max_ = max;
+	chunkQueue.wakeUpAll();
+
+	if (MinerConfig::getConfig().getMaxBufferSizeRaw() > 0)
+	{
+		if (getMax() == max)
+			return;
+
+		if (memoryPool_ != nullptr)
+			memoryPool_.reset();
+
+		const auto chunks = MinerConfig::getConfig().getBufferChunkCount();
+		auto chunkSize = max / chunks;
+
+		memoryPool_ = std::make_unique<Poco::MemoryPool>(chunkSize, 0, chunks);
+		max_ = max;
+	}
 }
 
-bool Burst::GlobalBufferSize::reserve(Poco::UInt64 size)
+void* Burst::GlobalBufferSize::reserve()
 {
 	// unlimited memory
-	if (MinerConfig::getConfig().getMaxBufferSize() == 0)
-		return true;
+	//if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
+	//	return true;
 
-	Poco::FastMutex::ScopedLock lock{ mutex_ };
-	
-	if (size_ + size > max_)
-		return false;
-
-	size_ += size;
-	return true;
+	try
+	{
+		return memoryPool_->get();
+	}
+	catch (...)
+	{
+		return nullptr;
+	}
 }
 
-void Burst::GlobalBufferSize::free(Poco::UInt64 size)
+void Burst::GlobalBufferSize::free(void* memory)
 {
 	// unlimited memory
-	if (MinerConfig::getConfig().getMaxBufferSize() == 0)
-		return;
+	//if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
+	//	return true;
 
-	Poco::FastMutex::ScopedLock lock{ mutex_ };
-	
-	if (size > size_)
-		size = size_;
-
-	size_ -= size;
+	memoryPool_->release(memory);
 }
 
 Poco::UInt64 Burst::GlobalBufferSize::getSize() const
 {
-	return size_;
+	if (memoryPool_ == nullptr)
+		return 0;
+
+	return memoryPool_->blockSize() * memoryPool_->allocated();
 }
 
 Poco::UInt64 Burst::GlobalBufferSize::getMax() const
@@ -174,11 +188,13 @@ void Burst::PlotReader::runTask()
 
 						auto memoryAcquired = false;
 						auto memoryToAcquire = std::min(readNonces * Settings::ScoopSize, chunkBytes);
+						void* memory = nullptr;
 
 						START_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
 						while (!isCancelled() && !memoryAcquired)
 						{
-							memoryAcquired = globalBufferSize.reserve(memoryToAcquire);
+							memory = globalBufferSize.reserve();
+							memoryAcquired = memory != nullptr;
 
 							if (!memoryAcquired)
 								std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
@@ -190,7 +206,7 @@ void Burst::PlotReader::runTask()
 						{
 							// but first give free the allocated memory
 							if (memoryAcquired)
-								globalBufferSize.free(memoryToAcquire);
+								globalBufferSize.free(memory);
 
 							continue;
 						}
@@ -211,34 +227,13 @@ void Burst::PlotReader::runTask()
 							verification->gensig = plotReadNotification->gensig;
 							verification->nonceRead = startNonce;
 							verification->baseTarget = plotReadNotification->baseTarget;
-							verification->memorySize = memoryToAcquire;
-
-							memoryAcquired = false;
-
-							while (!memoryAcquired && !isCancelled())
-							{
-								try
-								{
-									verification->buffer.resize(readNonces);
-									memoryAcquired = true;
-								}
-								catch (std::bad_alloc&)
-								{
-								}
-								catch (...)
-								{
-									globalBufferSize.free(memoryToAcquire);
-									throw;
-								}
-
-								if (!memoryAcquired)
-									std::this_thread::sleep_for(std::chrono::milliseconds{10});
-							}
+							verification->nonces = readNonces;
+							verification->buffer = reinterpret_cast<ScoopData*>(memory);
 							TAKE_PROBE("PlotReader.CreateVerification");
 
 							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire);
+							inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire);
 							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 
 							verificationQueue_->enqueueNotification(verification);
@@ -254,7 +249,7 @@ void Burst::PlotReader::runTask()
 						}
 						// if the memory was acquired, but it was not the right block, give it free
 						else if (memoryAcquired)
-							globalBufferSize.free(memoryToAcquire);
+							globalBufferSize.free(memory);
 						// this should never happen.. no memory allocated, not cancelled, wrong block
 						else;
 						TAKE_PROBE_DOMAIN("PlotReader.Nonces", plotFile.getPath());

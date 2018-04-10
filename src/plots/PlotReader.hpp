@@ -32,6 +32,8 @@
 #include <Poco/Notification.h>
 #include "mining/MinerConfig.hpp"
 #include "Plot.hpp"
+#include <Poco/NotificationQueue.h>
+#include <Poco/MemoryPool.h>
 
 namespace Poco
 {
@@ -47,16 +49,18 @@ namespace Burst
 	{
 	public:
 		void setMax(Poco::UInt64 max);
-		bool reserve(Poco::UInt64 size);
-		void free(Poco::UInt64 size);
+		void* reserve();
+		void free(void* memory);
 		
 		Poco::UInt64 getSize() const;
 		Poco::UInt64 getMax() const;
 
+		Poco::NotificationQueue chunkQueue;
+
 	private:
-		Poco::UInt64 size_ = 0;
-		Poco::UInt64 max_ = 0;
-		mutable Poco::FastMutex mutex_;
+		Poco::Event reserveEvent_;
+		Poco::UInt64 max_;
+		std::unique_ptr<Poco::MemoryPool> memoryPool_;
 	};
 
 	struct PlotReadNotification : Poco::Notification

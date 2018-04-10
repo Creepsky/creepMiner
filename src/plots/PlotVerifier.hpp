@@ -44,7 +44,7 @@ namespace Burst
 	{
 		typedef Poco::AutoPtr<VerifyNotification> Ptr;
 
-		std::vector<ScoopData> buffer;
+		ScoopData* buffer = nullptr;
 		Poco::UInt64 accountId = 0;
 		Poco::UInt64 nonceRead = 0;
 		Poco::UInt64 nonceStart = 0;
@@ -52,7 +52,7 @@ namespace Burst
 		Poco::UInt64 block = 0;
 		GensigData gensig;
 		Poco::UInt64 baseTarget = 0;
-		Poco::UInt64 memorySize = 0;
+		Poco::UInt64 nonces = 0;
 	};
 	
 	using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
@@ -116,9 +116,10 @@ namespace Burst
 				};
 
 				START_PROBE("PlotVerifier.SearchDeadline");
-				auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer, verifyNotification->nonceRead,
-					verifyNotification->nonceStart, verifyNotification->baseTarget, verifyNotification->gensig,
-					stopFunction, stream);
+				auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer, verifyNotification->nonces,
+				                                              verifyNotification->nonceRead, verifyNotification->nonceStart,
+				                                              verifyNotification->baseTarget, verifyNotification->gensig,
+				                                              stopFunction, stream);
 				TAKE_PROBE("PlotVerifier.SearchDeadline");
 
 				if (bestResult.first != 0 && bestResult.second != 0)
@@ -134,12 +135,11 @@ namespace Burst
 				}
 
 				START_PROBE("PlotVerifier.FreeMemory");
-				PlotReader::globalBufferSize.free(verifyNotification->memorySize);
+				PlotReader::globalBufferSize.free(verifyNotification->buffer);
 				TAKE_PROBE("PlotVerifier.FreeMemory");
 
 				if (progress_ != nullptr)
-					progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::PlotSize,
-						verifyNotification->block);
+					progress_->add(verifyNotification->nonces * Settings::PlotSize, verifyNotification->block);
 			}
 			catch (Poco::Exception& exc)
 			{
@@ -218,7 +218,7 @@ namespace Burst
 			return true;
 		}
 
-		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
+		static DeadlineTuple run(ScoopData* buffer, const size_t size, Poco::UInt64 nonceRead,
 						Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, const GensigData& gensig,
 						std::function<bool()> stop, void* stream)
 		{
@@ -228,11 +228,9 @@ namespace Burst
 			// hash the gensig according to the cpu instruction level
 			shabal.update(gensig.data(), Settings::HashSize);
 
-			for (size_t i = 0;
-				i < buffer.size() && !stop();
-				i += TShabal::HashSize)
+			for (size_t i = 0; i < size && !stop(); i += TShabal::HashSize)
 			{
-				auto result = verify(shabal, buffer, nonceRead, nonceStart, i, baseTarget);
+				auto result = verify(shabal, buffer, size, nonceRead, nonceStart, i, baseTarget);
 
 				for (auto& pair : result)
 					// make sure the nonce->deadline pair is valid...
@@ -245,7 +243,7 @@ namespace Burst
 			return bestResult;
 		}
 
-		static std::vector<DeadlineTuple> verify(const TShabal& shabalCopy, std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
+		static std::vector<DeadlineTuple> verify(const TShabal& shabalCopy, ScoopData* buffer, size_t size, Poco::UInt64 nonceRead,
 										  Poco::UInt64 nonceStart, size_t offset, Poco::UInt64 baseTarget)
 		{
 			constexpr auto HashSize = TShabal::HashSize;
@@ -263,11 +261,11 @@ namespace Burst
 			// we init the buffer overflow guardians
 			for (size_t i = 0; i < HashSize; ++i)
 			{
-				const auto overflow = i + offset >= buffer.size();
+				const auto overflow = i + offset >= size;
 
 				// if the index would cause a buffer overflow, we init it 
 				// with a nullptr, otherwise with the value
-				scoopPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(buffer.data() + offset + i);
+				scoopPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(buffer + offset + i);
 				targetPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(targets[i].data());
 			}
 
@@ -285,7 +283,7 @@ namespace Burst
 
 			for (size_t i = 0u; i < HashSize; ++i)
 				// only set the pair if it was calculated
-				if (i + offset < buffer.size())
+				if (i + offset < size)
 					pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
 
 			return pairs;
@@ -300,18 +298,11 @@ namespace Burst
 			return TGpu::initStream(stream);
 		}
 
-		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
-			Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, const GensigData& gensig,
-			std::function<bool()> stop, void* stream)
+		static DeadlineTuple run(ScoopData* buffer, size_t size, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart,
+		                         Poco::UInt64 baseTarget, const GensigData& gensig, std::function<bool()> stop, void* stream)
 		{
 			DeadlineTuple bestDeadline{0, 0};
-			TGpu::template run<TAlgorithm>(
-				buffer,
-				gensig,
-				nonceStart + nonceRead,
-				baseTarget,
-				stream,
-				bestDeadline);
+			TGpu::template run<TAlgorithm>(buffer, size, gensig, nonceStart + nonceRead, baseTarget, stream, bestDeadline);
 			return bestDeadline;
 		}
 	};
