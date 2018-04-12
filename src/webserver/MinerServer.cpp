@@ -295,7 +295,7 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 		// plot new file
 		if (path_segments.front() == "plotter")
-			if (path_segments.size() == 5) {
+			if (path_segments.size() > 4) {
 				using Poco::replace;
 				std::string plotPath = "";
 				Poco::URI::decode(replace(request.getURI(), "/" + path_segments[0] + "/" + path_segments[1] + "/" + path_segments[2] + "/" + path_segments[3] + "/", plotPath), plotPath, false);
