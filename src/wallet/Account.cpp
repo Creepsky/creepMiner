@@ -154,7 +154,7 @@ Poco::JSON::Object::Ptr Burst::Account::toJSON() const
 
 	Poco::JSON::Object::Ptr json(new Poco::JSON::Object);
 
-	json->set("numeric", getId());
+	json->set("numeric", std::to_string(getId()));
 	json->set("address", getAddress());
 
 	auto name = name_.value("");

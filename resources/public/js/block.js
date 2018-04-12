@@ -73,7 +73,7 @@ $('#timePlotButton').on('click', function(event) {
     timePlot.getAxes().yaxis.options.max = timePlotMax;
     timePlot.setupGrid();
     timePlot.draw();
-	$(".flot-tick-label").css("color", flotFrameColor);
+    $(".flot-tick-label").css("color", flotFrameColor);
 });
 
 $('#deadlinePlotButton').on('click', function(event) {
@@ -84,7 +84,7 @@ $('#deadlinePlotButton').on('click', function(event) {
     deadlinePlot.getAxes().yaxis.options.max = deadlinePlotMax;
     deadlinePlot.setupGrid();
     deadlinePlot.draw();
-	$(".flot-tick-label").css("color", flotFrameColor);
+    $(".flot-tick-label").css("color", flotFrameColor);
 });
 
 var timerRefresh = setInterval(function(){ myTimer() }, 1000);
@@ -250,7 +250,6 @@ function newBlock(json) {
 
     setOverallProgress(0);
     setOverallProgressVerify(0);
-    lastWinnerContainer.hide();
     avgDeadline.html(json["deadlinesAvg"]);
     deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
     var roundsSub=json["nRoundsSubmitted"];
@@ -519,22 +518,18 @@ function setLastWinner(winner) {
         var address = lastWinner.find("#lastWinnerAddress");
         var name = lastWinner.find("#lastWinnerName");
 
-        var link = "https://explore.burst.cryptoguru.org/account/BURST-" + burstAddress;
+        var link = "https://explore.burst.cryptoguru.org/account/" + winner["numeric"];
 
         if (winner["name"]) {
-            name.html(winner["name"]);
-            name.attr("href", link);
+            name.html("<a href = '" + link + "' target='blank_'>" + winner["name"] + "</a>");
             lastWinner.find("#lastWinnerNameRow").show();
         }
         else {
             lastWinner.find("#lastWinnerNameRow").hide();
         }
 
-        numeric.html(winner["numeric"]);
-        address.html(winner["address"]);
-
-        numeric.attr("href", link);
-        address.attr("href", link);
+        numeric.html("<a href = '" + link + "' target='blank_'>" + winner["numeric"] + "</a>");
+        address.html("<a href = '" + link + "' target='blank_'>" + winner["address"] + "</a>");
 
         lastWinnerContainer.show();
     }
