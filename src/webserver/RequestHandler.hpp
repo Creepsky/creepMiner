@@ -234,6 +234,20 @@ namespace Burst
 			MinerServer& server, std::string plotPath);
 
 		/**
+		* \brief Checks a plot file for corruption
+		* \param request The HTTP request.
+		* \param response The HTTP response.
+		* \param miner The miner, which will propagate the changed config to his connected users.
+		* \param plotPath The path to the folder where to plot the new file
+		* \param account Account for which to plot the file.
+		* \param sNonce Starting nonce of the plotfile.
+		* \param nNonces Number of nonces to plot into this file.
+		* \param server The server instance, that is shut down.
+		*/
+		void plotNewFile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner,
+			MinerServer& server, std::string plotPath, std::string account, std::string sNonce, std::string nNonces);
+
+		/**
 		* \brief Checks all plot files for corruption
 		* \param request The HTTP request.
 		* \param response The HTTP response.

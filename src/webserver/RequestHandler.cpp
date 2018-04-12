@@ -482,6 +482,23 @@ void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request,
 
 }
 
+void Burst::RequestHandler::plotNewFile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner, MinerServer& server, 
+		std::string plotPath, std::string account, std::string sNonce, std::string nNonces)
+{
+	// first check the credentials
+	if (!checkCredentials(request, response))
+		return;
+
+	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+	response.setContentLength(0);
+	response.send();
+
+	log_information(MinerLogger::server, "Got request to plot new file...");
+
+	PlotGenerator::generatePlotfile(plotPath, miner, server, account, sNonce, nNonces);
+
+}
+
 void Burst::RequestHandler::checkAllPlotfiles(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner, MinerServer& server)
 {
 	// first check the credentials

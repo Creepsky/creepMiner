@@ -293,6 +293,17 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 				});
 			}
 
+		// plot new file
+		if (path_segments.front() == "plotter")
+			if (path_segments.size() == 5) {
+				using Poco::replace;
+				std::string plotPath = "";
+				Poco::URI::decode(replace(request.getURI(), "/" + path_segments[0] + "/" + path_segments[1] + "/" + path_segments[2] + "/" + path_segments[3] + "/", plotPath), plotPath, false);
+				return new LambdaRequestHandler([&, pPath = move(plotPath), account = move(path_segments[1]), sNonce = move(path_segments[2]), nNonces = move(path_segments[3])](req_t& req, res_t& res)
+				{
+					RequestHandler::plotNewFile(req, res, *server_->miner_, *server_, pPath, account, sNonce, nNonces);
+				});
+			}
 
 		// show/change plot files
 		if (path_segments.front() == "plotdir")

@@ -200,6 +200,11 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 	return totalIntegrity / noncesChecked;
 }
 
+void Burst::PlotGenerator::generatePlotfile(std::string plotPath, Miner& miner, MinerServer& server, std::string account, std::string sNonce, std::string nNonces)
+{
+	log_success(MinerLogger::general, "Starting to plot %s nonces starting from nonce %s for accountID %s to folder %s", nNonces, sNonce, account, plotPath);
+}
+
 std::array<std::vector<char>, Burst::Shabal256_SSE2::HashSize> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
 {
 	return generate<Shabal256_SSE2, PlotGeneratorOperations1<Shabal256_SSE2>>(account, startNonce);
