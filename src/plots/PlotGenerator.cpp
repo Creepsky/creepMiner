@@ -30,6 +30,8 @@
 #include "webserver/MinerServer.hpp"
 #include <future>
 #include <thread>
+#include "Poco/File.h"
+#include "Poco/Path.h"
 
 Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner)
 {
@@ -202,7 +204,15 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 
 void Burst::PlotGenerator::generatePlotfile(std::string plotPath, Miner& miner, MinerServer& server, std::string account, std::string sNonce, std::string nNonces)
 {
-	log_success(MinerLogger::general, "Starting to plot %s nonces starting from nonce %s for accountID %s to folder %s", nNonces, sNonce, account, plotPath);
+	log_success(MinerLogger::general, "Starting to plot %s nonces beginning at nonce %s for accountID %s to folder %s", nNonces, sNonce, account, plotPath);
+	Poco::Path plotFilePath;
+	plotFilePath.parse(plotPath, Poco::Path::PATH_NATIVE);
+	plotFilePath.setFileName(account + "_" + sNonce + "_" + nNonces + "_" + nNonces);
+	log_success(MinerLogger::general, "Full plot path: %s", plotFilePath.toString());
+	Poco::File plotFile(plotFilePath.getFileName());
+	plotFile.createFile();
+	plotFile.setSize(1024 * 1024);
+	log_success(MinerLogger::general, "Free Space on this device: %s", std::to_string(plotFile.freeSpace())+" GB");
 }
 
 std::array<std::vector<char>, Burst::Shabal256_SSE2::HashSize> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
