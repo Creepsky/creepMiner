@@ -32,7 +32,6 @@
 #include <thread>
 #include "Poco/File.h"
 #include "Poco/Path.h"
-#include <windows.h>
 
 Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner)
 {
@@ -214,9 +213,16 @@ void Burst::PlotGenerator::generatePlotfile(std::string plotPath, Miner& miner, 
 	plotFilePath.setFileName(account + "_" + sNonce + "_" + nNonces + "_" + nNonces);
 	log_success(MinerLogger::general, "Full plot path: %s", plotFilePath.toString());
 	Poco::File plotFile(plotFilePath);
-	plotFile.createFile();
-	plotFile.setSize(nonceCount * Settings::PlotSize);
-	log_success(MinerLogger::general, "Free Space on this device: %s", std::to_string(plotFile.freeSpace())+" GB");
+	if (!plotFile.exists())
+	{
+		plotFile.createFile();
+		plotFile.setSize(nonceCount * Settings::PlotSize);
+	}
+	else
+		log_system(MinerLogger::general, "File already exists.");
+	
+	
+	//log_success(MinerLogger::general, "Free Space on this device: %s", std::to_string(plotFile.freeSpace())+" GB");
 }
 
 std::array<std::vector<char>, Burst::Shabal256_SSE2::HashSize> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
