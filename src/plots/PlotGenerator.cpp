@@ -32,6 +32,7 @@
 #include <thread>
 #include "Poco/File.h"
 #include "Poco/Path.h"
+#include <windows.h>
 
 Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner)
 {
@@ -204,14 +205,17 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 
 void Burst::PlotGenerator::generatePlotfile(std::string plotPath, Miner& miner, MinerServer& server, std::string account, std::string sNonce, std::string nNonces)
 {
+	const auto accountId = Poco::NumberParser::parseUnsigned64(account);
+	const auto startNonce = Poco::NumberParser::parseUnsigned64(sNonce);
+	const auto nonceCount = Poco::NumberParser::parseUnsigned64(nNonces);
 	log_success(MinerLogger::general, "Starting to plot %s nonces beginning at nonce %s for accountID %s to folder %s", nNonces, sNonce, account, plotPath);
 	Poco::Path plotFilePath;
 	plotFilePath.parse(plotPath, Poco::Path::PATH_NATIVE);
 	plotFilePath.setFileName(account + "_" + sNonce + "_" + nNonces + "_" + nNonces);
 	log_success(MinerLogger::general, "Full plot path: %s", plotFilePath.toString());
-	Poco::File plotFile(plotFilePath.getFileName());
+	Poco::File plotFile(plotFilePath);
 	plotFile.createFile();
-	plotFile.setSize(1024 * 1024);
+	plotFile.setSize(nonceCount * Settings::PlotSize);
 	log_success(MinerLogger::general, "Free Space on this device: %s", std::to_string(plotFile.freeSpace())+" GB");
 }
 

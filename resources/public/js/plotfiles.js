@@ -158,6 +158,17 @@ function startPlotting() {
 	$.post(encodeURI("/plotter/"+$("#account-id").val()+"/"+$("#start-nonce").val()+"/"+$("#num-nonces").val()+"/"+plotFolder));
 }
 
+function calcPlotSize() {
+	var plotSize = $("#num-nonces").val()*262144;
+	if (plotSize > 1099511627776)
+		plotSize = (Math.round(plotSize/1099511627776*1000)/1000).toString()+ " TB";
+	else if (plotSize > 1073741824)
+		plotSize = (Math.round(plotSize/1073741824*1000)/1000).toString()+ " GB";
+	else 
+		plotSize = (Math.round(plotSize/1048576*1000)/1000).toString()+ " MB";
+	$("#fileSize").val(plotSize);
+}
+
 function checkPlotFile(account, start_nonce, nonces, staggersize, path) {
     if(!isChecking && !isCheckingAll)
     {
