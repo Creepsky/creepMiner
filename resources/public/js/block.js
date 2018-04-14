@@ -73,7 +73,7 @@ $('#timePlotButton').on('click', function(event) {
     timePlot.getAxes().yaxis.options.max = timePlotMax;
     timePlot.setupGrid();
     timePlot.draw();
-	$(".flot-tick-label").css("color", flotFrameColor);
+    $(".flot-tick-label").css("color", flotFrameColor);
 });
 
 $('#deadlinePlotButton').on('click', function(event) {
@@ -84,7 +84,7 @@ $('#deadlinePlotButton').on('click', function(event) {
     deadlinePlot.getAxes().yaxis.options.max = deadlinePlotMax;
     deadlinePlot.setupGrid();
     deadlinePlot.draw();
-	$(".flot-tick-label").css("color", flotFrameColor);
+    $(".flot-tick-label").css("color", flotFrameColor);
 });
 
 var timerRefresh = setInterval(function(){ myTimer() }, 1000);
@@ -250,7 +250,6 @@ function newBlock(json) {
 
     setOverallProgress(0);
     setOverallProgressVerify(0);
-    lastWinnerContainer.hide();
     avgDeadline.html(json["deadlinesAvg"]);
     deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
     var roundsSub=json["nRoundsSubmitted"];
@@ -343,7 +342,7 @@ function createNonceLine(deadline, iconId, lineType, nonceType) {
     else if (nonceType == NONCE_CONFIRMED)
         nonceTypeStr = "confirmed";
 
-    message.append("<span class='fa " + iconId + "'></span> ");
+    message.append("<span class='far " + iconId + "'></span> ");
     if (MasterMiner == 'true') {
         message.append(nonceTypeStr);
         message.append("&nbsp;<span class='badge badge-primary badge-pill''>" + deadline.deadlineStr + "</span><small>&nbsp;(" + deadline.nonce + ")</small>");
@@ -466,7 +465,7 @@ function hideSameNonceLines(nonce) {
 
 function nonceFound(json) {
     if (noncesFound.prop("checked"))
-        replaceOrAddNonceLine(json, "fa fa-compass", "list-group-item-default", NONCE_FOUND);
+        replaceOrAddNonceLine(json, "fa-compass", "list-group-item-default", NONCE_FOUND);
 }
 
 function addOrSubmit(json) {
@@ -476,7 +475,7 @@ function addOrSubmit(json) {
 
 function addOrConfirm(json) {
     if (noncesConfirmed.prop("checked")) {
-        replaceOrAddNonceLine(json, "fa-check", "list-group-item-success", NONCE_CONFIRMED);
+        replaceOrAddNonceLine(json, "fa-check-circle", "list-group-item-success", NONCE_CONFIRMED);
 
         if (confirmedSound && playConfirmationSound)
             confirmedSound.play();
@@ -519,22 +518,18 @@ function setLastWinner(winner) {
         var address = lastWinner.find("#lastWinnerAddress");
         var name = lastWinner.find("#lastWinnerName");
 
-        var link = "https://explore.burst.cryptoguru.org/account/BURST-" + burstAddress;
+        var link = "https://explore.burst.cryptoguru.org/account/" + winner["numeric"];
 
         if (winner["name"]) {
-            name.html(winner["name"]);
-            name.attr("href", link);
+            name.html("<a href = '" + link + "' target='blank_'>" + winner["name"] + "</a>");
             lastWinner.find("#lastWinnerNameRow").show();
         }
         else {
             lastWinner.find("#lastWinnerNameRow").hide();
         }
 
-        numeric.html(winner["numeric"]);
-        address.html(winner["address"]);
-
-        numeric.attr("href", link);
-        address.attr("href", link);
+        numeric.html("<a href = '" + link + "' target='blank_'>" + winner["numeric"] + "</a>");
+        address.html("<a href = '" + link + "' target='blank_'>" + winner["address"] + "</a>");
 
         lastWinnerContainer.show();
     }
@@ -689,7 +684,7 @@ function connectBlock() {
                     break;
                 case "nonce confirmed":
                     addOrConfirm(response);
-                    checkAddBestOverall(BigInteger(response["deadlineNum"]), response["deadline"]);
+                    checkAddBestOverall(BigInteger(response["deadlineNum"]), response["deadline"], response["blockheight"]);
                     break;
                 case "nonce submitted":
                     addOrSubmit(response);
@@ -878,11 +873,11 @@ function initBlock() {
     // ******************************************
     localInitCheckBoxes();
     // ******************************************
-    
+
     flotFrameColor = $("p").css("color");
     flotColorOne = $("#progressBarVerify").css("background-color");
     flotColorTwo = $("#progressBar").css("background-color");
-    
+
     initDeadlinePlot();
     initTimePlot();
     initDeadlineDistributionPlot();

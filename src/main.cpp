@@ -45,6 +45,8 @@
 #include <Poco/File.h>
 #include <Poco/DirectoryIterator.h>
 #include <regex>
+#include <Poco/Data/SQLite/Connector.h>
+#include "MinerUtil.hpp"
 
 class SslInitializer
 {
@@ -142,10 +144,12 @@ int main(const int argc, const char* argv[])
 		HTTPSSessionInstantiator::registerInstantiator();
 
 		// start versionChecker timer thread , checking online version every 30 minutes
-		Poco::Timer checkVersionTimer(100, 1800000);
+		Timer checkVersionTimer(100, 1800000);
 		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(Burst::Settings::Project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
 
 		auto running = true;
+		
+		Data::SQLite::Connector::registerConnector();
 
 		while (running)
 		{
@@ -153,22 +157,17 @@ int main(const int argc, const char* argv[])
 			auto configLoaded = Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath);
 
 			// the config could not be loaded, look for a config in the creepMiner home dir
-			if (!configLoaded)
+			if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 			{
 				log_information(general, "Could not load config %s", arguments.confPath);
 
-				Path minerRootPath(Path::home());
-				minerRootPath.pushDirectory(".creepMiner");
+				// create the home directory
+				const auto minerHomePath = Burst::getMinerHomeDir();
 
-				File(minerRootPath).createDirectory();
+				File minerHomeDir{minerHomePath};
+				minerHomeDir.createDirectories();
 
-				Path minerHomePath(minerRootPath);
-				minerHomePath.pushDirectory(std::string(Project.getVersion()));
-
-				if (File(minerHomePath).createDirectory())
-					log_information(general, "Home directory has created: %s", minerHomePath.toString());
-
-				Path homeConfigPath(minerHomePath);
+				auto homeConfigPath(minerHomePath);
 				homeConfigPath.append("mining.conf");
 				const auto homeConfig = homeConfigPath.toString();
 
@@ -176,16 +175,20 @@ int main(const int argc, const char* argv[])
 				configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
 
 				// if there is also no config in the home dir, create one in the home dir
-				if (!configLoaded)
+				if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 				{
 					// create the log dir
-					Path homeLogPath(minerHomePath);
+					auto homeLogPath(minerHomePath);
 					homeLogPath.pushDirectory("logs");
 					homeLogPath.makeDirectory();
+
+					auto homeDatabasePath(minerHomePath);
+					homeDatabasePath.setFileName("data.db");
 
 					// and save it in the config
 					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
 					Burst::MinerConfig::getConfig().useLogfile(true);
+					Burst::MinerConfig::getConfig().setDatabasePath(homeDatabasePath.toString());
 
 					if (!Burst::MinerConfig::getConfig().save(homeConfig))
 						log_error(Burst::MinerLogger::general, "Could not save current settings!");
@@ -195,7 +198,7 @@ int main(const int argc, const char* argv[])
 				}
 			}
 
-			if (configLoaded)
+			if (configLoaded == Burst::ReadConfigFileResult::Ok)
 			{
 				log_information(general, "Config loaded: %s", Burst::MinerConfig::getConfig().getPath());
 

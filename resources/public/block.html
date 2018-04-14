@@ -9,12 +9,9 @@
         </button>
       </div>
       <div class="modal-body">
-	        <div>
-	        	<p><i class="fa fa-info fa fa-2x pull-right"></i></p>
-	        	<p>
-	        	If you wish to use a custom notification <pre>alert.mp3</pre> please place it into the <b>public\sounds\</b> directory.
-        		</p>
-	        </div>
+            <div>
+                <p>If you wish to use a custom notification <pre>alert.mp3</pre> please place it into the <b>public\sounds\</b> directory.</p>
+            </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-info" data-dismiss="modal">Okay</button>
@@ -25,54 +22,71 @@
 
 <div class="row bs-component">
     <!-- current block -->
-	<div class="col-lg-4" style="margin:0;padding:0">
-		<div class="col-lg-12" id="container">
-			<div class="btn-group d-flex" role="group">
-				<!-- refresh btn -->
-				<button type="button" class="btn btn-info w-100" onclick="connectBlock();" id="refreshButton">
-					<span class="fa fa-refresh"></span>
-					Refresh
-				</button>
-				<!-- sound btn -->
-				<button type="button" class="btn btn-info" onclick="toggleConfirmationSound();" data-toggle="modal" data-target="#soundModal">
-					<span id="iconConfirmationSound" class="fa"></span>
-					Sound
-				</button>
-			</div>
-			<!-- progress bar -->
-			<div class="progress" style="margin-bottom:0">
-				<label class="progress-label" style="font-size:x-small;"></label>
-				<div id="progressBarVerify" class="progress-bar progress-bar-success progress-bar-striped bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-				<div id="progressBar" class="progress-bar progress-bar-info progress-bar-striped bg-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-			</div>
-		</div>
-		<!-- Nonce Display Options -->
-		<div class="col-lg-12 mm-hide">
-			<div class="row">
-				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show found nonce">
-					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesFound" checked><label class="custom-control-label" for="cbNoncesFound"><i class="fa fa-compass" aria-hidden="true">&nbsp;Found</i></label>
-					</div>
-				</div>
-				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show sent nonce">
-					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesSent" checked><label class="custom-control-label" for="cbNoncesSent"><i class="fa fa-paper-plane" aria-hidden="true">&nbsp;Sent</i></label>
-					</div>
-				</div>
-				<div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show confirmed nonce">
-					<div class="custom-control custom-checkbox">
-						<input type="checkbox" class="custom-control-input" id="cbNoncesConfirmed" checked><label class="custom-control-label" for="cbNoncesConfirmed"><i class="fa fa-check" aria-hidden="true">&nbsp;Conf</i></label>
-					</div>
-				</div>
+    <div class="col-lg-4" style="margin:0;padding:0">
+        <div class="col-lg-12" id="container">
+            <div class="btn-group d-flex" role="group">
+                <!-- refresh btn -->
+                <button type="button" class="btn btn-primary w-100" onclick="connectBlock();" id="refreshButton">
+                    <span class="fas fa-sync"></span>
+                    Refresh
+                </button>
+                <!-- sound btn -->
+                <button type="button" class="btn btn-primary w-100" onclick="toggleConfirmationSound();" data-toggle="modal" data-target="#soundModal">
+                    <span class="fas fa-volume-up" id="iconConfirmationSound"></span>
+                    Sound
+                </button>
+            </div>
+            <!-- progress bar -->
+            <div class="progress" style="margin-bottom:0">
+                <label class="progress-label" style="font-size:x-small;"></label>
+                <div id="progressBarVerify" class="progress-bar progress-bar-success progress-bar-striped bg-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                <div id="progressBar" class="progress-bar progress-bar-info progress-bar-striped bg-info" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+        <!-- Nonce Display Options -->
+        <div class="col-lg-12 mm-hide">
+            <div class="row">
+                <div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show found nonce">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="cbNoncesFound" checked><label class="custom-control-label" for="cbNoncesFound"><i class="far fa-compass"></i>&nbsp;Found</label>
+                    </div>
+                </div>
+                <div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show sent nonce">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="cbNoncesSent" checked><label class="custom-control-label" for="cbNoncesSent"><i class="far fa-paper-plane"></i>&nbsp;Sent</label>
+                    </div>
+                </div>
+                <div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Show confirmed nonce">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="cbNoncesConfirmed" checked><label class="custom-control-label" for="cbNoncesConfirmed"><i class="far fa-check-circle"></i>&nbsp;Conf</label>
+                    </div>
+                </div>
                 <div class="col-3" data-toggle="tooltip" data-placement="bottom" title="Hide same nonce">
                     <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="cbHideSameNonces" checked><label class="custom-control-label" for="cbHideSameNonces"><i class="fa fa-eye-slash" aria-hidden="true">&nbsp;Same</i></label>
+                        <input type="checkbox" class="custom-control-input" id="cbHideSameNonces" checked><label class="custom-control-label" for="cbHideSameNonces"><i class="far fa-eye-slash"></i>&nbsp;Same</label>
                     </div>
                 </div>
                 <br>
-			</div>
-		</div>
-	</div>
+            </div>
+        </div>
+        <!-- Last Winner -->
+        <div class="col-lg-12" style="padding-top:1rem">
+            <div id="lastWinnerContainer" class="card mb-12" style="display: none">
+                <div class="card-header text-white bg-success"><h4>Last Winner</h4></div>
+                <div id="lastWinner" class="card-body">
+                    <li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0' id="lastWinnerNameRow">
+                        Name <span id="lastWinnerName"></span>
+                    </li>
+                    <li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>
+                        Numeric <span id="lastWinnerNumeric"></span>
+                    </li>
+                    <li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>
+                        Address <span id="lastWinnerAddress"></span>
+                    </li>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- stats block -->
     <div class="col-lg-8">
         <div class="card mb-12">
@@ -163,7 +177,12 @@
                         <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Deadlines</h5></div>
                         <div class="col-md-12">
                             <div id="deadlinesChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
-                            <div class="alert alert-info"><span id="deadlinesInfo">---</span><span class="fa fa-expand float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer"></span></div>
+                            <div class="alert alert-info">
+                                <span id="deadlinesInfo">---</span>
+                                <span class="float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="deadlinePlotButton" style="cursor: pointer">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div class="col-lg-6">
@@ -185,7 +204,12 @@
                         <div class="col-md-12" style="text-align:center"><h5 style="margin-bottom:0px; margin-top:10px">Block and Scan Times</h5></div>
                         <div class="col-md-12">
                             <div id="timeChart" style="height: 150px; width: auto; margin: 0px; margin-bottom:10px"></div>
-                            <div class="alert alert-info"><span id="timeInfo">---</span><span class="fa fa-expand float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer"></span> </div>
+                            <div class="alert alert-info">
+                                <span id="timeInfo">---</span>
+                                <span class="float-right" data-toggle="tooltip" data-placement="top" title="Rescale" id="timePlotButton" style="cursor: pointer">
+                                    <i class="fas fa-expand-arrows-alt"></i>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -194,70 +218,70 @@
         <!-- system block -->
         <div class="card mb-12">
             <h4 class="card-header">System</h4>
-				<div class="card-body">
-					<div class="row">
-						<!-- System -->
-						<div class="row col-xs-12 col-md-12 col-lg-12" id="system">
-							<div class="col-lg-6 col-md-6 mm-hide">
-								<h5 class="card-title">URLs</h5>
-								<div class="bs-component">
-									<ul class="list-group">
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
-											Pool
-											<div id="poolURL">---</div>
-										</li>
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
-											Mining
-											<div id="miningURL">---</div>
-										</li>
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
-											Wallet
-											<div id="walletURL">---</div>
-										</li>
-									</ul>
-								</div>
-							</div>
-							<div class="col-lg-3 col-md-3">
-								<h5 class="card-title">Mining</h5>
-								<div class="bs-component">
-									<ul class="list-group">
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
-											Plot size
-											<div id="plotSize">---</div>
-										</li>
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" id="submitProbDL">
-											submitProb/targetDL
-											<div id="plotSize">---</div>
-										</li>
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
-											Pool DL limit
-											<span class="badge badge-primary badge-pill"><div id="poolDL">---</div></span>
-										</li>
-									</ul>
-								</div>
-							</div>
-							<div class="col-lg-3 col-md-3">
-								<h5 class="card-title">Processing</h5>
-								<div class="bs-component">
-									<ul class="list-group">
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
-											Readers
-											<div id="readers">---</div>
-										</li>
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
-											Intensity
-											<div id="intensity">---</div>
-										</li>
-										<li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" data-toggle="tooltip" data-placement="top" title="If this value is significantly lower than your real plot size over longer periods of time, you may want to check your plots for overlaps or corruption.">
-											Buffer size
-											<div id="bufferSize">---</div>
-										</li>
-									</ul>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- System -->
+                        <div class="row col-xs-12 col-md-12 col-lg-12" id="system">
+                            <div class="col-lg-6 col-md-6 mm-hide">
+                                <h5 class="card-title">URLs</h5>
+                                <div class="bs-component">
+                                    <ul class="list-group">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                            Pool
+                                            <div id="poolURL">---</div>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                            Mining
+                                            <div id="miningURL">---</div>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                            Wallet
+                                            <div id="walletURL">---</div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-3">
+                                <h5 class="card-title">Mining</h5>
+                                <div class="bs-component">
+                                    <ul class="list-group">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                            Plot size
+                                            <div id="plotSize">---</div>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px" id="submitProbDL">
+                                            submitProb/targetDL
+                                            <div id="plotSize">---</div>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                            Pool DL limit
+                                            <span class="badge badge-primary badge-pill"><div id="poolDL">---</div></span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-lg-3 col-md-3">
+                                <h5 class="card-title">Processing</h5>
+                                <div class="bs-component">
+                                    <ul class="list-group">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                            Readers
+                                            <div id="readers">---</div>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                            Intensity
+                                            <div id="intensity">---</div>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center" style="padding:4px">
+                                            Buffer size
+                                            <div id="bufferSize">---</div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </div>
     </div>
 </div>

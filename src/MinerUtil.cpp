@@ -542,8 +542,9 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	auto nBTimes = 0;
 	auto sumBTimes = 0.0;
 	auto maxBlockTime = 0ull;
+	const auto historicalBlockData = data.getAllHistoricalBlockData();
 
-	for (auto& historicalRoundTime : data.getAllHistoricalBlockData())
+	for (auto& historicalRoundTime : historicalBlockData)
 	{
 		const auto roundTime = historicalRoundTime->getRoundTime();
 		if (roundTime > 0)
@@ -563,7 +564,8 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 		blockTimeHistory.add(jsonBlockTimeHistory);
 		nBTimes++;
 		sumBTimes += blockTime;
-		if (blockTime > maxBlockTime) maxBlockTime = blockTime;
+		if (blockTime > maxBlockTime)
+			maxBlockTime = blockTime;
 	}
 	auto meanRoundTime = 0.0;
 	if (nRTimes > 0)
@@ -587,7 +589,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	auto totalTarget = 0.0;
 	auto nTargets = 0;
 
-	for (auto& historicalDeadline : data.getAllHistoricalBlockData())
+	for (auto& historicalDeadline : historicalBlockData)
 	{
 		if (historicalDeadline->getBestDeadline() != nullptr)
 		{
@@ -596,7 +598,10 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 			jsonBestDeadline.add(std::to_string(historicalDeadline->getBlockheight()));
 			jsonBestDeadline.add(std::to_string(thisDL));
 			bestDeadlines.add(jsonBestDeadline);
-			if( thisDL > maxDeadline ) maxDeadline = thisDL;
+
+			if( thisDL > maxDeadline )
+				maxDeadline = thisDL;
+
 			nDeadlines++;
 			if (historicalDeadline->getBlockTime() > meanRoundTime)
 			{
@@ -1099,4 +1104,17 @@ void Burst::setStdInEcho(bool enable)
 
 	(void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
 #endif
+}
+
+Poco::Path Burst::getMinerHomeDir()
+{
+	Poco::Path minerRootPath(Poco::Path::home());
+	minerRootPath.pushDirectory(".creepMiner");
+	minerRootPath.pushDirectory(Settings::Project.getVersion());
+	return minerRootPath.parseDirectory(minerRootPath.toString());
+}
+
+Poco::Path Burst::getMinerHomeDir(const std::string& filename)
+{
+	return getMinerHomeDir().append(filename);
 }

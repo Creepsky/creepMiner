@@ -187,7 +187,7 @@ void Burst::ProjectData::refreshAndCheckOnlineVersion(Poco::Timer& timer)
 	const std::string host = "https://github.com/Creepsky/creepMiner";
 	onlineVersion = Burst::RequestHandler::fetchOnlineVersion();
 	if (onlineVersion > version)
-		log_error(MinerLogger::general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
+		log_system(MinerLogger::general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
 }
 
 std::string Burst::ProjectData::getOnlineVersion() const

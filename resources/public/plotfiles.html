@@ -10,7 +10,7 @@
       </div>
       <div class="modal-body">
             <div>
-                <p><i class="fa fa-info fa fa-2x pull-right"></i></p>
+                <p><i class="fas fa-info pull-right"></i></p>
                 <p>
                 Validating all plots is a intense process and can take a while to run. You may observe the progress by selecting the plot directory.
                 </p>
@@ -29,16 +29,16 @@
         <div class="col-lg-12" id="container">
             <div class="btn-group d-flex" role="group">
                 <!-- rescan btn -->
-                <button type="button" class="btn btn-info w-100" onclick="$.get('/rescanPlotfiles');">
+                <button type="button" class="btn btn-primary w-100" onclick="$.get('/rescanPlotfiles');">
                 <span data-toggle='tooltip' data-placement='bottom' data-original-title='Rescan plot folders for new or removed plot files.'>
-                    <span class="fa fa-search"></span>
+                    <span class="fas fa-sync"></span>
                     Rescan
                 </span>
                 </button>
                 <!-- validate btn, trigger modal -->
-                <button type="button" class="btn btn-info" id="CheckAllButton" data-toggle="modal" data-target="#checkAllModal">
+                <button type="button" class="btn btn-primary w-100" id="CheckAllButton" data-toggle="modal" data-target="#checkAllModal">
                 <span data-toggle='tooltip' data-placement='bottom' data-original-title='Validate the integrity of all plot files. This may take a while.'>
-                    <span class="fa fa-superpowers"></span>
+                    <span class="fab fa-superpowers"></span>
                     Validate all
                 </span>
                 </button>

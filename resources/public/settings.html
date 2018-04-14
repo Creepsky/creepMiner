@@ -3,6 +3,7 @@
         <div class="card mb-12">
             <h4 class="card-header bg-success text-white">Mining / Processing</h4>
             <div class="card-body">
+            <div class="row">
                 <div class="col-lg-12">
                     <form method="POST" action="/settings/urls">
                         <div class="form-group row">
@@ -23,12 +24,12 @@
                                 <input class="form-control" type="text" id="wallet-url" name="wallet-url">
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-info float-right" style="width:100%">Submit URLs</button>
-                    </form><br><br>
+                        <button type="submit" class="btn btn-primary float-right">Submit</button>
+                    </form>
                 </div>
                 <div class="col-lg-12">
                     <form method="POST" action="/settings/mining">   
-<h4 class="row"></h4>					
+                        <h4 class="row"></h4>                   
                         <div class="form-group row">
                             <label for="intensity" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top" title="The mining intensity sets the amount of verifier threads that verify plot files.">Intensity</label>
                             <div class="col-md-12 col-lg-9">
@@ -83,9 +84,10 @@
                                 <input class="form-control" type="number" id="max-historical-blocks" name="max-historical-blocks">
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-info float-right" style="width:100%">Submit Miner Config</button>
+                        <button type="submit" class="btn btn-primary float-right">Submit</button>
                     </form>
-                </div>          
+                </div>
+            </div>
             </div>      
         </div>
     </div>
@@ -101,7 +103,7 @@
                             <input class="form-control" type="text" id="log-dir" name="log-dir">
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-info float-right" style="width:100%">Submit Console Config</button>
+                    <button type="submit" class="btn btn-primary float-right">Submit</button>
                 </form>
             </div>
             <br />
@@ -114,10 +116,10 @@
                 <div = class="col-md-12">
                     <div class="row">
                         <button type="button" class="btn btn-danger" onclick="$.get('/shutdown');" style="width:50%">
-                            <span class="fa fa-power-off" aria-hidden="true">shutdown</span>
+                            <i class="fas fa-power-off"></i>&nbsp;shutdown
                         </button>
                         <button type="button" class="btn btn-warning" onclick="$.get('/restart');" style="width:50%;">
-                            <span class="fa fa-refresh" aria-hidden="true">restart</span>
+                            <i class="fas fa-sync-alt"></i>&nbsp;restart
                         </button>
                     </div>
                 </div>

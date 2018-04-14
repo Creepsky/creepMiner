@@ -30,6 +30,7 @@
 #include <Poco/Net/SocketAddress.h>
 #include <array>
 #include <Poco/JSON/Array.h>
+#include <Poco/Path.h>
 
 namespace Poco
 {
@@ -171,4 +172,7 @@ namespace Burst
 
 	size_t getMemorySize();
 	void setStdInEcho(bool enable);
+
+	Poco::Path getMinerHomeDir();
+	Poco::Path getMinerHomeDir(const std::string& filename);
 }
