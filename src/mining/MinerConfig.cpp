@@ -1,22 +1,22 @@
 // ==========================================================================
-// 
+//
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
 // Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301  USA
-// 
+//
 // ==========================================================================
 
 #include "MinerConfig.hpp"
@@ -62,7 +62,7 @@ bool Burst::MinerConfig::rescanPlotfiles()
 
 	const auto oldPlotsHash = plotsHash_;
 	recalculatePlotsHash();
-	
+
 	if (oldPlotsHash != plotsHash_)
 	{
 		printConsolePlots();
@@ -128,7 +128,7 @@ void Burst::MinerConfig::printConsole() const
 
 	log_system(MinerLogger::config, "Submission Max Retry : %s",
 		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()) + " seconds");
-	
+
 	printBufferSize();
 	printBufferChunks();
 
@@ -155,7 +155,7 @@ void Burst::MinerConfig::printConsole() const
 
 	if (getConfig().getProcessorType() == "CPU")
 		log_system(MinerLogger::config, "CPU instruction set : %s", getConfig().getCpuInstructionSet());
-	
+
 	if (getConfig().isBenchmark())
 		log_warning(MinerLogger::config, "Benchmark mode activated!");
 }
@@ -211,7 +211,7 @@ T getOrAdd(Poco::JSON::Object::Ptr object, const std::string& key, T defaultValu
 		object->set(key, defaultValue);
 		return defaultValue;
 	}
-	
+
 	return json.convert<T>();
 }
 
@@ -274,7 +274,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 	const std::string jsonStr((std::istreambuf_iterator<char>(inputFileStream)),
 		std::istreambuf_iterator<char>());
-	
+
 	inputFileStream.close();
 
 	try
@@ -296,7 +296,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 		if (endByte > jsonStr.size() - 5)
 			endByte = jsonStr.size();
-		
+
 		const auto errorColor = MinerLogger::getTextTypeColor(TextType::Error);
 
 		auto printBlock = Console::print();
@@ -481,7 +481,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		useInsecurePlotfiles_ = getOrAdd(miningObj, "useInsecurePlotfiles", false);
 		getMiningInfoInterval_ = getOrAdd(miningObj, "getMiningInfoInterval", 3);
 		rescanEveryBlock_ = getOrAdd(miningObj, "rescanEveryBlock", false);
-		
+
 		bufferChunkCount_ = getOrAdd(miningObj, "bufferChunkCount", 8);
 		wakeUpTime_ = getOrAdd(miningObj, "wakeUpTime", 0);
 
@@ -534,9 +534,9 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 			else
 				urlsObj = new Poco::JSON::Object;
 
-			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8080, "http://pool.burstcoin.ro:8080");
-			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8080, "http://pool.burstcoin.ro:8080");
-			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 443, "https://wallet.burstcoin.ro:443");
+			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8124, "http://pool.creepminer.net:8124");
+			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8124, "http://pool.creepminer.net:8124");
+			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 443, "https://wallet.creepminer.net");
 
 			if (urlMiningInfo_.empty() && !urlPool_.empty())
 			{
@@ -577,7 +577,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 							auto typeStr = plotJson->optValue<std::string>("type", "");
 
 							auto path = plotJson->get("path");
-							
+
 							if (path.isEmpty())
 								log_error(MinerLogger::config, "Empty dir given as plot dir/file! Skipping it...");
 							else if (typeStr.empty())
@@ -635,7 +635,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 				}*/
 			}
 			catch (Poco::Exception& exc)
-			{		
+			{
 				log_error(MinerLogger::config,
 					"Error while reading plot files!\n"
 					"%s",
@@ -820,7 +820,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 			const auto userId = "user";
 			const auto passId = "pass";
-			
+
 			if (!credentialsJson.isEmpty())
 				credentials = credentialsJson.extract<Poco::JSON::Object::Ptr>();
 
@@ -884,7 +884,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		{
 			auto certificateJson = webserverObj->get("certificate");
 			Poco::JSON::Object::Ptr certificate;
-			
+
 			if (!certificateJson.isEmpty())
 				certificate = certificateJson.extract<Poco::JSON::Object::Ptr>();
 
@@ -910,7 +910,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 		MinerLogger::refreshChannels();
 	}
-	
+
 	if (!save(configPath_, *config))
 		log_error(MinerLogger::config, "Could not save new settings!");
 
@@ -933,7 +933,7 @@ std::vector<std::shared_ptr<Burst::PlotFile>> Burst::MinerConfig::getPlotFiles()
 		auto plotDirFiles = plotDir->getPlotfiles();
 
 		plotFiles.insert(plotFiles.end(), plotDirFiles.begin(), plotDirFiles.end());
-		
+
 		for (const auto& relatedDir : plotDir->getRelatedDirs())
 		{
 			auto relatedPlotDirFiles = relatedDir->getPlotfiles();
@@ -953,7 +953,7 @@ uintmax_t Burst::MinerConfig::getTotalPlotsize() const
 	for (const auto& plotDir : plotDirs_)
 	{
 		sum += plotDir->getSize();
-		
+
 		for (const auto& relatedDir : plotDir->getRelatedDirs())
 			sum += relatedDir->getSize();
 	}
@@ -1195,7 +1195,7 @@ unsigned Burst::MinerConfig::getMaxPlotReaders(bool real) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
-	// if maxPlotReaders is zero it means we have to set it to 
+	// if maxPlotReaders is zero it means we have to set it to
 	// the amount of active plot dirs
 	if (maxPlotReaders_ == 0 && real)
 	{
@@ -1321,7 +1321,7 @@ void Burst::MinerConfig::setTargetDeadline(Poco::UInt64 target_deadline, TargetD
 Poco::UInt64 Burst::MinerConfig::getMaxBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	
+
 	if (maxBufferSizeMB_ == 0)
 		return getTotalPlotsize() / 4096;
 
@@ -1422,16 +1422,16 @@ bool Burst::MinerConfig::save(const std::string& path) const
 	{
 		// logger
 		Poco::JSON::Object logging;
-	
+
 		for (auto& priority : MinerLogger::getChannelPriorities())
 			logging.set(priority.first, priority.second);
-		
+
 		// output
 		Poco::JSON::Object outputs;
-		
+
 		for (auto& output : MinerLogger::getOutput())
 			outputs.set(Output_Helper::output_to_string(output.first), output.second);
-		
+
 		logging.set("output", outputs);
 
 		logging.set("path", getLogDir());
@@ -1453,7 +1453,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 			progressBar.set("steady", isSteadyProgressBar());
 			progressBar.set("fancy", isFancyProgressBar());
 			logging.set("progressBar", progressBar);
-		}		
+		}
 
 		json.set("logging", logging);
 	}
@@ -1529,7 +1529,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 	// webserver
 	{
 		Poco::JSON::Object webserver;
-		
+
 		// credentials
 		{
 			Poco::JSON::Object credentials;
@@ -1667,7 +1667,7 @@ void Burst::MinerConfig::setLogDir(const std::string& log_dir)
 	{
 		// remove the logfile
 		Poco::File file{ logDirAndFile };
-		
+
 		if (file.exists())
 			file.remove();
 

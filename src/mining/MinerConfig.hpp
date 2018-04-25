@@ -1,22 +1,22 @@
 // ==========================================================================
-// 
+//
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
 // Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301  USA
-// 
+//
 // ==========================================================================
 
 #pragma once
@@ -122,7 +122,7 @@ namespace Burst
 		 * \return true, if saved, false otherwise.
 		 */
 		bool save() const;
-		
+
 		/**
 		 * \brief Saves the current settings by creating a JSON object for it and saving it
 		 * into a file.
@@ -272,7 +272,7 @@ namespace Burst
 		 * \return the current configuration.
 		 */
 		static MinerConfig& getConfig();
-		
+
 	private:
 		static Poco::JSON::Object::Ptr readOutput(Poco::JSON::Object::Ptr json);
 		static const std::string hashDelimiter;
@@ -285,9 +285,9 @@ namespace Burst
 		unsigned submissionMaxRetry_ = 10;
 		unsigned http_ = 1;
 		std::string confirmedDeadlinesPath_ = "";
-		Url urlPool_;
-		Url urlMiningInfo_;
-		Url urlWallet_;
+		Url urlPool_{"http://pool.creepminer.net:8124"};
+		Url urlMiningInfo_{"http://pool.creepminer.net:8124"};
+		Url urlWallet_{"https://wallet.creepminer.net"};
 		bool startServer_ = true;
 		Url serverUrl_{"http://0.0.0.0:8124"};
 		double targetDLFactor_ = 1.0;
