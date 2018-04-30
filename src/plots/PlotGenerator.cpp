@@ -95,7 +95,7 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(const std::string& plotPath,
 	//set up random number generator
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	const std::uniform_int_distribution<Poco::UInt64> randInt(0, nonceCount);
+	std::uniform_int_distribution<Poco::UInt64> randInt(0, nonceCount);
 
 	log_system(MinerLogger::general, "Validating the integrity of file " + plotPath + " ...");
 
