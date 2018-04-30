@@ -67,7 +67,7 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	for (size_t i = 0; i < Settings::PlotSize; i++)
 		gendata[i] ^= final[i % Settings::HashSize];
 
-	std::array<uint8_t, 32> target;
+	std::array<uint8_t, 32> target{};
 	Poco::UInt64 result;
 
 	const auto generationSignature = miner.getGensig();
@@ -85,7 +85,7 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 }
 
 
-double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner& miner, MinerServer& server)
+double Burst::PlotGenerator::checkPlotfileIntegrity(const std::string& plotPath, Miner& miner, MinerServer& server)
 {
 	const auto account = Poco::NumberParser::parseUnsigned64(getAccountIdFromPlotFile(plotPath));
 	const auto startNonce = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(plotPath));
@@ -95,12 +95,12 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 	//set up random number generator
 	std::random_device rd;
 	std::mt19937 gen(rd());
-	std::uniform_int_distribution<Poco::UInt64> randInt(0, nonceCount);
+	const std::uniform_int_distribution<Poco::UInt64> randInt(0, nonceCount);
 
 	log_system(MinerLogger::general, "Validating the integrity of file " + plotPath + " ...");
-	
-	const auto checkNonces = 32ull;		//number of nonces to check
-	const auto checkScoops = 32ull;		//number of scoops to check per nonce
+
+	const auto checkNonces = 32ull; //number of nonces to check
+	const auto checkScoops = 32ull; //number of scoops to check per nonce
 	const auto scoopSize = Settings::ScoopSize;
 	const auto scoopStep = Settings::ScoopPerPlot / checkScoops;
 	const auto nonceStep = (nonceCount / checkNonces);
@@ -108,14 +108,13 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 	// drawing random numbers to decide which scoops/nonces to check
 	std::vector<Poco::UInt64> scoops(checkScoops + 1);
 	std::vector<Poco::UInt64> nonces(checkNonces + 1);
-	for (auto i = 0; i < (checkScoops + 1); i++) scoops[i] = randInt(gen) % scoopStep;
-	for (auto i = 0; i < (checkNonces + 1); i++) nonces[i] = randInt(gen) % nonceStep;
+	for (Poco::UInt64 i = 0; i < (checkScoops + 1); i++) scoops[i] = randInt(gen) % scoopStep;
+	for (Poco::UInt64 i = 0; i < (checkNonces + 1); i++) nonces[i] = randInt(gen) % nonceStep;
 
 	// reading the nonces from the plot file in a parallel thread
 	std::vector<char> readNonce(16 + scoopSize * checkNonces * checkScoops);
 
-	std::thread nonceReader([&readNonce, scoops, plotPath, &miner, nonces, checkNonces, checkScoops,
-		startNonce, nonceCount, staggerSize, scoopSize, scoopStep, nonceStep]
+	std::thread nonceReader([&]
 	{
 		const auto nonceScoopOffset = staggerSize * scoopSize;
 		for (auto scoopInterval = 0ull; scoopInterval < checkScoops; scoopInterval++)
@@ -131,9 +130,10 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 			{
 				auto nonce = startNonce + nonceInterval * nonceStep + nonces[nonceInterval];
 				if (nonce >= startNonce + nonceCount) nonce = startNonce + nonceCount - 1;
-				const auto nonceStaggerOffset = ((nonce - startNonce) / staggerSize) *Settings::PlotSize*staggerSize + ((nonce - startNonce) % staggerSize)*scoopSize;
+				const auto nonceStaggerOffset = ((nonce - startNonce) / staggerSize) * Settings::PlotSize * staggerSize + ((nonce -
+					startNonce) % staggerSize) * scoopSize;
 				plotFile.seekg(nonceStaggerOffset + scoop * nonceScoopOffset);
-				plotFile.read(readNonce.data() + nonceInterval * scoopSize + (checkNonces*scoopInterval*scoopSize), scoopSize);
+				plotFile.read(readNonce.data() + nonceInterval * scoopSize + (checkNonces * scoopInterval * scoopSize), scoopSize);
 			}
 			plotFile.close();
 		}

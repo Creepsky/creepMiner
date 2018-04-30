@@ -27,7 +27,6 @@
 #include <condition_variable>
 #include "Declarations.hpp"
 #include "shabal/MinerShabal.hpp"
-#include "Poco/Runnable.h"
 #include <future>
 #include <cstring>
 
@@ -40,7 +39,7 @@ namespace Burst
 	{
 	public:
 		static Poco::UInt64 generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner);
-		static double checkPlotfileIntegrity(std::string plotPath, Miner& miner, MinerServer& server);
+		static double checkPlotfileIntegrity(const std::string& plotPath, Miner& miner, MinerServer& server);
 
 		static std::array<std::vector<char>, Shabal256_SSE2::HashSize> generateSse2(Poco::UInt64 account, Poco::UInt64 startNonce);
 		static std::array<std::vector<char>, Shabal256_AVX::HashSize> generateAvx(Poco::UInt64 account, Poco::UInt64 startNonce);
