@@ -665,6 +665,7 @@ bool Burst::Miner::getMiningInfo()
 	{
 		log_error(MinerLogger::miner, "Could not get the mining info: %s", e.displayText());
 		log_current_stackframe(MinerLogger::miner);
+		return false;
 	}
 }
 
