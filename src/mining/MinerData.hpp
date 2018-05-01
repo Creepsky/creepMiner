@@ -34,7 +34,7 @@
 #include <functional>
 #include <Poco/BasicEvent.h>
 #include <Poco/Message.h>
-#include <Poco/Data/Session.h>
+#include <Poco/Net/Session.h>
 
 namespace Burst
 {
