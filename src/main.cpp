@@ -149,7 +149,7 @@ int main(const int argc, const char* argv[])
 
 		auto running = true;
 		
-		Data::SQLite::Connector::registerConnector();
+		SQL::SQLite::Connector::registerConnector();
 
 		while (running)
 		{
