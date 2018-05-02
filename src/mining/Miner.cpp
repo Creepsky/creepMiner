@@ -351,10 +351,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 				numberToString(difficulty),
 				diffiultyDifferenceToString,
 				deadlineFormat(MinerConfig::getConfig().getTargetDeadline())
-			)
-
-
-;
+			);
 
 			data_.getBlockData()->refreshBlockEntry();
 		}

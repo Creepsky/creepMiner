@@ -191,7 +191,7 @@ namespace Burst
 	private:
 		Poco::Timestamp startTime_ = {};
 		std::atomic<Poco::UInt64> blocksWon_;
-		std::shared_ptr<BlockData> blockData_ = nullptr;
+		std::shared_ptr<BlockData> blockData_ = nullptr, lastBlockData_ = nullptr;
 		mutable Poco::Mutex mutex_;
 
 		std::unique_ptr<Poco::Data::Session> dbSession_ = nullptr;

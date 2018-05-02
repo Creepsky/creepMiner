@@ -705,6 +705,7 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
 
 	try
 	{
+		lastBlockData_ = blockData_;
 		blockData_ = std::make_shared<BlockData>(block, baseTarget, genSig, this, blockTargetDeadline);
 		return blockData_;
 	}
@@ -1095,12 +1096,11 @@ Poco::Int64 Burst::MinerData::getDifficultyDifference() const
 			return 0;
 
 		const Poco::Int64 difficulty = blockData_->getDifficulty();
-		const auto lastBlockData = getHistoricalBlockData(1);
 
-		if (lastBlockData == nullptr)
+		if (lastBlockData_ == nullptr)
 			return difficulty;
 		
-		return difficulty - lastBlockData->getDifficulty();
+		return difficulty - lastBlockData_->getDifficulty();
 	}
 	catch (const Poco::Exception& e)
 	{
