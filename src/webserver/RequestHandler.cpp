@@ -821,29 +821,54 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 	Poco::StreamCopier::copyToString(request.stream(), path);
 
 	using hs = Poco::Net::HTTPResponse::HTTPStatus;
+	Poco::Nullable<std::string> errorMessage;
 
 	if (path.empty())
 	{
-		response.setStatus(hs::HTTP_BAD_REQUEST);
-		response.setContentLength(0);
-		response.send();
-		return;
+		errorMessage = "The plot dir path is empty";
+	}
+	else
+	{
+		log_information(MinerLogger::server, "Got request for changing the plotdirs...");
+
+		bool success;
+
+		if (remove)
+		{
+			try
+			{
+				success = MinerConfig::getConfig().removePlotDir(path);
+			}
+			catch (const Poco::Exception& e)
+			{
+				errorMessage = e.displayText();
+				success = false;
+			}
+		}
+		else
+		{
+			try
+			{
+				success = MinerConfig::getConfig().addPlotDir(path);
+			}
+			catch (const Poco::Exception& e)
+			{
+				errorMessage = e.displayText();
+				success = false;
+			}
+		}
+
+		if (success)
+			server.sendToWebsockets(createJsonPlotDirsRescan());
 	}
 
-	log_information(MinerLogger::server, "Got request for changing the plotdirs...");
-
-	bool success;
-
-	if (remove)
-		success = MinerConfig::getConfig().removePlotDir(path);
-	else
-		success = MinerConfig::getConfig().addPlotDir(path);
-
-	server.sendToWebsockets(createJsonPlotDirsRescan());
-
-	response.setStatus(success ? hs::HTTP_OK : hs::HTTP_BAD_REQUEST);
+	response.setStatus(hs::HTTP_OK);
 	response.setContentLength(0);
-	response.send();
+	auto& out = response.send();
+
+	Poco::JSON::Object json;
+	json.set("error", errorMessage);
+	Poco::JSON::Stringifier::condense(json, out);
 }
 
 void Burst::RequestHandler::notFound(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)

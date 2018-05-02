@@ -1786,7 +1786,7 @@ bool Burst::MinerConfig::removePlotDir(const std::string& dir)
 	});
 
 	if (iter == plotDirs_.end())
-		return false;
+		throw Poco::Exception{Poco::format("The plot dir '%s' does not exist", dir)};
 
 	plotDirs_.erase(iter);
 	return true;
