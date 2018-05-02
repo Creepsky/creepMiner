@@ -209,9 +209,13 @@ int main(const int argc, const char* argv[])
 						Burst::MinerConfig::getConfig().getServerCertificatePath(),
 						Context::VERIFY_RELAXED, Context::OPT_LOAD_CERT_FROM_FILE | Context::OPT_USE_STRONG_CRYPTO));
 #elif defined __linux__ || defined __APPLE__
+					Poco::Path pathCertificate{Burst::MinerConfig::getConfig().getServerCertificatePath()};
+					Poco::Path pathKey{pathCertificate};
+					pathKey.setExtension("key");
 					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
-						Burst::MinerConfig::getConfig().getServerCertificatePath(),
-						Context::VERIFY_RELAXED));
+						pathKey.toString(),
+						pathCertificate.toString(),
+						""));
 #endif
 
 					const SharedPtr<PrivateKeyPassphraseHandler> privateKeyPassphraseHandler(new KeyConfigHandler(true));

@@ -96,8 +96,8 @@ namespace Burst
 		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
 		                              Poco::UInt64 blockheight, std::string plotFile,
 		                              bool ownAccount, std::shared_ptr<Deadline>& newDeadline);
-		void shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskManager& task_manager,
-		                      Poco::NotificationQueue& queue) const;
+		void shutDownWorker(Poco::ThreadPool& threadPool, Poco::TaskManager& taskManager,
+		                    Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);
 		void on_wake_up(Poco::Timer& timer);
 		void onBenchmark(Poco::Timer& timer);

@@ -73,18 +73,48 @@ Burst::RequestHandler::LambdaRequestHandler::LambdaRequestHandler(Lambda lambda)
 
 void Burst::RequestHandler::LambdaRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	lambda_(request, response);
+	poco_ndc(LambdaRequestHandler::handleRequest);
+
+	try
+	{
+		lambda_(request, response);
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not execute lambda: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 Burst::RequestHandler::WebsocketRequestHandler::WebsocketRequestHandler(MinerServer& server, MinerData& data)
 	: server_{server}, data_{data}
 {
-	server_.newDataEvent += Poco::delegate(this, &WebsocketRequestHandler::onNewData);
+	poco_ndc(WebsocketRequestHandler::WebSocketRequestHandler);
+
+	try
+	{
+		server_.newDataEvent += Poco::delegate(this, &WebsocketRequestHandler::onNewData);
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not connect to server_.newDataEvent: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 Burst::RequestHandler::WebsocketRequestHandler::~WebsocketRequestHandler()
 {
-	server_.newDataEvent -= Poco::delegate(this, &WebsocketRequestHandler::onNewData);
+	poco_ndc(WebsocketRequestHandler::~WebsocketRequestHandler);
+
+	try
+	{
+		server_.newDataEvent -= Poco::delegate(this, &WebsocketRequestHandler::onNewData);
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not disconnect to server_.newDataEvent: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HTTPServerRequest& request,
@@ -185,7 +215,18 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 void Burst::RequestHandler::WebsocketRequestHandler::onNewData(std::string& data)
 {
 	std::lock_guard<std::mutex> lock(mutex_);
-	queue_.emplace_back(data);
+
+	poco_ndc(WebsocketRequestHandler::onNewData);
+
+	try
+	{
+		queue_.emplace_back(data);
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not enqueue new data for websockets: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::RequestHandler::loadTemplate(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
@@ -317,24 +358,35 @@ namespace Burst
 
 bool Burst::RequestHandler::login(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
 {
-	Poco::Net::HTMLForm post_body(request, request.stream());
+	Poco::Net::HTMLForm postBody(request, request.stream());
 
-	const std::string defaultCredential;
-	const auto& plainUserPost = post_body.get(cookieUserName, defaultCredential);
-	const auto& plainPassPost = post_body.get(cookiePassName, defaultCredential);
+	poco_ndc(RequestHandler::login);
 
-	const auto credentialsOk =
-		check_HMAC_SHA1(plainUserPost, MinerConfig::getConfig().getServerUser(), MinerConfig::webserverUserPassphrase) &&
-		check_HMAC_SHA1(plainPassPost, MinerConfig::getConfig().getServerPass(), MinerConfig::webserverPassPassphrase);
-
-	// save the hashed username and password in a clientside cookie
-	if (credentialsOk)
+	try
 	{
-		response.addCookie({ cookieUserName, hash_HMAC_SHA1(plainUserPost, MinerConfig::webserverUserPassphrase) });
-		response.addCookie({ cookiePassName, hash_HMAC_SHA1(plainPassPost, MinerConfig::webserverPassPassphrase) });
-	}
+		const std::string defaultCredential;
+		const auto& plainUserPost = postBody.get(cookieUserName, defaultCredential);
+		const auto& plainPassPost = postBody.get(cookiePassName, defaultCredential);
 
-	return credentialsOk;
+		const auto credentialsOk =
+			check_HMAC_SHA1(plainUserPost, MinerConfig::getConfig().getServerUser(), MinerConfig::webserverUserPassphrase) &&
+			check_HMAC_SHA1(plainPassPost, MinerConfig::getConfig().getServerPass(), MinerConfig::webserverPassPassphrase);
+
+		// save the hashed username and password in a clientside cookie
+		if (credentialsOk)
+		{
+			response.addCookie({ cookieUserName, hash_HMAC_SHA1(plainUserPost, MinerConfig::webserverUserPassphrase) });
+			response.addCookie({ cookiePassName, hash_HMAC_SHA1(plainPassPost, MinerConfig::webserverPassPassphrase) });
+		}
+
+		return credentialsOk;
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not login: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+		return false;
+	}
 }
 
 void Burst::RequestHandler::logout(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
@@ -466,8 +518,12 @@ void Burst::RequestHandler::rescanPlotfiles(Poco::Net::HTTPServerRequest& reques
 	response.send();
 }
 
-void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner, MinerServer& server, std::string plotPath)
+void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request,
+                                          Poco::Net::HTTPServerResponse& response, Miner& miner, MinerServer& server,
+                                          const std::string& plotPath)
 {
+	poco_ndc(RequestHandler::checkPlotfile);
+
 	// first check the credentials
 	if (!checkCredentials(request, response))
 		return;
@@ -478,8 +534,15 @@ void Burst::RequestHandler::checkPlotfile(Poco::Net::HTTPServerRequest& request,
 
 	log_information(MinerLogger::server, "Got request to check a file for corruption...");
 
-	PlotGenerator::checkPlotfileIntegrity(plotPath, miner, server);
-
+	try
+	{
+		PlotGenerator::checkPlotfileIntegrity(plotPath, miner, server);
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not check plotfile integrity: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::RequestHandler::checkAllPlotfiles(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner, MinerServer& server)
@@ -488,31 +551,42 @@ void Burst::RequestHandler::checkAllPlotfiles(Poco::Net::HTTPServerRequest& requ
 	if (!checkCredentials(request, response))
 		return;
 
-	response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-	response.setContentLength(0);
-	response.send();
+	poco_ndc(RequestHandler::checkAllPlotfiles);
 
-	log_information(MinerLogger::server, "Got request to check all files for corruption...");
-
-	const auto plotFiles = MinerConfig::getConfig().getPlotFiles();
-	auto totalSize = 0ull;
-	auto totalWeightedIntegrity = 0.0;
-
-	for (const auto& plotFile : plotFiles)
+	try
 	{
-		const auto& plotPath = plotFile->getPath();
-		auto integrity = PlotGenerator::checkPlotfileIntegrity(plotPath, miner, server);
-		totalWeightedIntegrity += integrity * plotFile->getSize();
-		totalSize += plotFile->getSize();
+		response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
+		response.setContentLength(0);
+		response.send();
+
+		log_information(MinerLogger::server, "Got request to check all files for corruption...");
+
+		const auto plotFiles = MinerConfig::getConfig().getPlotFiles();
+		auto totalSize = 0ull;
+		auto totalWeightedIntegrity = 0.0;
+
+		for (const auto& plotFile : plotFiles)
+		{
+			const auto& plotPath = plotFile->getPath();
+			const auto integrity = PlotGenerator::checkPlotfileIntegrity(plotPath, miner, server);
+			totalWeightedIntegrity += integrity * plotFile->getSize();
+			totalSize += plotFile->getSize();
+		}
+
+		log_information(MinerLogger::general, "Overall miner plot integrity: %f%%", totalWeightedIntegrity / totalSize);
+
+		//response
+		Poco::JSON::Object json;
+		json.set("type", "totalPlotcheck-result");
+		json.set("totalPlotIntegrity", std::to_string(totalWeightedIntegrity / totalSize));
+
+		server.sendToWebsockets(json);
 	}
-	log_information(MinerLogger::general, "Overall miner plot integrity: " + std::to_string(totalWeightedIntegrity / totalSize) + "%");
-	//response
-	Poco::JSON::Object json;
-	json.set("type", "totalPlotcheck-result");
-	json.set("totalPlotIntegrity", std::to_string(totalWeightedIntegrity / totalSize));
-
-	server.sendToWebsockets(json);
-
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not check all plotfiles integrity: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 bool Burst::RequestHandler::checkCredentials(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
@@ -710,14 +784,14 @@ void Burst::RequestHandler::miningInfo(Poco::Net::HTTPServerRequest& request, Po
 {
 	poco_ndc(MiningInfoHandler::handleRequest);
 
-	Poco::JSON::Object json;
-	json.set("baseTarget", std::to_string(miner.getBaseTarget()));
-	json.set("generationSignature", miner.getGensigStr());
-	json.set("targetDeadline", MinerConfig::getConfig().getTargetDeadline());
-	json.set("height", miner.getBlockheight());
-
 	try
 	{
+		Poco::JSON::Object json;
+		json.set("baseTarget", std::to_string(miner.getBaseTarget()));
+		json.set("generationSignature", miner.getGensigStr());
+		json.set("targetDeadline", MinerConfig::getConfig().getTargetDeadline());
+		json.set("height", miner.getBlockheight());
+
 		std::stringstream ss;
 		json.stringify(ss);
 		auto jsonStr = ss.str();
@@ -738,75 +812,85 @@ void Burst::RequestHandler::miningInfo(Poco::Net::HTTPServerRequest& request, Po
 void Burst::RequestHandler::changeSettings(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
 	Miner& miner)
 {
-	if (request.getMethod() == "POST")
+	poco_ndc(RequestHandler::changeSettings);
+
+	try
 	{
-		if (!checkCredentials(request, response))
-			return;
-
-		Poco::Net::HTMLForm post_body(request, request.stream());
-
-		for (auto& key_val : post_body)
+		if (request.getMethod() == "POST")
 		{
-			const auto& key = key_val.first;
-			const auto& value = key_val.second;
+			if (!checkCredentials(request, response))
+				return;
 
-			using np = Poco::NumberParser;
-			while (miner.isProcessing()) Poco::Thread::sleep(1000);
+			Poco::Net::HTMLForm post_body(request, request.stream());
 
-			try
+			for (auto& key_val : post_body)
 			{
-				if (key == "mining-info-url")
-					MinerConfig::getConfig().setUrl(value, HostType::MiningInfo);
-				else if (key == "submission-url")
-					MinerConfig::getConfig().setUrl(value, HostType::Pool);
-				else if (key == "wallet-url")
-					MinerConfig::getConfig().setUrl(value, HostType::Wallet);
-				else if (key == "intensity")
-					miner.setMiningIntensity(np::parseUnsigned(value));
-				else if (key == "buffer-size")
-					Miner::setMaxBufferSize(np::parseUnsigned64(value));
-				else if (key == "buffer-chunks")
-					MinerConfig::getConfig().setBufferChunkCount(np::parseUnsigned(value));
-				else if (key == "plot-readers")
-					miner.setMaxPlotReader(np::parseUnsigned(value));
-				else if (key == "submission-max-retry")
-					MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned(value));
-				else if (key == "submit-probability")
-					MinerConfig::getConfig().setSubmitProbability(np::parseFloat(value));
-				else if (key == "max-historical-blocks")
-					MinerConfig::getConfig().setMaxHistoricalBlocks(np::parseUnsigned(value));
-				else if (key == "target-deadline")
-					MinerConfig::getConfig().setTargetDeadline(value, TargetDeadlineType::Local);
-				else if (key == "timeout")
-					MinerConfig::getConfig().setTimeout(static_cast<float>(np::parseFloat(value)));
-				else if (key == "log-dir")
-					MinerConfig::getConfig().setLogDir(value);
-				else if (Poco::icompare(key, std::string("cmb_").size(), std::string("cmb_")) == 0)
+				const auto& key = key_val.first;
+				const auto& value = key_val.second;
+
+				using np = Poco::NumberParser;
+				while (miner.isProcessing()) Poco::Thread::sleep(1000);
+
+				try
 				{
-					const auto logger_name = Poco::replace(key, "cmb_", "");
-					const auto logger_priority = static_cast<Poco::Message::Priority>(np::parse(value));
-					MinerLogger::setChannelPriority(logger_name, logger_priority);
+					if (key == "mining-info-url")
+						MinerConfig::getConfig().setUrl(value, HostType::MiningInfo);
+					else if (key == "submission-url")
+						MinerConfig::getConfig().setUrl(value, HostType::Pool);
+					else if (key == "wallet-url")
+						MinerConfig::getConfig().setUrl(value, HostType::Wallet);
+					else if (key == "intensity")
+						miner.setMiningIntensity(np::parseUnsigned(value));
+					else if (key == "buffer-size")
+						Miner::setMaxBufferSize(np::parseUnsigned64(value));
+					else if (key == "buffer-chunks")
+						MinerConfig::getConfig().setBufferChunkCount(np::parseUnsigned(value));
+					else if (key == "plot-readers")
+						miner.setMaxPlotReader(np::parseUnsigned(value));
+					else if (key == "submission-max-retry")
+						MinerConfig::getConfig().setMaxSubmissionRetry(np::parseUnsigned(value));
+					else if (key == "submit-probability")
+						MinerConfig::getConfig().setSubmitProbability(np::parseFloat(value));
+					else if (key == "max-historical-blocks")
+						MinerConfig::getConfig().setMaxHistoricalBlocks(np::parseUnsigned(value));
+					else if (key == "target-deadline")
+						MinerConfig::getConfig().setTargetDeadline(value, TargetDeadlineType::Local);
+					else if (key == "timeout")
+						MinerConfig::getConfig().setTimeout(static_cast<float>(np::parseFloat(value)));
+					else if (key == "log-dir")
+						MinerConfig::getConfig().setLogDir(value);
+					else if (Poco::icompare(key, std::string("cmb_").size(), std::string("cmb_")) == 0)
+					{
+						const auto logger_name = Poco::replace(key, "cmb_", "");
+						const auto logger_priority = static_cast<Poco::Message::Priority>(np::parse(value));
+						MinerLogger::setChannelPriority(logger_name, logger_priority);
+					}
+					else
+						log_warning(MinerLogger::server, "unknown settings-key: %s", key);
 				}
-				else
-					log_warning(MinerLogger::server, "unknown settings-key: %s", key);
+				catch (Poco::Exception& exc)
+				{
+					log_exception(MinerLogger::server, exc);
+					log_current_stackframe(MinerLogger::server);
+				}
 			}
-			catch (Poco::Exception& exc)
-			{
-				log_exception(MinerLogger::server, exc);
-				log_current_stackframe(MinerLogger::server);
-			}
+
+			log_system(MinerLogger::config, "Settings changed...");
+			MinerConfig::getConfig().printConsole();
+
+			if (MinerConfig::getConfig().save())
+				log_success(MinerLogger::config, "Saved new settings!");
+			else
+				log_error(MinerLogger::config, "Could not save new settings!");
 		}
 
-		log_system(MinerLogger::config, "Settings changed...");
-		MinerConfig::getConfig().printConsole();
-
-		if (MinerConfig::getConfig().save())
-			log_success(MinerLogger::config, "Saved new settings!");
-		else
-			log_error(MinerLogger::config, "Could not save new settings!");
+		redirect(request, response, "/settings");
 	}
-
-	redirect(request, response, "/settings");
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not change settings: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response,
@@ -821,29 +905,54 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 	Poco::StreamCopier::copyToString(request.stream(), path);
 
 	using hs = Poco::Net::HTTPResponse::HTTPStatus;
+	Poco::Nullable<std::string> errorMessage;
 
 	if (path.empty())
 	{
-		response.setStatus(hs::HTTP_BAD_REQUEST);
-		response.setContentLength(0);
-		response.send();
-		return;
+		errorMessage = "The plot dir path is empty";
+	}
+	else
+	{
+		log_information(MinerLogger::server, "Got request for changing the plotdirs...");
+
+		bool success;
+
+		if (remove)
+		{
+			try
+			{
+				success = MinerConfig::getConfig().removePlotDir(path);
+			}
+			catch (const Poco::Exception& e)
+			{
+				errorMessage = e.displayText();
+				success = false;
+			}
+		}
+		else
+		{
+			try
+			{
+				success = MinerConfig::getConfig().addPlotDir(path);
+			}
+			catch (const Poco::Exception& e)
+			{
+				errorMessage = e.displayText();
+				success = false;
+			}
+		}
+
+		if (success)
+			server.sendToWebsockets(createJsonPlotDirsRescan());
 	}
 
-	log_information(MinerLogger::server, "Got request for changing the plotdirs...");
-
-	bool success;
-
-	if (remove)
-		success = MinerConfig::getConfig().removePlotDir(path);
-	else
-		success = MinerConfig::getConfig().addPlotDir(path);
-
-	server.sendToWebsockets(createJsonPlotDirsRescan());
-
-	response.setStatus(success ? hs::HTTP_OK : hs::HTTP_BAD_REQUEST);
+	response.setStatus(hs::HTTP_OK);
 	response.setContentLength(0);
-	response.send();
+	auto& out = response.send();
+
+	Poco::JSON::Object json;
+	json.set("error", errorMessage);
+	Poco::JSON::Stringifier::condense(json, out);
 }
 
 void Burst::RequestHandler::notFound(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
