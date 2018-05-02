@@ -583,11 +583,12 @@ std::vector<std::shared_ptr<Burst::BlockData>> Burst::MinerData::getHistoricalBl
 void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 to,
 	const std::function<bool(std::shared_ptr<BlockData>&)>& traverseFunction) const
 {
-	Poco::UInt64 height, baseTarget, targetDeadline, blockTime;
-	double roundTime;
-	std::string gensig;
 	std::vector<Poco::UInt64> nonces, values, accounts, totalPlotSizes, status;
 	std::vector<std::string> files;
+
+	std::vector<Poco::UInt64> heights, baseTargets, targetDeadlines, blockTimes;
+	std::vector<double> roundTimes;
+	std::vector<std::string> gensigs;
 
 	const auto fetchAll = from == 0 && to == 0;
 	std::string query = "SELECT height, baseTarget, gensig, targetDeadline, roundTime, blockTime FROM block";
@@ -595,8 +596,8 @@ void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 
 	if (!fetchAll)
 		query += " WHERE height >= :from AND height <= :to";
 
-	auto stmt = (*dbSession_ << query,	into(height), into(baseTarget), into(gensig),
-										into(targetDeadline), into(roundTime), into(blockTime), limit(1));
+	auto stmt = (*dbSession_ << query,	into(heights), into(baseTargets), into(gensigs),
+										into(targetDeadlines), into(roundTimes), into(blockTimes));
 
 	if (!fetchAll)
 	{
@@ -604,19 +605,18 @@ void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 
 		stmt.bind(to);
 	}
 
+	stmt.execute();
+
+	Poco::UInt64 height;
+
 	auto stmtDeadlines = (*dbSession_ << "SELECT nonce, value, account, file, totalplotsize, status " <<
 										 "FROM deadline WHERE height = :height",
 		into(nonces), into(values), into(accounts), into(files), into(totalPlotSizes), into(status), use(height));
 
 	auto stop = false;
 
-	while (!stmt.done() && !stop)
+	for (size_t i = 0; i < heights.size() && !stop; ++i)
 	{
-		stmt.execute();
-
-		if (stmt.rowsExtracted() == 0)
-			continue;
-		
 		nonces.clear();
 		values.clear();
 		accounts.clear();
@@ -624,16 +624,18 @@ void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 
 		totalPlotSizes.clear();
 		status.clear();
 
+		height = heights[i];
+
 		auto historicBlock = std::make_shared<BlockData>(
 			height,
-			baseTarget,
-			gensig,
+			baseTargets[i],
+			gensigs[i],
 			nullptr,
-			targetDeadline
+			targetDeadlines[i]
 		);
 
-		historicBlock->setRoundTime(roundTime);
-		historicBlock->setBlockTime(blockTime);
+		historicBlock->setRoundTime(roundTimes[i]);
+		historicBlock->setBlockTime(blockTimes[i]);
 
 		stmtDeadlines.execute();
 
