@@ -901,67 +901,76 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 	if (!checkCredentials(request, response))
 		return;
 
-	std::string path;
-	Poco::StreamCopier::copyToString(request.stream(), path);
-
-	using hs = Poco::Net::HTTPResponse::HTTPStatus;
-	std::string errorMessage;
-
-	if (path.empty())
+	try
 	{
-		errorMessage = "The plot dir path is empty";
-	}
-	else
-	{
-		log_information(MinerLogger::server, "Got request for changing the plotdirs...");
+		std::string path;
+		Poco::StreamCopier::copyToString(request.stream(), path);
 
-		bool success;
+		using hs = Poco::Net::HTTPResponse::HTTPStatus;
+		std::string errorMessage;
 
-		if (remove)
+		if (path.empty())
 		{
-			try
-			{
-				success = MinerConfig::getConfig().removePlotDir(path);
-			}
-			catch (const Poco::Exception& e)
-			{
-				errorMessage = e.displayText();
-				success = false;
-			}
+			errorMessage = "The plot dir path is empty";
 		}
 		else
 		{
-			try
-			{
-				success = MinerConfig::getConfig().addPlotDir(path);
-			}
-			catch (const Poco::Exception& e)
-			{
-				errorMessage = e.displayText();
-				success = false;
-			}
-		}
+			log_information(MinerLogger::server, "Got request for changing the plotdirs...");
 
-		if (success)
-		{
-			if (!MinerConfig::getConfig().save())
-				errorMessage = "Could not save the changes to config file";
+			bool success;
+
+			if (remove)
+			{
+				try
+				{
+					success = MinerConfig::getConfig().removePlotDir(path);
+				}
+				catch (const Poco::Exception& e)
+				{
+					errorMessage = e.displayText();
+					success = false;
+				}
+			}
 			else
-				server.sendToWebsockets(createJsonPlotDirsRescan());
+			{
+				try
+				{
+					success = MinerConfig::getConfig().addPlotDir(path);
+				}
+				catch (const Poco::Exception& e)
+				{
+					errorMessage = e.displayText();
+					success = false;
+				}
+			}
+
+			if (success)
+			{
+				if (!MinerConfig::getConfig().save())
+					errorMessage = "Could not save the changes to config file";
+				else
+					server.sendToWebsockets(createJsonPlotDirsRescan());
+			}
 		}
+
+		Poco::JSON::Object json;
+		json.set("error", errorMessage);
+		std::stringstream sstream;
+
+		Poco::JSON::Stringifier::condense(json, sstream);
+		const auto responseString = sstream.str();
+
+		response.setStatus(hs::HTTP_OK);
+		response.setContentLength(responseString.size());
+		auto& out = response.send();
+		out << responseString;
 	}
-
-	Poco::JSON::Object json;
-	json.set("error", errorMessage);
-	std::stringstream sstream;
-
-	Poco::JSON::Stringifier::condense(json, sstream);
-	const auto responseString = sstream.str();
-
-	response.setStatus(hs::HTTP_OK);
-	response.setContentLength(responseString.size());
-	auto& out = response.send();
-	out << responseString;
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not %s the plot dir: %s", std::string(remove ? "remove" : "add"), e.displayText());
+		log_current_stackframe(MinerLogger::server);
+		badRequest(request, response);
+	}
 }
 
 void Burst::RequestHandler::notFound(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
