@@ -57,7 +57,9 @@ Burst::Response Burst::Request::send(Poco::Net::HTTPRequest& request)
 	
 	if (!canSend())
 		return {nullptr};
-	
+
+	request.set("User-Agent", Settings::Project.nameAndVersion);
+
 	try
 	{
 		session_->sendRequest(request);
