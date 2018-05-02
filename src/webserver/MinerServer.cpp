@@ -297,9 +297,9 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		// show/change plot files
 		if (path_segments.front() == "plotdir")
 			if (path_segments.size() > 1)
-				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+				return new LambdaRequestHandler([&, remove = path_segments[1] == "remove"](req_t& req, res_t& res)
 				{
-					RequestHandler::changePlotDirs(req, res, *server_, path_segments[1] == "remove" ? true : false);
+					RequestHandler::changePlotDirs(req, res, *server_, remove);
 				});
 
 		if (path_segments.front() == "login")
