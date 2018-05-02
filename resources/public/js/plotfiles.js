@@ -67,7 +67,7 @@ function createDirLine(dirElement, index) {
     var line = $('<a href="#" class="list-group-item"></a>');
 
     line.append(dirElement["path"]);
-    line.append(" (" + dirElement.plotfiles.length + " files, " + dirElement["size"] + ")");
+    line.append(" (" + dirElement.plotfiles.length + " files, " + dirElement["size"] + ") <small class='float-sm-right'><span onclick='delPlotDir();'><i class='fas fa-minus text-danger'></i></span></small>");
     line.append(createProgressBar(index));
 
     line.click(function () {
@@ -301,4 +301,68 @@ function remove_selected_plot_dir() {
     if (current_selected) {
         $.get("/");
     }
+}
+
+function delPlotDir() {
+    swal({
+      title: 'Are you sure?',
+      text: "You want to remove this directory!",
+      type: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'No, cancel!',
+      confirmButtonClass: 'btn btn-success',
+      cancelButtonClass: 'btn btn-danger',
+      buttonsStyling: false,
+      reverseButtons: true
+    }).then((result) => {
+      if (result.value) {
+        swal(
+          'Deleted!',
+          'Your plot directory has been deleted.',
+          'success'
+        )
+      } else if (
+        result.dismiss === swal.DismissReason.cancel
+      ) {
+        swal(
+          'Cancelled',
+          'Your plot directory is safe :)',
+          'error'
+        )
+      }
+    })
+}
+
+function addPlotDir() {
+    swal({
+    title: "Add new directory",
+    text:
+    'Enter your plot directory ' +
+    ' - examples??',
+    input: "text",
+    showCancelButton: true,
+    confirmButtonColor: "#1FAB45",
+    confirmButtonText: "Submit",
+    cancelButtonText: "Cancel",
+    buttonsStyling: true
+    }).then((result) => {
+      if (result.value) {
+        swal(
+          'Added!',
+          'Your plot directory has been added.',
+          'success'
+        )
+      } else if (
+        result.dismiss === swal.DismissReason.cancel
+      ) {
+        swal(
+          'Cancelled',
+          'No new directory added',
+          'info'
+        )
+      }
+    })
 }

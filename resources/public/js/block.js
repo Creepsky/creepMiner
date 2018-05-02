@@ -556,6 +556,19 @@ function toggleConfirmationSound() {
     // ******************************************
 
     deActivateConfirmationSound(!playConfirmationSound);
+    //sql
+    swal({
+        title: 'Nonce sound notifications',
+        type: 'info',
+        html:
+        'If you wish to use a custom notification please place ' +
+        '<pre>alert.mp3</pre> it into the <b>sounds </b> directory.',
+        showCloseButton: false,
+        showCancelButton: false,
+        confirmButtonText:
+        '<i class="fa fa-thumbs-up"></i> Okay!'
+    });
+
 }
 
 function showMessage(json) {

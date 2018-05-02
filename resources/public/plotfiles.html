@@ -45,7 +45,12 @@
             </div>
             <!-- Directories -->
             <div class="card mb-12">
-                <h4 class="card-header bg-success text-white">Directories</h4>
+                <h4 class="card-header bg-success text-white">
+                    Directories
+                    <small class="float-sm-right" data-toggle="tooltip" data-placement="bottom" data-original-title="Add new plot location.">
+                        <span onclick="addPlotDir();"><i class="fas fa-plus"></i></span>
+                    </small>
+                </h4>
                 <div class="card-body">
                     <div id="plotDirList" class="list-group"></div>
                 </div>
