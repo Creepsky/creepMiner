@@ -943,7 +943,12 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 		}
 
 		if (success)
-			server.sendToWebsockets(createJsonPlotDirsRescan());
+		{
+			if (!MinerConfig::getConfig().save())
+				errorMessage = "Could not save the changes to config file";
+			else
+				server.sendToWebsockets(createJsonPlotDirsRescan());
+		}
 	}
 
 	Poco::JSON::Object json;
