@@ -176,24 +176,24 @@ Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
 Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& request)
 {
 	using RequestHandler::LambdaRequestHandler;
-	using req_t = Poco::Net::HTTPServerRequest;
-	using res_t = Poco::Net::HTTPServerResponse;
+	using req_t = HTTPServerRequest;
+	using res_t = HTTPServerResponse;
 
 	poco_ndc(MinerServer::RequestFactory::createRequestHandler);
 
 	if (request.find("Upgrade") != request.end() && icompare(request["Upgrade"], "websocket") == 0)
 		return new RequestHandler::WebsocketRequestHandler(*server_, *server_->minerData_);
 
-	std::stringstream sstream;
-	sstream << "Request: " << request.getURI() << std::endl;
-	sstream << "Ip: " << request.clientAddress().toString() << std::endl;
-	sstream << "Method: " << request.getMethod() << std::endl;
-	
-	for (const auto& header : request)
-		sstream << header.first << ':' << header.second << std::endl;
+	//std::stringstream sstream;
+	//sstream << "Request: " << request.getURI() << std::endl;
+	//sstream << "Ip: " << request.clientAddress().toString() << std::endl;
+	//sstream << "Method: " << request.getMethod() << std::endl;
+	//
+	//for (const auto& header : request)
+	//	sstream << header.first << ':' << header.second << std::endl;
 	
 	log_debug(MinerLogger::server, "Request: %s", request.getURI());
-	log_file_only(MinerLogger::server, Poco::Message::PRIO_INFORMATION, TextType::Information, sstream.str());
+	//log_file_only(MinerLogger::server, Poco::Message::PRIO_INFORMATION, TextType::Information, sstream.str());
 
 	try
 	{
