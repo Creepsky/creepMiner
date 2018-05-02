@@ -631,7 +631,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 			static_cast<double>(maxDeadline) / static_cast<double>(nClasses)) + 1);
 		std::map<Poco::UInt64, Poco::UInt64> deadlineBins;
 
-		for (auto& historicalDeadline : data.getAllHistoricalBlockData())
+		for (auto& historicalDeadline : historicalBlockData)
 		{
 			if (historicalDeadline->getBestDeadline() != nullptr)
 			{
@@ -673,7 +673,7 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	auto nDiffs = 0;
 	auto sumDiffs = 0.0;
 
-	for (auto& historicalDifficulty : data.getAllHistoricalBlockData())
+	for (auto& historicalDifficulty : historicalBlockData)
 	{
 		const auto blockDiff = 18325193796.0f / static_cast<float>(historicalDifficulty->getBasetarget());
 		Poco::JSON::Array jsonDifficultyHistory;
