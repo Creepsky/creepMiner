@@ -817,12 +817,18 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 	if (!checkCredentials(request, response))
 		return;
 
-	std::stringstream sstream;
-	Poco::StreamCopier::copyStream(request.stream(), sstream);
-	auto path = sstream.str();
+	std::string path;
+	Poco::StreamCopier::copyToString(request.stream(), path);
+
+	using hs = Poco::Net::HTTPResponse::HTTPStatus;
 
 	if (path.empty())
+	{
+		response.setStatus(hs::HTTP_BAD_REQUEST);
+		response.setContentLength(0);
+		response.send();
 		return;
+	}
 
 	log_information(MinerLogger::server, "Got request for changing the plotdirs...");
 
@@ -832,8 +838,6 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 		success = MinerConfig::getConfig().removePlotDir(path);
 	else
 		success = MinerConfig::getConfig().addPlotDir(path);
-
-	using hs = Poco::Net::HTTPResponse::HTTPStatus;
 
 	server.sendToWebsockets(createJsonPlotDirsRescan());
 
