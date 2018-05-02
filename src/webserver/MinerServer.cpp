@@ -128,45 +128,83 @@ void Burst::MinerServer::stop()
 
 void Burst::MinerServer::connectToMinerData(MinerData& minerData)
 {
-	minerData_ = &minerData;
-	minerData_->blockDataChangedEvent += Poco::delegate(this, &MinerServer::onMinerDataChangeEvent);
+	poco_ndc(MinerServer::connectToMinerData);
+
+	try
+	{
+		minerData_ = &minerData;
+		minerData_->blockDataChangedEvent += delegate(this, &MinerServer::onMinerDataChangeEvent);
+	}
+	catch (const Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not connect to the block data change event: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::MinerServer::sendToWebsockets(std::string& data)
 {
 	poco_ndc(MinerServer::sendToWebsockets);
 	ScopedLock<Mutex> lock{mutex_};
-	newDataEvent(this, data);
+	try
+	{
+		newDataEvent(this, data);
+	}
+	catch (const Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not set to websockets: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::MinerServer::sendToWebsockets(const JSON::Object& json)
 {
-	std::stringstream sstream;
-	json.stringify(sstream);
-	auto jsonString = sstream.str();
-	sendToWebsockets(jsonString);
+	poco_ndc(MinerServer::sendToWebsockets);
+
+	try
+	{
+		std::stringstream sstream;
+		json.stringify(sstream);
+		auto jsonString = sstream.str();
+		sendToWebsockets(jsonString);
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not set to websockets: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::MinerServer::onMinerDataChangeEvent(const void* sender, const Poco::JSON::Object& data)
 {
-	auto send = true;
+	poco_ndc(MinerServer::onMinerDataChangeEvent);
 
-	// pre-filter progress
-	if (data.has("type") &&
-		data.get("type") == "progress")
+	try
 	{
-		auto progressRead = data.get("value").extract<float>();
-		auto progressVerification = data.get("valueVerification").extract<float>();
+		auto send = true;
 
-		send = static_cast<int>(progressRead) != static_cast<int>(progressRead_) ||
-			static_cast<int>(progressVerification) != static_cast<int>(progressVerification_);
-		
-		progressRead_ = progressRead;
-		progressVerification_ = progressVerification;
+		// pre-filter progress
+		if (data.has("type") &&
+			data.get("type") == "progress")
+		{
+			const auto progressRead = data.get("value").extract<float>();
+			const auto progressVerification = data.get("valueVerification").extract<float>();
+
+			send = static_cast<int>(progressRead) != static_cast<int>(progressRead_) ||
+				static_cast<int>(progressVerification) != static_cast<int>(progressVerification_);
+			
+			progressRead_ = progressRead;
+			progressVerification_ = progressVerification;
+		}
+
+		if (send)
+			sendToWebsockets(data);
 	}
-
-	if (send)
-		sendToWebsockets(data);
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not change the progress: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
