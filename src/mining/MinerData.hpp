@@ -59,7 +59,7 @@ namespace Burst
 		std::shared_ptr<Deadline> addDeadline(Poco::UInt64 nonce, Poco::UInt64 deadline,
 		                                      const std::shared_ptr<Account>& account, Poco::UInt64 block, const std::string& plotFile);
 		void setBaseTarget(Poco::UInt64 baseTarget);
-		void setLastWinner(std::shared_ptr<Account> account);
+		void setLastWinner(const std::shared_ptr<Account>& account);
 		void setRoundTime(double rTime);
 		
 		void refreshBlockEntry() const;
@@ -83,7 +83,7 @@ namespace Burst
 		std::shared_ptr<Deadline> getBestDeadline() const;
 		std::shared_ptr<Deadline> getBestDeadline(DeadlineSearchType searchType) const;
 		//std::vector<Poco::JSON::Object> getEntries() const;
-		bool forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const;
+		bool forEntries(const std::function<bool(const Poco::JSON::Object&)>& traverseFunction) const;
 		//const std::unordered_map<AccountId, Deadlines>& getDeadlines() const;
 		std::shared_ptr<Deadline> getBestDeadline(Poco::UInt64 accountId, DeadlineSearchType searchType);
 		Poco::ActiveResult<std::shared_ptr<Account>> getLastWinnerAsync(const Wallet& wallet, Accounts& accounts);
@@ -139,7 +139,7 @@ namespace Burst
 		MinerData* parent_;
 		Poco::JSON::Object::Ptr jsonProgress_;
 		std::unordered_map<std::string, Poco::JSON::Object::Ptr> jsonDirProgress_;
-		mutable std::mutex mutex_;
+		mutable Poco::Mutex mutex_;
 
 		friend class Deadlines;
 	};
@@ -192,7 +192,7 @@ namespace Burst
 		Poco::Timestamp startTime_ = {};
 		std::atomic<Poco::UInt64> blocksWon_;
 		std::shared_ptr<BlockData> blockData_ = nullptr;
-		mutable std::mutex mutex_;
+		mutable Poco::Mutex mutex_;
 
 		std::unique_ptr<Poco::Data::Session> dbSession_ = nullptr;
 
