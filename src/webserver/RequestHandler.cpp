@@ -905,7 +905,7 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 	Poco::StreamCopier::copyToString(request.stream(), path);
 
 	using hs = Poco::Net::HTTPResponse::HTTPStatus;
-	Poco::Nullable<std::string> errorMessage;
+	std::string errorMessage;
 
 	if (path.empty())
 	{
@@ -946,13 +946,17 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 			server.sendToWebsockets(createJsonPlotDirsRescan());
 	}
 
-	response.setStatus(hs::HTTP_OK);
-	response.setContentLength(0);
-	auto& out = response.send();
-
 	Poco::JSON::Object json;
 	json.set("error", errorMessage);
-	Poco::JSON::Stringifier::condense(json, out);
+	std::stringstream sstream;
+
+	Poco::JSON::Stringifier::condense(json, sstream);
+	const auto responseString = sstream.str();
+
+	response.setStatus(hs::HTTP_OK);
+	response.setContentLength(responseString.size());
+	auto& out = response.send();
+	out << responseString;
 }
 
 void Burst::RequestHandler::notFound(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response)
