@@ -76,3 +76,49 @@ window.onload = function (evt) {
 
     connect(connectCallback);
 }
+
+function restartMiner() {
+	swal( {
+		title: 'Restart creepMiner',
+		html:
+        '<p>Are you 100% sure you want to restart?</p>' +
+        'If you are sure, type in <b>restart</b>',
+		type: 'warning',
+        input: "text",
+		showCancelButton: true,
+		confirmButtonText: 'Restart',
+		cancelButtonText: 'Cancel',
+        confirmButtonColor: "#dc3545",
+        reverseButtons: true,
+	}).then((result) => {
+        if (result.value.trim().toLowerCase() == 'restart') {
+				$.ajax( {
+					type: "GET",
+	                url: "/restart",
+	                success: function(msg){
+	                    if (!msg.error) {
+	                        swal({
+	                            title: "Successfully queued!",
+	                            html: "<p><b>creepMiner</b> has been restarted,</p> <p>please wait for it to startup.</p>",
+	                            type: "success"
+	                        });
+	                    }
+	                    else {
+	                        swal({
+	                            title: "Error!",
+	                            html: "There was an error removing the plot directory: " + msg.error,
+	                            type: "error"
+	                        });
+	                    }
+	                }
+	    		} );
+        }
+        else {
+					swal({
+						title: "Error!",
+						html: "<p>In adding the plot directory</p><p>'" + msg.error + "'</p><p><b>Check that it is a valid directory!</b><p>",
+						type: "error"
+					})
+				}
+    });
+}
