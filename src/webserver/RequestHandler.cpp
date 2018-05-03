@@ -764,6 +764,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (blockheight != miner.getBlockheight())
 		{
+			poco_ndc(SubmitNonceHandler::handleRequest::wrongBlock);
+
 			const auto responseString = Poco::format(
 				R"({ "result" : "Your submitted deadline is for another block!", "nonce" : %Lu, "blockheight" : %Lu, "currentBlockheight" : %Lu })",
 				nonce, blockheight, miner.getBlockheight());
@@ -775,8 +777,9 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		}
 		else if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
+			poco_ndc(SubmitNonceHandler::handleRequest::forwarding);
 			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline, miner.getBlockheight(), plotfile, false,
-				minerName, workerName, capacity, Poco::Net::IPAddress{request.clientAddress().toString()});
+				minerName, workerName, capacity, request.clientAddress().host());
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setContentLength(forwardResult.json.size());
 			auto& responseData = response.send();
@@ -784,6 +787,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		}
 		else
 		{
+			poco_ndc(SubmitNonceHandler::handleRequest::forwardingBlind);
+
 			// sum up the capacity
 			request.set("X-Capacity", std::to_string(PlotSizes::getTotal(PlotSizes::Type::Combined)));
 
