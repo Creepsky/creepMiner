@@ -376,7 +376,7 @@ function addPlotDir() {
                     else {
                         swal({
                             title: "Error!",
-                            text: "There was an error in adding the plot directory: '" + msg.error + "'. Check that it is a valid directory!",
+                            html: "<p>In adding the plot directory</p><p>'" + msg.error + "'</p><p><b>Check that it is a valid directory!</b><p>",
                             type: "error"
                         })
                     }
