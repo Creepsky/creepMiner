@@ -482,11 +482,7 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 			if (tooHigh)
 				output = MinerLogger::hasOutput(NonceFoundTooHigh);
 
-			log_unimportant_if(MinerLogger::miner, output,
-				"%s: nonce found (%s)\n"
-				"\tnonce: %s\n"
-				"\tin:    %s",
-				newDeadline->getAccountName(), deadlineFormat(deadline), numberToString(newDeadline->getNonce()), plotFile);
+			log_unimportant_if(MinerLogger::miner, output, newDeadline->toActionString("nonce found"));
 				
 			if (tooHigh)
 				return SubmitResponse::TooHigh;
