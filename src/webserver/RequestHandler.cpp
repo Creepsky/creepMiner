@@ -573,12 +573,19 @@ void Burst::RequestHandler::checkAllPlotfiles(Poco::Net::HTTPServerRequest& requ
 			totalSize += plotFile->getSize();
 		}
 
-		log_information(MinerLogger::general, "Overall miner plot integrity: %f%%", totalWeightedIntegrity / totalSize);
+		double plotIntegrity;
+
+		if (totalSize == 0 || totalWeightedIntegrity == 0)
+			plotIntegrity = 100;
+		else
+			plotIntegrity = totalWeightedIntegrity / totalSize;
+
+		log_information(MinerLogger::general, "Overall miner plot integrity: %.2f%%", plotIntegrity);
 
 		//response
 		Poco::JSON::Object json;
 		json.set("type", "totalPlotcheck-result");
-		json.set("totalPlotIntegrity", std::to_string(totalWeightedIntegrity / totalSize));
+		json.set("totalPlotIntegrity", std::to_string(plotIntegrity));
 
 		server.sendToWebsockets(json);
 	}
