@@ -538,16 +538,16 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const Poco::UInt64 nonce, con
 		}
 		
 		if (result == SubmitResponse::NotBest)
-			log_information(MinerLogger::miner, newDeadline->toActionString("nonce discarded - not best"));
+			log_debug(MinerLogger::miner, newDeadline->toActionString("nonce discarded - not best"));
 
 		if (result == SubmitResponse::TooHigh)
-			log_information(MinerLogger::miner, newDeadline->toActionString("nonce discarded - deadline too high"));
+			log_debug(MinerLogger::miner, newDeadline->toActionString("nonce discarded - deadline too high"));
 
 		if (result == SubmitResponse::WrongBlock)
-			log_information(MinerLogger::miner, newDeadline->toActionString("nonce discarded - wrong block"));
+			log_debug(MinerLogger::miner, newDeadline->toActionString("nonce discarded - wrong block"));
 
 		if (result == SubmitResponse::Error)
-			log_information(MinerLogger::miner, newDeadline->toActionString("nonce discarded - error occured"));
+			log_debug(MinerLogger::miner, newDeadline->toActionString("nonce discarded - error occured"));
 
 		NonceConfirmation nonceConfirmation;
 		nonceConfirmation.deadline = 0;

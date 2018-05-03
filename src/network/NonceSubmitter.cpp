@@ -69,7 +69,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 
 		if (betterDeadlineInPipeline)
 		{
-			log_information(MinerLogger::nonceSubmitter, deadline->toActionString("nonce discarded - not best"));
+			log_debug(MinerLogger::nonceSubmitter, deadline->toActionString("nonce discarded - not best"));
 			return false;
 		}
 			
