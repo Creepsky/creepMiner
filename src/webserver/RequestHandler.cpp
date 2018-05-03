@@ -961,6 +961,11 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 					MinerConfig::getConfig().printBufferSize();
 				}
 			}
+			else
+			{
+				log_warning(MinerLogger::server, "Could not %s the plotdir/file '%s': %s",
+					std::string(remove ? "remove" : "add"), path, errorMessage);
+			}
 		}
 
 		Poco::JSON::Object json;
