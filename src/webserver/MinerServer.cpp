@@ -232,7 +232,7 @@ HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(con
 	//for (const auto& header : request)
 	//	sstream << header.first << ':' << header.second << std::endl;
 
-	log_debug(MinerLogger::server, "Request: %s", request.getURI());
+	//log_debug(MinerLogger::server, "Request: %s", request.getURI());
 	//log_file_only(MinerLogger::server, Poco::Message::PRIO_INFORMATION, TextType::Information, sstream.str());
 
 	try
