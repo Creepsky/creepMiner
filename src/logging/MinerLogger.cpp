@@ -112,7 +112,7 @@ const std::unordered_map<std::string, Burst::MinerDataChannel*> Burst::MinerLogg
 
 Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel;
 Poco::FormattingChannel* Burst::MinerLogger::fileFormatter_ = nullptr;
-std::string Burst::MinerLogger::logFileName_ = getFilenameWithtimestamp("creepMiner", "log");
+std::string Burst::MinerLogger::logFileName_ = ("creepMiner.log");
 
 std::map<Burst::TextType, Burst::ConsoleColorPair> Burst::MinerLogger::typeColors =
 	{
