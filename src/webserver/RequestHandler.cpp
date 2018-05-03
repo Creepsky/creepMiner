@@ -712,6 +712,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		if (request.has(X_Deadline))
 			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
 
+		const auto workerName = request.get(X_Worker, "");
+
 		auto account = miner.getAccount(accountId);
 
 		if (account == nullptr)
@@ -730,15 +732,24 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		if (request.has(X_Miner) && MinerConfig::getConfig().isForwardingMinerName())
 			minerName = request.get(X_Miner);
 
+		auto from = minerName;
+
+		if (from.empty())
+			from = request.clientAddress().toString();
+		else
+			from += Poco::format(" (%s)", request.clientAddress());
+
 		log_information(MinerLogger::server, "Got nonce forward request (%s)\n"
 			"\tnonce:   %s\n"
 			"\taccount: %s\n"
 			"\theight:  %s\n"
-			"\tin:      %s",
+			"\tin:      %s\n"
+			"\tfrom:	%s",
 			blockheight == miner.getBlockheight() ? deadlineFormat(deadline) : "for last block!",
 			numberToString(nonce),
 			account->getAddress(),
-			numberToString(blockheight), plotfile
+			numberToString(blockheight), plotfile,
+			from
 		);
 
 		if (MinerConfig::getConfig().isCumulatingPlotsizes())
@@ -758,7 +769,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		else if (accountId != 0 && nonce != 0 && deadline != 0)
 		{
 			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline, miner.getBlockheight(), plotfile, false,
-			                                             minerName, capacity);
+				minerName, workerName, capacity, Poco::Net::IPAddress{request.clientAddress().toString()});
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setContentLength(forwardResult.json.size());
 			auto& responseData = response.send();

@@ -36,6 +36,7 @@ namespace Burst
 	const std::string X_Deadline = "X-Deadline";
 	const std::string X_Capacity = "X-Capacity";
 	const std::string X_Miner = "X-Miner";
+	const std::string X_Worker = "X-Worker";
 
 	class Deadline;
 

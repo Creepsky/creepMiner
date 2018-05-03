@@ -97,9 +97,29 @@ std::string Burst::Deadline::getMiner() const
 	return minerName_.empty() ? Settings::Project.nameAndVersionVerbose : minerName_;
 }
 
+const std::string& Burst::Deadline::getWorker() const
+{
+	return workerName_;
+}
+
 Poco::UInt64 Burst::Deadline::getTotalPlotsize() const
 {
 	return plotsize_ == 0 ? PlotSizes::getTotal(PlotSizes::Type::Combined) : plotsize_;
+}
+
+const Poco::Net::IPAddress& Burst::Deadline::getIp() const
+{
+	return ip_;
+}
+
+std::string Burst::Deadline::toActionString(const std::string& action) const
+{
+	return Poco::format("%s: %s (%s)\n"
+	                    "\tnonce: %s\n"
+	                    "\tin:    %s\n"
+	                    "\tfrom:  %s",
+	                    getAccountName(), action, deadlineToReadableString(), numberToString(getNonce()), getPlotFile(),
+	                    getWorker().empty() ? getIp().toString() : Poco::format("%s (%s)", getWorker(), getIp().toString()));
 }
 
 void Burst::Deadline::setDeadline(Poco::UInt64 deadline)
@@ -115,9 +135,19 @@ void Burst::Deadline::setMiner(const std::string& miner)
 	minerName_ = miner;
 }
 
+void Burst::Deadline::setWorker(const std::string& worker)
+{
+	workerName_ = worker;
+}
+
 void Burst::Deadline::setTotalPlotsize(const Poco::UInt64 plotsize)
 {
 	plotsize_ = plotsize;
+}
+
+void Burst::Deadline::setIp(const Poco::Net::IPAddress& ip)
+{
+	ip_ = ip;
 }
 
 bool Burst::Deadline::operator<(const Burst::Deadline& rhs) const

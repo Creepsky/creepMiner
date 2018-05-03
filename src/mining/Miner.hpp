@@ -70,10 +70,11 @@ namespace Burst
 
 		NonceConfirmation submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
 		                              Poco::UInt64 blockheight, const std::string& plotFile,
-		                              bool ownAccount, const std::string& minerName = "", Poco::UInt64 plotsize = 0);
+		                              bool ownAccount, const std::string& minerName = "", const std::string& workerName = "",
+		                              Poco::UInt64 plotsize = 0, const Poco::Net::IPAddress& ip = Poco::Net::IPAddress{"127.0.0.1"});
 
 		Poco::ActiveMethod<NonceConfirmation,
-		                   std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>,
+		                   std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool, std::string>,
 		                   Miner> submitNonceAsync;
 
 		std::shared_ptr<Deadline> getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
@@ -92,7 +93,7 @@ namespace Burst
 	private:
 		bool getMiningInfo();
 		NonceConfirmation submitNonceAsyncImpl(
-			const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>& data);
+			const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool, std::string>& data);
 		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
 		                              Poco::UInt64 blockheight, std::string plotFile,
 		                              bool ownAccount, std::shared_ptr<Deadline>& newDeadline);

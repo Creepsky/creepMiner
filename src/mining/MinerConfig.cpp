@@ -489,6 +489,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		cpuInstructionSet_ = Poco::trim(cpuInstructionSet_);
 
 		databasePath_ = getOrAdd(miningObj, "databasePath", std::string("data.db"));
+		workerName_ = getOrAdd(miningObj, "workerName", std::string{});
 
 		// auto detect the max. cpu instruction set
 		if (cpuInstructionSet_ == "AUTO")
@@ -1071,6 +1072,11 @@ const std::string& Burst::MinerConfig::getDatabasePath() const
 	return databasePath_;
 }
 
+const std::string& Burst::MinerConfig::getWorkerName() const
+{
+	return workerName_;
+}
+
 Poco::UInt64 Burst::MinerConfig::getTargetDeadline(TargetDeadlineType type) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
@@ -1490,6 +1496,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		mining.set("gpuDevice", getGpuDevice());
 		mining.set("gpuPlatform", getGpuPlatform());
 		mining.set("databasePath", getDatabasePath());
+		mining.set("workerName", getWorkerName());
 
 		// benchmark
 		{

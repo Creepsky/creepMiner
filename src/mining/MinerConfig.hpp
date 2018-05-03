@@ -165,6 +165,7 @@ namespace Burst
 		const std::string& getServerCertificatePath() const;
 		const std::string& getServerCertificatePass() const;
 		const std::string& getDatabasePath() const;
+		const std::string& getWorkerName() const;
 
 		Url getServerUrl() const;
 		double getSubmitProbability() const;
@@ -327,6 +328,7 @@ namespace Burst
 		std::string serverCertificatePath_;
 		std::string serverCertificatePass_;
 		std::string databasePath_;
+		std::string workerName_;
 		mutable Poco::Mutex mutex_;
 	};
 }

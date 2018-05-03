@@ -42,7 +42,7 @@ namespace Burst
 	namespace MinerHelper
 	{
 		template <typename T>
-		void create_worker_default(std::unique_ptr<Poco::ThreadPool>& thread_pool, std::unique_ptr<Poco::TaskManager>& task_manager,
+		void createWorkerDefault(std::unique_ptr<Poco::ThreadPool>& thread_pool, std::unique_ptr<Poco::TaskManager>& task_manager,
 			const size_t size, Miner& miner, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress)
 		{
 			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
@@ -52,7 +52,8 @@ namespace Burst
 			                               Poco::UInt64 blockheight, const std::string& plotFile,
 			                               bool ownAccount)
 			{
-				miner.submitNonceAsync(make_tuple(nonce, accountId, deadline, blockheight, plotFile, ownAccount));
+				miner.submitNonceAsync(make_tuple(nonce, accountId, deadline, blockheight, plotFile, ownAccount,
+				                                  MinerConfig::getConfig().getWorkerName()));
 			};
 
 			for (size_t i = 0; i < size; ++i)
@@ -60,7 +61,7 @@ namespace Burst
 		}
 
 		template <typename T, typename ...Args>
-		void create_worker(std::unique_ptr<Poco::ThreadPool>& thread_pool, std::unique_ptr<Poco::TaskManager>& task_manager,
+		void createWorker(std::unique_ptr<Poco::ThreadPool>& thread_pool, std::unique_ptr<Poco::TaskManager>& task_manager,
 			const size_t size, Args&&... args)
 		{
 			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
@@ -110,7 +111,7 @@ void Burst::Miner::run()
 		nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>();
 
 		// create the plot readers
-		MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
+		MinerHelper::createWorker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
 			data_, progressRead_, verificationQueue_, plotReadQueue_);
 
 		// create the plot verifiers
@@ -317,6 +318,8 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 			const auto timeDiffSeconds = std::chrono::duration_cast<std::chrono::seconds>(timeDiff);
 			log_unimportant(MinerLogger::miner, "Block %s ended in %s", numberToString(blockHeight - 1),
 				deadlineFormat(timeDiffSeconds.count()))
+
+
 ;
 			data_.getBlockData()->setBlockTime(timeDiffSeconds.count());
 		}
@@ -351,7 +354,13 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 				numberToString(difficulty),
 				diffiultyDifferenceToString,
 				deadlineFormat(MinerConfig::getConfig().getTargetDeadline())
-			);
+			)
+
+
+
+
+
+;
 
 			data_.getBlockData()->refreshBlockEntry();
 		}
@@ -498,7 +507,8 @@ Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UIn
 Burst::NonceConfirmation Burst::Miner::submitNonce(const Poco::UInt64 nonce, const Poco::UInt64 accountId,
                                                    const Poco::UInt64 deadline, const Poco::UInt64 blockheight,
                                                    const std::string& plotFile, const bool ownAccount,
-                                                   const std::string& minerName, const Poco::UInt64 plotsize)
+                                                   const std::string& minerName, const std::string& workerName,
+                                                   const Poco::UInt64 plotsize, const Poco::Net::IPAddress& ip)
 {
 	poco_ndc(Miner::submitNonce);
 
@@ -508,18 +518,36 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const Poco::UInt64 nonce, con
 
 		const auto result = addNewDeadline(nonce, accountId, deadline, blockheight, plotFile, ownAccount, newDeadline);
 
-		// is the new nonce better then the best one we already have?
-		if (result == SubmitResponse::Found)
-		{
-			if (!minerName.empty())
-				newDeadline->setMiner(minerName);
+		if (newDeadline == nullptr)
+			newDeadline = std::make_shared<Deadline>(nonce, deadline, std::make_shared<Account>(wallet_, accountId), blockheight, plotFile);
 
-			if (plotsize > 0 && !MinerConfig::getConfig().isCumulatingPlotsizes())
+		// is the new nonce better then the best one we already have?
+		if (!minerName.empty())
+			newDeadline->setMiner(minerName);
+
+		if (!workerName.empty())
+			newDeadline->setWorker(workerName);
+
+		if (plotsize > 0 && !MinerConfig::getConfig().isCumulatingPlotsizes())
 				newDeadline->setTotalPlotsize(plotsize);
 
+		if (result == SubmitResponse::Found)
+		{
 			newDeadline->onTheWay();
-			return NonceSubmitter{ *this, newDeadline }.submit();
+			return NonceSubmitter{*this, newDeadline}.submit();
 		}
+		
+		if (result == SubmitResponse::NotBest)
+			log_information(MinerLogger::miner, newDeadline->toActionString("nonce discarded - not best"));
+
+		if (result == SubmitResponse::TooHigh)
+			log_information(MinerLogger::miner, newDeadline->toActionString("nonce discarded - deadline too high"));
+
+		if (result == SubmitResponse::WrongBlock)
+			log_information(MinerLogger::miner, newDeadline->toActionString("nonce discarded - wrong block"));
+
+		if (result == SubmitResponse::Error)
+			log_information(MinerLogger::miner, newDeadline->toActionString("nonce discarded - error occured"));
 
 		NonceConfirmation nonceConfirmation;
 		nonceConfirmation.deadline = 0;
@@ -534,7 +562,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const Poco::UInt64 nonce, con
 	{
 		log_error(MinerLogger::miner, "Could not process the nonce submission: %s", e.displayText());
 		log_current_stackframe(MinerLogger::miner);
-		NonceConfirmation confirmation;
+		NonceConfirmation confirmation{};
 		confirmation.errorCode = SubmitResponse::Error;
 		return confirmation;
 	}
@@ -624,7 +652,10 @@ bool Burst::Miner::getMiningInfo()
 										deadlineFormat(targetDeadlinePoolBefore),
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)),
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
-										deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
+										deadlineFormat(MinerConfig::getConfig().getTargetDeadline()))
+
+
+;
 							}
 							else {
 								if (targetDeadlinePoolBefore != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
@@ -633,7 +664,8 @@ bool Burst::Miner::getMiningInfo()
 										"\told pool target deadline:    %s\n"
 										"\tnew pool target deadline:    %s",
 										deadlineFormat(targetDeadlinePoolBefore),
-										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)));
+										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)))
+;
 							}
 						}
 
@@ -762,7 +794,9 @@ void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 			"\tbest deadline:  %s",
 			numberToString(block->getBlockheight()),
 			Poco::NumberFormatter::format(roundTime, 3),
-			bestDeadline == nullptr ? "none" : deadlineFormat(bestDeadline->getDeadline()));
+			bestDeadline == nullptr ? "none" : deadlineFormat(bestDeadline->getDeadline()))
+
+;
 	}
 	catch (const Poco::Exception& e)
 	{
@@ -771,7 +805,8 @@ void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 	}
 }
 
-Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool>& data)
+Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(
+	const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool, std::string>& data)
 {
 	const auto nonce = std::get<0>(data);
 	const auto accountId = std::get<1>(data);
@@ -779,8 +814,9 @@ Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(const std::tuple<Poc
 	const auto blockheight = std::get<3>(data);
 	const auto& plotFile = std::get<4>(data);
 	const auto ownAccount = std::get<5>(data);
+	const auto workerName = std::get<6>(data);
 
-	return submitNonce(nonce, accountId, deadline, blockheight, plotFile, ownAccount);
+	return submitNonce(nonce, accountId, deadline, blockheight, plotFile, ownAccount, "", workerName);
 }
 
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight)
@@ -836,14 +872,14 @@ void Burst::Miner::createPlotVerifiers()
 	if (processorType == "CUDA")
 	{
 		if (Settings::Cuda)
-			createWorker(MinerHelper::create_worker_default<PlotVerifier_cuda>);
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_cuda>);
 		else
 			forceCpu = true;
 	}
 	else if (processorType == "OPENCL")
 	{
 		if (Settings::OpenCl)
-			createWorker(MinerHelper::create_worker_default<PlotVerifier_opencl>);
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_opencl>);
 		else
 			forceCpu = true;
 	}
@@ -851,13 +887,13 @@ void Burst::Miner::createPlotVerifiers()
 	if (processorType == "CPU" || forceCpu)
 	{
 		if (cpuInstructionSet == "SSE4" && Settings::Sse4)
-			createWorker(MinerHelper::create_worker_default<PlotVerifier_sse4>);
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_sse4>);
 		else if (cpuInstructionSet == "AVX" && Settings::Avx)
-			createWorker(MinerHelper::create_worker_default<PlotVerifier_avx>);
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_avx>);
 		else if (cpuInstructionSet == "AVX2" && Settings::Avx2)
-			createWorker(MinerHelper::create_worker_default<PlotVerifier_avx2>);
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_avx2>);
 		else if (cpuInstructionSet == "SSE2")
-			createWorker(MinerHelper::create_worker_default<PlotVerifier_sse2>);
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_sse2>);
 		else
 			fallback = true;
 	}
@@ -872,7 +908,7 @@ void Burst::Miner::createPlotVerifiers()
 			"As a fallback solution your CPU with the instruction set %s is used.", processorType, MinerConfig::getConfig().
 			getCpuInstructionSet(), cpuInstructionSet);
 		
-		createWorker(MinerHelper::create_worker_default<PlotVerifier_sse2>);
+		createWorker(MinerHelper::createWorkerDefault<PlotVerifier_sse2>);
 	}
 }
 
@@ -901,7 +937,7 @@ void Burst::Miner::setMaxPlotReader(unsigned max_reader)
 
 	shutDownWorker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
 	MinerConfig::getConfig().setMaxPlotReaders(max_reader);
-	MinerHelper::create_worker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
+	MinerHelper::createWorker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
 		data_, progressRead_, verificationQueue_, plotReadQueue_);
 }
 
