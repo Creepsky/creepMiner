@@ -320,22 +320,30 @@ function delPlotDir(path) {
         confirmButtonColor: "#dc3545",
         reverseButtons: true,
 	}).then((result) => {
-        if (result.value) {
+        if (result.value.trim().toLowerCase() == 'yes') {
 			$.ajax( {
 				type: "POST",
                 url: "plotdir/remove",
                 data: (path),
-                success: function(){
-        					swal({ title: "Successfully deleted!", text: "The plot directory has been removed", type: "success",},
-             			function () { location.reload(true); });
-                },
-                error:function(){
-        					swal({ title: "Error!", text: "There was an error removing the plot directory", type: "error",},
-               		function () { location.reload(true); });
+                success: function(msg){
+                    if (!msg.error) {
+                        swal({
+                            title: "Successfully deleted!",
+                            text: "The plot directory has been removed",
+                            type: "success"
+                        });
+                    }
+                    else {
+                        swal({
+                            title: "Error!",
+                            text: "There was an error removing the plot directory: " + msg.error,
+                            type: "error"
+                        });
+                    }
                 }
     		} );
         }
-    })
+    });
 }
 
 function addPlotDir() {
@@ -354,18 +362,26 @@ function addPlotDir() {
     }).then((result) => {
         if (result.value) {
       	    $.ajax( {
-              type: "POST",
-              url: "plotdir/add",
-              data: (result.value),
-              success: function(){
-    						swal({ title: "Successfully added!", text: "Your plot directory has been added", type: "success",},
-           			function () { location.reload(true); });
-              },
-              error:function(){
-    						swal({ title: "Error!", text: "There was an error in adding the plot directory, check that it is a valid directory!", type: "error",},
-             		function () { location.reload(true); });
-              }
+                type: "POST",
+                url: "plotdir/add",
+                data: (result.value),
+                success: function (msg) {
+                    if (!msg.error) {
+                        swal({
+                            title: "Successfully added!",
+                            text: "Your plot directory has been added",
+                            type: "success"
+                        })
+                    }
+                    else {
+                        swal({
+                            title: "Error!",
+                            text: "There was an error in adding the plot directory: '" + msg.error + "'. Check that it is a valid directory!",
+                            type: "error"
+                        })
+                    }
+                }
           } );
         }
-    })
+    });
 }

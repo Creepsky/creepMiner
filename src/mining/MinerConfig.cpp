@@ -562,60 +562,67 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 					for (auto& plot : *plots)
 					{
-						// string means sequential plot dir
-						if (plot.isString())
-							plotDirs_.emplace_back(new PlotDir{ plot.extract<std::string>(), PlotDir::Type::Sequential });
-						// object means custom (sequential/parallel) plot dir
-						else if (plot.type() == typeid(Poco::JSON::Object::Ptr))
+						try
 						{
-							const auto sequential = "sequential";
-							const auto parallel = "parallel";
-
-							auto plotJson = plot.extract<Poco::JSON::Object::Ptr>();
-							auto type = PlotDir::Type::Sequential;
-
-							auto typeStr = plotJson->optValue<std::string>("type", "");
-
-							auto path = plotJson->get("path");
-
-							if (path.isEmpty())
-								log_error(MinerLogger::config, "Empty dir given as plot dir/file! Skipping it...");
-							else if (typeStr.empty())
-								log_error(MinerLogger::config, "Invalid type of plot dir/file %s! Skipping it...", path.toString());
-							else if (typeStr != sequential && typeStr != parallel)
-								log_error(MinerLogger::config, "Type of plot dir/file %s is invalid (%s)! Skipping it...", path.toString(), typeStr);
-							else
+							// string means sequential plot dir
+							if (plot.isString())
+								addPlotDir(std::make_shared<PlotDir>(plot.extract<std::string>(), PlotDir::Type::Sequential));
+							// object means custom (sequential/parallel) plot dir
+							else if (plot.type() == typeid(Poco::JSON::Object::Ptr))
 							{
-								if (typeStr == sequential)
-									type = PlotDir::Type::Sequential;
-								else if (typeStr == parallel)
-									type = PlotDir::Type::Parallel;
+								const auto sequential = "sequential";
+								const auto parallel = "parallel";
 
-								// related dirs
-								if (path.type() == typeid(Poco::JSON::Array::Ptr))
-								{
-									auto relatedPathsJson = path.extract<Poco::JSON::Array::Ptr>();
-									std::vector<std::string> relatedPaths;
+								auto plotJson = plot.extract<Poco::JSON::Object::Ptr>();
+								auto type = PlotDir::Type::Sequential;
 
-									for (const auto& relatedPath : *relatedPathsJson)
-									{
-										if (relatedPath.isString())
-											relatedPaths.emplace_back(relatedPath.extract<std::string>());
-										else
-											log_error(MinerLogger::config, "Invalid plot dir/file %s! Skipping it...", relatedPath.toString());
-									}
+								auto typeStr = plotJson->optValue<std::string>("type", "");
 
-									if (relatedPaths.size() == 1)
-										plotDirs_.emplace_back(new PlotDir{ *relatedPaths.begin(), type });
-									else if (relatedPaths.size() > 1)
-										plotDirs_.emplace_back(new PlotDir{ *relatedPaths.begin(), { relatedPaths.begin() + 1, relatedPaths.end() }, type });
-								}
-								// single dir
-								else if (path.isString())
-									plotDirs_.emplace_back(new PlotDir{ path, type });
+								auto path = plotJson->get("path");
+
+								if (path.isEmpty())
+									log_error(MinerLogger::config, "Empty dir given as plot dir/file! Skipping it...");
+								else if (typeStr.empty())
+									log_error(MinerLogger::config, "Invalid type of plot dir/file %s! Skipping it...", path.toString());
+								else if (typeStr != sequential && typeStr != parallel)
+									log_error(MinerLogger::config, "Type of plot dir/file %s is invalid (%s)! Skipping it...", path.toString(), typeStr);
 								else
-									log_error(MinerLogger::config, "Invalid plot dir/file %s! Skipping it...", path.toString());
+								{
+									if (typeStr == sequential)
+										type = PlotDir::Type::Sequential;
+									else if (typeStr == parallel)
+										type = PlotDir::Type::Parallel;
+
+									// related dirs
+									if (path.type() == typeid(Poco::JSON::Array::Ptr))
+									{
+										auto relatedPathsJson = path.extract<Poco::JSON::Array::Ptr>();
+										std::vector<std::string> relatedPaths;
+
+										for (const auto& relatedPath : *relatedPathsJson)
+										{
+											if (relatedPath.isString())
+												relatedPaths.emplace_back(relatedPath.extract<std::string>());
+											else
+												log_error(MinerLogger::config, "Invalid plot dir/file %s! Skipping it...", relatedPath.toString());
+										}
+
+										if (relatedPaths.size() == 1)
+											plotDirs_.emplace_back(new PlotDir{ *relatedPaths.begin(), type });
+										else if (relatedPaths.size() > 1)
+											plotDirs_.emplace_back(new PlotDir{ *relatedPaths.begin(), { relatedPaths.begin() + 1, relatedPaths.end() }, type });
+									}
+									// single dir
+									else if (path.isString())
+										plotDirs_.emplace_back(new PlotDir{ path, type });
+									else
+										log_error(MinerLogger::config, "Invalid plot dir/file %s! Skipping it...", path.toString());
+								}
 							}
+						}
+						catch (const Poco::Exception& e)
+						{
+							log_warning(MinerLogger::config, "Error while adding the plotdir/file: %s", e.message());
 						}
 					}
 				}
@@ -1635,22 +1642,15 @@ bool Burst::MinerConfig::addPlotDir(std::shared_ptr<PlotDir> plotDir)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
-	// TODO: implement an existence-check before adding it
+	const auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](const std::shared_ptr<PlotDir>& element)
 	{
-		//auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
-		//{
-		//	/* TODO: it would be wiser to check the hash of both dirs
-		//	 * then we would assure, that they are the same.
-		//	 * BUT: the user could use very weird constellations, where
-		//	 * the dir is for example inside the related dirs of another dir
-		//	 */
-		//	return element->getPath() == plotDir->getPath();
-		//});
+		return element->getPath() == plotDir->getPath() ||
+			element->getHash() == plotDir->getHash();
+	});
 
-		//// same plotdir already in collection
-		//if (iter != plotDirs_.end())
-		//	return false;
-	}
+	// same plotdir already in collection
+	if (iter != plotDirs_.end())
+		throw Poco::Exception{Poco::format("The plotfile/dir %s already exists!", plotDir->getPath())};
 
 	plotDirs_.emplace_back(plotDir);
 	return true;
@@ -1772,21 +1772,6 @@ void Burst::MinerConfig::setDatabasePath(std::string databasePath)
 
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
-	Poco::Path path;
-
-	if (!path.tryParse(dir))
-	{
-		log_warning(MinerLogger::config, "%s is an invalid directory (syntax), skipping it!", dir);
-		return false;
-	}
-
-	Poco::File fileordir{path};
-
-	if (!fileordir.exists())
-	{
-		log_warning(MinerLogger::config, "Plot directory does not exist: '%s'", dir);
-		return false;
-	}
 	return addPlotDir(std::make_shared<PlotDir>(Poco::replace(dir, "\\", "/"), PlotDir::Type::Sequential));
 }
 
@@ -1794,10 +1779,12 @@ bool Burst::MinerConfig::removePlotDir(const std::string& dir)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
-	const auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](std::shared_ptr<PlotDir> element)
+	const auto normalizedPath = Poco::replace(dir, "\\", "/");
+
+	const auto iter = std::find_if(plotDirs_.begin(), plotDirs_.end(), [&](const std::shared_ptr<PlotDir>& element)
 	{
 		// TODO: look in Burst::MinerConfig::addPlotDir
-		return element->getPath() == dir;
+		return element->getPath() == normalizedPath;
 	});
 
 	if (iter == plotDirs_.end())

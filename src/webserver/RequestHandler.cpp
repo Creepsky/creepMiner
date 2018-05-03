@@ -924,10 +924,13 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 				try
 				{
 					success = MinerConfig::getConfig().removePlotDir(path);
+
+					if (success)
+						log_system(MinerLogger::config, "Removed the plotdir/file: %s", path);
 				}
 				catch (const Poco::Exception& e)
 				{
-					errorMessage = e.displayText();
+					errorMessage = e.message();
 					success = false;
 				}
 			}
@@ -936,14 +939,13 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 				try
 				{
 					success = MinerConfig::getConfig().addPlotDir(path);
-					if (!success)
-					{
-						errorMessage = "Plot directory does not exist";
-					}
+
+					if (success)
+						log_system(MinerLogger::config, "Added the new plotdir/file: %s", path);
 				}
 				catch (const Poco::Exception& e)
 				{
-					errorMessage = e.displayText();
+					errorMessage = e.message();
 					success = false;
 				}
 			}
@@ -953,7 +955,11 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 				if (!MinerConfig::getConfig().save())
 					errorMessage = "Could not save the changes to config file";
 				else
+				{
 					server.sendToWebsockets(createJsonPlotDirsRescan());
+					MinerConfig::getConfig().printConsolePlots();
+					MinerConfig::getConfig().printBufferSize();
+				}
 			}
 		}
 
@@ -964,16 +970,9 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 		Poco::JSON::Stringifier::condense(json, sstream);
 		const auto responseString = sstream.str();
 
-		if (!errorMessage.empty())
-		{
-			response.setStatus(hs::HTTP_BAD_REQUEST);
-		}
-		else
-		{
-			response.setStatus(hs::HTTP_OK);
-		}
-		
+		response.setStatus(hs::HTTP_OK);
 		response.setContentLength(responseString.size());
+		response.setContentType("application/json");
 		auto& out = response.send();
 		out << responseString;
 	}

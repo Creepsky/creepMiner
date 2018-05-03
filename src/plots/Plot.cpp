@@ -25,7 +25,6 @@
 #include "mining/Miner.hpp"
 #include <Poco/File.h>
 #include <Poco/DirectoryIterator.h>
-#include "logging/Message.hpp"
 #include "logging/MinerLogger.hpp"
 #include "MinerUtil.hpp"
 
@@ -115,7 +114,7 @@ Burst::PlotDir::PlotList Burst::PlotDir::getPlotfiles(bool recursive) const
 	if (recursive)
 	{
 		// copy also all plot files inside all related plot directories
-		for (auto relatedPlotDir : getRelatedDirs())
+		for (const auto& relatedPlotDir : getRelatedDirs())
 		{
 			auto relatedPlotFiles = relatedPlotDir->getPlotfiles(true);
 			plotFiles.insert(std::end(plotFiles), std::begin(relatedPlotFiles), std::end(relatedPlotFiles));
@@ -165,63 +164,58 @@ void Burst::PlotDir::rescan()
 
 bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
 {
-	try
+	Poco::Path path;
+
+	if (!path.tryParse(fileOrPath))
+		throw Poco::Exception{Poco::format("%s is an invalid file/dir (syntax), skipping it!", fileOrPath)};
+
+	Poco::File fileOrDir{path};
+
+	if (!fileOrDir.exists())
+		throw Poco::Exception{Poco::format("Plot file/dir does not exist: '%s'", path.toString())};
+
+	// its a single plot file, add it if its really a plot file
+	if (fileOrDir.isFile())
+		return addPlotFile(fileOrPath) != nullptr;
+
+	// its a dir, so we need to parse all plot files in it and add them
+	if (fileOrDir.isDirectory())
 	{
-		Poco::Path path;
+		Poco::DirectoryIterator iter{fileOrDir};
+		const Poco::DirectoryIterator end;
 
-		if (!path.tryParse(fileOrPath))
+		while (iter != end)
 		{
-			log_warning(MinerLogger::config, "%s is an invalid file/dir (syntax), skipping it!", fileOrPath);
-			return false;
-		}
-
-		Poco::File fileOrDir{path};
-
-		if (!fileOrDir.exists())
-		{
-			log_warning(MinerLogger::config, "Plot file/dir does not exist: '%s'", path.toString());
-			return false;
-		}
-
-		// its a single plot file, add it if its really a plot file
-		if (fileOrDir.isFile())
-			return addPlotFile(fileOrPath) != nullptr;
-
-		// its a dir, so we need to parse all plot files in it and add them
-		if (fileOrDir.isDirectory())
-		{
-			Poco::DirectoryIterator iter{fileOrDir};
-			Poco::DirectoryIterator end;
-
-			while (iter != end)
+			try
 			{
 				if (iter->isFile())
 					addPlotFile(*iter);
-
-				++iter;
+			}
+			catch (const Poco::Exception& e)
+			{
+				log_warning(MinerLogger::config, "Found an invalid plotfile, skipping it!\n\tPath: %s\n\tReason: %s",
+					iter->path(), e.displayText());
 			}
 
-			return true;
+			++iter;
 		}
 
-		return false;
+		return true;
 	}
-	catch (...)
-	{
-		return false;
-	}
+
+	return false;
 }
 
 std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& file)
 {
-	auto result = isValidPlotFile(file.path());
+	const auto result = isValidPlotFile(file.path());
 
 	if (result == PlotCheckResult::Ok)
 	{
 		// plot file is already in our list
-		for (size_t i = 0; i < plotfiles_.size(); i++)
-			if (plotfiles_[i]->getPath() == file.path())
-				return plotfiles_[i];
+		for (auto& plotfile : plotfiles_)
+			if (plotfile->getPath() == file.path())
+				return plotfile;
 
 		// make a new plotfile and add it to the list
 		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()), file.getSize());
@@ -234,18 +228,17 @@ std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& f
 	if (result == PlotCheckResult::EmptyParameter)
 		return nullptr;
 
-	std::string errorString = "";
+	std::string errorString;
 
 	if (result == PlotCheckResult::Incomplete)
-		errorString = "The plotfile is incomplete!";
+		throw Poco::Exception{"The plotfile is incomplete!"};
 
 	if (result == PlotCheckResult::InvalidParameter)
-		errorString = "The plotfile has invalid parameters!";
+		throw Poco::Exception{"The plotfile has invalid parameters!"};
 
 	if (result == PlotCheckResult::WrongStaggersize)
-		errorString = "The plotfile has an invalid staggersize!";
+		throw Poco::Exception{"The plotfile has an invalid staggersize!"};
 
-	log_warning(MinerLogger::config, "Found an invalid plotfile, skipping it!\n\tPath: %s\n\tReason: %s", file.path(), errorString);
 	return nullptr;
 }
 
@@ -256,7 +249,7 @@ void Burst::PlotDir::recalculateHash()
 
 	hash_.clear();
 
-	for (const auto plotFile : getPlotfiles(true))
+	for (const auto& plotFile : getPlotfiles(true))
 		shaStream << plotFile->getPath();
 
 	shaStream << std::flush;
