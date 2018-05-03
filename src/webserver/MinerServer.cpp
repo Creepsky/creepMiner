@@ -277,18 +277,18 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		}
 
 		// shutdown everything
-		if (path_segments.front() == "shutdown")
-			return new LambdaRequestHandler([&](req_t& req, res_t& res)
-			{
-				RequestHandler::shutdown(req, res, *server_->miner_, *server_);
-			});
+		//if (path_segments.front() == "shutdown")
+		//	return new LambdaRequestHandler([&](req_t& req, res_t& res)
+		//	{
+		//		RequestHandler::shutdown(req, res, *server_->miner_, *server_);
+		//	});
 
 		// restart
 		if (path_segments.front() == "restart")
 			return new LambdaRequestHandler([&](req_t& req, res_t& res)
-		{
-			RequestHandler::restart(req, res, *server_->miner_, *server_);
-		});
+			{
+				RequestHandler::restart(req, res, *server_->miner_, *server_);
+			});
 
 		// rescan plot files
 		if (path_segments.front() == "rescanPlotfiles")
