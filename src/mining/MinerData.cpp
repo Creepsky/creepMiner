@@ -28,7 +28,7 @@
 #include "wallet/Wallet.hpp"
 #include "wallet/Account.hpp"
 
-using namespace Poco::Data::Keywords;
+using namespace Poco::SQL::Keywords;
 
 Burst::BlockData::BlockData(const Poco::UInt64 blockHeight, const Poco::UInt64 baseTarget, const std::string& genSigStr,
                             MinerData* parent, const Poco::UInt64 blockTargetDeadline)
@@ -470,7 +470,7 @@ Burst::MinerData::MinerData()
 
 	try
 	{
-		dbSession_ = std::make_unique<Poco::Data::Session>("SQLite", databasePath);
+		dbSession_ = std::make_unique<Poco::SQL::Session>("SQLite", databasePath);
 		
 		*dbSession_ <<
 			"CREATE TABLE IF NOT EXISTS deadline (" <<
