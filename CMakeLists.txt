@@ -56,6 +56,20 @@ if (USE_CONAN)
   conan_basic_setup()
 endif ()
 
+if(NOT USE_CONAN)
+   find_package(OpenSSL)
+   if( OPENSSL_FOUND )
+      include_directories(${OPENSSL_INCLUDE_DIRS})
+      message(STATUS "Using OpenSSL ${OPENSSL_VERSION}")
+   endif()
+
+   find_package(Poco REQUIRED Foundation Util Net Crypto NetSSL SQL SQLSQLite)
+   if( Poco_FOUND )
+      include_directories(${Poco_INCLUDE_DIRS})
+      message(STATUS "Using Poco ${Poco_VERSION}")
+   endif()
+endif()
+
 ##################################################################
 # CPU architecture (only for Unix/Mac)
 ##################################################################
@@ -191,7 +205,7 @@ endif ()
 target_link_libraries(creepMiner ${CONAN_LIBS})
 
 if (NOT USE_CONAN)
-  find_package(Poco REQUIRED Foundation Util Net Crypto NetSSL)
+  target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
   target_link_libraries(creepMiner ${Poco_LIBRARIES})
 endif()
 
