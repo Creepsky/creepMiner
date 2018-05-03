@@ -739,12 +739,12 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		if (request.has(X_Miner) && MinerConfig::getConfig().isForwardingMinerName())
 			minerName = request.get(X_Miner);
 
-		auto from = minerName;
+		auto from = workerName;
 
 		if (from.empty())
 			from = request.clientAddress().toString();
 		else
-			from += Poco::format(" (%s)", request.clientAddress());
+			from += Poco::format(" (%s)", request.clientAddress().toString());
 
 		log_information(MinerLogger::server, "Got nonce forward request (%s)\n"
 			"\tnonce:   %s\n"
