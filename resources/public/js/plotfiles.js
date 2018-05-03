@@ -65,9 +65,10 @@ function createProgressBar(id) {
 
 function createDirLine(dirElement, index) {
     var line = $('<a href="#" class="list-group-item"></a>');
+    var removeElement = '<span id="removeElement" data-toggle="tooltip" data-placement="bottom" data-original-title="Remove plot directory." onclick="delPlotDir(\'' + dirElement["path"] + '\');">';
 
     line.append(dirElement["path"]);
-    line.append(" (" + dirElement.plotfiles.length + " files, " + dirElement["size"] + ") <small class='float-sm-right'><span onclick='delPlotDir();'><i class='fas fa-minus text-danger'></i></span></small>");
+    line.append(" (" + dirElement.plotfiles.length + " files, " + dirElement["size"] + ") <small class='float-sm-right'>" + removeElement + "<i class='fas fa-minus text-danger'></i></span></small>");
     line.append(createProgressBar(index));
 
     line.click(function () {
@@ -303,66 +304,68 @@ function remove_selected_plot_dir() {
     }
 }
 
-function delPlotDir() {
-    swal({
-      title: 'Are you sure?',
-      text: "You want to remove this directory!",
-      type: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'No, cancel!',
-      confirmButtonClass: 'btn btn-success',
-      cancelButtonClass: 'btn btn-danger',
-      buttonsStyling: false,
-      reverseButtons: true
-    }).then((result) => {
-      if (result.value) {
-        swal(
-          'Deleted!',
-          'Your plot directory has been deleted.',
-          'success'
-        )
-      } else if (
-        result.dismiss === swal.DismissReason.cancel
-      ) {
-        swal(
-          'Cancelled',
-          'Your plot directory is safe :)',
-          'error'
-        )
-      }
+$('#removeElement').tooltip();
+
+function delPlotDir(path) {
+	swal( {
+		title: 'Remove plot directory',
+		html: 
+        '<p>Are you sure you want to remove this directory?</p>' +
+        'If you are sure, type in <b>YES</b>',
+		type: 'warning',
+        input: "text",
+		showCancelButton: true,
+		confirmButtonText: 'Delete',
+		cancelButtonText: 'Cancel',
+        confirmButtonColor: "#dc3545",
+        reverseButtons: true,
+	}).then((result) => {
+        if (result.value) {
+			$.ajax( {
+				type: "POST",
+                url: "plotdir/remove",
+                data: (path),
+                success: function(){
+        					swal({ title: "Successfully deleted!", text: "The plot directory has been removed", type: "success",},
+             			function () { location.reload(true); });
+                },
+                error:function(){
+        					swal({ title: "Error!", text: "There was an error removing the plot directory", type: "error",},
+               		function () { location.reload(true); });
+                }
+    		} );
+        }
     })
 }
 
 function addPlotDir() {
     swal({
-    title: "Add new directory",
-    text:
-    'Enter your plot directory ' +
-    ' - examples??',
+    title: 'Add new directory',
+    html:
+    '<p>Enter your plot directory</p>' +
+    '<div style="font-size:3em; color:Tomato"><i class="fas fa-bug"></i></div><br>' +
+    '<b>still need to implement a browse button<b>',
     input: "text",
     showCancelButton: true,
-    confirmButtonColor: "#1FAB45",
-    confirmButtonText: "Submit",
+    confirmButtonText: "Add",
     cancelButtonText: "Cancel",
+    confirmButtonColor: "#1FAB45",
     buttonsStyling: true
     }).then((result) => {
-      if (result.value) {
-        swal(
-          'Added!',
-          'Your plot directory has been added.',
-          'success'
-        )
-      } else if (
-        result.dismiss === swal.DismissReason.cancel
-      ) {
-        swal(
-          'Cancelled',
-          'No new directory added',
-          'info'
-        )
-      }
+        if (result.value) {
+      	    $.ajax( {
+              type: "POST",
+              url: "plotdir/add",
+              data: (result.value),
+              success: function(){
+    						swal({ title: "Successfully added!", text: "Your plot directory has been added", type: "success",},
+           			function () { location.reload(true); });
+              },
+              error:function(){
+    						swal({ title: "Error!", text: "There was an error in adding the plot directory, check that it is a valid directory!", type: "error",},
+             		function () { location.reload(true); });
+              }
+          } );
+        }
     })
 }
