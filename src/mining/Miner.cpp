@@ -528,6 +528,8 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const Poco::UInt64 nonce, con
 		if (!workerName.empty())
 			newDeadline->setWorker(workerName);
 
+		newDeadline->setIp(ip);
+
 		if (plotsize > 0 && !MinerConfig::getConfig().isCumulatingPlotsizes())
 				newDeadline->setTotalPlotsize(plotsize);
 
