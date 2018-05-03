@@ -28,8 +28,8 @@
                     </form>
                 </div>
                 <div class="col-lg-12">
-                    <form method="POST" action="/settings/mining">   
-                        <h4 class="row"></h4>                   
+                    <form method="POST" action="/settings/mining">
+                        <h4 class="row"></h4>
                         <div class="form-group row">
                             <label for="intensity" class="col-md-12 col-lg-3 col-form-label" data-toggle="tooltip" data-placement="top" title="The mining intensity sets the amount of verifier threads that verify plot files.">Intensity</label>
                             <div class="col-md-12 col-lg-9">
@@ -88,12 +88,17 @@
                     </form>
                 </div>
             </div>
-            </div>      
+            </div>
         </div>
     </div>
     <div class="col-md-6">
         <div class="card mb-12">
-            <h4 class="card-header bg-primary text-white">Console</h4>
+            <h4 class="card-header bg-primary text-white">
+            	Console
+	            <small class="float-sm-right" data-toggle="tooltip" data-placement="bottom" data-original-title="Restart creepMiner">
+	                <span onclick="restartMiner();"><i class="fas fa-sync-alt"></i></span>
+	            </small>
+            </h4>
             <div class="card-body">
                 <form method="POST" action="/settings/logging">
                     <div id="settingsDlComboboxes"></div>
@@ -108,22 +113,5 @@
             </div>
             <br />
         </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card mb-12">
-            <h4 class="card-header bg-danger text-white">Danger Zone</h4>
-            <div class="card-body">
-                <div = class="col-md-12">
-                    <div class="row">
-                        <button type="button" class="btn btn-danger" onclick="$.get('/shutdown');" style="width:50%">
-                            <i class="fas fa-power-off"></i>&nbsp;shutdown
-                        </button>
-                        <button type="button" class="btn btn-warning" onclick="$.get('/restart');" style="width:50%;">
-                            <i class="fas fa-sync-alt"></i>&nbsp;restart
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+			</div>
 </div>
