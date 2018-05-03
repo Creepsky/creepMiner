@@ -936,6 +936,10 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 				try
 				{
 					success = MinerConfig::getConfig().addPlotDir(path);
+					if (!success)
+					{
+						errorMessage = "Plot directory does not exist";
+					}
 				}
 				catch (const Poco::Exception& e)
 				{
@@ -960,7 +964,15 @@ void Burst::RequestHandler::changePlotDirs(Poco::Net::HTTPServerRequest& request
 		Poco::JSON::Stringifier::condense(json, sstream);
 		const auto responseString = sstream.str();
 
-		response.setStatus(hs::HTTP_OK);
+		if (!errorMessage.empty())
+		{
+			response.setStatus(hs::HTTP_BAD_REQUEST);
+		}
+		else
+		{
+			response.setStatus(hs::HTTP_OK);
+		}
+		
 		response.setContentLength(responseString.size());
 		auto& out = response.send();
 		out << responseString;

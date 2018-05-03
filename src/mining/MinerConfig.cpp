@@ -1772,6 +1772,21 @@ void Burst::MinerConfig::setDatabasePath(std::string databasePath)
 
 bool Burst::MinerConfig::addPlotDir(const std::string& dir)
 {
+	Poco::Path path;
+
+	if (!path.tryParse(dir))
+	{
+		log_warning(MinerLogger::config, "%s is an invalid directory (syntax), skipping it!", dir);
+		return false;
+	}
+
+	Poco::File fileordir{path};
+
+	if (!fileordir.exists())
+	{
+		log_warning(MinerLogger::config, "Plot directory does not exist: '%s'", dir);
+		return false;
+	}
 	return addPlotDir(std::make_shared<PlotDir>(Poco::replace(dir, "\\", "/"), PlotDir::Type::Sequential));
 }
 
