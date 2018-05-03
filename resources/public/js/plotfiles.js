@@ -234,6 +234,17 @@ function showPlotfiles(files) {
     plotFileDiv.hide('fast', function () {
         plotFileDiv.empty();
 
+        plotFileDiv.append("<h4 class='card-header text-white bg-primary'>Files</h4>" +
+            "<div class='col-lg-12'>" +
+            "    <div class='row card-header' style='padding-left:0;padding-right:0'>" +
+            "        <div class='col-xs-3 col-md-3'>Account</div>" +
+            "        <div class='col-xs-2 col-md-2'>Start nonce</div>" +
+            "        <div class='col-xs-2 col-md-1'>Nonces</div>" +
+            "        <div class='col-xs-2 col-md-1'>Stagger</div>" +
+            "        <div class='col-xs-1 col-md-2'>Size</div>" +
+            "        <div class='col-xs-2 col-md-3' data-toggle='tooltip' data-placement='top' data-original-title='Pressing the button will Validate the integrity of 32 random scoops of 32 random nonces in the plot file'>Integrity</div>" +
+            "    </div>" +
+            "</div>");
         files.forEach(function (file, i, arr) {
             plotFileDiv.append(file["element"]);
         });
