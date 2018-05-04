@@ -859,6 +859,13 @@ std::string Burst::getTime()
 	strftime (buffer, 80, "%X",timeinfo);
 
 	ss << buffer;
+#elif defined(_WIN32)
+	const auto now = std::chrono::system_clock::now();
+	auto nowC = std::chrono::system_clock::to_time_t(now);
+	ss.imbue(std::locale());
+	struct tm timeinfo{};
+	localtime_s(&timeinfo, &nowC);
+	ss << std::put_time(&timeinfo, "%X");
 #else 
 	const auto now = std::chrono::system_clock::now();
 	auto nowC = std::chrono::system_clock::to_time_t(now);
