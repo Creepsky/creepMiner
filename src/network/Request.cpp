@@ -110,6 +110,7 @@ Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 	request.set(X_Miner, deadline.getMiner());
 	request.set(X_Deadline, std::to_string(deadline.getDeadline()));
 	request.set(X_Plotfile, plotFileStr);
+	request.set(X_Worker, deadline.getWorker());
 	request.setKeepAlive(false);
 	request.setContentLength(0);
 
