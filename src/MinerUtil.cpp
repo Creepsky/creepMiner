@@ -485,6 +485,9 @@ Poco::JSON::Object Burst::createJsonDeadline(const Deadline& deadline)
 	json.set("plotfile", deadline.getPlotFile());
 	json.set("deadlineNum", std::to_string(deadline.getDeadline()));
 	json.set("blockheight", std::to_string(deadline.getBlock()));
+	json.set("miner", deadline.getMiner());
+	json.set("worker", deadline.getWorker());
+	json.set("ip", deadline.getIp().toString());
 	return json;
 }
 
