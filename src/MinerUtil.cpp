@@ -862,14 +862,14 @@ std::string Burst::getTime()
 #elif defined(_WIN32)
 	const auto now = std::chrono::system_clock::now();
 	auto nowC = std::chrono::system_clock::to_time_t(now);
-	ss.imbue(std::locale());
+	//ss.imbue(std::locale());
 	struct tm timeinfo{};
 	localtime_s(&timeinfo, &nowC);
 	ss << std::put_time(&timeinfo, "%X");
 #else 
 	const auto now = std::chrono::system_clock::now();
 	auto nowC = std::chrono::system_clock::to_time_t(now);
-	ss.imbue(std::locale());
+	//ss.imbue(std::locale());
 	ss << std::put_time(std::localtime(&nowC), "%X");
 #endif
 
