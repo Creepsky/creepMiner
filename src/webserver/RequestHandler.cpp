@@ -676,6 +676,9 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 	try
 	{
+		log_debug(MinerLogger::server, "Nonce submission request from %s on %s",
+			request.clientAddress().toString(), request.serverAddress().toString());
+
 		auto miningInfoOk = false;
 
 		while (!miningInfoOk)
