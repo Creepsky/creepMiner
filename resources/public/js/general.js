@@ -209,8 +209,12 @@ function eraseCookie(name) {
 document.getElementById('server-name').innerHTML = servername;
 document.title = servername;
 
-// if master miner is set hide some elements
+// if master miner is set show and hide some elements
 if (MasterMiner == 'true') {
+	var mmElement = document.getElementsByClassName('mm-show'), i;
+	for (var i = 0; i < mmElement.length; i ++) {
+	    mmElement[i].style.display = 'inline';
+	}
 	var mmHideElements = document.getElementsByClassName('mm-hide'), i;
 	for (var i = 0; i < mmHideElements.length; i ++) {
 	    mmHideElements[i].style.display = 'none';
