@@ -128,7 +128,7 @@ namespace Burst
 	Poco::Timespan secondsToTimespan(float seconds);
 	std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Poco::URI& uri);
 	Poco::Net::SocketAddress getHostAddress(const Poco::URI& uri);
-	std::string serializeDeadline(const Deadline& deadline, std::string delimiter = ":");
+	std::string serializeDeadline(const Deadline& deadline, const std::string& delimiter = ":");
 
 	Poco::JSON::Object createJsonDeadline(const Deadline& deadline);
 	Poco::JSON::Object createJsonDeadline(const Deadline& deadline, const std::string& type);

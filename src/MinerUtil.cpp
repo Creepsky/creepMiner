@@ -103,20 +103,21 @@ std::vector<std::string> Burst::splitStr(const std::string& s, char delim)
 std::vector<std::string> Burst::splitStr(const std::string& s, const std::string& delim)
 {
 	std::vector<std::string> tokens;
-	std::string::size_type pos, lastPos = 0, length = s.length();
+	std::string::size_type lastPos = 0;
+	const auto length = s.length();
 
 	using size_type  = std::vector<std::string>::size_type;
 
 	while(lastPos < length + 1)
 	{
-		pos = s.find_first_of(delim, lastPos);
+		auto pos = s.find_first_of(delim, lastPos);
 
 		if(pos == std::string::npos)
 			pos = length;
 
 		if(pos != lastPos)
-			tokens.push_back(std::string(s.data() + lastPos,
-			static_cast<size_type>(pos-lastPos)));
+			tokens.emplace_back(s.data() + lastPos,
+			static_cast<size_type>(pos-lastPos));
 
 		lastPos = pos + 1;
 	}
@@ -139,23 +140,23 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 {
 	try
 	{
-		auto fileName = getFileNameFromPath(filePath);
+		const auto fileName = getFileNameFromPath(filePath);
 
-		auto accountIdStr = getAccountIdFromPlotFile(fileName);
-		auto nonceStartStr = getStartNonceFromPlotFile(fileName);
-		auto nonceCountStr = getNonceCountFromPlotFile(fileName);
-		auto staggerStr = getStaggerSizeFromPlotFile(fileName);
+		const auto accountIdStr = getAccountIdFromPlotFile(fileName);
+		const auto nonceStartStr = getStartNonceFromPlotFile(fileName);
+		const auto nonceCountStr = getNonceCountFromPlotFile(fileName);
+		const auto staggerStr = getStaggerSizeFromPlotFile(fileName);
 
-		if (accountIdStr == "" ||
-			nonceStartStr == "" ||
-			nonceCountStr == "" ||
-			staggerStr == "")
+		if (accountIdStr.empty() ||
+			nonceStartStr.empty() ||
+			nonceCountStr.empty() ||
+			staggerStr.empty())
 			return PlotCheckResult::EmptyParameter;
 
-		volatile auto accountId = std::stoull(accountIdStr);
+		const volatile auto accountId = std::stoull(accountIdStr);
 		std::stoull(nonceStartStr);
-		volatile auto nonceCount = std::stoull(nonceCountStr);
-		volatile auto staggerSize = std::stoull(staggerStr);
+		const volatile auto nonceCount = std::stoull(nonceCountStr);
+		const volatile auto staggerSize = std::stoull(staggerStr);
 
 		// values are 0
 		if (accountId == 0 ||
@@ -183,7 +184,7 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 				std::string content(std::istreambuf_iterator<char>(alternativeFileData), {});
 				alternativeFileData.close();
 
-				auto noncesWrote = reinterpret_cast<const Poco::UInt64*>(content.data());
+				const auto noncesWrote = reinterpret_cast<const Poco::UInt64*>(content.data());
 
 				if (*noncesWrote != nonceCount)
 					return PlotCheckResult::Incomplete;
@@ -235,12 +236,12 @@ std::string Burst::getStartNonceFromPlotFile(const std::string& path)
 
 std::string Burst::deadlineFormat(Poco::UInt64 seconds)
 {
-	auto secs = seconds;
-	auto mins = secs / 60;
-	auto hours = mins / 60;
-	auto day = hours / 24;
-	auto months = day / 30;
-	auto years = months / 12;
+	const auto secs = seconds;
+	const auto mins = secs / 60;
+	const auto hours = mins / 60;
+	const auto day = hours / 24;
+	const auto months = day / 30;
+	const auto years = months / 12;
 	
 	std::stringstream ss;
 	
@@ -266,12 +267,12 @@ std::string Burst::deadlineFormat(Poco::UInt64 seconds)
 
 Poco::UInt64 Burst::deadlineFragment(Poco::UInt64 seconds, Burst::DeadlineFragment fragment)
 {
-	auto secs = seconds;
-	auto mins = secs / 60;
-	auto hours = mins / 60;
-	auto day = hours / 24;
-	auto months = day / 30;
-	auto years = months / 12;
+	const auto secs = seconds;
+	const auto mins = secs / 60;
+	const auto hours = mins / 60;
+	const auto day = hours / 24;
+	const auto months = day / 30;
+	const auto years = months / 12;
 
 	switch (fragment)
 	{
@@ -298,10 +299,10 @@ Poco::UInt64 Burst::formatDeadline(const std::string& format)
 	Poco::UInt64 deadline = 0u;
 	std::locale loc;
 
-	std::regex years("\\d*y");
-	std::regex months("\\d*m");
-	std::regex days("\\d*d");
-	std::regex hms("\\d\\d:\\d\\d:\\d\\d");
+	const std::regex years("\\d*y");
+	const std::regex months("\\d*m");
+	const std::regex days("\\d*d");
+	const std::regex hms(R"(\d\d:\d\d:\d\d)");
 
 	const auto extractFunction = [](const std::string& token, uint32_t conversion, uint32_t postfixSize = 1)
 	{
@@ -410,7 +411,7 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 		if (salt.empty())
 			salt = createRandomCharSequence(15);
 
-		Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
+		const Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
 		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
 		auto cipher = factory.createCipher(cipherKey);
 		
@@ -434,7 +435,7 @@ std::string Burst::decrypt(const std::string& encrypted, const std::string& algo
 
 	try
 	{
-		Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
+		const Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
 		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
 		auto cipher = factory.createCipher(cipherKey);
 		return cipher->decryptString(encrypted, Poco::Crypto::Cipher::ENC_BASE64);
@@ -448,10 +449,10 @@ std::string Burst::decrypt(const std::string& encrypted, const std::string& algo
 	}
 }
 
-Poco::Timespan Burst::secondsToTimespan(float seconds)
+Poco::Timespan Burst::secondsToTimespan(const float seconds)
 {
-	auto secondsInt = static_cast<long>(seconds);
-	auto microSeconds = static_cast<long>((seconds - secondsInt) * 100000);
+	const auto secondsInt = static_cast<long>(seconds);
+	const auto microSeconds = static_cast<long>((seconds - secondsInt) * 100000);
 	return Poco::Timespan{secondsInt, microSeconds};
 }
 
@@ -466,7 +467,7 @@ Poco::Net::SocketAddress Burst::getHostAddress(const Poco::URI& uri)
 	return address;
 }
 
-std::string Burst::serializeDeadline(const Deadline& deadline, std::string delimiter)
+std::string Burst::serializeDeadline(const Deadline& deadline, const std::string& delimiter)
 {
 	return deadline.getAccountName() + delimiter +
 		std::to_string(deadline.getBlock()) + delimiter +
@@ -498,7 +499,7 @@ Poco::JSON::Object Burst::createJsonDeadline(const Deadline& deadline, const std
 Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 {
 	Poco::JSON::Object json;
-	auto blockPtr = data.getBlockData();
+	const auto blockPtr = data.getBlockData();
 
 	if (blockPtr == nullptr)
 		return json;
@@ -768,7 +769,7 @@ Poco::JSON::Object Burst::createJsonProgress(float progressRead, float progressV
 
 Poco::JSON::Object Burst::createJsonLastWinner(const MinerData& data)
 {
-	auto block = data.getBlockData();
+	const auto block = data.getBlockData();
 
 	if (block == nullptr || block->getLastWinner() == nullptr)
 		return Poco::JSON::Object{};
@@ -856,10 +857,10 @@ std::string Burst::getTime()
 
 	ss << buffer;
 #else 
-	auto now = std::chrono::system_clock::now();
-	auto now_c = std::chrono::system_clock::to_time_t(now);
+	const auto now = std::chrono::system_clock::now();
+	auto nowC = std::chrono::system_clock::to_time_t(now);
 	ss.imbue(std::locale());
-	ss << std::put_time(std::localtime(&now_c), "%X");
+	ss << std::put_time(std::localtime(&nowC), "%X");
 #endif
 
 	return ss.str();
@@ -894,7 +895,7 @@ bool Burst::check_HMAC_SHA1(const std::string& plain, const std::string& hashed,
 	auto& digest = engine.digest();
 
 	// create the digest for the hashed word
-	auto hashedDigest = Poco::HMACEngine<Poco::SHA1Engine>::digestFromHex(hashed);
+	const auto hashedDigest = Poco::HMACEngine<Poco::SHA1Engine>::digestFromHex(hashed);
 
 	// check if its the same
 	return digest == hashedDigest;
@@ -906,7 +907,7 @@ std::string Burst::createTruncatedString(const std::string& string, size_t paddi
 
 	for (size_t i = 0; i < string.size(); i += size)
 	{
-		auto max_size = std::min(size, string.size());
+		const auto max_size = std::min(size, string.size());
 
 		padded_string += string.substr(i, max_size);
 
@@ -1024,7 +1025,7 @@ size_t Burst::getMemorySize()
 	MEMORYSTATUSEX status;
 	status.dwLength = sizeof(status);
 	GlobalMemoryStatusEx(&status);
-	return (size_t)status.ullTotalPhys;
+	return static_cast<size_t>(status.ullTotalPhys);
 
 #elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
 	/* UNIX variants. ------------------------------------------- */
@@ -1083,7 +1084,7 @@ size_t Burst::getMemorySize()
 void Burst::setStdInEcho(bool enable)
 {
 #ifdef WIN32
-	HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+	const auto hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	DWORD mode;
 	GetConsoleMode(hStdin, &mode);
 
