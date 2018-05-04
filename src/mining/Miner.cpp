@@ -111,7 +111,7 @@ void Burst::Miner::run()
 		nonceSubmitterManager_ = std::make_unique<Poco::TaskManager>();
 
 		// create the plot readers
-		MinerHelper::createWorker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
+		MinerHelper::createWorker<PlotReader>(plotReaderPool_, plotReader_, MinerConfig::getConfig().getMaxPlotReaders(),
 			data_, progressRead_, verificationQueue_, plotReadQueue_);
 
 		// create the plot verifiers
@@ -130,10 +130,10 @@ void Burst::Miner::run()
 
 	if (wakeUpTime > 0)
 	{
-		const Poco::TimerCallback<Miner> callback(*this, &Miner::on_wake_up);
+		const Poco::TimerCallback<Miner> callback(*this, &Miner::onWakeUp);
 
-		wake_up_timer_.setPeriodicInterval(wakeUpTime * 1000);
-		wake_up_timer_.start(callback);
+		wakeUpTimer_.setPeriodicInterval(wakeUpTime * 1000);
+		wakeUpTimer_.start(callback);
 	}
 
 	const auto benchmark = MinerConfig::getConfig().isBenchmark();
@@ -142,8 +142,8 @@ void Burst::Miner::run()
 	if (benchmark)
 	{
 		const Poco::TimerCallback<Miner> callback(*this, &Miner::onBenchmark);
-		benchmark_timer_.setPeriodicInterval(benchmarkInterval * 1000u);
-		benchmark_timer_.start(callback);
+		benchmarkTimer_.setPeriodicInterval(benchmarkInterval * 1000u);
+		benchmarkTimer_.start(callback);
 	}
 
 	running_ = true;
@@ -186,7 +186,7 @@ void Burst::Miner::run()
 	}
 
 	if (wakeUpTime > 0)
-		wake_up_timer_.stop();
+		wakeUpTimer_.stop();
 
 	running_ = false;
 }
@@ -196,12 +196,12 @@ void Burst::Miner::stop()
 	poco_ndc(Miner::stop);
 
 	// stop plot reader
-	if (plot_reader_ != nullptr)
-		shutDownWorker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
+	if (plotReader_ != nullptr)
+		shutDownWorker(*plotReaderPool_, *plotReader_, plotReadQueue_);
 
 	// stop verifier
 	if (verifier_ != nullptr)
-		shutDownWorker(*verifier_pool_, *verifier_, verificationQueue_);
+		shutDownWorker(*verifierPool_, *verifier_, verificationQueue_);
 	
 	running_ = false;
 }
@@ -282,7 +282,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 		if (!MinerConfig::getConfig().getPlotFiles().empty())
 		{
 			log_debug(MinerLogger::miner, "Plot-read-queue: %d (%d reader), verification-queue: %d (%d verifier)",
-				plotReadQueue_.size(), plot_reader_->count(), verificationQueue_.size(), verifier_->count());
+				plotReadQueue_.size(), plotReader_->count(), verificationQueue_.size(), verifier_->count());
 			log_debug(MinerLogger::miner, "Allocated memory: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
 		
 			START_PROBE("Miner.SetBuffersize")
@@ -691,7 +691,7 @@ void Burst::Miner::progressChanged(float &progress)
 	             [this](Poco::UInt64 blockHeight, double roundTime) { onRoundProcessed(blockHeight, roundTime); });
 }
 
-void Burst::Miner::on_wake_up(Poco::Timer& timer)
+void Burst::Miner::onWakeUp(Poco::Timer& timer)
 {
 	addPlotReadNotifications(true);
 }
@@ -804,7 +804,7 @@ void Burst::Miner::createPlotVerifiers()
 	                                                    size_t, Miner&, Poco::NotificationQueue&,
 	                                                    std::shared_ptr<PlotReadProgress>)> function)
 	{
-		function(verifier_pool_, verifier_, MinerConfig::getConfig().getMiningIntensity(), *this, verificationQueue_,
+		function(verifierPool_, verifier_, MinerConfig::getConfig().getMiningIntensity(), *this, verificationQueue_,
 		         progressVerify_);
 	};
 
@@ -860,7 +860,7 @@ void Burst::Miner::setMiningIntensity(unsigned intensity)
 	if (MinerConfig::getConfig().getMiningIntensity() == intensity)
 		return;
 
-	shutDownWorker(*verifier_pool_, *verifier_, verificationQueue_);
+	shutDownWorker(*verifierPool_, *verifier_, verificationQueue_);
 	MinerConfig::getConfig().setMininigIntensity(intensity);
 	createPlotVerifiers();
 }
@@ -874,9 +874,9 @@ void Burst::Miner::setMaxPlotReader(unsigned max_reader)
 	if (MinerConfig::getConfig().getMaxPlotReaders() == max_reader)
 		return;
 
-	shutDownWorker(*plot_reader_pool_, *plot_reader_, plotReadQueue_);
+	shutDownWorker(*plotReaderPool_, *plotReader_, plotReadQueue_);
 	MinerConfig::getConfig().setMaxPlotReaders(max_reader);
-	MinerHelper::createWorker<PlotReader>(plot_reader_pool_, plot_reader_, MinerConfig::getConfig().getMaxPlotReaders(),
+	MinerHelper::createWorker<PlotReader>(plotReaderPool_, plotReader_, MinerConfig::getConfig().getMaxPlotReaders(),
 		data_, progressRead_, verificationQueue_, plotReadQueue_);
 }
 

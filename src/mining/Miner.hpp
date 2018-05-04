@@ -76,7 +76,6 @@ namespace Burst
 
 		std::shared_ptr<Deadline> getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
 		std::shared_ptr<Deadline> getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
-		//std::vector<Poco::JSON::Object> getBlockData() const;
 		MinerData& getData();
 		std::shared_ptr<Account> getAccount(AccountId id, bool persistent = false);
 		void createPlotVerifiers();
@@ -90,14 +89,13 @@ namespace Burst
 	private:
 		bool getMiningInfo();
 		NonceConfirmation submitNonceAsyncImpl(
-			const std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool, std::string>& data);
-		SubmitResponse addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
-		                              Poco::UInt64 blockheight, std::string plotFile,
-		                              bool ownAccount, std::shared_ptr<Deadline>& newDeadline);
+			const std::tuple<Poco::UInt64, Poco::UInt64,
+			                 Poco::UInt64, Poco::UInt64, std::string, bool, std::string>&
+			data);
 		void shutDownWorker(Poco::ThreadPool& threadPool, Poco::TaskManager& taskManager,
 		                    Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);
-		void on_wake_up(Poco::Timer& timer);
+		void onWakeUp(Poco::Timer& timer);
 		void onBenchmark(Poco::Timer& timer);
 		void onRoundProcessed(Poco::UInt64 blockHeight, double roundTime);
 
@@ -107,11 +105,11 @@ namespace Burst
 		std::unique_ptr<Poco::Net::HTTPClientSession> miningInfoSession_;
 		Accounts accounts_;
 		Wallet wallet_;
-		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_, plot_reader_, verifier_;
+		std::unique_ptr<Poco::TaskManager> nonceSubmitterManager_, plotReader_, verifier_;
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
-		std::unique_ptr<Poco::ThreadPool> verifier_pool_, plot_reader_pool_;
-		Poco::Timer wake_up_timer_, benchmark_timer_;
+		std::unique_ptr<Poco::ThreadPool> verifierPool_, plotReaderPool_;
+		Poco::Timer wakeUpTimer_, benchmarkTimer_;
 		mutable Poco::Mutex worker_mutex_;
 		std::chrono::high_resolution_clock::time_point startPoint_;
 	};
