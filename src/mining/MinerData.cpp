@@ -184,11 +184,7 @@ std::shared_ptr<Burst::Account> Burst::BlockData::DataLoader::runGetLastWinner(c
 				numberToString(lastBlockheight), lastWinner, winnerAccount->getAddress(),
 				winnerAccount->getName().empty() ? "" : Poco::format("winner-name        %s\n", winnerAccount->getName()),
 				rewardRecipient
-			)
-
-
-
-;
+			);
 
 			blockdata.setLastWinner(winnerAccount);
 
@@ -582,7 +578,7 @@ bool Burst::BlockData::forDeadlines(const std::function<bool(const Deadline&)>& 
 			const auto deadlines = iterAccounts->second->getDeadlines();
 
 			for (auto iter = deadlines.begin(); iter != deadlines.end() && !error; ++iter)
-				error = !traverseFunction(**iter);
+				error = traverseFunction(**iter);
 		}
 
 		return error;
@@ -791,6 +787,7 @@ void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 
 			for (size_t j = 0; j < nonces.size(); ++j)
 			{
 				auto deadline = std::make_shared<Deadline>(nonces[j], values[j], std::make_shared<Account>(accounts[j]), height, files[j]);
+				historicBlock->addDeadline(deadline);
 
 				switch (status[j])
 				{
@@ -803,8 +800,6 @@ void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 
 				default:
 					break;
 				}
-
-				historicBlock->addDeadline(deadline);
 			}
 
 			stop = traverseFunction(historicBlock);

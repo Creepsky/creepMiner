@@ -429,6 +429,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const std::shared_ptr<Deadlin
 				}
 				else
 				{
+					deadline->onTheWay();
 					return NonceSubmitter{*this, deadline}.submit();
 				}
 			}
@@ -588,10 +589,7 @@ bool Burst::Miner::getMiningInfo()
 										deadlineFormat(targetDeadlinePoolBefore),
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)),
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
-										deadlineFormat(MinerConfig::getConfig().getTargetDeadline()))
-
-
-;
+										deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
 							}
 							else {
 								if (targetDeadlinePoolBefore != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
@@ -600,8 +598,7 @@ bool Burst::Miner::getMiningInfo()
 										"\told pool target deadline:    %s\n"
 										"\tnew pool target deadline:    %s",
 										deadlineFormat(targetDeadlinePoolBefore),
-										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)))
-;
+										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)));
 							}
 						}
 
@@ -896,6 +893,10 @@ void Burst::Miner::rescanPlotfiles()
 
 		// then we send all plot dirs and files
 		data_.getBlockData()->refreshPlotDirs();
+	}
+	else
+	{
+		log_success(MinerLogger::config, "No plot dir changes");
 	}
 }
 

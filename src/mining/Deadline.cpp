@@ -217,6 +217,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(Poco::UInt64 nonce, Poco:
 void Burst::Deadlines::add(std::shared_ptr<Deadline> deadline)
 {
 	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	deadline->setParent(this);
 	deadlines_.emplace(std::move(deadline));
 }
 
