@@ -96,7 +96,7 @@ void Burst::Miner::run()
 		config.getMiningInfoUrl().empty() &&
 		config.getWalletUrl().empty())
 	{
-		log_critical(MinerLogger::miner, "Pool/Wallet/MiningInfo are all empty! Miner has nothing to do and shutting down!");
+		log_critical(MinerLogger::miner, "One of the URLs are all empty! Therfore the miner is shutting down!");
 		return;
 	}
 
@@ -154,7 +154,7 @@ void Burst::Miner::run()
 	// TODO REWORK
 	//wallet_.getLastBlock(currentBlockHeight_);
 
-	log_information(MinerLogger::miner, "Looking for mining info...");
+	log_information(MinerLogger::miner, "Fetching getMiningInfo from pool");
 	
 	while (running_)
 	{
@@ -165,20 +165,20 @@ void Burst::Miner::run()
 			else
 			{
 				++errors;
-				log_debug(MinerLogger::miner, "Could not get mining infos %u/5 times...", errors);
+				log_debug(MinerLogger::miner, "Could not fetch getMiningInfo %u/5 times...", errors);
 			}
 
 			// we have a tollerance of 5 times of not being able to fetch mining infos, before its a real error
 			if (errors >= 5)
 			{
 				// reset error-counter and show error-message in console
-				log_error(MinerLogger::miner, "Could not get block infos!");
+				log_error(MinerLogger::miner, "Could not fetch getMiningInfo!");
 				errors = 0;
 			}
 		}
 		catch (const Poco::Exception& e)
 		{
-			log_error(MinerLogger::miner, "Could not get the mining info: %s", e.displayText());
+			log_error(MinerLogger::miner, "Could not fetch getMiningInfo: %s", e.displayText());
 			log_current_stackframe(MinerLogger::miner);
 		}
 
@@ -614,9 +614,9 @@ bool Burst::Miner::getMiningInfo()
 			}
 			catch (Poco::Exception& exc)
 			{
-				log_error(MinerLogger::miner, "Error on getting new block-info!\n\t%s", exc.displayText());
+				log_error(MinerLogger::miner, "Error on getting new block information!\n\t%s", exc.displayText());
 				// because the full response may be too long, we only log the it in the logfile
-				log_file_only(MinerLogger::miner, Poco::Message::PRIO_ERROR, TextType::Error, "Block-info full response:\n%s", responseData);
+				log_file_only(MinerLogger::miner, Poco::Message::PRIO_ERROR, TextType::Error, "Block information full response:\n%s", responseData);
 				log_current_stackframe(MinerLogger::miner);
 			}
 		}
@@ -628,7 +628,7 @@ bool Burst::Miner::getMiningInfo()
 	}
 	catch (const Poco::Exception& e)
 	{
-		log_error(MinerLogger::miner, "Could not get the mining info: %s", e.displayText());
+		log_error(MinerLogger::miner, "Could not get the mining information: %s", e.displayText());
 		log_current_stackframe(MinerLogger::miner);
 		return false;
 	}
