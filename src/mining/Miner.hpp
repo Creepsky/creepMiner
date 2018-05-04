@@ -68,10 +68,7 @@ namespace Burst
 		const std::string& getGensigStr() const;
 		void updateGensig(const std::string& gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
 
-		NonceConfirmation submitNonce(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline,
-		                              Poco::UInt64 blockheight, const std::string& plotFile,
-		                              bool ownAccount, const std::string& minerName = "", const std::string& workerName = "",
-		                              Poco::UInt64 plotsize = 0, const Poco::Net::IPAddress& ip = Poco::Net::IPAddress{"127.0.0.1"});
+		NonceConfirmation submitNonce(const std::shared_ptr<Deadline>& deadline);
 
 		Poco::ActiveMethod<NonceConfirmation,
 		                   std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool, std::string>,

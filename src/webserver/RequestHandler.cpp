@@ -690,7 +690,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		Poco::UInt64 capacity = 0;
 		Poco::UInt64 accountId = 0;
 		Poco::UInt64 nonce = 0;
-		Poco::UInt64 deadline = 0;
+		Poco::UInt64 deadlineValue = 0;
 		std::string plotfile;
 		Poco::UInt64 blockheight = 0;
 		std::string minerName;
@@ -704,7 +704,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			else if (param.first == "blockheight")
 				blockheight = Poco::NumberParser::parseUnsigned64(param.second);
 			else if (param.first == "deadline")
-				deadline = Poco::NumberParser::parseUnsigned64(param.second) / miner.getBaseTarget();
+				deadlineValue = Poco::NumberParser::parseUnsigned64(param.second) / miner.getBaseTarget();
 		}
 
 		if (request.has(X_Capacity))
@@ -717,7 +717,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		}
 		
 		if (request.has(X_Deadline))
-			deadline = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
+			deadlineValue = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
 
 		const auto workerName = request.get(X_Worker, "");
 
@@ -732,32 +732,18 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		if (blockheight == 0)
 			blockheight = miner.getBlockheight();
 
-		if ((deadline == 0 || MinerConfig::getConfig().isCalculatingEveryDeadline()) &&
+		if ((deadlineValue == 0 || MinerConfig::getConfig().isCalculatingEveryDeadline()) &&
 			blockheight == miner.getBlockheight())
-			deadline = PlotGenerator::generateAndCheck(accountId, nonce, miner);
+			deadlineValue = PlotGenerator::generateAndCheck(accountId, nonce, miner);
 
 		if (request.has(X_Miner) && MinerConfig::getConfig().isForwardingMinerName())
 			minerName = request.get(X_Miner);
 
-		auto from = workerName;
-
-		if (from.empty())
-			from = request.clientAddress().toString();
-		else
-			from += Poco::format(" (%s)", request.clientAddress().toString());
-
-		log_information(MinerLogger::server, "Got nonce forward request (%s)\n"
-			"\tnonce:   %s\n"
-			"\taccount: %s\n"
-			"\theight:  %s\n"
-			"\tin:      %s\n"
-			"\tfrom:	%s",
-			blockheight == miner.getBlockheight() ? deadlineFormat(deadline) : "for last block!",
-			numberToString(nonce),
-			account->getAddress(),
-			numberToString(blockheight), plotfile,
-			from
-		);
+		auto deadline = std::make_shared<Deadline>(nonce, deadlineValue, account, blockheight, plotfile);
+		deadline->setMiner(minerName);
+		deadline->setWorker(workerName);
+		deadline->setTotalPlotsize(capacity);
+		deadline->setIp(request.clientAddress().host());
 
 		if (MinerConfig::getConfig().isCumulatingPlotsizes())
 			PlotSizes::set(request.clientAddress().host(), capacity * 1024 * 1024 * 1024, false);
@@ -765,6 +751,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		if (blockheight != miner.getBlockheight())
 		{
 			poco_ndc(SubmitNonceHandler::handleRequest::wrongBlock);
+
+			log_information(MinerLogger::server, deadline->toActionString("forwarded nonce discarded - wrong block"));
 
 			const auto responseString = Poco::format(
 				R"({ "result" : "Your submitted deadline is for another block!", "nonce" : %Lu, "blockheight" : %Lu, "currentBlockheight" : %Lu })",
@@ -775,11 +763,11 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			auto& responseData = response.send();
 			responseData << responseString << std::flush;
 		}
-		else if (accountId != 0 && nonce != 0 && deadline != 0)
+		else if (accountId != 0 && nonce != 0 && deadlineValue != 0)
 		{
 			poco_ndc(SubmitNonceHandler::handleRequest::forwarding);
-			const auto forwardResult = miner.submitNonce(nonce, accountId, deadline, miner.getBlockheight(), plotfile, false,
-				minerName, workerName, capacity, request.clientAddress().host());
+			log_information(MinerLogger::server, deadline->toActionString("forwarding nonce"));
+			const auto forwardResult = miner.submitNonce(deadline);
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setContentLength(forwardResult.json.size());
 			auto& responseData = response.send();
@@ -788,9 +776,10 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		else
 		{
 			poco_ndc(SubmitNonceHandler::handleRequest::forwardingBlind);
+			log_information(MinerLogger::server, deadline->toActionString("forwarding nonce - incompatible client"));
 
 			// sum up the capacity
-			request.set("X-Capacity", std::to_string(PlotSizes::getTotal(PlotSizes::Type::Combined)));
+			request.set(X_Capacity, std::to_string(PlotSizes::getTotal(PlotSizes::Type::Combined)));
 
 			// forward the request to the pool
 			forward(request, response, HostType::Pool);

@@ -71,6 +71,7 @@ namespace Burst
 		void setWorker(const std::string& worker);
 		void setTotalPlotsize(Poco::UInt64 plotsize);
 		void setIp(const Poco::Net::IPAddress& ip);
+		void setParent(Deadlines* parent);
 
 		bool operator<(const Deadline& rhs) const;
 		bool operator()(const Deadline& lhs, const Deadline& rhs) const;
@@ -100,6 +101,7 @@ namespace Burst
 		//Deadlines& operator=(const Deadlines& rhs);
 
 		std::shared_ptr<Deadline> add(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile);
+		void add(std::shared_ptr<Deadline> deadline);
 		void clear();
 		bool confirm(Nonce nonce);
 		bool confirm(Nonce nonce, AccountId accountId, Poco::UInt64 block);

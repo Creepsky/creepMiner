@@ -317,10 +317,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 			const auto timeDiff = std::chrono::high_resolution_clock::now() - startPoint_;
 			const auto timeDiffSeconds = std::chrono::duration_cast<std::chrono::seconds>(timeDiff);
 			log_unimportant(MinerLogger::miner, "Block %s ended in %s", numberToString(blockHeight - 1),
-				deadlineFormat(timeDiffSeconds.count()))
-
-
-;
+				deadlineFormat(timeDiffSeconds.count()));
 			data_.getBlockData()->setBlockTime(timeDiffSeconds.count());
 		}
 
@@ -348,19 +345,13 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 				"baseTarget#\t%s\n"
 				"gensig     \t%s\n"
 				"difficulty \t%s (%s)\n"
-				"targetDL \t%s\n" +
+				"targetDL   \t%s\n" +
 				std::string(50, '-'),
 				numberToString(blockHeight), block->getScoop(), numberToString(baseTarget), createTruncatedString(getGensigStr(), 14, 32),
 				numberToString(difficulty),
 				diffiultyDifferenceToString,
 				deadlineFormat(MinerConfig::getConfig().getTargetDeadline())
-			)
-
-
-
-
-
-;
+			);
 
 			data_.getBlockData()->refreshBlockEntry();
 		}
@@ -392,6 +383,74 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 		log_error(MinerLogger::server, "Could not update the gensig: %s", e.displayText());
 		log_current_stackframe(MinerLogger::server);
 	}
+}
+
+Burst::NonceConfirmation Burst::Miner::submitNonce(const std::shared_ptr<Deadline>& deadline)
+{
+	poco_ndc(Miner::addNewDeadline);
+
+	NonceConfirmation nonceConfirmation;
+	nonceConfirmation.deadline = 0;
+
+	try
+	{
+		if (deadline->getBlock() != getBlockheight())
+		{
+			log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - wrong block"));
+			nonceConfirmation.errorCode = SubmitResponse::WrongBlock;
+		}
+		else
+		{
+			const auto targetDeadline = MinerConfig::getConfig().getTargetDeadline();
+			const auto tooHigh = targetDeadline > 0 && deadline->getDeadline() > targetDeadline;
+
+			auto block = data_.getBlockData();
+
+			if (block == nullptr)
+			{
+				log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - no block data"));
+				nonceConfirmation.errorCode = SubmitResponse::Error;
+			}
+			else if (block->addDeadlineIfBest(deadline))
+			{
+				deadline->found(tooHigh);
+
+				auto output = MinerLogger::hasOutput(NonceFound) || (tooHigh && MinerLogger::hasOutput(NonceFoundTooHigh));
+
+				if (tooHigh)
+					output = MinerLogger::hasOutput(NonceFoundTooHigh);
+
+				log_unimportant_if(MinerLogger::miner, output, deadline->toActionString("nonce found"));
+					
+				if (tooHigh)
+				{
+					log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - deadline too high"));
+					nonceConfirmation.errorCode = SubmitResponse::TooHigh;
+				}
+				else
+				{
+					return NonceSubmitter{*this, deadline}.submit();
+				}
+			}
+			else
+			{
+				log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - not best"));
+				nonceConfirmation.errorCode = SubmitResponse::NotBest;
+			}
+		}
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::miner, deadline->toActionString("nonce discarded - error occured") + Poco::format("\n\tReason: %s", e.displayText()));
+		log_current_stackframe(MinerLogger::miner);
+		nonceConfirmation.errorCode = SubmitResponse::Error;
+	}
+
+	nonceConfirmation.json = Poco::format(
+		R"({ "result" : "success", "deadline" : %Lu, "deadlineText" : "%s", "deadlineString" : "%s" })",
+		deadline->getDeadline(), deadline->deadlineToReadableString(), deadline->deadlineToReadableString());
+
+	return nonceConfirmation;
 }
 
 const Burst::GensigData& Burst::Miner::getGensig() const
@@ -443,127 +502,6 @@ Poco::UInt64 Burst::Miner::getScoopNum() const
 bool Burst::Miner::isProcessing() const
 {
 	return isProcessing_;
-}
-
-Burst::SubmitResponse Burst::Miner::addNewDeadline(Poco::UInt64 nonce, Poco::UInt64 accountId, Poco::UInt64 deadline, Poco::UInt64 blockheight,
-	std::string plotFile, bool ownAccount, std::shared_ptr<Burst::Deadline>& newDeadline)
-{
-	poco_ndc(Miner::addNewDeadline);
-
-	try
-	{
-		newDeadline = nullptr;
-
-		if (blockheight != getBlockheight())
-			return SubmitResponse::WrongBlock;
-
-		const auto targetDeadline = MinerConfig::getConfig().getTargetDeadline();
-		const auto tooHigh = targetDeadline > 0 && deadline > targetDeadline;
-
-		auto block = data_.getBlockData();
-
-		if (block == nullptr)
-			return SubmitResponse::Error;
-
-		newDeadline = block->addDeadlineIfBest(
-			nonce,
-			deadline,
-			accounts_.getAccount(accountId, wallet_, ownAccount),
-			data_.getBlockData()->getBlockheight(),
-			plotFile
-		);
-
-		if (newDeadline)
-		{
-			newDeadline->found(tooHigh);
-
-			auto output = MinerLogger::hasOutput(NonceFound) || (tooHigh && MinerLogger::hasOutput(NonceFoundTooHigh));
-
-			if (tooHigh)
-				output = MinerLogger::hasOutput(NonceFoundTooHigh);
-
-			log_unimportant_if(MinerLogger::miner, output, newDeadline->toActionString("nonce found"));
-				
-			if (tooHigh)
-				return SubmitResponse::TooHigh;
-
-			return SubmitResponse::Found;
-		}
-
-		return SubmitResponse::NotBest;
-	}
-	catch (const Poco::Exception& e)
-	{
-		log_error(MinerLogger::miner, "Could not add the new deadline: %s", e.displayText());
-		log_current_stackframe(MinerLogger::miner);
-		return SubmitResponse::Error;
-	}
-}
-
-Burst::NonceConfirmation Burst::Miner::submitNonce(const Poco::UInt64 nonce, const Poco::UInt64 accountId,
-                                                   const Poco::UInt64 deadline, const Poco::UInt64 blockheight,
-                                                   const std::string& plotFile, const bool ownAccount,
-                                                   const std::string& minerName, const std::string& workerName,
-                                                   const Poco::UInt64 plotsize, const Poco::Net::IPAddress& ip)
-{
-	poco_ndc(Miner::submitNonce);
-
-	try
-	{
-		std::shared_ptr<Deadline> newDeadline;
-
-		const auto result = addNewDeadline(nonce, accountId, deadline, blockheight, plotFile, ownAccount, newDeadline);
-
-		if (newDeadline == nullptr)
-			newDeadline = std::make_shared<Deadline>(nonce, deadline, std::make_shared<Account>(wallet_, accountId), blockheight, plotFile);
-
-		// is the new nonce better then the best one we already have?
-		if (!minerName.empty())
-			newDeadline->setMiner(minerName);
-
-		if (!workerName.empty())
-			newDeadline->setWorker(workerName);
-
-		newDeadline->setIp(ip);
-
-		if (plotsize > 0 && !MinerConfig::getConfig().isCumulatingPlotsizes())
-				newDeadline->setTotalPlotsize(plotsize);
-
-		if (result == SubmitResponse::Found)
-		{
-			newDeadline->onTheWay();
-			return NonceSubmitter{*this, newDeadline}.submit();
-		}
-		
-		if (result == SubmitResponse::NotBest)
-			log_debug(MinerLogger::miner, newDeadline->toActionString("nonce discarded - not best"));
-
-		if (result == SubmitResponse::TooHigh)
-			log_debug(MinerLogger::miner, newDeadline->toActionString("nonce discarded - deadline too high"));
-
-		if (result == SubmitResponse::WrongBlock)
-			log_debug(MinerLogger::miner, newDeadline->toActionString("nonce discarded - wrong block"));
-
-		if (result == SubmitResponse::Error)
-			log_debug(MinerLogger::miner, newDeadline->toActionString("nonce discarded - error occured"));
-
-		NonceConfirmation nonceConfirmation;
-		nonceConfirmation.deadline = 0;
-		nonceConfirmation.json = Poco::format(
-			R"({ "result" : "success", "deadline" : %Lu, "deadlineText" : "%s", "deadlineString" : "%s" })", deadline,
-			deadlineFormat(deadline), deadlineFormat(deadline));
-		nonceConfirmation.errorCode = result;
-
-		return nonceConfirmation;
-	}
-	catch (const Poco::Exception& e)
-	{
-		log_error(MinerLogger::miner, "Could not process the nonce submission: %s", e.displayText());
-		log_current_stackframe(MinerLogger::miner);
-		NonceConfirmation confirmation{};
-		confirmation.errorCode = SubmitResponse::Error;
-		return confirmation;
-	}
 }
 
 bool Burst::Miner::getMiningInfo()
@@ -808,13 +746,16 @@ Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(
 {
 	const auto nonce = std::get<0>(data);
 	const auto accountId = std::get<1>(data);
-	const auto deadline = std::get<2>(data);
+	const auto deadlineValue = std::get<2>(data);
 	const auto blockheight = std::get<3>(data);
 	const auto& plotFile = std::get<4>(data);
 	const auto ownAccount = std::get<5>(data);
-	const auto workerName = std::get<6>(data);
+	const auto& workerName = std::get<6>(data);
 
-	return submitNonce(nonce, accountId, deadline, blockheight, plotFile, ownAccount, "", workerName);
+	auto deadline = std::make_shared<Deadline>(nonce, deadlineValue, getAccount(accountId, ownAccount), blockheight, plotFile);
+	deadline->setWorker(workerName);
+
+	return submitNonce(deadline);
 }
 
 std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight)
