@@ -137,6 +137,7 @@ namespace Burst
 
 		Poco::UInt64 getMaxBufferSize() const;
 		Poco::UInt64 getMaxBufferSizeRaw() const;
+		bool getRecursiveScan() const;
 		float getReceiveTimeout() const;
 		float getSendTimeout() const;
 		float getTimeout() const;
@@ -289,6 +290,7 @@ namespace Burst
 		bool logUseColors_ = true;
 		bool steadyProgressBar_ = true;
 		bool fancyProgressBar_ = true;
+		bool recursiveScan_ = false;
 		unsigned wakeUpTime_ = 0;
 		std::string cpuInstructionSet_ = "AUTO";
 		std::string processorType_ = "CPU";

@@ -197,7 +197,7 @@ namespace Burst
 		 * \brief Resets the list of all plot files and searches the directory again for them.
 		 * The unique hash value and the total size is also recalculated.
 		 */
-		void rescan();
+		void rescan(bool recurse);
 
 	private:
 		/**
@@ -207,7 +207,7 @@ namespace Burst
 		 * \param fileOrPath The path to the plotfile or plot directory.
 		 * \return true, if all plot files could be added.
 		 */
-		bool addPlotLocation(const std::string& fileOrPath);
+		bool addPlotLocation(const std::string& fileOrPath, bool recurse);
 
 		/**
 		 * \brief Adds a single plot file to the internal list of plotfiles, if it is a valid plotfile.

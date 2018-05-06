@@ -58,7 +58,7 @@ bool Burst::MinerConfig::rescanPlotfiles()
 	Poco::Mutex::ScopedLock lock(mutex_);
 
 	for (auto& plotDir : plotDirs_)
-		plotDir->rescan();
+		plotDir->rescan(getRecursiveScan());
 
 	const auto oldPlotsHash = plotsHash_;
 	recalculatePlotsHash();
@@ -405,7 +405,7 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 
 		submission_max_retry_ = getOrAdd(miningObj, "submissionMaxRetry", 10);
 		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 0u);
-
+		recursiveScan_ = getOrAdd(miningObj, "recursiveScan", false);
 		auto timeout = getOrAdd(miningObj, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
 
@@ -1157,6 +1157,11 @@ Poco::UInt64 Burst::MinerConfig::getMaxBufferSize() const
 Poco::UInt64 Burst::MinerConfig::getMaxBufferSizeRaw() const
 {
 	return maxBufferSizeMB_;
+}
+
+bool Burst::MinerConfig::getRecursiveScan() const
+{
+	return recursiveScan_;
 }
 
 void Burst::MinerConfig::setMininigIntensity(unsigned intensity)

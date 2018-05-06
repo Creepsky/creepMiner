@@ -88,7 +88,7 @@ Burst::PlotDir::PlotDir(std::string plotPath, Type type)
 	  type_{type},
 	  size_{0}
 {
-	addPlotLocation(path_);
+	addPlotLocation(path_, false);
 	recalculateHash();
 }
 
@@ -97,7 +97,7 @@ Burst::PlotDir::PlotDir(std::string path, const std::vector<std::string>& relate
 	  type_{type},
 	  size_{0}
 {
-	addPlotLocation(path_);
+	addPlotLocation(path_, false);
 
 	for (const auto& relatedPath : relatedPaths)
 		relatedDirs_.emplace_back(new PlotDir{relatedPath, type_});
@@ -150,20 +150,19 @@ const std::string& Burst::PlotDir::getHash() const
 	return hash_;
 }
 
-void Burst::PlotDir::rescan()
+void Burst::PlotDir::rescan(bool recurse)
 {
 	plotfiles_.clear();
 	size_ = 0;
-
-	addPlotLocation(path_);
+	addPlotLocation(path_, recurse);
 
 	for (auto& relatedDir : relatedDirs_)
-		relatedDir->rescan();
+		relatedDir->rescan(recurse);
 
 	recalculateHash();
 }
 
-bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
+bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath, bool recurse)
 {
 	try
 	{
@@ -186,7 +185,7 @@ bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
 		// its a single plot file, add it if its really a plot file
 		if (fileOrDir.isFile())
 			return addPlotFile(fileOrPath) != nullptr;
-
+		
 		// its a dir, so we need to parse all plot files in it and add them
 		if (fileOrDir.isDirectory())
 		{
@@ -197,6 +196,8 @@ bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
 			{
 				if (iter->isFile())
 					addPlotFile(*iter);
+				if (iter->isDirectory() && recurse)
+					addPlotLocation(iter->path(), recurse);
 
 				++iter;
 			}
