@@ -725,6 +725,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 		if (account == nullptr)
 			account = std::make_shared<Account>(accountId);
+		else
+			account->getOrLoadName();
 
 		if (plotfile.empty())
 			plotfile = "unknown";
