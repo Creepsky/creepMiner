@@ -939,16 +939,16 @@ int Burst::cpuGetInstructionSets()
 	auto instruction_sets = 0;
 
 	if (__builtin_cpu_supports("sse2"))
-		instruction_sets += sse2;
+		instruction_sets += Sse2;
 
 	if (__builtin_cpu_supports("sse4.2"))
-		instruction_sets += sse4;
+		instruction_sets += Sse4;
 
 	if (__builtin_cpu_supports("avx"))
-		instruction_sets += avx;
+		instruction_sets += Avx;
 
 	if (__builtin_cpu_supports("avx2"))
-		instruction_sets += avx2;
+		instruction_sets += Avx2;
 
 	return instruction_sets;
 #else
@@ -956,41 +956,41 @@ int Burst::cpuGetInstructionSets()
 	cpuid(info, 0);
 	const auto n_ids = info[0];
 
-	auto has_sse2 = false;
-	auto has_sse4 = false;
-	auto has_avx = false;
-	auto has_avx2 = false;
+	auto hasSse2 = false;
+	auto hasSse4 = false;
+	auto hasAvx = false;
+	auto hasAvx2 = false;
 
 	//  Detect Features
 	if (n_ids >= 0x00000001)
 	{
 		cpuid(info, 0x00000001);
-		has_sse2 = (info[3] & 1 << 26) != 0;
-		has_sse4 = (info[2] & 1 << 19) != 0 || (info[2] & 1 << 20) != 0;
-		has_avx = (info[2] & 1 << 28) != 0;
+		hasSse2 = (info[3] & 1 << 26) != 0;
+		hasSse4 = (info[2] & 1 << 19) != 0 || (info[2] & 1 << 20) != 0;
+		hasAvx = (info[2] & 1 << 28) != 0;
 	}
 
 	if (n_ids >= 0x00000007)
 	{
 		cpuid(info, 0x00000007);
-		has_avx2 = (info[1] & (static_cast<int>(1) << 5)) != 0;
+		hasAvx2 = (info[1] & (static_cast<int>(1) << 5)) != 0;
 	}
 
-	auto instruction_sets = 0;
+	auto instructionSets = 0;
 
-	if (has_sse2)
-		instruction_sets += Sse2;
+	if (hasSse2)
+		instructionSets += Sse2;
 
-	if (has_sse4)
-		instruction_sets += Sse4;
+	if (hasSse4)
+		instructionSets += Sse4;
 
-	if (has_avx)
-		instruction_sets += Avx;
+	if (hasAvx)
+		instructionSets += Avx;
 
-	if (has_avx2)
-		instruction_sets += Avx2;
+	if (hasAvx2)
+		instructionSets += Avx2;
 
-	return instruction_sets;
+	return instructionSets;
 #endif
 }
 
