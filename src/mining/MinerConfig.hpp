@@ -91,9 +91,7 @@ namespace Burst
 		Invalid,
 		Error
 	};
-
-	class Socket;
-
+	
 	class MinerConfig
 	{
 	public:
@@ -155,6 +153,8 @@ namespace Burst
 		Url getPoolUrl() const;
 		Url getMiningInfoUrl() const;
 		Url getWalletUrl() const;
+		const std::string& getProxyFullUrl() const;
+		Poco::Net::HTTPClientSession::ProxyConfig getProxyConfig() const;
 
 		unsigned getReceiveMaxRetry() const;
 		unsigned getSendMaxRetry() const;
@@ -173,7 +173,7 @@ namespace Burst
 		double getDeadlinePerformanceFac() const;
 		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		unsigned getMiningIntensity(bool real = true) const;
-		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
+		bool forPlotDirs(const std::function<bool(PlotDir&)>& traverseFunction) const;
 		//const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		bool useInsecurePlotfiles() const;
@@ -214,7 +214,7 @@ namespace Burst
 		bool isCumulatingPlotsizes() const;
 		bool isForwardingMinerName() const;
 
-		void setUrl(std::string url, HostType hostType);
+		void setUrl(const std::string& url, HostType hostType);
 		void setBufferSize(Poco::UInt64 bufferSize);
 		void setMaxHistoricalBlocks(Poco::UInt64 maxHistData);
 		void setMaxSubmissionRetry(unsigned value);
@@ -289,8 +289,9 @@ namespace Burst
 		Url urlPool_{"http://pool.creepminer.net:8124"};
 		Url urlMiningInfo_{"http://pool.creepminer.net:8124"};
 		Url urlWallet_{"https://wallet.creepminer.net"};
+		Url urlServer_{"http://0.0.0.0:8124"};
+		std::string urlProxy_{};
 		bool startServer_ = true;
-		Url serverUrl_{"http://0.0.0.0:8124"};
 		double targetDLFactor_ = 1.0;
 		double deadlinePerformanceFac_ = 1.0;
 		double submitProbability_ = 0.999;
@@ -300,7 +301,7 @@ namespace Burst
 		std::string serverUser_, serverPass_;
 		unsigned maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
-		Poco::UInt64 maxBufferSizeMB_ = 0;
+		Poco::UInt64 maxBufferSizeMb_ = 0;
 		Poco::UInt64 maxHistoricalBlocks_ = 360;
 		unsigned bufferChunkCount_ = 16;
 		unsigned walletRequestTries_ = 3;

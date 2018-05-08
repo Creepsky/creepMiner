@@ -41,6 +41,7 @@
 #include <Poco/JSON/PrintHandler.h>
 #include <Poco/StringTokenizer.h>
 #include "extlibs/json.hpp"
+#include <regex>
 
 const std::string Burst::MinerConfig::webserverUserPassphrase = "ms7zKm7QjsSOQEP13wHAWnraSp7yP7YSQdPzAjvO";
 const std::string Burst::MinerConfig::webserverPassPassphrase = "CAAwj6RTQqXZGxbNjLVqr5FwAqT7GM9Y1wppNLRp";
@@ -137,6 +138,12 @@ void Burst::MinerConfig::printConsole() const
 	printUrl(HostType::Wallet);
 	printUrl(HostType::Server);
 
+	if (!getProxyFullUrl().empty())
+	{
+		auto proxyConfig = getProxyConfig();
+		log_system(MinerLogger::config, "Proxy URL : %s:%hu", proxyConfig.host, proxyConfig.port);
+	}
+
 	if (getConfig().getSubmitProbability() > 0.)
 		printSubmitProbability();
 	else
@@ -177,7 +184,7 @@ void Burst::MinerConfig::printUrl(HostType type) const
 	case HostType::MiningInfo: return printUrl(urlMiningInfo_, "Mininginfo URL");
 	case HostType::Pool: return printUrl(urlPool_, "Submission URL");
 	case HostType::Wallet: return printUrl(urlWallet_, "Wallet URL");
-	case HostType::Server: return printUrl(serverUrl_, "Server URL");
+	case HostType::Server: return printUrl(urlServer_, "Server URL");
 	}
 }
 
@@ -466,7 +473,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 			miningObj.assign(new Poco::JSON::Object);
 
 		submissionMaxRetry_ = getOrAdd(miningObj, "submissionMaxRetry", 10);
-		maxBufferSizeMB_ = getOrAdd(miningObj, "maxBufferSizeMB", 0u);
+		maxBufferSizeMb_ = getOrAdd(miningObj, "maxBufferSizeMB", 0u);
 
 		const auto timeout = getOrAdd(miningObj, "timeout", 30);
 		timeout_ = static_cast<float>(timeout);
@@ -545,6 +552,8 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 				urlsObj->set("miningInfo", urlPool_.getUri().toString());
 			}
 
+			urlProxy_ = getOrAdd(urlsObj, "proxy", std::string{});
+			
 			miningObj->set("urls", urlsObj);
 		}
 
@@ -814,7 +823,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 			webserverObj.assign(new Poco::JSON::Object);
 
 		startServer_ = getOrAdd(webserverObj, "start", true);
-		checkCreateUrlFunc(webserverObj, "url", serverUrl_, "http", 8124, "http://0.0.0.0:8124", startServer_);
+		checkCreateUrlFunc(webserverObj, "url", urlServer_, "http", 8124, "http://0.0.0.0:8124", startServer_);
 		maxConnectionsQueued_ = getOrAdd(webserverObj, "connectionQueue", 64u);
 		maxConnectionsActive_ = getOrAdd(webserverObj, "activeConnections", 16u);
 		cumulatePlotsizes_ = getOrAdd(webserverObj, "cumulatePlotsizes", true);
@@ -1021,6 +1030,66 @@ Burst::Url Burst::MinerConfig::getWalletUrl() const
 	return urlWallet_;
 }
 
+const std::string& Burst::MinerConfig::getProxyFullUrl() const
+{
+	Poco::Mutex::ScopedLock lock{mutex_};
+	return urlProxy_;
+}
+
+Poco::Net::HTTPClientSession::ProxyConfig Burst::MinerConfig::getProxyConfig() const
+{
+	Poco::Net::HTTPClientSession::ProxyConfig proxyConfig;
+	const auto& proxyUrl = getProxyFullUrl();
+
+	if (!proxyUrl.empty())
+	{
+		try
+		{
+			std::smatch match;
+
+			// user:password@host:port
+			if (std::regex_match(proxyUrl, match, std::regex{"^(.+):(.+)@(.+):(.+)$"}))
+			{
+				proxyConfig.username = match[1].str();
+				proxyConfig.password = match[2].str();
+				proxyConfig.host = match[3].str();
+				proxyConfig.port = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[4].str()));
+			}
+			// user@host:port
+			else if (std::regex_match(proxyUrl, match, std::regex{"^(.+)@(.+):(.+)$"}))
+			{
+				proxyConfig.username = match[1].str();
+				proxyConfig.host = match[2].str();
+				proxyConfig.port = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[3].str()));
+			}
+			// host:port
+			else if (std::regex_match(proxyUrl, match, std::regex{"^(.+):(.+)$"}))
+			{
+				proxyConfig.host = match[1].str();
+				proxyConfig.port = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[2].str()));
+			}
+			// host
+			else if (std::regex_match(proxyUrl, match, std::regex{"^(.+)$"}))
+			{
+				proxyConfig.host = match[1].str();
+				proxyConfig.port = 8080;
+				log_warning(MinerLogger::config, "Your proxy URL has no port definition, 8080 is assumed.\n"
+					"Please use the format [user:password@]host:port");
+			}
+			else
+			{
+				log_error(MinerLogger::config, "Invalid proxy URL format, please use [user:password@]host:port");
+			}
+		}
+		catch (const Poco::Exception& e)
+		{
+			log_error(MinerLogger::config, "Could not parse the proxy URL: %s", e.displayText());
+		}
+	}
+
+	return proxyConfig;
+}
+
 unsigned Burst::MinerConfig::getReceiveMaxRetry() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
@@ -1108,7 +1177,7 @@ Poco::UInt64 Burst::MinerConfig::getTargetDeadline(TargetDeadlineType type) cons
 Burst::Url Burst::MinerConfig::getServerUrl() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return serverUrl_;
+	return urlServer_;
 }
 
 std::unique_ptr<Poco::Net::HTTPClientSession> Burst::MinerConfig::createSession(HostType hostType) const
@@ -1176,7 +1245,7 @@ unsigned Burst::MinerConfig::getMiningIntensity(bool real) const
 	return miningIntensity_;
 }
 
-bool Burst::MinerConfig::forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const
+bool Burst::MinerConfig::forPlotDirs(const std::function<bool(PlotDir&)>& traverseFunction) const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
@@ -1248,7 +1317,7 @@ std::string Burst::MinerConfig::getServerPass() const
 	return serverPass_;
 }
 
-void Burst::MinerConfig::setUrl(std::string url, HostType hostType)
+void Burst::MinerConfig::setUrl(const std::string& url, const HostType hostType)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	Url* uri;
@@ -1258,7 +1327,7 @@ void Burst::MinerConfig::setUrl(std::string url, HostType hostType)
 	case HostType::MiningInfo: uri = &urlMiningInfo_; break;
 	case HostType::Pool: uri = &urlPool_; break;
 	case HostType::Wallet: uri = &urlWallet_; break;
-	case HostType::Server: uri = &serverUrl_; break;
+	case HostType::Server: uri = &urlServer_; break;
 	default: uri = nullptr;
 	}
 
@@ -1272,7 +1341,7 @@ void Burst::MinerConfig::setUrl(std::string url, HostType hostType)
 void Burst::MinerConfig::setBufferSize(Poco::UInt64 bufferSize)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	maxBufferSizeMB_ = bufferSize;
+	maxBufferSizeMb_ = bufferSize;
 }
 
 void Burst::MinerConfig::setMaxSubmissionRetry(unsigned value)
@@ -1335,15 +1404,15 @@ Poco::UInt64 Burst::MinerConfig::getMaxBufferSize() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
-	if (maxBufferSizeMB_ == 0)
+	if (maxBufferSizeMb_ == 0)
 		return getTotalPlotsize() / 4096;
 
-	return maxBufferSizeMB_ * 1024 * 1024;
+	return maxBufferSizeMb_ * 1024 * 1024;
 }
 
 Poco::UInt64 Burst::MinerConfig::getMaxBufferSizeRaw() const
 {
-	return maxBufferSizeMB_;
+	return maxBufferSizeMb_;
 }
 
 Poco::UInt64 Burst::MinerConfig::getMaxHistoricalBlocks() const
@@ -1478,7 +1547,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// miningInfoInterval
 		mining.set("getMiningInfoInterval", getMiningInfoInterval());
 		mining.set("intensity", miningIntensity_);
-		mining.set("maxBufferSizeMB", maxBufferSizeMB_);
+		mining.set("maxBufferSizeMB", maxBufferSizeMb_);
 		mining.set("maxPlotReaders", maxPlotReaders_);
 		mining.set("submissionMaxRetry", submissionMaxRetry_);
 		mining.set("maxHistoricalBlocks", maxHistoricalBlocks_);
@@ -1523,8 +1592,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// plots
 		{
 			Poco::JSON::Array plots;
-			for (auto& plot_dir : plotDirs_)
-				plots.add(plot_dir->getPath());
+			for (auto& plotDir : plotDirs_)
+				plots.add(plotDir->getPath());
 			mining.set("plots", plots);
 		}
 
@@ -1534,6 +1603,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 			urls.set("miningInfo", urlMiningInfo_.getUri().toString());
 			urls.set("submission", urlPool_.getUri().toString());
 			urls.set("wallet", urlWallet_.getUri().toString());
+			urls.set("proxy", urlProxy_);
 			mining.set("urls", urls);
 		}
 
@@ -1558,7 +1628,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		webserver.set("connectionQueue", getMaxConnectionsQueued());
 		webserver.set("cumulatePlotsizes", isCumulatingPlotsizes());
 		webserver.set("forwardMinerNames", isForwardingMinerName());
-		webserver.set("url", serverUrl_.getUri().toString());
+		webserver.set("url", urlServer_.getUri().toString());
 
 		// forwardUrls
 		{
@@ -1742,7 +1812,7 @@ void Burst::MinerConfig::setPlotDirs(const std::vector<std::string>& plotDirs)
 void Burst::MinerConfig::setWebserverUri(const std::string& uri)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	serverUrl_ = uri;
+	urlServer_ = uri;
 }
 
 void Burst::MinerConfig::setProgressbar(bool fancy, bool steady)

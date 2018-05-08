@@ -43,7 +43,6 @@
 #include <Poco/Util/Validator.h>
 #include <Poco/FileStream.h>
 #include <Poco/File.h>
-#include <Poco/DirectoryIterator.h>
 #include <regex>
 #include <Poco/Data/SQLite/Connector.h>
 #include "MinerUtil.hpp"
@@ -110,7 +109,7 @@ int main(const int argc, const char* argv[])
 
 	std::stringstream sstream;
 
-	const auto checkAndPrint = [&](bool flag, const std::string& text) {
+	const auto checkAndPrint = [&](const bool flag, const std::string& text) {
 		sstream << ' ' << (flag ? '+' : '-') << text;
 	};
 
@@ -154,7 +153,8 @@ int main(const int argc, const char* argv[])
 		while (running)
 		{
 			// load the config
-			auto configLoaded = Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath);
+			auto& config = Burst::MinerConfig::getConfig();
+			auto configLoaded = config.readConfigFile(arguments.confPath);
 
 			// the config could not be loaded, look for a config in the creepMiner home dir
 			if (configLoaded == Burst::ReadConfigFileResult::NotFound)
@@ -172,7 +172,7 @@ int main(const int argc, const char* argv[])
 				const auto homeConfig = homeConfigPath.toString();
 
 				log_information(general, "Trying to load config %s", homeConfig);
-				configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
+				configLoaded = config.readConfigFile(homeConfig);
 
 				// if there is also no config in the home dir, create one in the home dir
 				if (configLoaded == Burst::ReadConfigFileResult::NotFound)
@@ -186,15 +186,15 @@ int main(const int argc, const char* argv[])
 					homeDatabasePath.setFileName("data.db");
 
 					// and save it in the config
-					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
-					Burst::MinerConfig::getConfig().useLogfile(true);
-					Burst::MinerConfig::getConfig().setDatabasePath(homeDatabasePath.toString());
+					config.setLogDir(homeLogPath.toString());
+					config.useLogfile(true);
+					config.setDatabasePath(homeDatabasePath.toString());
 
-					if (!Burst::MinerConfig::getConfig().save(homeConfig))
+					if (!config.save(homeConfig))
 						log_error(Burst::MinerLogger::general, "Could not save current settings!");
 
 					// load the freshly created config in the home dir
-					configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
+					configLoaded = config.readConfigFile(homeConfig);
 				}
 			}
 
@@ -202,14 +202,14 @@ int main(const int argc, const char* argv[])
 			{
 				log_information(general, "Config loaded: %s", Burst::MinerConfig::getConfig().getPath());
 
-				if (!Burst::MinerConfig::getConfig().getServerCertificatePath().empty())
+				if (!config.getServerCertificatePath().empty())
 				{
 #ifdef _WIN32
 					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
-						Burst::MinerConfig::getConfig().getServerCertificatePath(),
+						config.getServerCertificatePath(),
 						Context::VERIFY_RELAXED, Context::OPT_LOAD_CERT_FROM_FILE | Context::OPT_USE_STRONG_CRYPTO));
 #elif defined __linux__ || defined __APPLE__
-					Poco::Path pathCertificate{Burst::MinerConfig::getConfig().getServerCertificatePath()};
+					Poco::Path pathCertificate{config.getServerCertificatePath()};
 					Poco::Path pathKey{pathCertificate};
 					pathKey.setExtension("key");
 					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
@@ -222,27 +222,30 @@ int main(const int argc, const char* argv[])
 					SSLManager::instance().initializeServer(privateKeyPassphraseHandler, ptrCert, serverContext);
 				}
 
-				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL" &&
+				if (config.getProcessorType() == "OPENCL" &&
 					!Burst::MinerCL::getCL().initialized())
 					Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
-						Burst::MinerConfig::getConfig().getGpuDevice());
-				else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
+						config.getGpuDevice());
+				else if (config.getProcessorType() == "CUDA")
 				{
 					Burst::Gpu_Cuda_Impl::listDevices();
-					Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
+					Burst::Gpu_Cuda_Impl::useDevice(config.getGpuDevice());
 				}
 
 				Burst::Miner miner;
 				Burst::MinerServer server{miner};
 
-				if (Burst::MinerConfig::getConfig().getStartServer())
+				if (config.getStartServer())
 				{
 					server.connectToMinerData(miner.getData());
-					server.run(Burst::MinerConfig::getConfig().getServerUrl().getPort());
+					server.run(config.getServerUrl().getPort());
 				}
 
 				Burst::MinerLogger::setChannelMinerData(&miner.getData());
-				Burst::MinerConfig::getConfig().checkPlotOverlaps();
+				config.checkPlotOverlaps();
+
+				if (!config.getProxyFullUrl().empty())
+					HTTPClientSession::setGlobalProxyConfig(config.getProxyConfig());
 
 				miner.run();
 				server.stop();
@@ -369,8 +372,7 @@ KeyConfigHandler::KeyConfigHandler(bool server)
 	: PrivateKeyPassphraseHandler{server}
 {}
 
-KeyConfigHandler::~KeyConfigHandler()
-{};
+KeyConfigHandler::~KeyConfigHandler() = default;
 
 void KeyConfigHandler::onPrivateKeyRequested(const void*, std::string& privateKey)
 {
