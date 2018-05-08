@@ -767,6 +767,10 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 				if (!passphrase_.decrypted.empty())
 				{
 					log_debug(MinerLogger::config, "Decrypted passphrase found, trying to encrypt...");
+
+					if (passphrase_.algorithm.empty())
+						passphrase_.algorithm = "aes-256-cbc";
+
 					passphrase_.encrypt();
 				}
 
