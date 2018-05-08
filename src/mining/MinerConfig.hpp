@@ -292,7 +292,7 @@ namespace Burst
 		Url urlServer_{"http://0.0.0.0:8124"};
 		std::string urlProxy_{};
 		bool startServer_ = true;
-		double targetDLFactor_ = 1.0;
+		double targetDlFactor_ = 1.0;
 		double deadlinePerformanceFac_ = 1.0;
 		double submitProbability_ = 0.999;
 		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;

@@ -90,10 +90,10 @@ namespace Burst
 
 	enum CpuInstructionSet
 	{
-		sse2 = 1 << 0,
-		sse4 = 1 << 1,
-		avx = 1 << 2,
-		avx2 = 1 << 3
+		Sse2 = 1 << 0,
+		Sse4 = 1 << 1,
+		Avx = 1 << 2,
+		Avx2 = 1 << 3
 	};
 
 	bool isNumberStr(const std::string& str);
@@ -175,4 +175,7 @@ namespace Burst
 
 	Poco::Path getMinerHomeDir();
 	Poco::Path getMinerHomeDir(const std::string& filename);
+
+	std::string toHex(const std::string& plainText);
+	std::string fromHex(const std::string& codedText);
 }

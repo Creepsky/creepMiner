@@ -501,11 +501,11 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		// auto detect the max. cpu instruction set
 		if (cpuInstructionSet_ == "AUTO")
 		{
-			if (cpuHasInstructionSet(CpuInstructionSet::avx2))
+			if (cpuHasInstructionSet(CpuInstructionSet::Avx2))
 				cpuInstructionSet_ = "AVX2";
-			else if (cpuHasInstructionSet(CpuInstructionSet::avx))
+			else if (cpuHasInstructionSet(CpuInstructionSet::Avx))
 				cpuInstructionSet_ = "AVX";
-			else if (cpuHasInstructionSet(CpuInstructionSet::sse4))
+			else if (cpuHasInstructionSet(CpuInstructionSet::Sse4))
 				cpuInstructionSet_ = "SSE4";
 			else
 				cpuInstructionSet_ = "SSE2";
@@ -997,7 +997,7 @@ float Burst::MinerConfig::getTimeout() const
 double Burst::MinerConfig::getTargetDLFactor() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return targetDLFactor_;
+	return targetDlFactor_;
 }
 
 double Burst::MinerConfig::getDeadlinePerformanceFac() const
@@ -1380,7 +1380,7 @@ void Burst::MinerConfig::setSubmitProbability(double subP)
 	else
 		deadlinePerformanceFac_ = 1.0 * 240.0;
 
-	targetDLFactor_ = -log(1.0 - submitProbability_) * 240.0;
+	targetDlFactor_ = -log(1.0 - submitProbability_) * 240.0;
 }
 
 

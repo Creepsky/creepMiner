@@ -48,6 +48,10 @@
 #include <fstream>
 #include "plots/PlotSizes.hpp"
 #include <chrono>
+#include <Poco/StreamCopier.h>
+#include <Poco/Base64Decoder.h>
+#include <Poco/HexBinaryEncoder.h>
+#include <Poco/HexBinaryDecoder.h>
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -106,7 +110,7 @@ std::vector<std::string> Burst::splitStr(const std::string& s, const std::string
 	std::string::size_type lastPos = 0;
 	const auto length = s.length();
 
-	using size_type  = std::vector<std::string>::size_type;
+	using SizeType  = std::vector<std::string>::size_type;
 
 	while(lastPos < length + 1)
 	{
@@ -117,7 +121,7 @@ std::vector<std::string> Burst::splitStr(const std::string& s, const std::string
 
 		if(pos != lastPos)
 			tokens.emplace_back(s.data() + lastPos,
-			static_cast<size_type>(pos-lastPos));
+			static_cast<SizeType>(pos-lastPos));
 
 		lastPos = pos + 1;
 	}
@@ -940,10 +944,10 @@ bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
 
 	switch (cpuInstructionSet)
 	{
-	case sse2: return (instructionSets & sse2) == sse2;
-	case sse4: return (instructionSets & sse4) == sse4;
-	case avx: return (instructionSets & avx) == avx;
-	case avx2: return (instructionSets & avx2) == avx2;
+	case Sse2: return (instructionSets & Sse2) == Sse2;
+	case Sse4: return (instructionSets & Sse4) == Sse4;
+	case Avx: return (instructionSets & Avx) == Avx;
+	case Avx2: return (instructionSets & Avx2) == Avx2;
 	default: return false;
 	}
 }
@@ -996,16 +1000,16 @@ int Burst::cpuGetInstructionSets()
 	auto instruction_sets = 0;
 
 	if (has_sse2)
-		instruction_sets += sse2;
+		instruction_sets += Sse2;
 
 	if (has_sse4)
-		instruction_sets += sse4;
+		instruction_sets += Sse4;
 
 	if (has_avx)
-		instruction_sets += avx;
+		instruction_sets += Avx;
 
 	if (has_avx2)
-		instruction_sets += avx2;
+		instruction_sets += Avx2;
 
 	return instruction_sets;
 #endif
