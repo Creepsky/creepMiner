@@ -731,43 +731,43 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		{
 			try
 			{
-				auto passphraseJson = miningObj->get("passphrase");
-				Poco::JSON::Object::Ptr passphrase = nullptr;
-
-				if (!passphraseJson.isEmpty())
-					passphrase = passphraseJson.extract<Poco::JSON::Object::Ptr>();
-
-				if (passphrase.isNull())
+				if (miningObj->isObject("passphrase"))
 				{
-					passphrase.assign(new Poco::JSON::Object);
-					miningObj->set("passphrase", passphrase);
+					auto passphraseJson = miningObj->get("passphrase");
+					Poco::JSON::Object::Ptr passphrase = nullptr;
+
+					if (!passphraseJson.isEmpty())
+						passphrase = passphraseJson.extract<Poco::JSON::Object::Ptr>();
+
+					if (passphrase.isNull())
+					{
+						passphrase.assign(new Poco::JSON::Object);
+						miningObj->set("passphrase", passphrase);
+					}
+
+					log_debug(MinerLogger::config, "Reading passphrase...");
+
+					if (passphrase->has("decrypted") || passphrase->has("encrypted"))
+					{
+						passphrase_.decrypted = getOrAdd<std::string>(passphrase, "decrypted", "");
+						passphrase_.encrypted = getOrAdd<std::string>(passphrase, "encrypted", "");
+						passphrase_.salt = getOrAdd<std::string>(passphrase, "salt", "");
+						passphrase_.key = getOrAdd<std::string>(passphrase, "key", "");
+						passphrase_.iterations = getOrAdd(passphrase, "iterations", 1000u);
+						passphrase_.deleteKey = getOrAdd(passphrase, "deleteKey", true);
+						passphrase_.algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
+					}
 				}
-
-				log_debug(MinerLogger::config, "Reading passphrase...");
-
-				passphrase_.decrypted = getOrAdd<std::string>(passphrase, "decrypted", "");
-				passphrase_.encrypted = getOrAdd<std::string>(passphrase, "encrypted", "");
-				passphrase_.salt = getOrAdd<std::string>(passphrase, "salt", "");
-				passphrase_.key = getOrAdd<std::string>(passphrase, "key", "");
-				passphrase_.iterations = getOrAdd(passphrase, "iterations", 1000u);
-				passphrase_.deleteKey = getOrAdd(passphrase, "deleteKey", true);
-				passphrase_.algorithm = getOrAdd<std::string>(passphrase, "algorithm", "aes-256-cbc");
+				else
+				{
+					passphrase_ = Passphrase::fromString(miningObj->getValue<std::string>("passphrase"));
+				}
 
 				// there is a decrypted passphrase, we need to encrypt it
 				if (!passphrase_.decrypted.empty())
 				{
 					log_debug(MinerLogger::config, "Decrypted passphrase found, trying to encrypt...");
-
 					passphrase_.encrypt();
-
-					if (!passphrase_.encrypted.empty())
-					{
-						passphrase->set("decrypted", "");
-						passphrase->set("encrypted", passphrase_.encrypted);
-						passphrase->set("salt", passphrase_.salt);
-						passphrase->set("key", passphrase_.key);
-						passphrase->set("iterations", passphrase_.iterations);
-					}
 				}
 
 				if (!passphrase_.encrypted.empty() &&
@@ -776,13 +776,13 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 				{
 					log_debug(MinerLogger::config, "Encrypted passphrase found, trying to decrypt...");
 
+					passphrase_.decrypt();
+
 					if (passphrase_.deleteKey && passphrase_.decrypted.empty())
 					{
 						log_debug(MinerLogger::config, "Passhrase.deleteKey == true, deleting the key...");
-						passphrase->set("key", "");
+						passphrase_.key.clear();
 					}
-
-					passphrase_.decrypt();
 
 					if (!passphrase_.decrypted.empty())
 						log_debug(MinerLogger::config, "Passphrase decrypted!");
@@ -792,7 +792,9 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 					if (!passphrase_.encrypted.empty() && !passphrase_.key.empty())
 						log_warning(MinerLogger::config, "WARNING! You entered a passphrase, what means you mine solo!\n"
 							"This means, your passphrase is sent in plain text to 'mining.urls.submission'!\n"
-							"If you don't want to mine solo, clear 'mining.passphrase.key' in your configuration file.");
+							"If you don't want to mine solo, clear 'mining.passphrase' in your configuration file.");
+
+					miningObj->set("passphrase", passphrase_.toString());
 				}
 			}
 			catch (Poco::Exception& exc)
