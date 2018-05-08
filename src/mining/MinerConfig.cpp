@@ -42,10 +42,11 @@
 #include <Poco/StringTokenizer.h>
 #include "extlibs/json.hpp"
 #include <regex>
+#include <Poco/Random.h>
+#include <Poco/Crypto/CipherFactory.h>
+#include <Poco/Crypto/CipherKey.h>
+#include <Poco/Crypto/Cipher.h>
 
-const std::string Burst::MinerConfig::webserverUserPassphrase = "ms7zKm7QjsSOQEP13wHAWnraSp7yP7YSQdPzAjvO";
-const std::string Burst::MinerConfig::webserverPassPassphrase = "CAAwj6RTQqXZGxbNjLVqr5FwAqT7GM9Y1wppNLRp";
-const std::string Burst::MinerConfig::hashDelimiter = "::::";
 const std::string Burst::Passphrase::delimiter = "::::";
 
 void Burst::MinerConfig::rescan()
@@ -848,36 +849,34 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 				webserverObj->set("credentials", credentials);
 			}
 
-			auto pass = getOrAdd(credentials, passId, std::string{});
-			auto user = getOrAdd(credentials, userId, std::string{});
+			auto serverPass = getOrAdd(credentials, passId, std::string{});
+			auto serverUser = getOrAdd(credentials, userId, std::string{});
 
-			const auto getOrHash = [](auto& property, const auto& hashDelimiter,
-				const auto& propertyJsonId, auto credentialsJsonObject,
-				const auto& salt) {
-				// user is already hashed
-				if (property.size() > hashDelimiter.size() && property.substr(0, hashDelimiter.size()) == hashDelimiter)
+			const auto getOrHash = [&](std::string& property,
+			                           auto propertyJsonId, auto credentialsJsonObject,
+			                           const auto& defaultSalt)
+			{
+				auto encryption = Passphrase::fromString(property);
+
+				if (encryption.isPlainText())
 				{
-					// cut off the hash delimiter
-					property = property.substr(hashDelimiter.size());
+					encryption.encrypt();
 				}
-				// user needs to be hashed
-				else
+				else if (encryption.salt.empty())
 				{
-					// hash it
-					property = hash_HMAC_SHA1(property, salt);
-
-					// save it in json
-					credentialsJsonObject->set(propertyJsonId, hashDelimiter + property);
+					encryption.salt = defaultSalt;
 				}
 
-				return property;
+				credentialsJsonObject->set(propertyJsonId, encryption.toString());
+
+				return encryption;
 			};
 
-			if (!user.empty())
-				serverUser_ = getOrHash(user, hashDelimiter, userId, credentials, webserverUserPassphrase);
+			if (!serverUser.empty())
+				serverUser_ = getOrHash(serverUser, userId, credentials, "ms7zKm7QjsSOQEP13wHAWnraSp7yP7YSQdPzAjvO");
 
-			if (!pass.empty())
-				serverPass_ = getOrHash(pass, hashDelimiter, passId, credentials, webserverPassPassphrase);
+			if (!serverPass.empty())
+				serverPass_ = getOrHash(serverPass, passId, credentials, "CAAwj6RTQqXZGxbNjLVqr5FwAqT7GM9Y1wppNLRp");
 		}
 
 		// forwarding
@@ -1306,13 +1305,13 @@ std::string Burst::MinerConfig::getLogDir() const
 	return Poco::Path(getPathLogfile().parent()).toString();
 }
 
-std::string Burst::MinerConfig::getServerUser() const
+const Burst::Passphrase& Burst::MinerConfig::getServerUser() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return serverUser_;
 }
 
-std::string Burst::MinerConfig::getServerPass() const
+const Burst::Passphrase& Burst::MinerConfig::getServerPass() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return serverPass_;
@@ -1618,8 +1617,8 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		// credentials
 		{
 			Poco::JSON::Object credentials;
-			credentials.set("pass", serverPass_.empty() ? "" : hashDelimiter + serverPass_);
-			credentials.set("user", serverUser_.empty() ? "" : hashDelimiter + serverUser_);
+			credentials.set("pass", serverPass_.empty() ? "" : serverPass_.toString());
+			credentials.set("user", serverUser_.empty() ? "" : serverUser_.toString());
 			webserver.set("credentials", credentials);
 		}
 
@@ -1833,8 +1832,11 @@ void Burst::MinerConfig::setPassphrase(const std::string& passphrase)
 void Burst::MinerConfig::setWebserverCredentials(const std::string& user, const std::string& pass)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	serverUser_ = hash_HMAC_SHA1(user, webserverUserPassphrase);
-	serverPass_ = hash_HMAC_SHA1(pass, webserverPassPassphrase);
+	serverUser_.decrypted = user;
+	serverPass_.decrypted = pass;
+
+	serverUser_.encrypt();
+	serverPass_.encrypt();
 }
 
 void Burst::MinerConfig::setStartWebserver(bool start)

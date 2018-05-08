@@ -367,16 +367,16 @@ bool Burst::RequestHandler::login(Poco::Net::HTTPServerRequest& request, Poco::N
 		const std::string defaultCredential;
 		const auto& plainUserPost = postBody.get(cookieUserName, defaultCredential);
 		const auto& plainPassPost = postBody.get(cookiePassName, defaultCredential);
-
+		
 		const auto credentialsOk =
-			check_HMAC_SHA1(plainUserPost, MinerConfig::getConfig().getServerUser(), MinerConfig::webserverUserPassphrase) &&
-			check_HMAC_SHA1(plainPassPost, MinerConfig::getConfig().getServerPass(), MinerConfig::webserverPassPassphrase);
+			MinerConfig::getConfig().getServerUser().check(plainUserPost) &&
+			MinerConfig::getConfig().getServerPass().check(plainPassPost);
 
 		// save the hashed username and password in a clientside cookie
 		if (credentialsOk)
 		{
-			response.addCookie({ cookieUserName, hash_HMAC_SHA1(plainUserPost, MinerConfig::webserverUserPassphrase) });
-			response.addCookie({ cookiePassName, hash_HMAC_SHA1(plainPassPost, MinerConfig::webserverPassPassphrase) });
+			response.addCookie({ cookieUserName, MinerConfig::getConfig().getServerUser().encrypted });
+			response.addCookie({ cookiePassName, MinerConfig::getConfig().getServerPass().encrypted });
 		}
 
 		return credentialsOk;
@@ -417,8 +417,8 @@ bool Burst::RequestHandler::isLoggedIn(Poco::Net::HTTPServerRequest& request)
 
 	if (!hashedUserCookie.empty() || !hashedPassCookie.empty())
 		credentialsOk =
-			hashedUserCookie == MinerConfig::getConfig().getServerUser() &&
-			hashedPassCookie == MinerConfig::getConfig().getServerPass();
+			hashedUserCookie == MinerConfig::getConfig().getServerUser().encrypted &&
+			hashedPassCookie == MinerConfig::getConfig().getServerPass().encrypted;
 	
 	return credentialsOk;
 }

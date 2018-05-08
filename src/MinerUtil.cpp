@@ -419,7 +419,7 @@ std::string Burst::encrypt(const std::string& decrypted, const std::string& algo
 		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
 		auto cipher = factory.createCipher(cipherKey);
 		
-		return cipher->encryptString(decrypted, Poco::Crypto::Cipher::ENC_BASE64);
+		return cipher->encryptString(decrypted, Poco::Crypto::Cipher::ENC_BINHEX_NO_LF);
 	}
 	catch (Poco::Exception& exc)
 	{
@@ -442,7 +442,7 @@ std::string Burst::decrypt(const std::string& encrypted, const std::string& algo
 		const Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
 		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
 		auto cipher = factory.createCipher(cipherKey);
-		return cipher->decryptString(encrypted, Poco::Crypto::Cipher::ENC_BASE64);
+		return cipher->decryptString(encrypted, Poco::Crypto::Cipher::ENC_BINHEX_NO_LF);
 	}
 	catch (Poco::Exception& exc)
 	{
@@ -886,33 +886,12 @@ std::string Burst::getFilenameWithtimestamp(const std::string& name, const std::
 		name, Poco::DateTimeFormatter::format(Poco::Timestamp(), "%Y%m%d_%H%M%s"), ending);
 }
 
-std::string Burst::hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase)
+std::string Burst::hashHmacSha1(const std::string& plain, const std::string& passphrase)
 {
 	Poco::HMACEngine<Poco::SHA1Engine> engine{ passphrase };
 	engine.update(plain);
 	auto& digest = engine.digest();
 	return Poco::DigestEngine::digestToHex(digest);
-}
-
-bool Burst::check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase)
-{
-	// if there is no hash
-	if (hashed.empty())
-		// there is no password
-		return plain.empty();
-
-	// first, hash the plain text
-	Poco::HMACEngine<Poco::SHA1Engine> engine{ passphrase };
-	//
-	engine.update(plain);
-	//
-	auto& digest = engine.digest();
-
-	// create the digest for the hashed word
-	const auto hashedDigest = Poco::HMACEngine<Poco::SHA1Engine>::digestFromHex(hashed);
-
-	// check if its the same
-	return digest == hashedDigest;
 }
 
 std::string Burst::createTruncatedString(const std::string& string, size_t padding, size_t size)
@@ -1132,4 +1111,23 @@ Poco::Path Burst::getMinerHomeDir()
 Poco::Path Burst::getMinerHomeDir(const std::string& filename)
 {
 	return getMinerHomeDir().append(filename);
+}
+
+std::string Burst::toHex(const std::string& plainText)
+{
+	std::stringstream sstream;
+	Poco::HexBinaryEncoder hex{sstream};
+	hex << plainText;
+	hex.close();
+	return sstream.str();
+}
+
+std::string Burst::fromHex(const std::string& codedText)
+{
+	std::stringstream sstream;
+	sstream << codedText;
+	Poco::HexBinaryDecoder hex{sstream};
+	std::string out;
+	Poco::StreamCopier::copyToString(hex, out);
+	return out;
 }

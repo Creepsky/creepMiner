@@ -208,8 +208,8 @@ namespace Burst
 		unsigned getMaxPlotReaders(bool real = true) const;
 		Poco::Path getPathLogfile() const;
 		std::string getLogDir() const;
-		std::string getServerUser() const;
-		std::string getServerPass() const;
+		const Passphrase& getServerUser() const;
+		const Passphrase& getServerPass() const;
 		unsigned getWalletRequestTries() const;
 		unsigned getWalletRequestRetryWaitTime() const;
 		unsigned getWakeUpTime() const;
@@ -271,16 +271,6 @@ namespace Burst
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
 
 		/**
-		 * \brief The passphrase, used by the webserver to hash (hmac) the username.
-		 */
-		static const std::string webserverUserPassphrase;
-
-		/**
-		 * \brief The passphrase, used by the webserver to hash (hmac) the password.
-		 */
-		static const std::string webserverPassPassphrase;
-
-		/**
 		 * \brief Returns the singleton-instance of the configuration.
 		 * \return the current configuration.
 		 */
@@ -288,7 +278,6 @@ namespace Burst
 
 	private:
 		static Poco::JSON::Object::Ptr readOutput(Poco::JSON::Object::Ptr json);
-		static const std::string hashDelimiter;
 
 		std::string configPath_;
 		std::vector<std::shared_ptr<PlotDir>> plotDirs_;
@@ -310,7 +299,7 @@ namespace Burst
 		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;
 		unsigned miningIntensity_ = 0;
 		std::string plotsHash_;
-		std::string serverUser_, serverPass_;
+		Passphrase serverUser_{}, serverPass_{};
 		unsigned maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
 		Poco::UInt64 maxBufferSizeMb_ = 0;
