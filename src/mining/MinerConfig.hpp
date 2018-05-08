@@ -63,13 +63,14 @@ namespace Burst
 	 */
 	struct Passphrase
 	{
-		std::string algorithm = "aes-256-cbc";
-		std::string decrypted;
-		bool deleteKey = true;
-		std::string encrypted;
+		std::string algorithm;
 		Poco::UInt32 iterations = 1000;
 		std::string key;
 		std::string salt;
+		std::string decrypted;
+		bool deleteKey = true;
+		std::string encrypted;
+		static const std::string delimiter;
 
 		/**
 		 * \brief Decrypts the encrypted passphrase.
@@ -82,6 +83,17 @@ namespace Burst
 		 * \return The encrypted passphrase.
 		 */
 		const std::string& encrypt();
+
+		bool isOneWayHash() const;
+		bool isTwoWayHash() const;
+		bool isEncrypted() const;
+		bool isPlainText() const;
+		bool check(const std::string& plainText) const;
+		bool empty() const;
+
+		std::string toString() const;
+		static Passphrase fromString(const std::string& string);
+		static std::string createSalt(size_t length = 20);
 	};
 
 	enum class ReadConfigFileResult

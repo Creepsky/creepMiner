@@ -46,6 +46,7 @@
 const std::string Burst::MinerConfig::webserverUserPassphrase = "ms7zKm7QjsSOQEP13wHAWnraSp7yP7YSQdPzAjvO";
 const std::string Burst::MinerConfig::webserverPassPassphrase = "CAAwj6RTQqXZGxbNjLVqr5FwAqT7GM9Y1wppNLRp";
 const std::string Burst::MinerConfig::hashDelimiter = "::::";
+const std::string Burst::Passphrase::delimiter = "::::";
 
 void Burst::MinerConfig::rescan()
 {
@@ -1871,15 +1872,143 @@ bool Burst::MinerConfig::removePlotDir(const std::string& dir)
 	return true;
 }
 
+std::string Burst::Passphrase::toString() const
+{
+	std::stringstream sstream;
+	
+	if (isOneWayHash())
+		sstream <<
+			delimiter << salt <<
+			delimiter << encrypted;
+	else
+		sstream <<
+			delimiter << algorithm <<
+			delimiter << iterations <<
+			delimiter << salt <<
+			delimiter << key <<
+			delimiter << encrypted;
+
+	return sstream.str();	
+}
+
+bool Burst::Passphrase::isOneWayHash() const
+{
+	return algorithm.empty() && key.empty();
+}
+
+bool Burst::Passphrase::isTwoWayHash() const
+{
+	return !isOneWayHash();
+}
+
+bool Burst::Passphrase::isEncrypted() const
+{
+	return !encrypted.empty();
+}
+
+bool Burst::Passphrase::isPlainText() const
+{
+	return !decrypted.empty();
+}
+
+bool Burst::Passphrase::check(const std::string& plainText) const
+{
+	// if there is no hash
+	if (encrypted.empty())
+		// there is no password
+		return plainText.empty();
+
+	Passphrase toCheck;
+	toCheck.algorithm = algorithm;
+	toCheck.iterations = iterations;
+	toCheck.salt = salt;
+	toCheck.decrypted = plainText;
+	return toCheck.encrypt() == encrypted;
+}
+
+bool Burst::Passphrase::empty() const
+{
+	return decrypted.empty() && encrypted.empty();
+}
+
+Burst::Passphrase Burst::Passphrase::fromString(const std::string& string)
+{
+	std::smatch match;
+	Passphrase passphrase{};
+
+	if (std::regex_match(string, match, std::regex{"::::(.*)::::(.*)::::(.*)::::(.*)::::(.*)"}))
+	{
+		passphrase.algorithm = match[1].str();
+		passphrase.iterations = Poco::NumberParser::parse(match[2].str());
+		passphrase.salt = match[3].str();
+		passphrase.key = match[4].str();
+		passphrase.encrypted = match[5].str();
+	}
+	else if (std::regex_match(string, match, std::regex{"::::(.*)::::(.*)"}))
+	{
+		passphrase.salt = match[1].str();
+		passphrase.encrypted = match[2].str();
+	}
+	else if (std::regex_match(string, match, std::regex{"::::(.*)"}))
+	{
+		passphrase.encrypted = match[1].str();
+	}
+	else
+	{
+		passphrase.decrypted = string;
+	}
+
+	return passphrase;
+}
+
+std::string Burst::Passphrase::createSalt(size_t length)
+{
+	std::stringstream sstream;
+	Poco::Random random;
+	random.seed();
+
+	for (size_t i = 0; i < length; ++i)
+		sstream << random.nextChar();
+
+	return toHex(sstream.str());
+}
+
 const std::string& Burst::Passphrase::decrypt()
 {
-	decrypted = Burst::decrypt(encrypted, algorithm, key, salt, iterations);
+	if (isTwoWayHash())
+		decrypted = Burst::decrypt(encrypted, algorithm, key, salt, iterations);
+
 	return decrypted;
 }
 
 const std::string& Burst::Passphrase::encrypt()
 {
-	encrypted = Burst::encrypt(decrypted, algorithm, key, salt, iterations);
+	if (salt.empty())
+		salt = createSalt();
+
+	if (isOneWayHash())
+		encrypted = hashHmacSha1(decrypted, salt);
+
+	if (isTwoWayHash())
+	{
+		if (algorithm.empty())
+			algorithm = "aes-256-cbc";
+
+		if (key.empty())
+			key = createSalt();
+
+		if (iterations == 0)
+			iterations = 1000;
+		
+		const Poco::Crypto::CipherKey cipherKey(algorithm, key, salt, iterations);
+		auto& factory = Poco::Crypto::CipherFactory::defaultFactory();
+		auto cipher = factory.createCipher(cipherKey);
+		
+		encrypted = cipher->encryptString(decrypted, Poco::Crypto::Cipher::ENC_BINHEX_NO_LF);
+	}
+
+	decrypted.clear();
+
 	return encrypted;
 }
 
