@@ -554,8 +554,67 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 				urlsObj->set("miningInfo", urlPool_.getUri().toString());
 			}
 
-			urlProxy_ = getOrAdd(urlsObj, "proxy", std::string{});
-			
+			const auto urlProxy = getOrAdd(urlsObj, "proxy", std::string{});
+
+			try
+			{
+				std::smatch match;
+
+				const auto extractEncrypted = [](const std::string& property)
+				{
+					auto encrypted = Passphrase::fromString(property);
+
+					if (encrypted.isPlainText())
+					{
+						if (encrypted.algorithm.empty())
+							encrypted.algorithm = "aes-256-cbc";
+
+						encrypted.encrypt();
+					}
+
+					return encrypted;
+				};
+
+				// user:password@host:port
+				if (std::regex_match(urlProxy, match, std::regex{"^(.+)(&|:)(.+)@(.+):(.+)$"}))
+				{
+					proxyUser_ = extractEncrypted(match[1].str());
+					proxyPassword_ = extractEncrypted(match[3].str());
+					proxyIp_ = match[4].str();
+					proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[5].str()));
+				}
+				// user@host:port
+				else if (std::regex_match(urlProxy, match, std::regex{"^(.+)@(.+):(.+)$"}))
+				{
+					proxyUser_ = extractEncrypted(match[1].str());
+					proxyIp_ = match[2].str();
+					proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[3].str()));
+				}
+				// host:port
+				else if (std::regex_match(urlProxy, match, std::regex{"^(.+):(.+)$"}))
+				{
+					proxyIp_ = match[1].str();
+					proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[2].str()));
+				}
+				// host
+				else if (std::regex_match(urlProxy, match, std::regex{"^(.+)$"}))
+				{
+					proxyIp_ = match[1].str();
+					proxyPort_ = 8080;
+					log_warning(MinerLogger::config, "Your proxy URL has no port definition, 8080 is assumed.\n"
+						"Please use the format [user:password@]host:port");
+				}
+				else
+				{
+					log_error(MinerLogger::config, "Invalid proxy URL format, please use [user:password@]host:port");
+				}
+			}
+			catch (const Poco::Exception& e)
+			{
+				log_error(MinerLogger::config, "Could not parse the proxy URL: %s", e.displayText());
+			}
+
+			urlsObj->set("proxy", getProxyFullUrl());
 			miningObj->set("urls", urlsObj);
 		}
 
@@ -1049,61 +1108,47 @@ Burst::Url Burst::MinerConfig::getWalletUrl() const
 	return urlWallet_;
 }
 
-const std::string& Burst::MinerConfig::getProxyFullUrl() const
+std::string Burst::MinerConfig::getProxyFullUrl() const
 {
 	Poco::Mutex::ScopedLock lock{mutex_};
-	return urlProxy_;
+
+	std::stringstream sstream;
+
+	if (!proxyUser_.empty())
+	{
+		sstream << proxyUser_.toString();
+		
+		if (!proxyPassword_.empty())
+			sstream << '&' << proxyPassword_.toString();
+
+		sstream << '@';
+	}
+
+	sstream << proxyIp_ << ':' << proxyPort_;
+
+	return sstream.str(); 
 }
 
 Poco::Net::HTTPClientSession::ProxyConfig Burst::MinerConfig::getProxyConfig() const
 {
 	Poco::Net::HTTPClientSession::ProxyConfig proxyConfig;
-	const auto& proxyUrl = getProxyFullUrl();
 
-	if (!proxyUrl.empty())
+	if (proxyIp_.empty() || proxyPort_ == 0)
+		return proxyConfig;
+
+	proxyConfig.host = proxyIp_;
+	proxyConfig.port = proxyPort_;
+
+	if (!proxyUser_.empty())
 	{
-		try
-		{
-			std::smatch match;
+		auto passphrase = proxyUser_;
+		proxyConfig.username = passphrase.decrypt();
+	}
 
-			// user:password@host:port
-			if (std::regex_match(proxyUrl, match, std::regex{"^(.+):(.+)@(.+):(.+)$"}))
-			{
-				proxyConfig.username = match[1].str();
-				proxyConfig.password = match[2].str();
-				proxyConfig.host = match[3].str();
-				proxyConfig.port = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[4].str()));
-			}
-			// user@host:port
-			else if (std::regex_match(proxyUrl, match, std::regex{"^(.+)@(.+):(.+)$"}))
-			{
-				proxyConfig.username = match[1].str();
-				proxyConfig.host = match[2].str();
-				proxyConfig.port = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[3].str()));
-			}
-			// host:port
-			else if (std::regex_match(proxyUrl, match, std::regex{"^(.+):(.+)$"}))
-			{
-				proxyConfig.host = match[1].str();
-				proxyConfig.port = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[2].str()));
-			}
-			// host
-			else if (std::regex_match(proxyUrl, match, std::regex{"^(.+)$"}))
-			{
-				proxyConfig.host = match[1].str();
-				proxyConfig.port = 8080;
-				log_warning(MinerLogger::config, "Your proxy URL has no port definition, 8080 is assumed.\n"
-					"Please use the format [user:password@]host:port");
-			}
-			else
-			{
-				log_error(MinerLogger::config, "Invalid proxy URL format, please use [user:password@]host:port");
-			}
-		}
-		catch (const Poco::Exception& e)
-		{
-			log_error(MinerLogger::config, "Could not parse the proxy URL: %s", e.displayText());
-		}
+	if (!proxyPassword_.empty())
+	{
+		auto passphrase = proxyPassword_;
+		proxyConfig.password = passphrase.decrypt();
 	}
 
 	return proxyConfig;
@@ -1622,7 +1667,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 			urls.set("miningInfo", urlMiningInfo_.getUri().toString());
 			urls.set("submission", urlPool_.getUri().toString());
 			urls.set("wallet", urlWallet_.getUri().toString());
-			urls.set("proxy", urlProxy_);
+			urls.set("proxy", getProxyFullUrl());
 			mining.set("urls", urls);
 		}
 

@@ -92,6 +92,7 @@ namespace Burst
 		bool empty() const;
 
 		std::string toString() const;
+
 		static Passphrase fromString(const std::string& string);
 		static std::string createSalt(size_t length = 20);
 	};
@@ -165,7 +166,7 @@ namespace Burst
 		Url getPoolUrl() const;
 		Url getMiningInfoUrl() const;
 		Url getWalletUrl() const;
-		const std::string& getProxyFullUrl() const;
+		std::string getProxyFullUrl() const;
 		Poco::Net::HTTPClientSession::ProxyConfig getProxyConfig() const;
 
 		unsigned getReceiveMaxRetry() const;
@@ -291,7 +292,9 @@ namespace Burst
 		Url urlMiningInfo_{"http://pool.creepminer.net:8124"};
 		Url urlWallet_{"https://wallet.creepminer.net"};
 		Url urlServer_{"http://0.0.0.0:8124"};
-		std::string urlProxy_{};
+		std::string proxyIp_{};
+		Poco::UInt16 proxyPort_{};
+		Passphrase proxyUser_{}, proxyPassword_{};
 		bool startServer_ = true;
 		double targetDlFactor_ = 1.0;
 		double deadlinePerformanceFac_ = 1.0;
