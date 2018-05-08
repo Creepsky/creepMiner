@@ -384,7 +384,7 @@ function createMessageLine(lineType, logger, level, file, lineNumber, time, text
     });
 
     var message = $("<div></div>");
-    message.append("<p class='pull-right'><span class='label label-default'>" + time + "</span></p>");
+    message.append("<span class='badge badge-secondary float-sm-right'>" + time + "</span>");
     message.append(text);
     message.append(hiddenInfosDiv);
 

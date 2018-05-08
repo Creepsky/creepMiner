@@ -325,6 +325,7 @@ function delPlotDir(path) {
         'If you are sure, type in <b>YES</b>',
 		type: 'warning',
         input: "text",
+        inputPlaceholder: "YES",
 		showCancelButton: true,
 		confirmButtonText: 'Delete',
 		cancelButtonText: 'Cancel',
@@ -336,7 +337,7 @@ function delPlotDir(path) {
 				type: "POST",
                 url: "plotdir/remove",
                 data: (path),
-                success: function(msg){
+                success: function(msg) {
                     if (!msg.error) {
                         swal({
                             title: "Successfully deleted!",
@@ -349,26 +350,36 @@ function delPlotDir(path) {
                             title: "Error!",
                             text: "There was an error removing the plot directory: " + msg.error,
                             type: "error"
-                        });
+                        } );
                     }
                 }
     		} );
         }
-    });
+    } );
 }
 
 function addPlotDir() {
     swal({
     title: 'Add new directory',
     html:
-    '<p>Enter your plot directory</p>' +
-    '<div style="font-size:3em; color:Tomato"><i class="fas fa-bug"></i></div><br>' +
-    '<b>still need to implement a browse button<b>',
+    '<p>Enter your plot location. E.G.</p>' +
+    '<ul class="list-group">' +
+    '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+    '<b>Windows</b>' +
+    '<span class="badge badge-primary badge-pill">D:\\plots</span>'+
+    '</li>' +
+    '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+    '<b>linux & MacOS</b>' +
+    '<span class="badge badge-primary badge-pill">/Volume/plots</span>'+
+    '</li>' +
+    '</ul>',
     input: "text",
+    inputPlaceholder: "Your plot location",
     showCancelButton: true,
     confirmButtonText: "Add",
     cancelButtonText: "Cancel",
     confirmButtonColor: "#1FAB45",
+    animation: "slide-from-top",
     buttonsStyling: true
     }).then((result) => {
         if (result.value) {
@@ -382,17 +393,18 @@ function addPlotDir() {
                             title: "Successfully added!",
                             text: "Your plot directory has been added",
                             type: "success"
-                        })
+                        } )
                     }
                     else {
                         swal({
                             title: "Error!",
                             html: "<p>In adding the plot directory</p><p>'" + msg.error + "'</p><p><b>Check that it is a valid directory!</b><p>",
                             type: "error"
-                        })
+                        } )
                     }
+
                 }
           } );
         }
-    });
+    } );
 }
