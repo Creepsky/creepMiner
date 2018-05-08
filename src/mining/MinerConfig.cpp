@@ -921,6 +921,19 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 			serverCertificatePath_ = getOrAdd(certificate, "path", std::string{});
 			serverCertificatePass_ = getOrAdd(certificate, "pass", std::string{});
+
+			if (!serverCertificatePass_.empty())
+			{
+				auto encryption = Passphrase::fromString(serverCertificatePass_);
+
+				if (encryption.algorithm.empty())
+					encryption.algorithm = "aes-256-cbc";
+
+				if (encryption.isPlainText())
+					encryption.encrypt();
+
+				certificate->set("pass", encryption.toString());
+			}
 		}
 
 		config->set("webserver", webserverObj);
