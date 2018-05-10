@@ -349,7 +349,16 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	for (auto i = 0u; i < tokenizer.count(); ++i)
 	{
 		block << getTextTypeColor(TextType::Normal) << getTime() << ": "
-			<< getTextTypeColor(type) << tokenizer[i];
+			<< getTextTypeColor(type);
+		
+#ifdef _WIN32
+		std::wstring utext;
+		Poco::UnicodeConverter::toUTF16(tokenizer[i], utext);
+		DWORD written;
+		WriteConsoleW(block.getHandle(), utext.data(), static_cast<DWORD>(utext.size()), &written, nullptr);
+#else
+		block << tokenizer[i];
+#endif
 
 		if (i != tokenizer.count() - 1)
 			block.nextLine();
