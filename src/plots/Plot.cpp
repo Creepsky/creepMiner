@@ -74,12 +74,12 @@ Poco::UInt64 Burst::PlotFile::getStaggerCount() const
 
 Poco::UInt64 Burst::PlotFile::getStaggerBytes() const
 {
-	return getStaggerSize() * Settings::PlotSize;
+	return getStaggerSize() * Settings::plotSize;
 }
 
 Poco::UInt64 Burst::PlotFile::getStaggerScoopBytes() const
 {
-	return getStaggerSize() * Settings::ScoopSize;
+	return getStaggerSize() * Settings::scoopSize;
 }
 
 Burst::PlotDir::PlotDir(std::string plotPath, Type type)

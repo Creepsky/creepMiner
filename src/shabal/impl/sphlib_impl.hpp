@@ -22,11 +22,10 @@
 #pragma once
 
 #include "shabal/sphlib/sph_shabal.h"
-#include <Poco/Types.h>
 
 namespace Burst
 {
-	struct Sphlib_Impl
+	struct SphlibImpl
 	{
 		static constexpr size_t HashSize = 1;
 

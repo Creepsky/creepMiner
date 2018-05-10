@@ -94,7 +94,7 @@ const std::string& Burst::Deadline::getPlotFile() const
 
 std::string Burst::Deadline::getMiner() const
 {
-	return minerName_.empty() ? Settings::Project.nameAndVersionVerbose : minerName_;
+	return minerName_.empty() ? Settings::project.nameAndVersionVerbose : minerName_;
 }
 
 const std::string& Burst::Deadline::getWorker() const

@@ -42,7 +42,7 @@ namespace Burst
 		void runTask() override;
 
 	private:
-		Miner& miner;
-		std::shared_ptr<Deadline> deadline;
+		Miner& miner_;
+		std::shared_ptr<Deadline> deadline_;
 	};
 }

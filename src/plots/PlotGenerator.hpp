@@ -41,24 +41,24 @@ namespace Burst
 		static Poco::UInt64 generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner);
 		static double checkPlotfileIntegrity(const std::string& plotPath, Miner& miner, MinerServer& server);
 
-		static std::array<std::vector<char>, Shabal256_SSE2::HashSize> generateSse2(Poco::UInt64 account, Poco::UInt64 startNonce);
-		static std::array<std::vector<char>, Shabal256_AVX::HashSize> generateAvx(Poco::UInt64 account, Poco::UInt64 startNonce);
-		static std::array<std::vector<char>, Shabal256_SSE4::HashSize> generateSse4(Poco::UInt64 account, Poco::UInt64 startNonce);
-		static std::array<std::vector<char>, Shabal256_AVX2::HashSize> generateAvx2(Poco::UInt64 account, Poco::UInt64 startNonce);
+		static std::array<std::vector<char>, Shabal256Sse2::HashSize> generateSse2(Poco::UInt64 account, Poco::UInt64 startNonce);
+		static std::array<std::vector<char>, Shabal256Avx::HashSize> generateAvx(Poco::UInt64 account, Poco::UInt64 startNonce);
+		static std::array<std::vector<char>, Shabal256Sse4::HashSize> generateSse4(Poco::UInt64 account, Poco::UInt64 startNonce);
+		static std::array<std::vector<char>, Shabal256Avx2::HashSize> generateAvx2(Poco::UInt64 account, Poco::UInt64 startNonce);
 
 		static Poco::UInt64 calculateDeadlineSse2(std::vector<char>& gendata,
 			GensigData& generationSignature, Poco::UInt64 scoop, Poco::UInt64 baseTarget);
 
-		static std::array<Poco::UInt64, Shabal256_AVX::HashSize> calculateDeadlineAvx(
-			std::array<std::vector<char>, Shabal256_AVX::HashSize>& gendatas,
+		static std::array<Poco::UInt64, Shabal256Avx::HashSize> calculateDeadlineAvx(
+			std::array<std::vector<char>, Shabal256Avx::HashSize>& gendatas,
 			GensigData& generationSignature, Poco::UInt64 scoop, Poco::UInt64 baseTarget);
 
-		static std::array<Poco::UInt64, Shabal256_SSE4::HashSize> calculateDeadlineSse4(
-			std::array<std::vector<char>, Shabal256_SSE4::HashSize>& gendatas,
+		static std::array<Poco::UInt64, Shabal256Sse4::HashSize> calculateDeadlineSse4(
+			std::array<std::vector<char>, Shabal256Sse4::HashSize>& gendatas,
 			GensigData& generationSignature, Poco::UInt64 scoop, Poco::UInt64 baseTarget);
 
-		static std::array<Poco::UInt64, Shabal256_AVX2::HashSize> calculateDeadlineAvx2(
-			std::array<std::vector<char>, Shabal256_AVX2::HashSize>& gendatas,
+		static std::array<Poco::UInt64, Shabal256Avx2::HashSize> calculateDeadlineAvx2(
+			std::array<std::vector<char>, Shabal256Avx2::HashSize>& gendatas,
 			GensigData& generationSignature, Poco::UInt64 scoop, Poco::UInt64 baseTarget);
 
 	private:
@@ -69,13 +69,13 @@ namespace Burst
 			std::array<std::vector<char>, TShabal::HashSize> gendatas{};
 
 			for (auto& gendata : gendatas)
-				gendata.resize(16 + Settings::PlotSize);
+				gendata.resize(16 + Settings::plotSize);
 
 			auto xv = reinterpret_cast<const char*>(&account);
 
 			for (auto& gendata : gendatas)
 				for (auto j = 0u; j <= 7; ++j)
-					gendata[Settings::PlotSize + j] = xv[7 - j];
+					gendata[Settings::plotSize + j] = xv[7 - j];
 
 			auto nonce = startNonce;
 
@@ -84,7 +84,7 @@ namespace Burst
 				xv = reinterpret_cast<char*>(&nonce);
 				
 				for (auto j = 0u; j <= 7; ++j)
-					gendata[Settings::PlotSize + 8 + j] = xv[7 - j];
+					gendata[Settings::plotSize + 8 + j] = xv[7 - j];
 
 				++nonce;
 			}
@@ -92,19 +92,19 @@ namespace Burst
 			std::array<unsigned char*, TShabal::HashSize> gendataUpdatePtr{};
 			std::array<unsigned char*, TShabal::HashSize> gendataClosePtr{};
 
-			for (auto i = Settings::PlotSize; i > 0; i -= Settings::HashSize)
+			for (auto i = Settings::plotSize; i > 0; i -= Settings::hashSize)
 			{
 				TShabal x;
 
-				auto len = Settings::PlotSize + 16 - i;
+				auto len = Settings::plotSize + 16 - i;
 
-				if (len > Settings::ScoopPerPlot)
-					len = Settings::ScoopPerPlot;
+				if (len > Settings::scoopPerPlot)
+					len = Settings::scoopPerPlot;
 
 				for (size_t j = 0; j < TShabal::HashSize; ++j)
 				{
 					gendataUpdatePtr[j] = reinterpret_cast<unsigned char*>(gendatas[j].data() + i);
-					gendataClosePtr[j] = reinterpret_cast<unsigned char*>(gendatas[j].data() + i - Settings::HashSize);
+					gendataClosePtr[j] = reinterpret_cast<unsigned char*>(gendatas[j].data() + i - Settings::hashSize);
 				}
 
 				TOperations::update(x, gendataUpdatePtr, len);
@@ -119,13 +119,13 @@ namespace Burst
 				gendataClosePtr[i] = reinterpret_cast<unsigned char*>(&finals[i][0]);
 			}
 
-			TOperations::update(x, gendataUpdatePtr, 16 + Settings::PlotSize);
+			TOperations::update(x, gendataUpdatePtr, 16 + Settings::plotSize);
 			TOperations::close(x, gendataClosePtr);
 
 			// XOR with final
 			for (size_t i = 0; i < TShabal::HashSize; ++i)
-				for (size_t j = 0; j < Settings::PlotSize; j++)
-					gendatas[i][j] ^= finals[i][j % Settings::HashSize];
+				for (size_t j = 0; j < Settings::plotSize; j++)
+					gendatas[i][j] ^= finals[i][j % Settings::hashSize];
 
 			return std::move(gendatas);
 		}
@@ -144,13 +144,13 @@ namespace Burst
 			for (size_t i = 0; i < TShabal::HashSize; ++i)
 			{
 				gensigPtr[i] = reinterpret_cast<char*>(generationSignature.data());
-				updatePtr[i] = &container[i].at(scoop * Settings::ScoopSize);
+				updatePtr[i] = &container[i].at(scoop * Settings::scoopSize);
 				closePtr[i] = reinterpret_cast<char*>(targets[i].data());
 			}
 
 			TShabal x;
-			TOperations::update(x, gensigPtr, Settings::HashSize);
-			TOperations::update(x, updatePtr, Settings::ScoopSize);
+			TOperations::update(x, gensigPtr, Settings::hashSize);
+			TOperations::update(x, updatePtr, Settings::scoopSize);
 			TOperations::close(x, closePtr);
 			
 			std::array<Poco::UInt64, TShabal::HashSize> deadlines{};

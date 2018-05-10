@@ -27,17 +27,17 @@
 
 namespace Burst
 {
-	struct Gpu_Algorithm_Atomic
+	struct GpuAlgorithmAtomic
 	{
-		template <typename TGpu_Impl>
+		template <typename TGpuImpl>
 		static bool run(std::vector<ScoopData>& scoops,
 			const GensigData& gensig,
 			Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, void* stream,
 			std::pair<Poco::UInt64, Poco::UInt64>& bestDeadline)
 		{
-			using shell = Gpu_Shell<TGpu_Impl>;
+			using Shell = GpuShell<TGpuImpl>;
 
-			auto ok = true;
+			bool ok;
 			ScoopData* gpuScoops;
 			GensigData* gpuGensig;
 			Poco::UInt64* gpuDeadlines;
@@ -47,24 +47,24 @@ namespace Burst
 			Poco::UInt64 minDeadlineIndex;
 
 			// allocate the memory for the gpu
-			auto allocated = shell::allocateMemory(reinterpret_cast<void**>(&gpuScoops), MemoryType::Buffer, nonces);
-			allocated = allocated && shell::allocateMemory(reinterpret_cast<void**>(&gpuGensig), MemoryType::Gensig, 1);
-			allocated = allocated && shell::allocateMemory(reinterpret_cast<void**>(&gpuDeadlines), MemoryType::Bytes, nonces * sizeof(Poco::UInt64));
+			auto allocated = Shell::allocateMemory(reinterpret_cast<void**>(&gpuScoops), MemoryType::Buffer, nonces);
+			allocated = allocated && Shell::allocateMemory(reinterpret_cast<void**>(&gpuGensig), MemoryType::Gensig, 1);
+			allocated = allocated && Shell::allocateMemory(reinterpret_cast<void**>(&gpuDeadlines), MemoryType::Bytes, nonces * sizeof(Poco::UInt64));
 
 			ok = allocated;
 
 			// copy the memory from RAM to gpu
-			ok = ok && shell::copyMemory(scoops.data(), gpuScoops, MemoryType::Buffer, nonces, MemoryCopyDirection::ToDevice, stream);
-			ok = ok && shell::copyMemory(&gensig, gpuGensig, MemoryType::Gensig, 1, MemoryCopyDirection::ToDevice, stream);
+			ok = ok && Shell::copyMemory(scoops.data(), gpuScoops, MemoryType::Buffer, nonces, MemoryCopyDirection::ToDevice, stream);
+			ok = ok && Shell::copyMemory(&gensig, gpuGensig, MemoryType::Gensig, 1, MemoryCopyDirection::ToDevice, stream);
 
 			// calculate the deadlines on gpu
-			ok = ok && shell::verify(gpuGensig, gpuScoops, gpuDeadlines, nonces, nonceStart, baseTarget, stream);
+			ok = ok && Shell::verify(gpuGensig, gpuScoops, gpuDeadlines, nonces, nonceStart, baseTarget, stream);
 
 			// get the best deadline on gpu
-			ok = ok && shell::getMinDeadline(gpuDeadlines, nonces, minDeadline, minDeadlineIndex, stream);
+			ok = ok && Shell::getMinDeadline(gpuDeadlines, nonces, minDeadline, minDeadlineIndex, stream);
 
 			// fetch the last error if there is one
-			ok = !shell::getError(errorString);
+			ok = !Shell::getError(errorString);
 
 			if (ok)
 			{
@@ -78,9 +78,9 @@ namespace Burst
 			}
 
 			// give the memory on gpu free
-			ok = ok && shell::freeMemory(gpuScoops);
-			ok = ok && shell::freeMemory(gpuGensig);
-			ok = ok && shell::freeMemory(gpuDeadlines);
+			ok = ok && Shell::freeMemory(gpuScoops);
+			ok = ok && Shell::freeMemory(gpuGensig);
+			ok = ok && Shell::freeMemory(gpuDeadlines);
 			
 			return ok;
 		}

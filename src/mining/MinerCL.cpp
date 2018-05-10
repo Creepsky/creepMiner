@@ -153,16 +153,16 @@ bool Burst::ClPlatform::getPlatforms(std::vector<ClPlatform>& platforms, std::st
 	return true;
 }
 
-Burst::MinerCL::MinerCL()
+Burst::MinerCl::MinerCl()
 {
 	std::string error;
 	ClPlatform::getPlatforms(platforms_, error);
 }
 
 #ifdef USE_OPENCL
-Burst::MinerCL::~MinerCL()
+Burst::MinerCl::~MinerCl()
 {
-	for (auto command_queue : command_queues_)
+	for (auto command_queue : commandQueues_)
 	{
 		if (command_queue != nullptr)
 		{
@@ -171,13 +171,13 @@ Burst::MinerCL::~MinerCL()
 		}
 	}
 
-	if (kernel_calculate_deadlines_ != nullptr)
-		clReleaseKernel(kernel_calculate_deadlines_);
+	if (kernelCalculateDeadlines_ != nullptr)
+		clReleaseKernel(kernelCalculateDeadlines_);
 
 	if (program_ != nullptr)
 		clReleaseProgram(program_);
 
-	for (auto command_queue : command_queues_)
+	for (auto command_queue : commandQueues_)
 		if (command_queue != nullptr)
 			clReleaseCommandQueue(command_queue);
 
@@ -190,7 +190,7 @@ Burst::MinerCL::~MinerCL()
 Burst::MinerCL::~MinerCL() = default;
 #endif
 
-bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
+bool Burst::MinerCl::create(unsigned platformIdx, unsigned deviceIdx)
 {
 	deviceIdx_ = deviceIdx;
 	platformIdx_ = platformIdx;
@@ -304,7 +304,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 	// create kernel
 	{
 		cl_int ret;
-		kernel_calculate_deadlines_ = clCreateKernel(program_, "calculate_deadlines", &ret);
+		kernelCalculateDeadlines_ = clCreateKernel(program_, "calculate_deadlines", &ret);
 
 		if (ret != CL_SUCCESS)
 		{
@@ -312,7 +312,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 			return false;
 		}
 
-		kernel_best_deadline_ = clCreateKernel(program_, "reduce_best", &ret);
+		kernelBestDeadline_ = clCreateKernel(program_, "reduce_best", &ret);
 
 		if (ret != CL_SUCCESS)
 		{
@@ -323,15 +323,15 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 	// get work group size
 	{
-		auto ret = clGetKernelWorkGroupInfo(kernel_calculate_deadlines_, *getDeviceId(),
+		auto ret = clGetKernelWorkGroupInfo(kernelCalculateDeadlines_, *getDeviceId(),
 		                                    CL_KERNEL_WORK_GROUP_SIZE,
-		                                    sizeof(kernel_Calculate_WorkGroupSize_), &kernel_Calculate_WorkGroupSize_,
+		                                    sizeof(kernelCalculateWorkGroupSize_), &kernelCalculateWorkGroupSize_,
 		                                    nullptr);
 
 		if (ret == CL_SUCCESS)
-			ret = clGetKernelWorkGroupInfo(kernel_calculate_deadlines_, *getDeviceId(),
+			ret = clGetKernelWorkGroupInfo(kernelCalculateDeadlines_, *getDeviceId(),
 			                               CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
-			                               sizeof(kernel_Calculate_PrefferedWorkGroupSize_), &kernel_Calculate_PrefferedWorkGroupSize_,
+			                               sizeof(kernelCalculatePrefferedWorkGroupSize_), &kernelCalculatePrefferedWorkGroupSize_,
 			                               nullptr);
 
 		if (ret != CL_SUCCESS)
@@ -340,15 +340,15 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 			return false;
 		}
 
-		ret = clGetKernelWorkGroupInfo(kernel_best_deadline_, *getDeviceId(),
+		ret = clGetKernelWorkGroupInfo(kernelBestDeadline_, *getDeviceId(),
 		                               CL_KERNEL_WORK_GROUP_SIZE,
-		                               sizeof(kernel_FindBest_WorkGroupSize_), &kernel_FindBest_WorkGroupSize_,
+		                               sizeof(kernelFindBestWorkGroupSize_), &kernelFindBestWorkGroupSize_,
 		                               nullptr);
 
 		if (ret == CL_SUCCESS)
-			ret = clGetKernelWorkGroupInfo(kernel_best_deadline_, *getDeviceId(),
+			ret = clGetKernelWorkGroupInfo(kernelBestDeadline_, *getDeviceId(),
 			                               CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
-			                               sizeof(kernel_FindBest_PrefferedWorkGroupSize_), &kernel_FindBest_PrefferedWorkGroupSize_,
+			                               sizeof(kernelFindBestPrefferedWorkGroupSize_), &kernelFindBestPrefferedWorkGroupSize_,
 			                               nullptr);
 
 		if (ret != CL_SUCCESS)
@@ -360,7 +360,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 
 	// compute units
 	{
-		const auto ret = clGetDeviceInfo(*getDeviceId(), CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(size_t), &compute_units_, nullptr);
+		const auto ret = clGetDeviceInfo(*getDeviceId(), CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(size_t), &computeUnits_, nullptr);
 
 		if (ret != CL_SUCCESS)
 		{
@@ -377,7 +377,7 @@ bool Burst::MinerCL::create(unsigned platformIdx, unsigned deviceIdx)
 	return true;
 }
 
-cl_command_queue Burst::MinerCL::createCommandQueue()
+cl_command_queue Burst::MinerCl::createCommandQueue()
 {
 #ifdef USE_OPENCL
 	auto ret = 0;
@@ -389,44 +389,44 @@ cl_command_queue Burst::MinerCL::createCommandQueue()
 		return nullptr;
 	}
 
-	command_queues_.emplace_back(command_queue);
+	commandQueues_.emplace_back(command_queue);
 	return command_queue;
 #else
 	return nullptr;
 #endif
 }
 
-cl_context Burst::MinerCL::getContext() const
+cl_context Burst::MinerCl::getContext() const
 {
 	return context_;
 }
 
-cl_kernel Burst::MinerCL::getKernel_Calculate() const
+cl_kernel Burst::MinerCl::getKernel_Calculate() const
 {
-	return kernel_calculate_deadlines_;
+	return kernelCalculateDeadlines_;
 }
 
-cl_kernel Burst::MinerCL::getKernel_GetMin() const
+cl_kernel Burst::MinerCl::getKernel_GetMin() const
 {
-	return kernel_best_deadline_;
+	return kernelBestDeadline_;
 }
 
-size_t Burst::MinerCL::getKernelCalculateWorkGroupSize(const bool preferred) const
+size_t Burst::MinerCl::getKernelCalculateWorkGroupSize(const bool preferred) const
 {
-	return preferred ? kernel_Calculate_PrefferedWorkGroupSize_ : kernel_Calculate_WorkGroupSize_;
+	return preferred ? kernelCalculatePrefferedWorkGroupSize_ : kernelCalculateWorkGroupSize_;
 }
 
-size_t Burst::MinerCL::getKernelFindBestWorkGroupSize(const bool preferred) const
+size_t Burst::MinerCl::getKernelFindBestWorkGroupSize(const bool preferred) const
 {
-	return preferred ? kernel_FindBest_PrefferedWorkGroupSize_ : kernel_FindBest_WorkGroupSize_;
+	return preferred ? kernelFindBestPrefferedWorkGroupSize_ : kernelFindBestWorkGroupSize_;
 }
 
-size_t Burst::MinerCL::getComputeUnits() const
+size_t Burst::MinerCl::getComputeUnits() const
 {
-	return compute_units_;
+	return computeUnits_;
 }
 
-const Burst::ClPlatform* Burst::MinerCL::getPlatform() const
+const Burst::ClPlatform* Burst::MinerCl::getPlatform() const
 {
 	if (platformIdx_ >= platforms_.size())
 		return nullptr;
@@ -434,7 +434,7 @@ const Burst::ClPlatform* Burst::MinerCL::getPlatform() const
 	return &platforms_[platformIdx_];
 }
 
-const cl_device_id* Burst::MinerCL::getDeviceId() const
+const cl_device_id* Burst::MinerCl::getDeviceId() const
 {
 	const auto device = getDevice();
 
@@ -444,7 +444,7 @@ const cl_device_id* Burst::MinerCL::getDeviceId() const
 	return &device->id;
 }
 
-const Burst::ClDevice* Burst::MinerCL::getDevice() const
+const Burst::ClDevice* Burst::MinerCl::getDevice() const
 {
 	if (platformIdx_ >= platforms_.size())
 		return nullptr;
@@ -457,23 +457,23 @@ const Burst::ClDevice* Burst::MinerCL::getDevice() const
 	return &platform.devices[platformIdx_];
 }
 
-const std::vector<Burst::ClPlatform>& Burst::MinerCL::getPlatforms() const
+const std::vector<Burst::ClPlatform>& Burst::MinerCl::getPlatforms() const
 {
 	return platforms_;
 }
 
-bool Burst::MinerCL::initialized() const
+bool Burst::MinerCl::initialized() const
 {
 	return initialized_;
 }
 
-Burst::MinerCL& Burst::MinerCL::getCL()
+Burst::MinerCl& Burst::MinerCl::getCL()
 {
-	static MinerCL minerCL;
+	static MinerCl minerCL;
 	return minerCL;
 }
 
-cl_program Burst::MinerCL::getProgram() const
+cl_program Burst::MinerCl::getProgram() const
 {
 	return program_;
 }

@@ -27,9 +27,9 @@
 namespace Burst
 {
 	template <typename TAlgorithm>
-	struct Gpu_Algorithm_Shell
+	struct GpuAlgorithmShell
 	{
-		template <typename TGpu_Shell, typename ...TArgs>
+		template <typename TGpuShell, typename ...TArgs>
 		static std::pair<Poco::UInt64, Poco::UInt64> run(TArgs&&... args)
 		{
 			return TAlgorithm::run(std::forward<TArgs&&>(args)...);

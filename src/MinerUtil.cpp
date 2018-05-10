@@ -178,7 +178,7 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 			Poco::File file{ filePath };
 		
 			// file is incomplete
-			if (nonceCount * Settings::PlotSize != file.getSize())
+			if (nonceCount * Settings::plotSize != file.getSize())
 				return PlotCheckResult::Incomplete;
 
 			std::ifstream alternativeFileData{ filePath + ":stream" };
@@ -525,8 +525,8 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	json.set("startTime", std::to_string( std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() ));
 	json.set("blocksMined", std::to_string(data.getBlocksMined()));
 	json.set("blocksWon", std::to_string(data.getBlocksWon()));
-	json.set("onlineVersion", Settings::Project.getOnlineVersion());
-	json.set("runningVersion", Settings::Project.getVersion());
+	json.set("onlineVersion", Settings::project.getOnlineVersion());
+	json.set("runningVersion", Settings::project.getVersion());
 	
 	if (bestOverall != nullptr)
 		json.set("bestOverall", createJsonDeadline(*bestOverall));
@@ -1104,7 +1104,6 @@ Poco::Path Burst::getMinerHomeDir()
 {
 	Poco::Path minerRootPath(Poco::Path::home());
 	minerRootPath.pushDirectory(".creepMiner");
-	minerRootPath.pushDirectory(Settings::Project.getVersion());
 	return minerRootPath.parseDirectory(minerRootPath.toString());
 }
 

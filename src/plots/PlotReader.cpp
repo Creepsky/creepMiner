@@ -157,7 +157,7 @@ void Burst::PlotReader::runTask()
 					if (maxBufferSize == 0)
 						chunkBytes = plotFile.getStaggerScoopBytes();
 
-					const auto noncesPerChunk = std::min(chunkBytes / Settings::ScoopSize, plotFile.getStaggerSize());
+					const auto noncesPerChunk = std::min(chunkBytes / Settings::scoopSize, plotFile.getStaggerSize());
 
 					auto nonce = 0ull;
 
@@ -173,7 +173,7 @@ void Burst::PlotReader::runTask()
 							readNonces = plotFile.getStaggerSize() - startNonce % plotFile.getStaggerSize();
 
 						auto memoryAcquired = false;
-						auto memoryToAcquire = std::min(readNonces * Settings::ScoopSize, chunkBytes);
+						auto memoryToAcquire = std::min(readNonces * Settings::scoopSize, chunkBytes);
 
 						START_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
 						while (!isCancelled() && !memoryAcquired)
@@ -198,7 +198,7 @@ void Burst::PlotReader::runTask()
 						if (memoryAcquired && currentBlock)
 						{
 							START_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
-							const auto chunkOffset = startNonce % plotFile.getStaggerSize() * Settings::ScoopSize;
+							const auto chunkOffset = startNonce % plotFile.getStaggerSize() * Settings::scoopSize;
 							const auto staggerBlockOffset = staggerBegin * plotFile.getStaggerBytes();
 							const auto staggerScoopOffset = plotReadNotification->scoopNum * plotFile.getStaggerScoopBytes();
 
@@ -244,7 +244,7 @@ void Burst::PlotReader::runTask()
 							verificationQueue_->enqueueNotification(verification);
 
 							if (MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
-								progress_->add(readNonces * Settings::PlotSize, plotReadNotification->blockheight);
+								progress_->add(readNonces * Settings::plotSize, plotReadNotification->blockheight);
 
 							// check, if the incoming plot-read-notification is for the current round
 							currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
@@ -283,7 +283,7 @@ void Burst::PlotReader::runTask()
 						);
 					}
 
-					const auto nonceBytes = static_cast<double>(plotFile.getNonces() * Settings::ScoopSize);
+					const auto nonceBytes = static_cast<double>(plotFile.getNonces() * Settings::scoopSize);
 					const auto bytesPerSeconds = nonceBytes / fileReadDiffSeconds;
 
 					log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(PlotDone), "%s (%s) read in %ss (~%s/s)",
@@ -323,8 +323,8 @@ void Burst::PlotReader::runTask()
 
 			if (plotReadNotification->type == PlotDir::Type::Sequential && totalSizeBytes > 0 && currentBlock)
 			{
-				const auto sumNonces = totalSizeBytes / Settings::PlotSize;
-				const auto sumNoncesBytes = static_cast<float>(sumNonces * Settings::ScoopSize);
+				const auto sumNonces = totalSizeBytes / Settings::plotSize;
+				const auto sumNoncesBytes = static_cast<float>(sumNonces * Settings::scoopSize);
 				const auto bytesPerSecond = sumNoncesBytes / dirReadDiffSeconds;
 
 				std::stringstream sstr;

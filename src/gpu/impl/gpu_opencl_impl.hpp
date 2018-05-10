@@ -30,7 +30,7 @@ namespace Burst
 {
 	struct CalculatedDeadline;
 
-	struct Gpu_Opencl_Impl
+	struct GpuOpenclImpl
 	{
 		static bool initStream(void** stream);
 		static bool allocateMemory(void** memory, MemoryType type, size_t size);

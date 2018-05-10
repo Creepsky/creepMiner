@@ -50,7 +50,7 @@ Burst::MinerServer::MinerServer(Miner& miner)
 	auto ip = MinerConfig::getConfig().getServerUrl().getCanonical();
 	auto port = std::to_string(MinerConfig::getConfig().getServerUrl().getPort());
 
-	variables_.variables.emplace(std::make_pair("title", []() { return Settings::Project.nameAndVersion; }));
+	variables_.variables.emplace(std::make_pair("title", []() { return Settings::project.nameAndVersion; }));
 	variables_.variables.emplace(std::make_pair("ip", [ip]() { return ip; }));
 	variables_.variables.emplace(std::make_pair("port", [port]() { return port; }));
 	variables_.variables.emplace(std::make_pair("nullDeadline", []() { return deadlineFormat(0); }));
@@ -91,8 +91,8 @@ void Burst::MinerServer::run(uint16_t port)
 
 	params->setMaxQueued(MinerConfig::getConfig().getMaxConnectionsQueued());
 	params->setMaxThreads(MinerConfig::getConfig().getMaxConnectionsActive());
-	params->setServerName(Settings::Project.name);
-	params->setSoftwareVersion(Settings::Project.nameAndVersion);
+	params->setServerName(Settings::project.name);
+	params->setSoftwareVersion(Settings::project.nameAndVersion);
 
 	threadPool_.addCapacity(MinerConfig::getConfig().getMaxConnectionsActive());
 

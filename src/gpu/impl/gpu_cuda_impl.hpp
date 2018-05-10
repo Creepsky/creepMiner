@@ -7,7 +7,7 @@
 
 namespace Burst
 {
-	struct Gpu_Cuda_Impl
+	struct GpuCudaImpl
 	{
 		static bool initStream(void** stream);
 		static bool allocateMemory(void** memory, MemoryType type, size_t size);

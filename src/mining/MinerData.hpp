@@ -26,7 +26,6 @@
 #include <Poco/Timespan.h>
 #include <Poco/JSON/Object.h>
 #include <mutex>
-#include <deque>
 #include <Poco/ActiveDispatcher.h>
 #include <Poco/ActiveMethod.h>
 #include <unordered_map>

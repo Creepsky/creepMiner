@@ -707,19 +707,19 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 				deadlineValue = Poco::NumberParser::parseUnsigned64(param.second) / miner.getBaseTarget();
 		}
 
-		if (request.has(X_Capacity))
-			capacity = Poco::NumberParser::parseUnsigned64(request.get(X_Capacity));
+		if (request.has(xCapacity))
+			capacity = Poco::NumberParser::parseUnsigned64(request.get(xCapacity));
 
-		if (request.has(X_Plotfile))
+		if (request.has(xPlotfile))
 		{
-			const auto& plotfileEncoded = request.get(X_Plotfile);
+			const auto& plotfileEncoded = request.get(xPlotfile);
 			Poco::URI::decode(plotfileEncoded, plotfile);
 		}
 		
-		if (request.has(X_Deadline))
-			deadlineValue = Poco::NumberParser::parseUnsigned64(request.get(X_Deadline));
+		if (request.has(xDeadline))
+			deadlineValue = Poco::NumberParser::parseUnsigned64(request.get(xDeadline));
 
-		const auto workerName = request.get(X_Worker, "");
+		const auto workerName = request.get(xWorker, "");
 
 		auto account = miner.getAccount(accountId);
 
@@ -738,8 +738,8 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			blockheight == miner.getBlockheight())
 			deadlineValue = PlotGenerator::generateAndCheck(accountId, nonce, miner);
 
-		if (request.has(X_Miner) && MinerConfig::getConfig().isForwardingMinerName())
-			minerName = request.get(X_Miner);
+		if (request.has(xMiner) && MinerConfig::getConfig().isForwardingMinerName())
+			minerName = request.get(xMiner);
 
 		auto deadline = std::make_shared<Deadline>(nonce, deadlineValue, account, blockheight, plotfile);
 		deadline->setMiner(minerName);
@@ -781,7 +781,7 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 			log_information(MinerLogger::server, deadline->toActionString("forwarding nonce - incompatible client"));
 
 			// sum up the capacity
-			request.set(X_Capacity, std::to_string(PlotSizes::getTotal(PlotSizes::Type::Combined)));
+			request.set(xCapacity, std::to_string(PlotSizes::getTotal(PlotSizes::Type::Combined)));
 
 			// forward the request to the pool
 			forward(request, response, HostType::Pool);
@@ -1036,16 +1036,16 @@ Burst::Version Burst::RequestHandler::fetchOnlineVersion()
 				return onlineVersion;
 			}
 			else
-				return Settings::Project.getOnlineVersion();
+				return Settings::project.getOnlineVersion();
 		}
 		else
 		{
-			return Settings::Project.getOnlineVersion(); // if no response, just keep the latest Version we have fetched.
+			return Settings::project.getOnlineVersion(); // if no response, just keep the latest Version we have fetched.
 		}
 	}
 	// just skip if version could not be determined
 	catch (...)
 	{
-		return Settings::Project.getOnlineVersion(); // if it fails somehow, also just keep the latest Version we have fetched.
+		return Settings::project.getOnlineVersion(); // if it fails somehow, also just keep the latest Version we have fetched.
 	}
 }

@@ -1286,7 +1286,7 @@ Poco::JSON::Object::Ptr Burst::MinerConfig::readOutput(Poco::JSON::Object::Ptr j
 	if (json.isNull())
 		return nullptr;
 
-	for (auto& output : Output_Helper::Output_Names)
+	for (auto& output : OutputHelper::outputNames)
 	{
 		const auto id = output.first;
 		const auto name = output.second;
@@ -1582,7 +1582,7 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		Poco::JSON::Object outputs;
 
 		for (auto& output : MinerLogger::getOutput())
-			outputs.set(Output_Helper::output_to_string(output.first), output.second);
+			outputs.set(OutputHelper::outputToString(output.first), output.second);
 
 		logging.set("output", outputs);
 

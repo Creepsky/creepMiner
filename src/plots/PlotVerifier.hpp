@@ -138,7 +138,7 @@ namespace Burst
 				TAKE_PROBE("PlotVerifier.FreeMemory");
 
 				if (progress_ != nullptr)
-					progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::PlotSize,
+					progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::plotSize,
 						verifyNotification->block);
 			}
 			catch (Poco::Exception& exc)
@@ -161,12 +161,12 @@ namespace Burst
 	}
 
 	template <typename TShabal>
-	struct PlotVerifierOperations_1
+	struct PlotVerifierOperations1
 	{
 		template <typename TContainer>
 		static void updateScoops(TShabal& shabal, const TContainer& scoopPtr)
 		{
-			shabal.update(scoopPtr[0], Burst::Settings::ScoopSize);
+			shabal.update(scoopPtr[0], Burst::Settings::scoopSize);
 		}
 
 		template <typename TContainer>
@@ -177,12 +177,12 @@ namespace Burst
 	};
 
 	template <typename TShabal>
-	struct PlotVerifierOperations_4
+	struct PlotVerifierOperations4
 	{
 		template <typename TContainer>
 		static void updateScoops(TShabal& shabal, const TContainer& scoopPtr)
 		{
-			shabal.update(scoopPtr[0], scoopPtr[1], scoopPtr[2], scoopPtr[3], Burst::Settings::ScoopSize);
+			shabal.update(scoopPtr[0], scoopPtr[1], scoopPtr[2], scoopPtr[3], Burst::Settings::scoopSize);
 		}
 
 		template <typename TContainer>
@@ -193,13 +193,13 @@ namespace Burst
 	};
 
 	template <typename TShabal>
-	struct PlotVerifierOperations_8
+	struct PlotVerifierOperations8
 	{
 		template <typename TContainer>
 		static void updateScoops(TShabal& shabal, const TContainer& scoopPtr)
 		{
 			shabal.update(scoopPtr[0], scoopPtr[1], scoopPtr[2], scoopPtr[3],
-				scoopPtr[4], scoopPtr[5], scoopPtr[6], scoopPtr[7], Burst::Settings::ScoopSize);
+				scoopPtr[4], scoopPtr[5], scoopPtr[6], scoopPtr[7], Burst::Settings::scoopSize);
 		}
 
 		template <typename TContainer>
@@ -211,7 +211,7 @@ namespace Burst
 	};
 
 	template <typename TShabal, typename TShabalOperations>
-	struct PlotVerifierAlgorithm_cpu
+	struct PlotVerifierAlgorithmCpu
 	{
 		static bool initStream(void** stream)
 		{
@@ -226,7 +226,7 @@ namespace Burst
 			TShabal shabal;
 
 			// hash the gensig according to the cpu instruction level
-			shabal.update(gensig.data(), Settings::HashSize);
+			shabal.update(gensig.data(), Settings::hashSize);
 
 			for (size_t i = 0;
 				i < buffer.size() && !stop();
@@ -316,25 +316,25 @@ namespace Burst
 		}
 	};
 
-	using PlotVerifierOperation_sse2 = PlotVerifierOperations_1<Shabal256_SSE2>;
-	using PlotVerifierOperation_sse4 = PlotVerifierOperations_4<Shabal256_SSE4>;
-	using PlotVerifierOperation_avx = PlotVerifierOperations_4<Shabal256_AVX>;
-	using PlotVerifierOperation_avx2 = PlotVerifierOperations_8<Shabal256_AVX2>;
+	using PlotVerifierOperationSse2 = PlotVerifierOperations1<Shabal256Sse2>;
+	using PlotVerifierOperationSse4 = PlotVerifierOperations4<Shabal256Sse4>;
+	using PlotVerifierOperationAvx = PlotVerifierOperations4<Shabal256Avx>;
+	using PlotVerifierOperationAvx2 = PlotVerifierOperations8<Shabal256Avx2>;
 
-	using PlotVerifierAlgorithm_sse2 = PlotVerifierAlgorithm_cpu<Shabal256_SSE2, PlotVerifierOperation_sse2>;
-	using PlotVerifierAlgorithm_sse4 = PlotVerifierAlgorithm_cpu<Shabal256_SSE4, PlotVerifierOperation_sse4>;
-	using PlotVerifierAlgorithm_avx = PlotVerifierAlgorithm_cpu<Shabal256_AVX, PlotVerifierOperation_avx>;
-	using PlotVerifierAlgorithm_avx2 = PlotVerifierAlgorithm_cpu<Shabal256_AVX2, PlotVerifierOperation_avx2>;
+	using PlotVerifierAlgorithmSse2 = PlotVerifierAlgorithmCpu<Shabal256Sse2, PlotVerifierOperationSse2>;
+	using PlotVerifierAlgorithmSse4 = PlotVerifierAlgorithmCpu<Shabal256Sse4, PlotVerifierOperationSse4>;
+	using PlotVerifierAlgorithmAvx = PlotVerifierAlgorithmCpu<Shabal256Avx, PlotVerifierOperationAvx>;
+	using PlotVerifierAlgorithmAvx2 = PlotVerifierAlgorithmCpu<Shabal256Avx2, PlotVerifierOperationAvx2>;
 
-	using PlotVerifier_sse2 = PlotVerifier<PlotVerifierAlgorithm_sse2>;
-	using PlotVerifier_sse4 = PlotVerifier<PlotVerifierAlgorithm_sse4>;
-	using PlotVerifier_avx = PlotVerifier<PlotVerifierAlgorithm_avx>;
-	using PlotVerifier_avx2 = PlotVerifier<PlotVerifierAlgorithm_avx2>;
+	using PlotVerifierSse2 = PlotVerifier<PlotVerifierAlgorithmSse2>;
+	using PlotVerifierSse4 = PlotVerifier<PlotVerifierAlgorithmSse4>;
+	using PlotVerifierAvx = PlotVerifier<PlotVerifierAlgorithmAvx>;
+	using PlotVerifierAvx2 = PlotVerifier<PlotVerifierAlgorithmAvx2>;
 
-	using PlotVerifierAlgorithm_cuda = PlotVerifierAlgorithm_gpu<GpuCuda, Gpu_Algorithm_Atomic>;
-	using PlotVerifierAlgorithm_opencl = PlotVerifierAlgorithm_gpu<GpuOpenCL, Gpu_Algorithm_Atomic>;
+	using PlotVerifierAlgorithmCuda = PlotVerifierAlgorithm_gpu<GpuCuda, GpuAlgorithmAtomic>;
+	using PlotVerifierAlgorithmOpencl = PlotVerifierAlgorithm_gpu<GpuOpenCl, GpuAlgorithmAtomic>;
 
-	using PlotVerifier_cuda = PlotVerifier<PlotVerifierAlgorithm_cuda>;
-	using PlotVerifier_opencl = PlotVerifier<PlotVerifierAlgorithm_opencl>;
+	using PlotVerifierCuda = PlotVerifier<PlotVerifierAlgorithmCuda>;
+	using PlotVerifierOpencl = PlotVerifier<PlotVerifierAlgorithmOpencl>;
 }
 

@@ -113,13 +113,13 @@ int main(const int argc, const char* argv[])
 		sstream << ' ' << (flag ? '+' : '-') << text;
 	};
 
-	checkAndPrint(Cuda, "CUDA");
-	checkAndPrint(OpenCl, "OpenCL");
-	checkAndPrint(Sse4, "SSE4");
-	checkAndPrint(Avx, "AVX");
-	checkAndPrint(Avx2, "AVX2");
+	checkAndPrint(cuda, "CUDA");
+	checkAndPrint(openCl, "OpenCL");
+	checkAndPrint(sse4, "SSE4");
+	checkAndPrint(avx, "AVX");
+	checkAndPrint(avx2, "AVX2");
 
-	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
+	log_information(general, Burst::Settings::project.nameAndVersionVerbose);
 	log_information(general, "%s mode%s", mode, sstream.str());
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
@@ -144,7 +144,7 @@ int main(const int argc, const char* argv[])
 
 		// start versionChecker timer thread , checking online version every 30 minutes
 		Timer checkVersionTimer(100, 1800000);
-		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(Burst::Settings::Project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
+		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
 
 		auto running = true;
 		
@@ -237,13 +237,13 @@ int main(const int argc, const char* argv[])
 				}
 
 				if (config.getProcessorType() == "OPENCL" &&
-					!Burst::MinerCL::getCL().initialized())
-					Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
+					!Burst::MinerCl::getCL().initialized())
+					Burst::MinerCl::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
 						config.getGpuDevice());
 				else if (config.getProcessorType() == "CUDA")
 				{
-					Burst::Gpu_Cuda_Impl::listDevices();
-					Burst::Gpu_Cuda_Impl::useDevice(config.getGpuDevice());
+					Burst::GpuCudaImpl::listDevices();
+					Burst::GpuCudaImpl::useDevice(config.getGpuDevice());
 				}
 
 				Burst::Miner miner;
@@ -329,7 +329,7 @@ Arguments::Arguments()
 bool Arguments::process(const int argc, const char* argv[])
 {
 	Poco::Util::OptionProcessor optionProcessor(options_);
-	optionProcessor.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+	optionProcessor.setUnixStyle(std::string(Burst::Settings::osFamily) != "Windows");
 
 	try
 	{
@@ -366,7 +366,7 @@ bool Arguments::process(const int argc, const char* argv[])
 void Arguments::displayHelp(const std::string& name, const std::string& value)
 {
 	Poco::Util::HelpFormatter helpFormatter(options_);
-	helpFormatter.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+	helpFormatter.setUnixStyle(std::string(Burst::Settings::osFamily) != "Windows");
 	helpFormatter.setCommand("creepMiner");
 	helpFormatter.setUsage("<options>");
 	helpFormatter.setHeader("Burstcoin Proof-of-Capacity CPU and GPU miner.");

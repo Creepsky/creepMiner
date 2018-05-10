@@ -807,29 +807,29 @@ void Burst::Miner::createPlotVerifiers()
 
 	if (processorType == "CUDA")
 	{
-		if (Settings::Cuda)
-			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_cuda>);
+		if (Settings::cuda)
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifierCuda>);
 		else
 			forceCpu = true;
 	}
 	else if (processorType == "OPENCL")
 	{
-		if (Settings::OpenCl)
-			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_opencl>);
+		if (Settings::openCl)
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifierOpencl>);
 		else
 			forceCpu = true;
 	}
 
 	if (processorType == "CPU" || forceCpu)
 	{
-		if (cpuInstructionSet == "SSE4" && Settings::Sse4)
-			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_sse4>);
-		else if (cpuInstructionSet == "AVX" && Settings::Avx)
-			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_avx>);
-		else if (cpuInstructionSet == "AVX2" && Settings::Avx2)
-			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_avx2>);
+		if (cpuInstructionSet == "SSE4" && Settings::sse4)
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifierSse4>);
+		else if (cpuInstructionSet == "AVX" && Settings::avx)
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifierAvx>);
+		else if (cpuInstructionSet == "AVX2" && Settings::avx2)
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifierAvx2>);
 		else if (cpuInstructionSet == "SSE2")
-			createWorker(MinerHelper::createWorkerDefault<PlotVerifier_sse2>);
+			createWorker(MinerHelper::createWorkerDefault<PlotVerifierSse2>);
 		else
 			fallback = true;
 	}
@@ -844,7 +844,7 @@ void Burst::Miner::createPlotVerifiers()
 			"As a fallback solution your CPU with the instruction set %s is used.", processorType, MinerConfig::getConfig().
 			getCpuInstructionSet(), cpuInstructionSet);
 		
-		createWorker(MinerHelper::createWorkerDefault<PlotVerifier_sse2>);
+		createWorker(MinerHelper::createWorkerDefault<PlotVerifierSse2>);
 	}
 }
 
