@@ -426,11 +426,11 @@ void Burst::MinerLogger::setup()
 	{
 		fileChannel_ = new Poco::FileChannel;
 
-		// rotate every 1 MB
-		fileChannel_->setProperty("rotation", "5 M");
+		// rotate every 10 MB
+		fileChannel_->setProperty("rotation", "10 M");
 		// purge old logs
 		//fileChannel_->setProperty("purgeAge", "1 days");
-		fileChannel_->setProperty("purgeCount", "5");
+		fileChannel_->setProperty("purgeCount", "10");
 		// use local times
 		fileChannel_->setProperty("times", "local");
 		// archive old logfiles
