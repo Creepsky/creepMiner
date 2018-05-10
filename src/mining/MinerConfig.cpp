@@ -859,9 +859,12 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 						log_warning(MinerLogger::config, "WARNING! You entered a passphrase, what means you mine solo!\n"
 							"This means, your passphrase is sent in plain text to 'mining.urls.submission'!\n"
 							"If you don't want to mine solo, clear 'mining.passphrase' in your configuration file.");
-
-					miningObj->set("passphrase", passphrase_.toString());
 				}
+
+				if (passphrase_.empty())
+					miningObj->set("passphrase", "");
+				else
+					miningObj->set("passphrase", passphrase_.toString());
 			}
 			catch (Poco::Exception& exc)
 			{
