@@ -556,62 +556,65 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 			const auto urlProxy = getOrAdd(urlsObj, "proxy", std::string{});
 
-			try
+			if (!urlProxy.empty())
 			{
-				std::smatch match;
-
-				const auto extractEncrypted = [](const std::string& property)
+				try
 				{
-					auto encrypted = Passphrase::fromString(property);
+					std::smatch match;
 
-					if (encrypted.isPlainText())
+					const auto extractEncrypted = [](const std::string& property)
 					{
-						if (encrypted.algorithm.empty())
-							encrypted.algorithm = "aes-256-cbc";
+						auto encrypted = Passphrase::fromString(property);
 
-						encrypted.encrypt();
+						if (encrypted.isPlainText())
+						{
+							if (encrypted.algorithm.empty())
+								encrypted.algorithm = "aes-256-cbc";
+
+							encrypted.encrypt();
+						}
+
+						return encrypted;
+					};
+
+					// user:password@host:port
+					if (std::regex_match(urlProxy, match, std::regex{"^(.+)(&|:)(.+)@(.+):(.+)$"}))
+					{
+						proxyUser_ = extractEncrypted(match[1].str());
+						proxyPassword_ = extractEncrypted(match[3].str());
+						proxyIp_ = match[4].str();
+						proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[5].str()));
 					}
-
-					return encrypted;
-				};
-
-				// user:password@host:port
-				if (std::regex_match(urlProxy, match, std::regex{"^(.+)(&|:)(.+)@(.+):(.+)$"}))
-				{
-					proxyUser_ = extractEncrypted(match[1].str());
-					proxyPassword_ = extractEncrypted(match[3].str());
-					proxyIp_ = match[4].str();
-					proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[5].str()));
+					// user@host:port
+					else if (std::regex_match(urlProxy, match, std::regex{"^(.+)@(.+):(.+)$"}))
+					{
+						proxyUser_ = extractEncrypted(match[1].str());
+						proxyIp_ = match[2].str();
+						proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[3].str()));
+					}
+					// host:port
+					else if (std::regex_match(urlProxy, match, std::regex{"^(.+):(.+)$"}))
+					{
+						proxyIp_ = match[1].str();
+						proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[2].str()));
+					}
+					// host
+					else if (std::regex_match(urlProxy, match, std::regex{"^(.+)$"}))
+					{
+						proxyIp_ = match[1].str();
+						proxyPort_ = 8080;
+						log_warning(MinerLogger::config, "Your proxy URL has no port definition, 8080 is assumed.\n"
+							"Please use the format [user:password@]host:port");
+					}
+					else
+					{
+						log_error(MinerLogger::config, "Invalid proxy URL format, please use [user:password@]host:port");
+					}
 				}
-				// user@host:port
-				else if (std::regex_match(urlProxy, match, std::regex{"^(.+)@(.+):(.+)$"}))
+				catch (const Poco::Exception& e)
 				{
-					proxyUser_ = extractEncrypted(match[1].str());
-					proxyIp_ = match[2].str();
-					proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[3].str()));
+					log_error(MinerLogger::config, "Could not parse the proxy URL: %s", e.displayText());
 				}
-				// host:port
-				else if (std::regex_match(urlProxy, match, std::regex{"^(.+):(.+)$"}))
-				{
-					proxyIp_ = match[1].str();
-					proxyPort_ = static_cast<Poco::UInt16>(Poco::NumberParser::parse(match[2].str()));
-				}
-				// host
-				else if (std::regex_match(urlProxy, match, std::regex{"^(.+)$"}))
-				{
-					proxyIp_ = match[1].str();
-					proxyPort_ = 8080;
-					log_warning(MinerLogger::config, "Your proxy URL has no port definition, 8080 is assumed.\n"
-						"Please use the format [user:password@]host:port");
-				}
-				else
-				{
-					log_error(MinerLogger::config, "Invalid proxy URL format, please use [user:password@]host:port");
-				}
-			}
-			catch (const Poco::Exception& e)
-			{
-				log_error(MinerLogger::config, "Could not parse the proxy URL: %s", e.displayText());
 			}
 
 			urlsObj->set("proxy", getProxyFullUrl());
@@ -1111,6 +1114,9 @@ Burst::Url Burst::MinerConfig::getWalletUrl() const
 std::string Burst::MinerConfig::getProxyFullUrl() const
 {
 	Poco::Mutex::ScopedLock lock{mutex_};
+
+	if (proxyUser_.empty())
+		return "";
 
 	std::stringstream sstream;
 
