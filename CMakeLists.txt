@@ -116,6 +116,7 @@ if (UNIX OR APPLE)
 elseif (MSVC)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 	set_source_files_properties(bin/icon.ico src/resources.rc PROPERTIES LANGUAGE RC)
+	add_definitions(/MP)
 endif ()
 
 ##################################################################
