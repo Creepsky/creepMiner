@@ -155,7 +155,7 @@ int main(const int argc, const char* argv[])
 			// load the config
 			auto& config = Burst::MinerConfig::getConfig();
 			auto configLoaded = config.readConfigFile(arguments.confPath);
-
+			
 			// the config could not be loaded, look for a config in the creepMiner home dir
 			if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 			{
@@ -163,9 +163,6 @@ int main(const int argc, const char* argv[])
 
 				// create the home directory
 				const auto minerHomePath = Burst::getMinerHomeDir();
-
-				File minerHomeDir{minerHomePath};
-				minerHomeDir.createDirectories();
 
 				auto homeConfigPath(minerHomePath);
 				homeConfigPath.append("mining.conf");
@@ -177,24 +174,41 @@ int main(const int argc, const char* argv[])
 				// if there is also no config in the home dir, create one in the home dir
 				if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 				{
-					// create the log dir
-					auto homeLogPath(minerHomePath);
-					homeLogPath.pushDirectory("logs");
-					homeLogPath.makeDirectory();
+					const auto createConfig = [&config](const auto& rootPath)
+					{
+						Path logDir{rootPath};
 
-					auto homeDatabasePath(minerHomePath);
-					homeDatabasePath.setFileName("data.db");
+						Path configPath{rootPath};
+						configPath.append("mining.conf");
 
-					// and save it in the config
-					config.setLogDir(homeLogPath.toString());
-					config.useLogfile(true);
-					config.setDatabasePath(homeDatabasePath.toString());
+						Path databasePath{rootPath};
+						databasePath.setFileName("data.db");
 
-					if (!config.save(homeConfig))
-						log_error(Burst::MinerLogger::general, "Could not save current settings!");
+						try
+						{
+							logDir.makeDirectory();
+							
+							// save settings to the config
+							config.setLogDir(logDir.toString());
+							config.useLogfile(true);
+							config.setDatabasePath(databasePath.toString());
 
-					// load the freshly created config in the home dir
-					configLoaded = config.readConfigFile(homeConfig);
+							if (!config.save(configPath.toString()))
+								log_error(Burst::MinerLogger::general, "Could not save current settings!");
+
+						}
+						catch (const Exception& e)
+						{
+							log_warning(Burst::MinerLogger::config, "Could not create the config at %s: %s", rootPath, e.displayText());
+						}
+
+						return config.readConfigFile(configPath.toString());
+					};
+
+					configLoaded = createConfig(Path::current());
+
+					if (configLoaded != Burst::ReadConfigFileResult::Ok)
+						configLoaded = createConfig(minerHomePath);
 				}
 			}
 
