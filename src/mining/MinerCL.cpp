@@ -187,7 +187,7 @@ Burst::MinerCl::~MinerCl()
 	initialized_ = false;
 }
 #else
-Burst::MinerCL::~MinerCL() = default;
+Burst::MinerCl::~MinerCl() = default;
 #endif
 
 bool Burst::MinerCl::create(unsigned platformIdx, unsigned deviceIdx)

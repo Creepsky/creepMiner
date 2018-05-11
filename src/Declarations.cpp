@@ -27,30 +27,30 @@
 #include "logging/MinerLogger.hpp"
 #include "webserver/RequestHandler.hpp"
 
-std::string Burst::Settings::cpuInstructionSet = "";
+std::string Burst::Settings::cpuInstructionSet;
 Burst::ProjectData Burst::Settings::project("creepMiner",
 	Burst::Version(VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, 0));
 
 #ifdef USE_SSE4
 const bool Burst::Settings::sse4 = true;
 #else
-const bool Burst::Settings::Sse4 = false;
+const bool Burst::Settings::sse4 = false;
 #endif
 
 #ifdef USE_AVX
 const bool Burst::Settings::avx = true;
 #else
-const bool Burst::Settings::Avx = false;
+const bool Burst::Settings::avx = false;
 #endif
 
 #ifdef USE_AVX2
 const bool Burst::Settings::avx2 = true;
 #else
-const bool Burst::Settings::Avx2 = false;
+const bool Burst::Settings::avx2 = false;
 #endif
 
 #ifdef USE_CUDA
-const bool Burst::Settings::Cuda = true;
+const bool Burst::Settings::cuda = true;
 #else
 const bool Burst::Settings::cuda = false;
 #endif
@@ -58,7 +58,7 @@ const bool Burst::Settings::cuda = false;
 #ifdef USE_OPENCL
 const bool Burst::Settings::openCl = true;
 #else
-const bool Burst::Settings::OpenCl = false;
+const bool Burst::Settings::openCl = false;
 #endif
 
 void Burst::Version::updateLiterals()
