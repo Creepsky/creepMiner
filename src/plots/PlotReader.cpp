@@ -64,7 +64,8 @@ void* Burst::GlobalBufferSize::reserve()
 
 	try
 	{
-		return memoryPool_->get();
+		const auto ret = memoryPool_->get();
+		return ret;
 	}
 	catch (...)
 	{
@@ -77,7 +78,6 @@ void Burst::GlobalBufferSize::free(void* memory)
 	// unlimited memory
 	//if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
 	//	return true;
-
 	memoryPool_->release(memory);
 }
 
@@ -103,7 +103,7 @@ Burst::PlotReader::PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress>
 
 void Burst::PlotReader::runTask()
 {
-	char* memoryMirror = nullptr;
+	ScoopData* memoryMirror = nullptr;
 
 	while (!isCancelled())
 	{
@@ -189,19 +189,19 @@ void Burst::PlotReader::runTask()
 						auto memoryAcquired = false;
 						auto memoryAcquiredMirror = false;
 						const auto memoryToAcquire = std::min(readNonces * Settings::scoopSize, chunkBytes);
-						void* memory = nullptr;
+						ScoopData* memory = nullptr;
 
 						START_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
 						while (!isCancelled() && !memoryAcquired)
 						{
-							memory = globalBufferSize.reserve();
+							memory = reinterpret_cast<ScoopData*>(globalBufferSize.reserve());
 							memoryAcquired = memory != nullptr;
 
 							if (poc2 && !plotFile.isPoC(2))
 							{
 								while (!isCancelled() && !memoryAcquiredMirror)
 								{
-									memoryMirror = reinterpret_cast<char*>(globalBufferSize.reserve());
+									memoryMirror = reinterpret_cast<ScoopData*>(globalBufferSize.reserve());
 									memoryAcquiredMirror = memoryMirror != nullptr;
 								}
 							}
@@ -228,22 +228,9 @@ void Burst::PlotReader::runTask()
 							const auto staggerBlockOffset = staggerBegin * plotFile.getStaggerBytes();
 							const auto staggerScoopOffset = plotReadNotification->scoopNum * plotFile.getStaggerScoopBytes();
 
-							START_PROBE("PlotReader.CreateVerification");
-							VerifyNotification::Ptr verification(new VerifyNotification{});
-							verification->accountId = plotFile.getAccountId();
-							verification->nonceStart = plotFile.getNonceStart();
-							verification->block = plotReadNotification->blockheight;
-							verification->inputPath = plotFile.getPath();
-							verification->gensig = plotReadNotification->gensig;
-							verification->nonceRead = startNonce;
-							verification->baseTarget = plotReadNotification->baseTarget;
-							verification->nonces = readNonces;
-							verification->buffer = reinterpret_cast<ScoopData*>(memory);
-							TAKE_PROBE("PlotReader.CreateVerification");
-
 							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire);
+							inputStream.read(reinterpret_cast<char*>(memory), memoryToAcquire);
 
 							if (memoryAcquiredMirror)
 							{
@@ -251,14 +238,34 @@ void Burst::PlotReader::runTask()
 								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
 								inputStream.read(reinterpret_cast<char*>(memoryMirror), memoryToAcquire);
 
-								for (size_t i = 0; i < verification->nonces; ++i)
-									memcpy(&verification->buffer[i][32], &memoryMirror[i * 64 + 32], 32);
+								for (size_t i = 0; i < readNonces; ++i)
+									memcpy(&memory[i][32], &memoryMirror[i][32], 32);
 
 								globalBufferSize.free(memoryMirror);
 							}
 							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 
-							verificationQueue_->enqueueNotification(verification);
+							START_PROBE("PlotReader.CreateVerification");
+							const auto verifier = MinerConfig::getConfig().getMiningIntensity();
+							const auto noncesPerVerifier = readNonces / verifier;
+
+							for (unsigned i = 0; i < verifier; ++i)
+							{
+								VerifyNotification::Ptr verification(new VerifyNotification{});
+								verification->accountId = plotFile.getAccountId();
+								verification->nonceStart = plotFile.getNonceStart();
+								verification->block = plotReadNotification->blockheight;
+								verification->inputPath = plotFile.getPath();
+								verification->gensig = plotReadNotification->gensig;
+								verification->nonceRead = startNonce + i * noncesPerVerifier;
+								verification->baseTarget = plotReadNotification->baseTarget;
+								verification->nonces = noncesPerVerifier;
+								verification->bufferStartAddress = memory;
+								verification->buffer = reinterpret_cast<ScoopData*>(memory) + i * noncesPerVerifier;
+								verification->slices = MinerConfig::getConfig().getMiningIntensity();
+								verificationQueue_->enqueueNotification(verification);
+							}
+							TAKE_PROBE("PlotReader.CreateVerification");
 
 							if (MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
 								progress_->add(readNonces * Settings::plotSize, plotReadNotification->blockheight);

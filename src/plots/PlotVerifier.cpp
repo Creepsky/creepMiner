@@ -20,3 +20,11 @@
 // ==========================================================================
 
 #include "PlotVerifier.hpp"
+
+void Burst::VerifyNotification::release()
+{
+	std::lock_guard<std::mutex> lock{mutex};
+	++verifiedSlices;
+	if (verifiedSlices == slices)
+		PlotReader::globalBufferSize.free(bufferStartAddress);
+}

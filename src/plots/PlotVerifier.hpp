@@ -44,6 +44,7 @@ namespace Burst
 	{
 		typedef Poco::AutoPtr<VerifyNotification> Ptr;
 
+		ScoopData* bufferStartAddress = nullptr;
 		ScoopData* buffer = nullptr;
 		Poco::UInt64 accountId = 0;
 		Poco::UInt64 nonceRead = 0;
@@ -53,6 +54,10 @@ namespace Burst
 		GensigData gensig;
 		Poco::UInt64 baseTarget = 0;
 		Poco::UInt64 nonces = 0;
+		size_t slices = 0;
+		size_t verifiedSlices = 0;
+		std::mutex mutex;
+		void release();
 	};
 	
 	using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
@@ -135,7 +140,7 @@ namespace Burst
 				}
 
 				START_PROBE("PlotVerifier.FreeMemory");
-				PlotReader::globalBufferSize.free(verifyNotification->buffer);
+				verifyNotification->release();
 				TAKE_PROBE("PlotVerifier.FreeMemory");
 
 				if (progress_ != nullptr)
