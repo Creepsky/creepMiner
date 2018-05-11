@@ -103,7 +103,7 @@ Burst::PlotReader::PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress>
 
 void Burst::PlotReader::runTask()
 {
-	std::vector<ScoopData> bufferMirror;
+	char* memoryMirror = nullptr;
 
 	while (!isCancelled())
 	{
@@ -165,14 +165,14 @@ void Burst::PlotReader::runTask()
 						break;
 					}
 
-					const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSizeRaw();
+					const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSize();
 					auto chunkBytes = maxBufferSize / MinerConfig::getConfig().getBufferChunkCount();
 
 					// unlimited buffer size
-					if (maxBufferSize == 0)
+					if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
 						chunkBytes = plotFile.getStaggerScoopBytes();
 					
-					auto noncesPerChunk = std::min(chunkBytes / Settings::scoopSize, plotFile.getStaggerSize());
+					const auto noncesPerChunk = std::min(chunkBytes / Settings::scoopSize, plotFile.getStaggerSize());
 					auto nonce = 0ull;
 
 					while (nonce < plotFile.getNonces() && currentBlock && !isCancelled())
@@ -196,11 +196,15 @@ void Burst::PlotReader::runTask()
 						{
 							memory = globalBufferSize.reserve();
 							memoryAcquired = memory != nullptr;
-							memoryAcquired = globalBufferSize.reserve(memoryToAcquire);
 
 							if (poc2 && !plotFile.isPoC(2))
+							{
 								while (!isCancelled() && !memoryAcquiredMirror)
-									memoryAcquiredMirror = globalBufferSize.reserve(memoryToAcquire);
+								{
+									memoryMirror = reinterpret_cast<char*>(globalBufferSize.reserve());
+									memoryAcquiredMirror = memoryMirror != nullptr;
+								}
+							}
 						}
 						TAKE_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
 
@@ -212,7 +216,7 @@ void Burst::PlotReader::runTask()
 								globalBufferSize.free(memory);
 
 							if (memoryAcquiredMirror)
-								globalBufferSize.free(memoryToAcquire);
+								globalBufferSize.free(memoryMirror);
 
 							continue;
 						}
@@ -235,66 +239,22 @@ void Burst::PlotReader::runTask()
 							verification->baseTarget = plotReadNotification->baseTarget;
 							verification->nonces = readNonces;
 							verification->buffer = reinterpret_cast<ScoopData*>(memory);
-							verification->memorySize = memoryToAcquire;
-
-							memoryAcquired = false;
-
-							while (!memoryAcquired && !isCancelled())
-							{
-								try
-								{
-									verification->buffer.resize(readNonces);
-									memoryAcquired = true;
-								}
-								catch (std::bad_alloc&)
-								{
-								}
-								catch (...)
-								{
-									globalBufferSize.free(memoryToAcquire);
-									throw;
-								}
-							}
-
-							if (memoryAcquiredMirror)
-							{
-								memoryAcquiredMirror = false;
-
-								while (!memoryAcquiredMirror && !isCancelled())
-								{
-									try
-									{
-										bufferMirror.resize(readNonces);
-										memoryAcquiredMirror = true;
-									}
-									catch (std::bad_alloc&)
-									{
-									}
-									catch (...)
-									{
-										globalBufferSize.free(memoryToAcquire);
-										throw;
-									}
-								}
-							}
 							TAKE_PROBE("PlotReader.CreateVerification");
 
 							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire);
-							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire);
 
 							if (memoryAcquiredMirror)
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
 								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
-								inputStream.read(reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire);
+								inputStream.read(reinterpret_cast<char*>(memoryMirror), memoryToAcquire);
 
-								for (size_t i = 0; i < verification->buffer.size(); ++i)
-									memcpy(&verification->buffer[i][32], &bufferMirror[i][32], 32);
+								for (size_t i = 0; i < verification->nonces; ++i)
+									memcpy(&verification->buffer[i][32], &memoryMirror[i * 64 + 32], 32);
 
-								bufferMirror.clear();
-								globalBufferSize.free(memoryToAcquire);
+								globalBufferSize.free(memoryMirror);
 							}
 							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 

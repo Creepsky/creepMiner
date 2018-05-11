@@ -35,7 +35,6 @@
 #include <Poco/File.h>
 #include <Poco/Delegate.h>
 #include "plots/PlotVerifier.hpp"
-#include "MinerCL.hpp"
 
 namespace Burst
 {

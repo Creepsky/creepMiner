@@ -139,7 +139,7 @@ namespace Burst
 				TAKE_PROBE("PlotVerifier.FreeMemory");
 
 				if (progress_ != nullptr)
-					progress_->add(verifyNotification->nonces * Settings::PlotSize, verifyNotification->block);
+					progress_->add(verifyNotification->nonces * Settings::plotSize, verifyNotification->block);
 			}
 			catch (Poco::Exception& exc)
 			{
