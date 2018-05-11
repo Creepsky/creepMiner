@@ -44,7 +44,7 @@ void Burst::GlobalBufferSize::setMax(const Poco::UInt64 max)
 bool Burst::GlobalBufferSize::reserve(const Poco::UInt64 size)
 {
 	// unlimited memory
-	if (MinerConfig::getConfig().getMaxBufferSize() == 0)
+	if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
 		return true;
 
 	Poco::FastMutex::ScopedLock lock{mutex_};
@@ -59,7 +59,7 @@ bool Burst::GlobalBufferSize::reserve(const Poco::UInt64 size)
 void Burst::GlobalBufferSize::free(Poco::UInt64 size)
 {
 	// unlimited memory
-	if (MinerConfig::getConfig().getMaxBufferSize() == 0)
+	if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
 		return;
 
 	Poco::FastMutex::ScopedLock lock{mutex_};
@@ -151,14 +151,14 @@ void Burst::PlotReader::runTask()
 						break;
 					}
 
-					const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSize();
+					const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSizeRaw();
 					auto chunkBytes = maxBufferSize / MinerConfig::getConfig().getBufferChunkCount();
 
 					// unlimited buffer size
 					if (maxBufferSize == 0)
 						chunkBytes = plotFile.getStaggerScoopBytes();
-
-					const auto noncesPerChunk = std::min(chunkBytes / Settings::scoopSize, plotFile.getStaggerSize());
+					
+					auto noncesPerChunk = std::min(chunkBytes / Settings::scoopSize, plotFile.getStaggerSize());
 					auto nonce = 0ull;
 
 					while (nonce < plotFile.getNonces() && currentBlock && !isCancelled())
