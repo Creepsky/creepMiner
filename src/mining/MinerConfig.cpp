@@ -499,6 +499,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 		databasePath_ = getOrAdd(miningObj, "databasePath", std::string("data.db"));
 		workerName_ = getOrAdd(miningObj, "workerName", std::string{});
+		poc2StartBlock_ = getOrAdd(miningObj, "poc2StartBlock", 500000);
 
 		// auto detect the max. cpu instruction set
 		if (cpuInstructionSet_ == "AUTO")
@@ -2150,4 +2151,9 @@ void Burst::MinerConfig::useLogfile(bool use)
 bool Burst::MinerConfig::isForwardingMinerName() const
 {
 	return minerNameForwarding_;
+}
+
+Poco::UInt64 Burst::MinerConfig::getPoc2StartBlock() const
+{
+	return poc2StartBlock_;
 }

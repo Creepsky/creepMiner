@@ -226,6 +226,7 @@ namespace Burst
 		const std::vector<std::string>& getForwardingWhitelist() const;
 		bool isCumulatingPlotsizes() const;
 		bool isForwardingMinerName() const;
+		Poco::UInt64 getPoc2StartBlock() const;
 
 		void setUrl(const std::string& url, HostType hostType);
 		void setBufferSize(Poco::UInt64 bufferSize);
@@ -334,6 +335,7 @@ namespace Burst
 		std::string serverCertificatePass_;
 		std::string databasePath_;
 		std::string workerName_;
+		Poco::UInt64 poc2StartBlock_ = 0;
 		mutable Poco::Mutex mutex_;
 	};
 }

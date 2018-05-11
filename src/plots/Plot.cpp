@@ -28,13 +28,29 @@
 #include "logging/MinerLogger.hpp"
 #include "MinerUtil.hpp"
 
-Burst::PlotFile::PlotFile(std::string&& path, Poco::UInt64 size)
+Burst::PlotFile::PlotFile(std::string&& path, const Poco::UInt64 size)
 	: path_(move(path)), size_(size)
 {
 	accountId_ = stoull(getAccountIdFromPlotFile(path_));
 	nonceStart_ = stoull(getStartNonceFromPlotFile(path_));
 	nonces_ = stoull(getNonceCountFromPlotFile(path_));
-	staggerSize_ = stoull(getStaggerSizeFromPlotFile(path_));
+
+	const auto staggerSize = getStaggerSizeFromPlotFile(path_);
+	const auto version = getVersionFromPlotFile(path_);
+
+	if (staggerSize.empty())
+	{
+		staggerSize_ = nonces_;
+		version_ = 2;
+	}
+	else
+	{
+		staggerSize_ = stoull(staggerSize);
+		version_ = 1;
+	}
+
+	if (!version.empty())
+		version_ = stoull(version);
 }
 
 const std::string& Burst::PlotFile::getPath() const
@@ -80,6 +96,16 @@ Poco::UInt64 Burst::PlotFile::getStaggerBytes() const
 Poco::UInt64 Burst::PlotFile::getStaggerScoopBytes() const
 {
 	return getStaggerSize() * Settings::scoopSize;
+}
+
+bool Burst::PlotFile::isOptimized() const
+{
+	return getStaggerCount() == getNonces();
+}
+
+bool Burst::PlotFile::isPoC(int version) const
+{
+	return version_ == version;
 }
 
 Burst::PlotDir::PlotDir(std::string plotPath, Type type)

@@ -100,10 +100,22 @@ namespace Burst
 		 */
 		Poco::UInt64 getStaggerScoopBytes() const;
 
+		/** 
+	     * \brief Returns, if the plot file is optimized. 
+	     * \return true, if optimized, false otherwise. 
+	     */
+		bool isOptimized() const;
+
+		/** 
+		 * \brief Returns, if the plot file is optimized for PoC2. 
+		 * \return true, if optimized for PoC2, false otherwise. 
+		 */
+		bool isPoC(int version) const;
+
 	private:
 		std::string path_;
 		Poco::UInt64 size_;
-		Poco::UInt64 accountId_, nonceStart_, nonces_, staggerSize_;
+		Poco::UInt64 accountId_, nonceStart_, nonces_, staggerSize_, version_;
 	};
 
 	/**
