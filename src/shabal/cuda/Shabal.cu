@@ -604,11 +604,11 @@ void cuda_calculate_shabal(Burst::ScoopData* buffer, Poco::UInt64* deadlines, Po
 		return;
 	}
 
-	Poco::UInt8 target[Settings::HashSize];
+	Poco::UInt8 target[Settings::hashSize];
 	auto test = buffer[tid];
 
-	cuda_shabal_core(&context, (const unsigned char *)gensig, Settings::HashSize);
-	cuda_shabal_core(&context, (const unsigned char *)&test, Settings::ScoopSize);
+	cuda_shabal_core(&context, (const unsigned char *)gensig, Settings::hashSize);
+	cuda_shabal_core(&context, (const unsigned char *)&test, Settings::scoopSize);
 	cuda_shabal_close(&context, 0, 0, &target[0]);
 
 	Poco::UInt64 targetResult = 0;

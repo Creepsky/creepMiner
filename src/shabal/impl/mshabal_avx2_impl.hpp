@@ -25,7 +25,7 @@
 
 namespace Burst
 {
-	struct Mshabal_avx2_Impl
+	struct MshabalAvx2Impl
 	{
 		static constexpr size_t HashSize = 8;
 

@@ -89,6 +89,11 @@ const Burst::PrintBlock& Burst::PrintBlock::setColor(ConsoleColor color) const
 	return *this << color;
 }
 
+void* Burst::PrintBlock::getHandle() const
+{
+	return handle_;
+}
+
 const Burst::PrintBlock& Burst::PrintBlock::clearLine(bool wipe) const
 {
 	Console::clearLine(wipe);

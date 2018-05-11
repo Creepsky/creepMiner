@@ -90,10 +90,10 @@ namespace Burst
 
 	enum CpuInstructionSet
 	{
-		sse2 = 1 << 0,
-		sse4 = 1 << 1,
-		avx = 1 << 2,
-		avx2 = 1 << 3
+		Sse2 = 1 << 0,
+		Sse4 = 1 << 1,
+		Avx = 1 << 2,
+		Avx2 = 1 << 3
 	};
 
 	bool isNumberStr(const std::string& str);
@@ -106,6 +106,7 @@ namespace Burst
 	std::string getStartNonceFromPlotFile(const std::string& path);
 	std::string getNonceCountFromPlotFile(const std::string& path);
 	std::string getStaggerSizeFromPlotFile(const std::string& path);
+	std::string getVersionFromPlotFile(const std::string& path);
 	std::string deadlineFormat(Poco::UInt64 seconds);
 	Poco::UInt64 deadlineFragment(Poco::UInt64 seconds, DeadlineFragment fragment);
 	Poco::UInt64 formatDeadline(const std::string& format);
@@ -128,7 +129,7 @@ namespace Burst
 	Poco::Timespan secondsToTimespan(float seconds);
 	std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Poco::URI& uri);
 	Poco::Net::SocketAddress getHostAddress(const Poco::URI& uri);
-	std::string serializeDeadline(const Deadline& deadline, std::string delimiter = ":");
+	std::string serializeDeadline(const Deadline& deadline, const std::string& delimiter = ":");
 
 	Poco::JSON::Object createJsonDeadline(const Deadline& deadline);
 	Poco::JSON::Object createJsonDeadline(const Deadline& deadline, const std::string& type);
@@ -145,8 +146,7 @@ namespace Burst
 	std::string getTime();
 	std::string getFilenameWithtimestamp(const std::string& name, const std::string& ending);
 
-	std::string hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase);
-	bool check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase);
+	std::string hashHmacSha1(const std::string& plain, const std::string& passphrase);
 
 	/*
 	 * \brief Creates a string that is padded and locked on a specific size.
@@ -175,4 +175,7 @@ namespace Burst
 
 	Poco::Path getMinerHomeDir();
 	Poco::Path getMinerHomeDir(const std::string& filename);
+
+	std::string toHex(const std::string& plainText);
+	std::string fromHex(const std::string& codedText);
 }

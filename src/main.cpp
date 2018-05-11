@@ -43,7 +43,6 @@
 #include <Poco/Util/Validator.h>
 #include <Poco/FileStream.h>
 #include <Poco/File.h>
-#include <Poco/DirectoryIterator.h>
 #include <regex>
 #include <Poco/Data/SQLite/Connector.h>
 #include "MinerUtil.hpp"
@@ -110,17 +109,17 @@ int main(const int argc, const char* argv[])
 
 	std::stringstream sstream;
 
-	const auto checkAndPrint = [&](bool flag, const std::string& text) {
+	const auto checkAndPrint = [&](const bool flag, const std::string& text) {
 		sstream << ' ' << (flag ? '+' : '-') << text;
 	};
 
-	checkAndPrint(Cuda, "CUDA");
-	checkAndPrint(OpenCl, "OpenCL");
-	checkAndPrint(Sse4, "SSE4");
-	checkAndPrint(Avx, "AVX");
-	checkAndPrint(Avx2, "AVX2");
+	checkAndPrint(cuda, "CUDA");
+	checkAndPrint(openCl, "OpenCL");
+	checkAndPrint(sse4, "SSE4");
+	checkAndPrint(avx, "AVX");
+	checkAndPrint(avx2, "AVX2");
 
-	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
+	log_information(general, Burst::Settings::project.nameAndVersionVerbose);
 	log_information(general, "%s mode%s", mode, sstream.str());
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
@@ -145,7 +144,7 @@ int main(const int argc, const char* argv[])
 
 		// start versionChecker timer thread , checking online version every 30 minutes
 		Timer checkVersionTimer(100, 1800000);
-		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(Burst::Settings::Project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
+		checkVersionTimer.start(Poco::TimerCallback<Burst::ProjectData>(project, &Burst::ProjectData::refreshAndCheckOnlineVersion));
 
 		auto running = true;
 		
@@ -154,8 +153,9 @@ int main(const int argc, const char* argv[])
 		while (running)
 		{
 			// load the config
-			auto configLoaded = Burst::MinerConfig::getConfig().readConfigFile(arguments.confPath);
-
+			auto& config = Burst::MinerConfig::getConfig();
+			auto configLoaded = config.readConfigFile(arguments.confPath);
+			
 			// the config could not be loaded, look for a config in the creepMiner home dir
 			if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 			{
@@ -164,37 +164,51 @@ int main(const int argc, const char* argv[])
 				// create the home directory
 				const auto minerHomePath = Burst::getMinerHomeDir();
 
-				File minerHomeDir{minerHomePath};
-				minerHomeDir.createDirectories();
-
 				auto homeConfigPath(minerHomePath);
 				homeConfigPath.append("mining.conf");
 				const auto homeConfig = homeConfigPath.toString();
 
 				log_information(general, "Trying to load config %s", homeConfig);
-				configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
+				configLoaded = config.readConfigFile(homeConfig);
 
 				// if there is also no config in the home dir, create one in the home dir
 				if (configLoaded == Burst::ReadConfigFileResult::NotFound)
 				{
-					// create the log dir
-					auto homeLogPath(minerHomePath);
-					homeLogPath.pushDirectory("logs");
-					homeLogPath.makeDirectory();
+					const auto createConfig = [&config](const auto& rootPath)
+					{
+						Path logDir{rootPath};
 
-					auto homeDatabasePath(minerHomePath);
-					homeDatabasePath.setFileName("data.db");
+						Path configPath{rootPath};
+						configPath.append("mining.conf");
 
-					// and save it in the config
-					Burst::MinerConfig::getConfig().setLogDir(homeLogPath.toString());
-					Burst::MinerConfig::getConfig().useLogfile(true);
-					Burst::MinerConfig::getConfig().setDatabasePath(homeDatabasePath.toString());
+						Path databasePath{rootPath};
+						databasePath.setFileName("data.db");
 
-					if (!Burst::MinerConfig::getConfig().save(homeConfig))
-						log_error(Burst::MinerLogger::general, "Could not save current settings!");
+						try
+						{
+							logDir.makeDirectory();
+							
+							// save settings to the config
+							config.setLogDir(logDir.toString());
+							config.useLogfile(true);
+							config.setDatabasePath(databasePath.toString());
 
-					// load the freshly created config in the home dir
-					configLoaded = Burst::MinerConfig::getConfig().readConfigFile(homeConfig);
+							if (!config.save(configPath.toString()))
+								log_error(Burst::MinerLogger::general, "Could not save current settings!");
+
+						}
+						catch (const Exception& e)
+						{
+							log_warning(Burst::MinerLogger::config, "Could not create the config at %s: %s", rootPath, e.displayText());
+						}
+
+						return config.readConfigFile(configPath.toString());
+					};
+
+					configLoaded = createConfig(Path::current());
+
+					if (configLoaded != Burst::ReadConfigFileResult::Ok)
+						configLoaded = createConfig(minerHomePath);
 				}
 			}
 
@@ -202,43 +216,50 @@ int main(const int argc, const char* argv[])
 			{
 				log_information(general, "Config loaded: %s", Burst::MinerConfig::getConfig().getPath());
 
-				if (!Burst::MinerConfig::getConfig().getServerCertificatePath().empty())
+				if (!config.getServerCertificatePath().empty())
 				{
 #ifdef _WIN32
 					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
-						Burst::MinerConfig::getConfig().getServerCertificatePath(),
+						config.getServerCertificatePath(),
 						Context::VERIFY_RELAXED, Context::OPT_LOAD_CERT_FROM_FILE | Context::OPT_USE_STRONG_CRYPTO));
 #elif defined __linux__ || defined __APPLE__
+					Poco::Path pathCertificate{config.getServerCertificatePath()};
+					Poco::Path pathKey{pathCertificate};
+					pathKey.setExtension("key");
 					const Context::Ptr serverContext(new Context(Context::SERVER_USE,
-						Burst::MinerConfig::getConfig().getServerCertificatePath(),
-						Context::VERIFY_RELAXED));
+						pathKey.toString(),
+						pathCertificate.toString(),
+						""));
 #endif
 
 					const SharedPtr<PrivateKeyPassphraseHandler> privateKeyPassphraseHandler(new KeyConfigHandler(true));
 					SSLManager::instance().initializeServer(privateKeyPassphraseHandler, ptrCert, serverContext);
 				}
 
-				if (Burst::MinerConfig::getConfig().getProcessorType() == "OPENCL" &&
-					!Burst::MinerCL::getCL().initialized())
-					Burst::MinerCL::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
-						Burst::MinerConfig::getConfig().getGpuDevice());
-				else if (Burst::MinerConfig::getConfig().getProcessorType() == "CUDA")
+				if (config.getProcessorType() == "OPENCL" &&
+					!Burst::MinerCl::getCL().initialized())
+					Burst::MinerCl::getCL().create(Burst::MinerConfig::getConfig().getGpuPlatform(),
+						config.getGpuDevice());
+				else if (config.getProcessorType() == "CUDA")
 				{
-					Burst::Gpu_Cuda_Impl::listDevices();
-					Burst::Gpu_Cuda_Impl::useDevice(Burst::MinerConfig::getConfig().getGpuDevice());
+					Burst::GpuCudaImpl::listDevices();
+					Burst::GpuCudaImpl::useDevice(config.getGpuDevice());
 				}
 
 				Burst::Miner miner;
 				Burst::MinerServer server{miner};
 
-				if (Burst::MinerConfig::getConfig().getStartServer())
+				if (config.getStartServer())
 				{
 					server.connectToMinerData(miner.getData());
-					server.run(Burst::MinerConfig::getConfig().getServerUrl().getPort());
+					server.run(config.getServerUrl().getPort());
 				}
 
 				Burst::MinerLogger::setChannelMinerData(&miner.getData());
-				Burst::MinerConfig::getConfig().checkPlotOverlaps();
+				config.checkPlotOverlaps();
+
+				if (!config.getProxyFullUrl().empty())
+					HTTPClientSession::setGlobalProxyConfig(config.getProxyConfig());
 
 				miner.run();
 				server.stop();
@@ -308,7 +329,7 @@ Arguments::Arguments()
 bool Arguments::process(const int argc, const char* argv[])
 {
 	Poco::Util::OptionProcessor optionProcessor(options_);
-	optionProcessor.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+	optionProcessor.setUnixStyle(std::string(Burst::Settings::osFamily) != "Windows");
 
 	try
 	{
@@ -345,7 +366,7 @@ bool Arguments::process(const int argc, const char* argv[])
 void Arguments::displayHelp(const std::string& name, const std::string& value)
 {
 	Poco::Util::HelpFormatter helpFormatter(options_);
-	helpFormatter.setUnixStyle(std::string(Burst::Settings::OsFamily) != "Windows");
+	helpFormatter.setUnixStyle(std::string(Burst::Settings::osFamily) != "Windows");
 	helpFormatter.setCommand("creepMiner");
 	helpFormatter.setUsage("<options>");
 	helpFormatter.setHeader("Burstcoin Proof-of-Capacity CPU and GPU miner.");
@@ -365,8 +386,7 @@ KeyConfigHandler::KeyConfigHandler(bool server)
 	: PrivateKeyPassphraseHandler{server}
 {}
 
-KeyConfigHandler::~KeyConfigHandler()
-{};
+KeyConfigHandler::~KeyConfigHandler() = default;
 
 void KeyConfigHandler::onPrivateKeyRequested(const void*, std::string& privateKey)
 {

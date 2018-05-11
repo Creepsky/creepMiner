@@ -231,7 +231,7 @@ namespace Burst
 		* \param server The server instance, that is shut down.
 		*/
 		void checkPlotfile(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response, Miner& miner,
-			MinerServer& server, std::string plotPath);
+			MinerServer& server, const std::string& plotPath);
 
 		/**
 		* \brief Checks all plot files for corruption

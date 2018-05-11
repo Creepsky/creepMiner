@@ -27,6 +27,7 @@
 #include <atomic>
 #include <set>
 #include <vector>
+#include <Poco/Net/IPAddress.h>
 
 namespace Burst
 {
@@ -56,7 +57,10 @@ namespace Burst
 		Poco::UInt64 getBlock() const;
 		const std::string& getPlotFile() const;
 		std::string getMiner() const;
+		const std::string& getWorker() const;
 		Poco::UInt64 getTotalPlotsize() const;
+		const Poco::Net::IPAddress& getIp() const;
+		std::string toActionString(const std::string& action) const;
 
 		bool isOnTheWay() const;
 		bool isSent() const;
@@ -64,7 +68,10 @@ namespace Burst
 
 		void setDeadline(Poco::UInt64 deadline);
 		void setMiner(const std::string& miner);
+		void setWorker(const std::string& worker);
 		void setTotalPlotsize(Poco::UInt64 plotsize);
+		void setIp(const Poco::Net::IPAddress& ip);
+		void setParent(Deadlines* parent);
 
 		bool operator<(const Deadline& rhs) const;
 		bool operator()(const Deadline& lhs, const Deadline& rhs) const;
@@ -79,7 +86,9 @@ namespace Burst
 		std::atomic<bool> sent_;
 		std::atomic<bool> confirmed_;
 		std::string minerName_ = "";
+		std::string workerName_ = "";
 		Poco::UInt64 plotsize_ = 0;
+		Poco::Net::IPAddress ip_{"127.0.0.1"};
 		Deadlines* parent_;
 		mutable Poco::FastMutex mutex_;
 	};
@@ -92,6 +101,7 @@ namespace Burst
 		//Deadlines& operator=(const Deadlines& rhs);
 
 		std::shared_ptr<Deadline> add(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile);
+		void add(std::shared_ptr<Deadline> deadline);
 		void clear();
 		bool confirm(Nonce nonce);
 		bool confirm(Nonce nonce, AccountId accountId, Poco::UInt64 block);

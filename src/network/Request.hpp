@@ -32,10 +32,11 @@ namespace Poco {namespace Net {
 
 namespace Burst
 {
-	const std::string X_Plotfile = "X-Plotfile";
-	const std::string X_Deadline = "X-Deadline";
-	const std::string X_Capacity = "X-Capacity";
-	const std::string X_Miner = "X-Miner";
+	const std::string xPlotfile = "X-Plotfile";
+	const std::string xDeadline = "X-Deadline";
+	const std::string xCapacity = "X-Capacity";
+	const std::string xMiner = "X-Miner";
+	const std::string xWorker = "X-Worker";
 
 	class Deadline;
 

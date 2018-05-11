@@ -88,7 +88,11 @@ echo $use_avx2
 echo $use_opencl
 echo $use_cuda
 
+cd ..
 conan install . --build=missing -s compiler.libcxx=libstdc++11
 rm CMakeCache.txt -f
 cmake . -DCMAKE_BUILD_TYPE=RELEASE $use_sse4 $use_avx $use_avx2 $use_opencl $use_cuda
 make -j$(nproc)
+cp -Tr resources/public bin/public
+cp resources/run.sh bin
+cp resources/screen.sh bin

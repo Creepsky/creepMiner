@@ -14,7 +14,7 @@
     <link rel="alternate stylesheet" title="darkly" href="https://bootswatch.com/4/darkly/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="flatly" href="https://bootswatch.com/4/flatly/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="journal" href="https://bootswatch.com/4/journal/bootstrap.min.css" type="text/css">
-		<link rel="alternate stylesheet" title="litera" href="https://bootswatch.com/4/litera/bootstrap.min.css" type="text/css">
+    <link rel="alternate stylesheet" title="litera" href="https://bootswatch.com/4/litera/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="lumen" href="https://bootswatch.com/4/lumen/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="lux" href="https://bootswatch.com/4/lux/bootstrap.min.css" type="text/css">
     <link rel="alternate stylesheet" title="materia" href="https://bootswatch.com/4/materia/bootstrap.min.css" type="text/css">
@@ -62,29 +62,42 @@
                 </ul>
                 <!-- right nav bar-->
                 <ul class="nav navbar-nav ml-auto">
-                        <!-- theme selector -->
-                     <li class="nav-item dropdown">
-					   <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Themes <span class="caret"></span></a>
-					   <div class="dropdown-menu" aria-labelledby="themes" id="themeSelector">
-					   </div>
-					 </li>
+                    <!-- theme selector -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Themes <span class="caret"></span></a>
+                        <div class="dropdown-menu" aria-labelledby="themes" id="themeSelector"></div>
+                    </li>
+                    <!-- theme selector -->
+                    <li class="nav-item dropdown mm-show">
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="miners">Miners <span class="caret"></span></a>
+                        <div class="dropdown-menu" aria-labelledby="miners" id="minerSelector">
+                            <a class="dropdown-item" href="#">Master Node</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" target="_blank" href="http://worker-01:8124">Worker 01</a>
+                            <a class="dropdown-item" target="_blank" href="http://worker-02">Worker 02</a>
+                            <a class="dropdown-item" target="_blank" href="http://worker-03">Worker 03</a>
+                        </div>
+                    </li>
+                    <li class="nav-item mm-show">
+                        <a class="nav-link" href="http://localhost:9001" target="_blank">Logs</a>
+                    </li>
                     <!-- sign out btn -->
                     <li class="nav-item mm-hide" id="btnSignOut">
                         <a class="nav-link" href="/logout"><i class="fas fa-sign-out-alt"></i>Sign Out</a>
                     </li>
-
                 </ul>
             </div>
         </div>
     </div>
     <!-- render page content -->
-    <div class="container-fluid">%content%</div>
+    <div class="container-fluid" id="content">%content%</div>
     <!-- js CDN plugins, or local js -->
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.time.min.js"></script>
+    <script src="https://unpkg.com/sweetalert2@7.19.2/dist/sweetalert2.all.js"></script>
     <script defer src="https://use.fontawesome.com/releases/v5.0.9/js/all.js" integrity="sha384-8iPTk2s/jMVj81dnzb/iFR2sdA7u06vHJyyLlAd4snFpCl/SnyUjRrbdJsw1pGIl" crossorigin="anonymous"></script>
     <script src="js/biginteger.min.js"></script>
     <script src="js/general.js"></script>

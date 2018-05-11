@@ -1,20 +1,30 @@
-<div class="col-md-2">
-</div>
-<div class="card mb-12">
-	<h5 class="card-header text-white bg-primary">Login</h5>
-	<div class="card-body">
-		<form method="POST" action="/login">
-			<div class="form-group">
-				<label for="creepminer-webserver-user">Username</label>
-				<input type="username" class="form-control" id="creepminer-webserver-user" name="creepminer-webserver-user" placeholder="Username">
-			</div>
-			<div class="form-group">
-				<label for="creepminer-webserver-pass">Password</label>
-				<input type="password" class="form-control" id="creepminer-webserver-pass" name="creepminer-webserver-pass" placeholder="Password">
-			</div>
-			<button type="submit" class="btn btn-primary">Login</button>
-		</form>
-	</div>
-</div>
-<div class="col-md-2">
+<div class="login-container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="text-center m-b-md">
+                <h3>Please login to creepMiner</h3>
+                <small>This is the best BURST miner ever!</small>
+            </div>
+            <div class="hpanel">
+                <div class="panel-body">
+                    <form method="POST" action="/login">
+                        <div class="form-group">
+                            <label for="creepminer-webserver-user">Username</label>
+                            <input type="username" class="form-control" id="creepminer-webserver-user" name="creepminer-webserver-user" placeholder="creepAdmin">
+                        </div>
+                        <div class="form-group">
+                            <label for="creepminer-webserver-pass">Password</label>
+                            <input type="password" class="form-control" id="creepminer-webserver-pass" name="creepminer-webserver-pass" placeholder="Please enter your password">
+                        </div>
+                        <div class="checkbox">
+                            <input type="checkbox" class="i-checks" checked>
+                                 Remember login
+                            <p class="help-block small">(if this is a private computer)</p>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

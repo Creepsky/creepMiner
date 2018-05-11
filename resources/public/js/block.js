@@ -9,6 +9,9 @@ class Deadline {
         this.nonce = BigInteger(deadline["nonce"]);
         this.time = deadline["time"];
         this.plotfile = deadline["plotfile"];
+        this.miner = deadline["miner"];
+        this.worker = deadline["worker"];
+        this.ip = deadline["ip"];
     }
 }
 
@@ -31,8 +34,6 @@ class Block {
         this.body.html("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Start time <span class='badge badge-secondary float-sm-right'>" + block["time"] + "</span></li>");
         this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Scoop <span>" + block["scoop"] + "</span></li>"));
         this.body.append($("<li class='list-group-item d-flex justify-content-between align-items-center' style='border:none; padding:0'>Base target<span>" + block["baseTarget"] + "</span></li>"));
-
-
 
         blockStartTime=block["startTime"];
         var diffDifference = block['difficultyDifference'];
@@ -73,7 +74,7 @@ $('#timePlotButton').on('click', function(event) {
     timePlot.getAxes().yaxis.options.max = timePlotMax;
     timePlot.setupGrid();
     timePlot.draw();
-	$(".flot-tick-label").css("color", flotFrameColor);
+    $(".flot-tick-label").css("color", flotFrameColor);
 });
 
 $('#deadlinePlotButton').on('click', function(event) {
@@ -84,7 +85,7 @@ $('#deadlinePlotButton').on('click', function(event) {
     deadlinePlot.getAxes().yaxis.options.max = deadlinePlotMax;
     deadlinePlot.setupGrid();
     deadlinePlot.draw();
-	$(".flot-tick-label").css("color", flotFrameColor);
+    $(".flot-tick-label").css("color", flotFrameColor);
 });
 
 var timerRefresh = setInterval(function(){ myTimer() }, 1000);
@@ -250,7 +251,6 @@ function newBlock(json) {
 
     setOverallProgress(0);
     setOverallProgressVerify(0);
-    lastWinnerContainer.hide();
     avgDeadline.html(json["deadlinesAvg"]);
     deadlinePerformance.html(Math.round(json["deadlinePerformance"]*1000)/1000 + " TB");
     var roundsSub=json["nRoundsSubmitted"];
@@ -323,6 +323,9 @@ function createNonceLine(deadline, iconId, lineType, nonceType) {
     var hiddenInfos = $("<dl class='dl'></dl>");
     hiddenInfos.append("<dt>Nonce</dt><dd>" + deadline.nonce + "</dd>");
     hiddenInfos.append("<dt>Plotfile</dt><dd>" + deadline.plotfile + "</dd>");
+    hiddenInfos.append("<dt>Miner</dt><dd>" + deadline.miner + "</dd>");
+    hiddenInfos.append("<dt>Worker</dt><dd>" + deadline.worker + "</dd>");
+    hiddenInfos.append("<dt>Ip</dt><dd>" + deadline.ip + "</dd>");
     hiddenInfos.append("<span class='badge badge-secondary float-sm-right'>" + deadline.time + "</span>");
     hiddenInfos.hide();
 
@@ -353,7 +356,6 @@ function createNonceLine(deadline, iconId, lineType, nonceType) {
             message.append("&nbsp;<span class='badge badge-primary badge-pill'>" + deadline.deadlineStr + "</span>");
     }
 
-
     message.append(hiddenInfosDiv);
 
     line.html(message);
@@ -382,7 +384,7 @@ function createMessageLine(lineType, logger, level, file, lineNumber, time, text
     });
 
     var message = $("<div></div>");
-    message.append("<p class='pull-right'><span class='label label-default'>" + time + "</span></p>");
+    message.append("<span class='badge badge-secondary float-sm-right'>" + time + "</span>");
     message.append(text);
     message.append(hiddenInfosDiv);
 
@@ -519,22 +521,18 @@ function setLastWinner(winner) {
         var address = lastWinner.find("#lastWinnerAddress");
         var name = lastWinner.find("#lastWinnerName");
 
-        var link = "https://explore.burst.cryptoguru.org/account/BURST-" + burstAddress;
+        var link = "https://explore.burst.cryptoguru.org/account/" + winner["numeric"];
 
         if (winner["name"]) {
-            name.html(winner["name"]);
-            name.attr("href", link);
+            name.html("<a href = '" + link + "' target='blank_'>" + winner["name"] + "</a>");
             lastWinner.find("#lastWinnerNameRow").show();
         }
         else {
             lastWinner.find("#lastWinnerNameRow").hide();
         }
 
-        numeric.html(winner["numeric"]);
-        address.html(winner["address"]);
-
-        numeric.attr("href", link);
-        address.attr("href", link);
+        numeric.html("<a href = '" + link + "' target='blank_'>" + winner["numeric"] + "</a>");
+        address.html("<a href = '" + link + "' target='blank_'>" + winner["address"] + "</a>");
 
         lastWinnerContainer.show();
     }
@@ -561,6 +559,19 @@ function toggleConfirmationSound() {
     // ******************************************
 
     deActivateConfirmationSound(!playConfirmationSound);
+    //sql
+    swal({
+        title: 'Nonce sound notifications',
+        type: 'info',
+        html:
+        'If you wish to use a custom notification please place ' +
+        '<pre>alert.mp3</pre> it into the <b>sounds </b> directory.',
+        showCloseButton: false,
+        showCancelButton: false,
+        confirmButtonText:
+        '<i class="fa fa-thumbs-up"></i> Okay!'
+    });
+
 }
 
 function showMessage(json) {

@@ -50,7 +50,7 @@ Burst::MinerServer::MinerServer(Miner& miner)
 	auto ip = MinerConfig::getConfig().getServerUrl().getCanonical();
 	auto port = std::to_string(MinerConfig::getConfig().getServerUrl().getPort());
 
-	variables_.variables.emplace(std::make_pair("title", []() { return Settings::Project.nameAndVersion; }));
+	variables_.variables.emplace(std::make_pair("title", []() { return Settings::project.nameAndVersion; }));
 	variables_.variables.emplace(std::make_pair("ip", [ip]() { return ip; }));
 	variables_.variables.emplace(std::make_pair("port", [port]() { return port; }));
 	variables_.variables.emplace(std::make_pair("nullDeadline", []() { return deadlineFormat(0); }));
@@ -91,8 +91,8 @@ void Burst::MinerServer::run(uint16_t port)
 
 	params->setMaxQueued(MinerConfig::getConfig().getMaxConnectionsQueued());
 	params->setMaxThreads(MinerConfig::getConfig().getMaxConnectionsActive());
-	params->setServerName(Settings::Project.name);
-	params->setSoftwareVersion(Settings::Project.nameAndVersion);
+	params->setServerName(Settings::project.name);
+	params->setSoftwareVersion(Settings::project.nameAndVersion);
 
 	threadPool_.addCapacity(MinerConfig::getConfig().getMaxConnectionsActive());
 
@@ -128,98 +128,141 @@ void Burst::MinerServer::stop()
 
 void Burst::MinerServer::connectToMinerData(MinerData& minerData)
 {
-	minerData_ = &minerData;
-	minerData_->blockDataChangedEvent += Poco::delegate(this, &MinerServer::onMinerDataChangeEvent);
+	poco_ndc(MinerServer::connectToMinerData);
+
+	try
+	{
+		minerData_ = &minerData;
+		minerData_->blockDataChangedEvent += delegate(this, &MinerServer::onMinerDataChangeEvent);
+	}
+	catch (const Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not connect to the block data change event: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::MinerServer::sendToWebsockets(std::string& data)
 {
 	poco_ndc(MinerServer::sendToWebsockets);
 	ScopedLock<Mutex> lock{mutex_};
-	newDataEvent(this, data);
+	try
+	{
+		newDataEvent(this, data);
+	}
+	catch (const Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not set to websockets: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::MinerServer::sendToWebsockets(const JSON::Object& json)
 {
-	std::stringstream sstream;
-	json.stringify(sstream);
-	auto jsonString = sstream.str();
-	sendToWebsockets(jsonString);
+	poco_ndc(MinerServer::sendToWebsockets);
+
+	try
+	{
+		std::stringstream sstream;
+		json.stringify(sstream);
+		auto jsonString = sstream.str();
+		sendToWebsockets(jsonString);
+	}
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not set to websockets: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 void Burst::MinerServer::onMinerDataChangeEvent(const void* sender, const Poco::JSON::Object& data)
 {
-	auto send = true;
+	poco_ndc(MinerServer::onMinerDataChangeEvent);
 
-	// pre-filter progress
-	if (data.has("type") &&
-		data.get("type") == "progress")
+	try
 	{
-		auto progressRead = data.get("value").extract<float>();
-		auto progressVerification = data.get("valueVerification").extract<float>();
+		auto send = true;
 
-		send = static_cast<int>(progressRead) != static_cast<int>(progressRead_) ||
-			static_cast<int>(progressVerification) != static_cast<int>(progressVerification_);
-		
-		progressRead_ = progressRead;
-		progressVerification_ = progressVerification;
+		// pre-filter progress
+		if (data.has("type") &&
+			data.get("type") == "progress")
+		{
+			const auto progressRead = data.get("value").extract<float>();
+			const auto progressVerification = data.get("valueVerification").extract<float>();
+
+			send = static_cast<int>(progressRead) != static_cast<int>(progressRead_) ||
+				static_cast<int>(progressVerification) != static_cast<int>(progressVerification_);
+			
+			progressRead_ = progressRead;
+			progressVerification_ = progressVerification;
+		}
+
+		if (send)
+			sendToWebsockets(data);
 	}
-
-	if (send)
-		sendToWebsockets(data);
+	catch (const Poco::Exception& e)
+	{
+		log_error(MinerLogger::server, "Could not change the progress: %s", e.displayText());
+		log_current_stackframe(MinerLogger::server);
+	}
 }
 
 Burst::MinerServer::RequestFactory::RequestFactory(MinerServer& server)
 	: server_{&server}
 {}
 
-Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(const Poco::Net::HTTPServerRequest& request)
+HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequestHandler(const HTTPServerRequest& request)
 {
 	using RequestHandler::LambdaRequestHandler;
-	using req_t = Poco::Net::HTTPServerRequest;
-	using res_t = Poco::Net::HTTPServerResponse;
+	using ReqT = HTTPServerRequest;
+	using ResT = HTTPServerResponse;
 
 	poco_ndc(MinerServer::RequestFactory::createRequestHandler);
 
 	if (request.find("Upgrade") != request.end() && icompare(request["Upgrade"], "websocket") == 0)
 		return new RequestHandler::WebsocketRequestHandler(*server_, *server_->minerData_);
 
-	std::stringstream sstream;
-	sstream << "Request: " << request.getURI() << std::endl;
-	sstream << "Ip: " << request.clientAddress().toString() << std::endl;
-	sstream << "Method: " << request.getMethod() << std::endl;
-	
-	for (const auto& header : request)
-		sstream << header.first << ':' << header.second << std::endl;
-	
-	log_debug(MinerLogger::server, "Request: %s", request.getURI());
-	log_file_only(MinerLogger::server, Poco::Message::PRIO_INFORMATION, TextType::Information, sstream.str());
+	const auto demoMiner = MinerConfig::getConfig().getWorkerName() == "demo";
+
+	//std::stringstream sstream;
+	//sstream << "Request: " << request.getURI() << std::endl;
+	//sstream << "Ip: " << request.clientAddress().toString() << std::endl;
+	//sstream << "Method: " << request.getMethod() << std::endl;
+	//
+	//for (const auto& header : request)
+	//	sstream << header.first << ':' << header.second << std::endl;
+
+	//log_debug(MinerLogger::server, "Request: %s", request.getURI());
+	//log_file_only(MinerLogger::server, Poco::Message::PRIO_INFORMATION, TextType::Information, sstream.str());
 
 	try
 	{
 		using namespace Net;
 
-		URI uri {request.getURI()};
-		std::vector<std::string> path_segments;
+		URI uri{request.getURI()};
+		std::vector<std::string> pathSegments;
 
-		uri.getPathSegments(path_segments);
+		uri.getPathSegments(pathSegments);
 
 		// root
-		if (path_segments.empty())
-			return new LambdaRequestHandler([&](req_t& req, res_t& res)
+		if (pathSegments.empty())
+			return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 			{
-				auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/block.js'></script>"); } } });
-				RequestHandler::loadSecuredTemplate(req ,res, "index.html", "block.html", variables);
+				auto variables = server_->variables_ + TemplateVariables({
+					{"includes", []() { return std::string("<script src='js/block.js'></script>"); }}
+				});
+				RequestHandler::loadSecuredTemplate(req, res, "index.html", "block.html", variables);
 			});
 
 		// plotfiles
-		if (path_segments.front() == "plotfiles")
+		if (pathSegments.front() == "plotfiles")
 		{
-			return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 			{
 				auto variables = server_->variables_ + TemplateVariables({
 					{
-						"includes", []() { 
+						"includes", []()
+						{
 							auto jsonPlotDirs = createJsonPlotDirs();
 
 							std::stringstream sstr;
@@ -239,55 +282,62 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 		}
 
 		// shutdown everything
-		if (path_segments.front() == "shutdown")
-			return new LambdaRequestHandler([&](req_t& req, res_t& res)
-			{
-				RequestHandler::shutdown(req, res, *server_->miner_, *server_);
-			});
+		//if (path_segments.front() == "shutdown")
+		//	return new LambdaRequestHandler([&](req_t& req, res_t& res)
+		//	{
+		//		RequestHandler::shutdown(req, res, *server_->miner_, *server_);
+		//	});
 
 		// restart
-		if (path_segments.front() == "restart")
-			return new LambdaRequestHandler([&](req_t& req, res_t& res)
-		{
-			RequestHandler::restart(req, res, *server_->miner_, *server_);
-		});
+		if (pathSegments.front() == "restart" && !demoMiner)
+			return new LambdaRequestHandler([&](ReqT& req, ResT& res)
+			{
+				RequestHandler::restart(req, res, *server_->miner_, *server_);
+			});
 
 		// rescan plot files
-		if (path_segments.front() == "rescanPlotfiles")
-			return new LambdaRequestHandler([&](req_t& req, res_t& res) { RequestHandler::rescanPlotfiles(req, res, *server_->miner_); });
+		if (pathSegments.front() == "rescanPlotfiles" && !demoMiner)
+			return new LambdaRequestHandler([&](ReqT& req, ResT& res)
+			{
+				RequestHandler::rescanPlotfiles(req, res, *server_->miner_);
+			});
 
 		// show/change settings
-		if (path_segments.front() == "settings")
+		if (pathSegments.front() == "settings")
 		{
 			// no body -> show
-			if (path_segments.size() == 1)
-				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			if (pathSegments.size() == 1)
+				return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 				{
-					auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string("<script src='js/settings.js'></script>"); } } });
+					auto variables = server_->variables_ + TemplateVariables({
+						{"includes", []() { return std::string("<script src='js/settings.js'></script>"); }}
+					});
 					RequestHandler::loadSecuredTemplate(req, res, "index.html", "settings.html", variables);
 				});
 
 			// with body -> change
-			if (path_segments.size() > 1)
-				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			if (pathSegments.size() > 1 && !demoMiner)
+				return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 				{
 					RequestHandler::changeSettings(req, res, *server_->miner_);
 				});
 		}
 
 		// check plot file
-		if (path_segments.front() == "checkPlotFile")
-			if (path_segments.size() > 1) {
-				if (path_segments[1] == "all") {
-					return new LambdaRequestHandler([&](req_t& req, res_t& res)
+		if (pathSegments.front() == "checkPlotFile" && !demoMiner)
+			if (pathSegments.size() > 1)
+			{
+				if (pathSegments[1] == "all")
+				{
+					return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 					{
 						RequestHandler::checkAllPlotfiles(req, res, *server_->miner_, *server_);
 					});
 				}
 				using Poco::replace;
-				std::string plotPath = "";
-				Poco::URI::decode(replace(request.getURI(), "/" + path_segments[0] + "/", plotPath), plotPath, false);
-				return new LambdaRequestHandler([&, pPath = move(plotPath)](req_t& req, res_t& res)
+				std::string plotPath;
+				URI::decode(replace(request.getURI(), "/" + pathSegments[0] + "/", plotPath), plotPath, false);
+				return new LambdaRequestHandler([&, pPath = move(plotPath)](ReqT& req, ResT& res)
 				{
 					RequestHandler::checkPlotfile(req, res, *server_->miner_, *server_, pPath);
 				});
@@ -295,15 +345,15 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 
 
 		// show/change plot files
-		if (path_segments.front() == "plotdir")
-			if (path_segments.size() > 1)
-				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+		if (pathSegments.front() == "plotdir" && !demoMiner)
+			if (pathSegments.size() > 1)
+				return new LambdaRequestHandler([&, remove = pathSegments[1] == "remove"](ReqT& req, ResT& res)
 				{
-					RequestHandler::changePlotDirs(req, res, *server_, path_segments[1] == "remove" ? true : false);
+					RequestHandler::changePlotDirs(req, res, *server_, remove);
 				});
 
-		if (path_segments.front() == "login")
-			return new LambdaRequestHandler([&](req_t& req, res_t& res)
+		if (pathSegments.front() == "login")
+			return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 			{
 				if (req.getMethod() == "POST")
 				{
@@ -312,48 +362,48 @@ Poco::Net::HTTPRequestHandler* Burst::MinerServer::RequestFactory::createRequest
 				}
 				else
 				{
-					auto variables = server_->variables_ + TemplateVariables({ { "includes", []() { return std::string(); } } });
+					auto variables = server_->variables_ + TemplateVariables({{"includes", []() { return std::string(); }}});
 					RequestHandler::loadTemplate(req, res, "index.html", "login.html", variables);
 				}
 			});
 
-		if (path_segments.front() == "logout")
-			return new LambdaRequestHandler([&](req_t& req, res_t& res) { RequestHandler::logout(req, res); });
+		if (pathSegments.front() == "logout")
+			return new LambdaRequestHandler([&](ReqT& req, ResT& res) { RequestHandler::logout(req, res); });
 
 		// forward function
-		if (path_segments.front() == "burst")
+		if (pathSegments.front() == "burst")
 		{
 			static const std::string getMiningInfo = "requestType=getMiningInfo";
 			static const std::string submitNonce = "requestType=submitNonce";
 
 			// send back local mining infos
 			if (uri.getQuery().compare(0, getMiningInfo.size(), getMiningInfo) == 0)
-				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+				return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 				{
 					RequestHandler::miningInfo(req, res, *server_->miner_);
 				});
 
 			// forward nonce with combined capacity
 			if (uri.getQuery().compare(0, submitNonce.size(), submitNonce) == 0)
-				return new LambdaRequestHandler([&](req_t& req, res_t& res)
+				return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 				{
 					RequestHandler::submitNonce(req, res, *server_, *server_->miner_);
 				});
 
 			// just forward whatever the request is to the wallet
 			// why wallet? because the only requests to a pool are getMiningInfo and submitNonce and we handled them already
-			return new LambdaRequestHandler([&](req_t& req, res_t& res)
+			return new LambdaRequestHandler([&](ReqT& req, ResT& res)
 			{
 				RequestHandler::forward(req, res, HostType::Wallet);
 			});
 		}
 
-		Path path {"public"};
+		Path path{"public"};
 		path.append(uri.getPath());
 
-		if (Poco::File {path}.exists())
+		if (File{path}.exists())
 			return new LambdaRequestHandler(RequestHandler::loadAsset);
-		
+
 		return new LambdaRequestHandler(RequestHandler::notFound);
 	}
 	catch (...)
