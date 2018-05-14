@@ -26,7 +26,7 @@ Tell us what happens instead.
 
 
 ### Other information
-List any other information that is relevant to your issue. Stack traces, related issues, suggestions on how to fix, Stack Overflow links, forum links, etc.
+List any other information that is relevant to your issue. Stack traces, related issues, suggestions on how to fix etc.
 ```
 insert the output from ionic info here.
 ```
