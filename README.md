@@ -17,14 +17,16 @@ creepMiner is written in C++ and is multi-threaded to get the best performance, 
 ## Quickstart
 
 - Download and install the [latest release](https://github.com/Creepsky/creepMiner/releases/latest)
-- Follow the [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) documentation.
+- Follow the [Quickstart Quide](https://github.com/Creepsky/creepMiner/wiki)
 
-If you need help and support then please review the [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ) else [![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt) chat and ask in the **#help** channel.
+If you need help and support then please review the [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ) and [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) else [![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt) chat and ask in the **#help** channel.
 
 Alternatively their is a [![Join the chat at https://gitter.im/creepminer/lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/creepminer/lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) however that is not as much monitored as discord.
 
 ## Instructions
 
+- [Quickstart Quide](https://github.com/Creepsky/creepMiner/wiki)
+- [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Multi miner setup](https://github.com/Creepsky/creepMiner/wiki/Multi-miner-setup)
 - [Solo mining](https://github.com/Creepsky/creepMiner/wiki/Solo-mining)
 - [Mining & Optimization](https://github.com/Creepsky/creepMiner/wiki/Mining-&-Optimization)
