@@ -149,7 +149,7 @@ if (USE_SSE4 AND NOT MINIMAL_BUILD)
 	add_definitions(-DUSE_SSE4)
 	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_sse4.cpp)
 	if (UNIX OR APPLE)
-		set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse4)
+		set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse2)
 	endif ()
 endif ()
 
