@@ -96,7 +96,7 @@ namespace Burst
 		                    Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);
 		void onWakeUp(Poco::Timer& timer);
-		void onBenchmark(Poco::Timer& timer);
+		void saveBenchmark() const;
 		void onRoundProcessed(Poco::UInt64 blockHeight, double roundTime);
 
 		bool running_ = false, restart_ = false, isProcessing_ = false;
@@ -109,8 +109,8 @@ namespace Burst
 		Poco::NotificationQueue plotReadQueue_;
 		Poco::NotificationQueue verificationQueue_;
 		std::unique_ptr<Poco::ThreadPool> verifierPool_, plotReaderPool_;
-		Poco::Timer wakeUpTimer_, benchmarkTimer_;
-		mutable Poco::Mutex worker_mutex_;
+		Poco::Timer wakeUpTimer_;
+		mutable Poco::Mutex workerMutex_;
 		std::chrono::high_resolution_clock::time_point startPoint_;
 	};
 }

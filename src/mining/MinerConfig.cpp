@@ -522,19 +522,14 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		gpuDevice_ = getOrAdd(miningObj, "gpuDevice", 0u);
 
 		// benchmark
-		{
-			Poco::JSON::Object::Ptr benchmarkObj;
+		auto benchmarkObj = miningObj->getObject("benchmark");
 
-			if (miningObj->has("benchmark"))
-				benchmarkObj = miningObj->get("benchmark").extract<Poco::JSON::Object::Ptr>();
-			else
-				benchmarkObj = new Poco::JSON::Object;
+		if (!benchmarkObj.isNull() && benchmarkObj->has("active"))
+			benchmark_ = benchmarkObj->getValue<bool>("active");
+		else
+			benchmark_ = getOrAdd(miningObj, "benchmark", false);
 
-			benchmark_ = getOrAdd(benchmarkObj, "active", false);
-			benchmarkInterval_ = getOrAdd(benchmarkObj, "interval", 60l);
-
-			miningObj->set("benchmark", benchmarkObj);
-		}
+		miningObj->set("benchmark", benchmark_);
 
 		// urls
 		{

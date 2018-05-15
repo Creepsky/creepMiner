@@ -35,7 +35,6 @@
 #include <Poco/File.h>
 #include <Poco/Delegate.h>
 #include "plots/PlotVerifier.hpp"
-#include "MinerCL.hpp"
 
 namespace Burst
 {
@@ -135,17 +134,7 @@ void Burst::Miner::run()
 		wakeUpTimer_.setPeriodicInterval(wakeUpTime * 1000);
 		wakeUpTimer_.start(callback);
 	}
-
-	const auto benchmark = MinerConfig::getConfig().isBenchmark();
-	const auto benchmarkInterval = MinerConfig::getConfig().getBenchmarkInterval();
-
-	if (benchmark)
-	{
-		const Poco::TimerCallback<Miner> callback(*this, &Miner::onBenchmark);
-		benchmarkTimer_.setPeriodicInterval(benchmarkInterval * 1000u);
-		benchmarkTimer_.start(callback);
-	}
-
+	
 	running_ = true;
 
 	miningInfoSession_ = MinerConfig::getConfig().createSession(HostType::MiningInfo);
@@ -591,7 +580,8 @@ bool Burst::Miner::getMiningInfo()
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline()));
 							}
-							else {
+							else
+							{
 								if (targetDeadlinePoolBefore != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
 									log_system(MinerLogger::config,
 										"got new target deadline from pool\n"
@@ -633,7 +623,7 @@ bool Burst::Miner::getMiningInfo()
 
 void Burst::Miner::shutDownWorker(Poco::ThreadPool& threadPool, Poco::TaskManager& taskManager, Poco::NotificationQueue& queue) const
 {
-	Poco::Mutex::ScopedLock lock(worker_mutex_);
+	Poco::Mutex::ScopedLock lock(workerMutex_);
 	queue.wakeUpAll();
 	taskManager.cancelAll();
 	threadPool.stopAll();
@@ -693,7 +683,7 @@ void Burst::Miner::onWakeUp(Poco::Timer& timer)
 	addPlotReadNotifications(true);
 }
 
-void Burst::Miner::onBenchmark(Poco::Timer& timer)
+void Burst::Miner::saveBenchmark() const
 {
 	try
 	{
@@ -727,9 +717,10 @@ void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 			"\tbest deadline:  %s",
 			numberToString(block->getBlockheight()),
 			Poco::NumberFormatter::format(roundTime, 3),
-			bestDeadline == nullptr ? "none" : deadlineFormat(bestDeadline->getDeadline()))
+			bestDeadline == nullptr ? "none" : deadlineFormat(bestDeadline->getDeadline()));
 
-;
+		if (MinerConfig::getConfig().isBenchmark())
+			saveBenchmark();
 	}
 	catch (const Poco::Exception& e)
 	{
@@ -850,7 +841,7 @@ void Burst::Miner::createPlotVerifiers()
 
 void Burst::Miner::setMiningIntensity(unsigned intensity)
 {
-	Poco::Mutex::ScopedLock lock(worker_mutex_);
+	Poco::Mutex::ScopedLock lock(workerMutex_);
 
 	// dont change it if its the same intensity
 	// changing it is a heavy task
@@ -864,7 +855,7 @@ void Burst::Miner::setMiningIntensity(unsigned intensity)
 
 void Burst::Miner::setMaxPlotReader(unsigned max_reader)
 {
-	Poco::Mutex::ScopedLock lock(worker_mutex_);
+	Poco::Mutex::ScopedLock lock(workerMutex_);
 
 	// dont change it if its the same reader count
 	// changing it is a heavy task
@@ -902,7 +893,7 @@ void Burst::Miner::rescanPlotfiles()
 
 void Burst::Miner::setIsProcessing(bool isProc)
 {
-	Poco::Mutex::ScopedLock lock(worker_mutex_);
+	Poco::Mutex::ScopedLock lock(workerMutex_);
 
 	isProcessing_ = isProc;
 }
