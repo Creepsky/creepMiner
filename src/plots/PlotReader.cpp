@@ -32,6 +32,11 @@
 #include "logging/Output.hpp"
 #include "Plot.hpp"
 #include "logging/Performance.hpp"
+#ifdef _WIN32
+#include <io.h> 
+#include <fcntl.h> 
+#include <sys/stat.h>
+#endif
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
@@ -128,22 +133,40 @@ void Burst::PlotReader::runTask()
 			for (auto plotFileIter = plotList.begin(); plotFileIter != plotList.end() && !isCancelled() && currentBlock; ++plotFileIter)
 			{
 				auto& plotFile = **plotFileIter;
-				std::ifstream inputStream(plotFile.getPath(), std::ifstream::in | std::ifstream::binary);
 
-				START_PROBE_DOMAIN("PlotReader.ReadFile", plotFile.getPath())
+#ifdef _WIN32
+				int file;
+				_sopen_s(&file, plotFile.getPath().c_str(), _O_BINARY | _O_NOINHERIT | _O_RDONLY | _O_SEQUENTIAL, _SH_DENYRD, _S_IREAD);
+#else
+				std::ifstream inputStream(plotFile.getPath(), std::ifstream::in | std::ifstream::binary);
+#endif
+
+				START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile", plotFile.getPath())
 				Poco::Timestamp timeStartFile;
 
+#ifdef _WIN32
+				if (!isCancelled() && file > -1)
+#else
 				if (!isCancelled() && inputStream.is_open())
+#endif
 				{
 					if (plotReadNotification->wakeUpCall)
 					{
 						// its just a wake up call for the HDD, simply read the first byte
 						char dummyByte;
 						//
+#ifdef _WIN32
+						_read(file, &dummyByte, 1);
+#else
 						inputStream.read(&dummyByte, 1);
+#endif
 
 						// close the file ...
+#ifdef _WIN32
+						_close(file);
+#else
 						inputStream.close();
+#endif
 
 						log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
 
@@ -157,13 +180,13 @@ void Burst::PlotReader::runTask()
 					// unlimited buffer size
 					if (maxBufferSize == 0)
 						chunkBytes = plotFile.getStaggerScoopBytes();
-					
-					auto noncesPerChunk = std::min(chunkBytes / Settings::scoopSize, plotFile.getStaggerSize());
+
+					const auto noncesPerChunk = std::min(chunkBytes / Settings::scoopSize, plotFile.getStaggerSize());
 					auto nonce = 0ull;
 
 					while (nonce < plotFile.getNonces() && currentBlock && !isCancelled())
 					{
-						START_PROBE_DOMAIN("PlotReader.Nonces", plotFile.getPath());
+						START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces", plotFile.getPath());
 						const auto startNonce = nonce;
 						auto readNonces = noncesPerChunk;
 						const auto staggerBegin = startNonce / plotFile.getStaggerSize();
@@ -174,9 +197,9 @@ void Burst::PlotReader::runTask()
 
 						auto memoryAcquired = false;
 						auto memoryAcquiredMirror = false;
-						const auto memoryToAcquire = std::min(readNonces * Settings::scoopSize, chunkBytes);
+						const auto memoryToAcquire = static_cast<unsigned>(std::min(readNonces * Settings::scoopSize, chunkBytes));
 
-						START_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
+						START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.AllocMemory", plotFile.getPath());
 						while (!isCancelled() && !memoryAcquired)
 						{
 							memoryAcquired = globalBufferSize.reserve(memoryToAcquire);
@@ -185,7 +208,7 @@ void Burst::PlotReader::runTask()
 								while (!isCancelled() && !memoryAcquiredMirror)
 									memoryAcquiredMirror = globalBufferSize.reserve(memoryToAcquire);
 						}
-						TAKE_PROBE_DOMAIN("PlotReader.AllocMemory", plotFile.getPath());
+						TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.AllocMemory", plotFile.getPath());
 
 						// if the reader is cancelled, jump out of the loop
 						if (isCancelled())
@@ -202,12 +225,12 @@ void Burst::PlotReader::runTask()
 
 						if (memoryAcquired && currentBlock)
 						{
-							START_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
+							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork", plotFile.getPath());
 							const auto chunkOffset = startNonce % plotFile.getStaggerSize() * Settings::scoopSize;
 							const auto staggerBlockOffset = staggerBegin * plotFile.getStaggerBytes();
 							const auto staggerScoopOffset = plotReadNotification->scoopNum * plotFile.getStaggerScoopBytes();
 
-							START_PROBE("PlotReader.CreateVerification");
+							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.CreateVerification", plotFile.getPath());
 							VerifyNotification::Ptr verification(new VerifyNotification{});
 							verification->accountId = plotFile.getAccountId();
 							verification->nonceStart = plotFile.getNonceStart();
@@ -258,17 +281,27 @@ void Burst::PlotReader::runTask()
 									}
 								}
 							}
-							TAKE_PROBE("PlotReader.CreateVerification");
+							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.CreateVerification", plotFile.getPath());
 
-							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
+							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.SeekAndRead", plotFile.getPath());
+#ifdef _WIN32
+							_lseek(file, static_cast<long>(staggerBlockOffset + staggerScoopOffset + chunkOffset), SEEK_SET);
+							_read(file, verification->buffer.data(), memoryToAcquire);
+#else
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire);
+#endif
 
 							if (memoryAcquiredMirror)
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
+#ifdef _WIN32
+								_lseek(file, static_cast<long>(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset), SEEK_SET);
+								_read(file, bufferMirror.data(), memoryToAcquire);
+#else
 								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
 								inputStream.read(reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire);
+#endif
 
 								for (size_t i = 0; i < verification->buffer.size(); ++i)
 									memcpy(&verification->buffer[i][32], &bufferMirror[i][32], 32);
@@ -276,7 +309,7 @@ void Burst::PlotReader::runTask()
 								bufferMirror.clear();
 								globalBufferSize.free(memoryToAcquire);
 							}
-							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
+							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.SeekAndRead", plotFile.getPath());
 
 							verificationQueue_->enqueueNotification(verification);
 
@@ -287,18 +320,22 @@ void Burst::PlotReader::runTask()
 							currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
 							nonce += readNonces;
 
-							TAKE_PROBE_DOMAIN("PlotReader.PushWork", plotFile.getPath());
+							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork", plotFile.getPath());
 						}
 						// if the memory was acquired, but it was not the right block, give it free
 						else if (memoryAcquired)
 							globalBufferSize.free(memoryToAcquire);
 							// this should never happen.. no memory allocated, not cancelled, wrong block
 						else;
-						TAKE_PROBE_DOMAIN("PlotReader.Nonces", plotFile.getPath());
+						TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces", plotFile.getPath());
 					}
 				}
 
+#ifdef _WIN32
+				_close(file);
+#else
 				inputStream.close();
+#endif
 
 				// check, if the incoming plot-read-notification is for the current round
 				currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
@@ -332,9 +369,9 @@ void Burst::PlotReader::runTask()
 
 					if (!MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
 					{
-						START_PROBE("PlotReader.Progress")
+						START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Progress", plotFile.getPath())
 						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
-						TAKE_PROBE("PlotReader.Progress")
+						TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Progress", plotFile.getPath())
 					}
 				}
 
@@ -342,7 +379,7 @@ void Burst::PlotReader::runTask()
 				if (isCancelled())
 					plotReadQueue_->enqueueNotification(plotReadNotification);
 
-				TAKE_PROBE_DOMAIN("PlotReader.ReadFile", plotFile.getPath());
+				TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile", plotFile.getPath());
 			}
 
 			if (plotReadNotification->wakeUpCall)
