@@ -115,27 +115,29 @@ namespace Burst
 					return isCancelled() || verifyNotification->block != data_->getCurrentBlockheight();
 				};
 
-				START_PROBE("PlotVerifier.SearchDeadline");
-				auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer, verifyNotification->nonceRead,
-					verifyNotification->nonceStart, verifyNotification->baseTarget, verifyNotification->gensig,
-					stopFunction, stream);
-				TAKE_PROBE("PlotVerifier.SearchDeadline");
+				START_PROBE_DOMAIN("PlotVerifier.SearchDeadline", verifyNotification->inputPath);
+				auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer,
+				                                              verifyNotification->nonceRead,
+				                                              verifyNotification->nonceStart, verifyNotification->baseTarget,
+				                                              verifyNotification->gensig,
+				                                              stopFunction, stream);
+				TAKE_PROBE_DOMAIN("PlotVerifier.SearchDeadline", verifyNotification->inputPath);
 
 				if (bestResult.first != 0 && bestResult.second != 0)
 				{
-					START_PROBE("PlotVerifier.Submit");
+					START_PROBE_DOMAIN("PlotVerifier.Submit", verifyNotification->inputPath);
 					submitFunction_(bestResult.first,
 					                verifyNotification->accountId,
 					                bestResult.second,
 					                verifyNotification->block,
 					                verifyNotification->inputPath,
 					                true);
-					TAKE_PROBE("PlotVerifier.Submit");
+					TAKE_PROBE_DOMAIN("PlotVerifier.Submit", verifyNotification->inputPath);
 				}
 
-				START_PROBE("PlotVerifier.FreeMemory");
+				START_PROBE_DOMAIN("PlotVerifier.FreeMemory", verifyNotification->inputPath);
 				PlotReader::globalBufferSize.free(verifyNotification->memorySize);
-				TAKE_PROBE("PlotVerifier.FreeMemory");
+				TAKE_PROBE_DOMAIN("PlotVerifier.FreeMemory", verifyNotification->inputPath);
 
 				if (progress_ != nullptr)
 					progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::plotSize,
@@ -163,50 +165,69 @@ namespace Burst
 	template <typename TShabal>
 	struct PlotVerifierOperations1
 	{
-		template <typename TContainer>
-		static void updateScoops(TShabal& shabal, const TContainer& scoopPtr)
+		static void update(TShabal& shabal, const ScoopData* buffer, const size_t offset, const size_t size)
 		{
-			shabal.update(scoopPtr[0], Burst::Settings::scoopSize);
+			shabal.update(0 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 0),
+			              Settings::scoopSize);
 		}
 
 		template <typename TContainer>
-		static void close(TShabal& shabal, TContainer& targetPtr)
+		static void close(TShabal& shabal, TContainer& targets, const size_t offset, const size_t size)
 		{
-			shabal.close(targetPtr[0]);
+			shabal.close(0 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[0].data()));
 		}
 	};
 
 	template <typename TShabal>
 	struct PlotVerifierOperations4
 	{
-		template <typename TContainer>
-		static void updateScoops(TShabal& shabal, const TContainer& scoopPtr)
+		static void update(TShabal& shabal, const ScoopData* buffer, const size_t offset, const size_t size)
 		{
-			shabal.update(scoopPtr[0], scoopPtr[1], scoopPtr[2], scoopPtr[3], Burst::Settings::scoopSize);
+			shabal.update(0 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 0),
+			              1 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 1),
+			              2 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 2),
+			              3 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 3),
+			              Settings::scoopSize);
 		}
 
 		template <typename TContainer>
-		static void close(TShabal& shabal, TContainer& targetPtr)
+		static void close(TShabal& shabal, TContainer& targets, const size_t offset, const size_t size)
 		{
-			shabal.close(targetPtr[0], targetPtr[1], targetPtr[2], targetPtr[3]);
+			shabal.close(0 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[0].data()),
+			             1 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[1].data()),
+			             2 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[2].data()),
+			             3 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[3].data()));
 		}
 	};
+
 
 	template <typename TShabal>
 	struct PlotVerifierOperations8
 	{
-		template <typename TContainer>
-		static void updateScoops(TShabal& shabal, const TContainer& scoopPtr)
+		static void update(TShabal& shabal, const ScoopData* buffer, const size_t offset, const size_t size)
 		{
-			shabal.update(scoopPtr[0], scoopPtr[1], scoopPtr[2], scoopPtr[3],
-				scoopPtr[4], scoopPtr[5], scoopPtr[6], scoopPtr[7], Burst::Settings::scoopSize);
+			shabal.update(0 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 0),
+			              1 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 1),
+			              2 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 2),
+			              3 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 3),
+			              4 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 4),
+			              5 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 5),
+			              6 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 6),
+			              7 + offset >= size ? nullptr : reinterpret_cast<const unsigned char*>(buffer + offset + 7),
+			              Settings::scoopSize);
 		}
 
 		template <typename TContainer>
-		static void close(TShabal& shabal, TContainer& targetPtr)
+		static void close(TShabal& shabal, TContainer& targets, const size_t offset, const size_t size)
 		{
-			shabal.close(targetPtr[0], targetPtr[1], targetPtr[2], targetPtr[3],
-				targetPtr[4], targetPtr[5], targetPtr[6], targetPtr[7]);
+			shabal.close(0 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[0].data()),
+			             1 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[1].data()),
+			             2 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[2].data()),
+			             3 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[3].data()),
+			             4 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[4].data()),
+			             5 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[5].data()),
+			             6 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[6].data()),
+			             7 + offset >= size ? nullptr : reinterpret_cast<unsigned char*>(targets[7].data()));
 		}
 	};
 
@@ -218,79 +239,43 @@ namespace Burst
 			return true;
 		}
 
-		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
-						Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, const GensigData& gensig,
-						std::function<bool()> stop, void* stream)
+		static DeadlineTuple run(std::vector<ScoopData>& buffer, const Poco::UInt64 nonceRead,
+		                         const Poco::UInt64 nonceStart, const Poco::UInt64 baseTarget, const GensigData& gensig,
+		                         const std::function<bool()>& stop, void* stream)
 		{
 			DeadlineTuple bestResult = {0, 0};
-			TShabal shabal;
+			TShabal shabalOriginal;
 
 			// hash the gensig according to the cpu instruction level
-			shabal.update(gensig.data(), Settings::hashSize);
+			shabalOriginal.update(gensig.data(), Settings::hashSize);
 
-			for (size_t i = 0;
-				i < buffer.size() && !stop();
-				i += TShabal::HashSize)
+			std::array<HashData, TShabal::HashSize> targets{};
+
+			for (size_t i = 0; i < buffer.size() && !stop(); i += TShabal::HashSize)
 			{
-				auto result = verify(shabal, buffer, nonceRead, nonceStart, i, baseTarget);
+				auto shabal = shabalOriginal;
 
-				for (auto& pair : result)
-					// make sure the nonce->deadline pair is valid...
-					if (pair.first > 0 && pair.second > 0)
-						// ..and better than the others
-						if (bestResult.second == 0 || pair.second < bestResult.second)
-							bestResult = pair;
+				// hash the scoop according to the cpu instruction level
+				TShabalOperations::update(shabal, buffer.data(), i, buffer.size());
+
+				// digest the hash
+				TShabalOperations::close(shabal, targets, i, buffer.size());
+
+				for (auto j = 0u; j < TShabal::HashSize; ++j)
+				{
+					const auto nonce = nonceStart + nonceRead + i + j;
+					const auto deadline = *reinterpret_cast<Poco::UInt64*>(targets[j].data()) / baseTarget;
+
+					// make sure the nonce->deadline pair is valid and better than the others
+					if (nonce > 0 && deadline > 0 && (bestResult.second == 0 || deadline < bestResult.second))
+						bestResult = std::make_pair(nonce, deadline);
+				}
 			}
 
 			return bestResult;
 		}
-
-		static std::vector<DeadlineTuple> verify(const TShabal& shabalCopy, std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
-										  Poco::UInt64 nonceStart, size_t offset, Poco::UInt64 baseTarget)
-		{
-			constexpr auto HashSize = TShabal::HashSize;
-			TShabal shabal = shabalCopy;
-
-			std::array<HashData, HashSize> targets;
-			std::array<Poco::UInt64, HashSize> results;
-
-			// these are the buffer overflow prove arrays 
-			// instead of directly working with the raw arrays  
-			// we create an additional level of indirection 
-			std::array<const unsigned char*, HashSize> scoopPtr;
-			std::array<unsigned char*, HashSize> targetPtr;
-
-			// we init the buffer overflow guardians
-			for (size_t i = 0; i < HashSize; ++i)
-			{
-				const auto overflow = i + offset >= buffer.size();
-
-				// if the index would cause a buffer overflow, we init it 
-				// with a nullptr, otherwise with the value
-				scoopPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(buffer.data() + offset + i);
-				targetPtr[i] = overflow ? nullptr : reinterpret_cast<unsigned char*>(targets[i].data());
-			}
-
-			// hash the scoop according to the cpu instruction level
-			TShabalOperations::updateScoops(shabal, scoopPtr);
-
-			// digest the hash
-			TShabalOperations::close(shabal, targetPtr);
-
-			for (auto i = 0u; i < HashSize; ++i)
-				memcpy(&results[i], targets[i].data(), sizeof(Poco::UInt64));
-
-			// for every calculated deadline we create a pair of {nonce->deadline}
-			std::vector<DeadlineTuple> pairs(HashSize);
-
-			for (size_t i = 0u; i < HashSize; ++i)
-				// only set the pair if it was calculated
-				if (i + offset < buffer.size())
-					pairs[i] = std::make_pair(nonceStart + nonceRead + offset + i, results[i] / baseTarget);
-
-			return pairs;
-		}
 	};
+
 
 	template <typename TGpu, typename TAlgorithm>
 	struct PlotVerifierAlgorithm_gpu
