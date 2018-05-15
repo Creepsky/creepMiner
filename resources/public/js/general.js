@@ -220,3 +220,68 @@ if (MasterMiner == 'true') {
 	    mmHideElements[i].style.display = 'none';
 	}
 }
+
+// master miner menu - WIP
+$.getJSON('https://next.json-generator.com/api/json/get/VJs_LJEAN', function(data) {
+    var builddata = function() {
+        var source = [];
+        var items = [];
+        for (i = 0; i < data.length; i++) {
+            var item = data[i];
+            var label = item["name"];
+            var parentid = item["parent_id"];
+            var icon = item["icon"];
+            var id = item["id"];
+            var url = item["url"];
+
+            if (items[parentid]) {
+                var item = {
+                    parentid: parentid,
+                    label: label,
+                    url: url,
+                    icon: icon,
+                    item: item
+                };
+                if (!items[parentid].items) {
+                    items[parentid].items = [];
+                }
+                items[parentid].items[items[parentid].items.length] = item;
+                items[id] = item;
+            } else {
+                items[id] = {
+                    parentid: parentid,
+                    label: label,
+                    url: url,
+                    icon: icon,
+                    item: item
+                };
+                source[id] = items[id];
+            }
+        }
+        return source;
+    }
+    // build dynamic menu from json payload
+    var buildMenu = function(menu, source) {
+        var isFirst = true;
+        $.each(source, function() {
+            if (this.label) {
+                if (!isFirst) {
+                    var divider = $('<div class="dropdown-divider"></div>');
+                    menu.append(divider);
+                }
+                var parent = $('<a class="dropdown-item" href="' + this.url + '"><i class="text-muted ' + this.icon + '"></i>  ' + this.label + '</a>');
+                menu.append(parent);
+                if (this.items && this.items.length > 0) {
+                    $.each(this.items, function() {
+                        var child = $('<a class="dropdown-item" href="' + this.url + '"><i class="text-muted ' + this.icon + '" ></i>  ' + this.label + '</a>');
+                        menu.append(child);
+                    });
+                }
+                isFirst = false;
+            }
+        });
+    }
+    var source = builddata();
+    console.log(source);
+    buildMenu($('#dynamic-menu'), source);
+});
