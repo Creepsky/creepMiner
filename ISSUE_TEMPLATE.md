@@ -1,26 +1,32 @@
+Before submitting your issue, please review the following checklist:
+
+- [ ] **AVOID** using the issue tracker for questions or help. 
+Submitting issues to this repository are usually reserved for bugs, feature requests, or changes to the source code. We have a great discord to ask for help here: https://discord.gg/qnjyVQt
+- [ ] **DO** include log files.
+- [ ] **DO** include the miner config.
+- [ ] **DO** describe the operating system for the Server and Client (Windows / Linux). Also, the run-time platform and versions.
+
+
+### Subject of the issue
+Describe your issue here.
+
+### Your environment
+* version of creepMiner.
+* version of OS.
+* which browser and its version.
+
+### Steps to reproduce
+Tell us how to reproduce this issue.
+
+### Expected behavior
+Tell us what should happen.
+
+### Actual behavior
+Tell us what happens instead.
+
+
+### Other information
+List any other information that is relevant to your issue. Stack traces, related issues, suggestions on how to fix etc.
 ```
-issue
-Pronunciation /ˈɪʃuː/ /ˈɪsjuː/
-An important topic or problem for debate or discussion.
+insert the output from ionic info here.
 ```
-
-Please use the **search** function! Maybe your issue is already created by someone else. Also read the [**wiki pages**](https://github.com/Creepsky/creepMiner/wiki).
-
-If you have a **question** about the miner:
-- please post only miner related questions
-- be precise (questions like 'Dude, it is slow for me, why?' will be closed)
-
-If you have a **problem** with the miner:
-- can you fix it yourself? If you can, please open a [pull request](https://help.github.com/articles/about-pull-requests/) - thank you!
-- please post only general problems, not individual ones; otherhwise see [can you help me with...?](https://github.com/Creepsky/creepMiner/wiki/FAQ#can-you-help-me-with)
-- use the [**latest release**](https://github.com/Creepsky/creepMiner/releases/latest), your issue may be solved already
-- describe the problem as accurately as possible
-- describe all steps to get to your problem so it can be traced - otherwise it is nearly impossible to fix it!
-- provide additional information like the name of your **OS**, the miner **version**, your **gcc version**, ...
-- attach **log files**, **screenshots** and your **config-file**
-
-If you want a **new feature** in the miner:
-- can you add it yourself? If you can, please open a [pull request](https://help.github.com/articles/about-pull-requests/) - thank you!
-- describe your idea as accurately as possible
-- if possible, please use **screenshots**
-- please only post doable features; otherwise see [can you add...?](https://github.com/Creepsky/creepMiner/wiki/FAQ#can-you-add)
