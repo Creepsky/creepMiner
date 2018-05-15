@@ -1,0 +1,40 @@
+{
+    "words": {
+        "ERROR": "color: #E88D67;",
+        "Error": "color: #E88D67;",
+        "WARN": "color: yellow;",
+        "INFO": "color: #99C5B5;",
+        "Node is DEAD": "color: #E88D67;",
+        "Nonce forward request": "color: yellow;",
+        "Got nonce forward request": "color: yellow;",
+        "nonce forward request from remote miner": "color: yellow;",
+        "success": "font-weight: bold;color: green;",
+        "deadlineText": "font-weight: bold;color: green;",
+        "ended in": "font-weight: bold;color:#70389c;",
+        "Sending wallet request": "color: yellow;",
+        "Processed block": "color: yellow;color: #99C5B5;",
+        "Ip": "color: yellow;color: #99C5B5;",
+        "in:    ": "color: #2fa4e7;",
+        "Submit-loop 1": "color: #468847;",
+        "Submit-loop 2": "color: #468847;",
+        "Submit-loop ": "color: yellow;",
+        "ItemStateChangedEvent": "font-weight: bold;"
+    },
+    "lines": {
+        "/Volumes/": "color: #ff3898;font-weight: bold;",
+        "miner-01": "color: #ff3898;font-weight: bold;",
+        "miner-02": "color: #ff54A7;font-weight: bold;",
+        "miner-03": "color: #E4239D;font-weight: bold;",
+        "ERROR": "font-weight: bold;",
+        "Error": "font-weight: bold;",
+        "block#": "color: #99C5B5;",
+        "scoop#": "color: #99C5B5;",
+        "baseTarget#": "color: #99C5B5;",
+        "nonce: ": "color: #2fa4e7;",
+        "nonce found": "color: #73a839;",
+        "nonce submitted": "color: #468847;",
+        "JSON confirmation": "color: #468847;",
+        "nonce confirmed": "color: green;font-weight: bold;",
+        "requestType=getMiningInfo": "color: black;"
+    }
+}
