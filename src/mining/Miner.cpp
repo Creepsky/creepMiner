@@ -518,7 +518,7 @@ bool Burst::Miner::getMiningInfo(const Url& url)
 	try
 	{
 		if (miningInfoSession_ == nullptr && !url.empty())
-			miningInfoSession_ = url.createSession();
+			miningInfoSession_ = MinerConfig::getConfig().createSession(url);
 
 		Request request(std::move(miningInfoSession_));
 
