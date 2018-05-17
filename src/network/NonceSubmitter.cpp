@@ -116,36 +116,12 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 
 		++submitTryCount;
 	}
-
-	log_debug(MinerLogger::nonceSubmitter, deadline_->toActionString("JSON confirmation") + Poco::format("\n\tJSON:  %s", confirmation.json));
-
+	
 	// it has to be the same block
 	if (deadline_->getBlock() == miner_.getBlockheight())
 	{
 		if (confirmation.errorCode == SubmitResponse::Confirmed)
 		{
-			auto confirmedDeadlinesPath = MinerConfig::getConfig().getConfirmedDeadlinesPath();
-
-			if (!confirmedDeadlinesPath.empty())
-			{
-				std::ofstream file;
-
-				file.open(MinerConfig::getConfig().getConfirmedDeadlinesPath(), std::ios_base::out | std::ios_base::app);
-
-				if (file.is_open())
-				{
-					file << deadline_->getAccountId() << ";"
-						<< deadline_->getPlotFile() << ";"
-						<< deadline_->getDeadline() << std::endl;
-
-					file.close();
-				}
-				else
-				{
-					log_error(MinerLogger::nonceSubmitter, "Error on logging confirmed deadline!\nPath: %s", confirmedDeadlinesPath);
-				}
-			}
-
 			// our calculated deadlines differs from the pools one
 			if (confirmation.deadline != deadline_->getDeadline())
 			{
