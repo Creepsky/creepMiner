@@ -538,6 +538,31 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 		// urls
 		{
+			const auto checkCreateUrlArrayFunc = [&checkCreateUrlFunc](Poco::JSON::Object::Ptr urlsObj, const std::string& name,
+			                                                           Url& url,
+			                                                           std::vector<Url>& altUrls,
+			                                                           const std::string& defaultScheme,
+			                                                           unsigned short defaultPort,
+			                                                           const std::string& createUrl)
+			{
+				if (urlsObj->isArray(name))
+				{
+					const auto urls = urlsObj->getArray(name);
+
+					for (unsigned i = 0; i < urls->size(); ++i)
+					{
+						if (i == 0)
+							url = Url{urls->getElement<std::string>(i)};
+						else
+							altUrls.emplace_back(urls->getElement<std::string>(i));
+					}
+				}
+				else
+				{
+					checkCreateUrlFunc(urlsObj, name, url, defaultScheme, defaultPort, createUrl);
+				}
+			};
+
 			Poco::JSON::Object::Ptr urlsObj;
 
 			if (miningObj->has("urls"))
@@ -545,25 +570,10 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 			else
 				urlsObj = new Poco::JSON::Object;
 
-			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "https", 443, "https://pool.creepminer.net");
-
-			if (urlsObj->isArray("miningInfo"))
-			{
-				const auto miningInfoUrls = urlsObj->getArray("miningInfo");
-
-				for (unsigned i = 0; i < miningInfoUrls->size(); ++i)
-				{
-					if (i == 0)
-						urlMiningInfo_ = Url{miningInfoUrls->getElement<std::string>(i)};
-					else
-						urlMiningInfoAlt_.emplace_back(miningInfoUrls->getElement<std::string>(i));
-				}
-			}
-			else
-			{
-				checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "https", 443, "https://pool.creepminer.net");
-			}
-
+			checkCreateUrlArrayFunc(urlsObj, "submission", urlPool_, urlPoolAlt_, "https", 443,
+			                        "https://pool.creepminer.net");
+			checkCreateUrlArrayFunc(urlsObj, "miningInfo", urlMiningInfo_, urlMiningInfoAlt_, "https", 443,
+			                        "https://pool.creepminer.net");
 			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 443, "https://wallet.creepminer.net");
 
 			if (urlMiningInfo_.empty() && !urlPool_.empty())
@@ -1118,6 +1128,12 @@ Burst::Url Burst::MinerConfig::getPoolUrl() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return urlPool_;
+}
+
+const std::vector<Burst::Url>& Burst::MinerConfig::getPoolUrlAlt() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return urlPoolAlt_;
 }
 
 Burst::Url Burst::MinerConfig::getMiningInfoUrl() const

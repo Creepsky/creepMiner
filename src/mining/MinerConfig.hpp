@@ -165,6 +165,7 @@ namespace Burst
 		float getSendTimeout() const;
 		float getTimeout() const;
 		Url getPoolUrl() const;
+		const std::vector<Url>& getPoolUrlAlt() const;
 		Url getMiningInfoUrl() const;
 		const std::vector<Url>& getMiningInfoUrlAlt() const;
 		Url getWalletUrl() const;
@@ -296,6 +297,7 @@ namespace Burst
 		Url urlWallet_{"https://wallet.creepminer.net"};
 		Url urlServer_{"http://0.0.0.0:8124"};
 		std::vector<Url> urlMiningInfoAlt_{};
+		std::vector<Url> urlPoolAlt_{};
 		std::string proxyIp_{};
 		Poco::UInt16 proxyPort_{};
 		Passphrase proxyUser_{}, proxyPassword_{};
