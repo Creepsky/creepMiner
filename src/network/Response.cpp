@@ -44,7 +44,13 @@ bool Burst::Response::canReceive() const
 	return session_ != nullptr;
 }
 
-bool Burst::Response::receive(std::string& data)
+bool Burst::Response::receive(std::string& data) const
+{
+	int status;
+	return receive(data, status);
+}
+
+bool Burst::Response::receive(std::string& data, int& status) const
 {
 	poco_ndc(Response::receive);
 	
@@ -56,7 +62,8 @@ bool Burst::Response::receive(std::string& data)
 		HTTPResponse response;
 		const auto responseStream = &session_->receiveResponse(response);
 		data = {std::istreambuf_iterator<char>(*responseStream), {}};
-		return response.getStatus() == HTTPResponse::HTTP_OK;
+		status = response.getStatus();
+		return status == HTTPResponse::HTTP_OK;
 	}
 	catch (Poco::Exception& exc)
 	{
@@ -97,14 +104,15 @@ bool Burst::NonceResponse::canReceive() const
 	return response_.canReceive();
 }
 
-Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
+Burst::NonceConfirmation Burst::NonceResponse::getConfirmation() const
 {
 	poco_ndc(NonceResponse::getConfirmation);
 	
 	std::string response;
-	NonceConfirmation confirmation{ 0, SubmitResponse::None };
+	int status;
+	NonceConfirmation confirmation{0, SubmitResponse::None, ""};
 
-	if (response_.receive(response))
+	if (response_.receive(response, status))
 	{
 		try
 		{
@@ -115,7 +123,7 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 
 			if (root->has("deadline"))
 			{
-                confirmation.deadline = (Poco::UInt64)root->get("deadline");
+                confirmation.deadline = static_cast<Poco::UInt64>(root->get("deadline"));
 				confirmation.errorCode = SubmitResponse::Confirmed;
 			}
 			else if (root->has("errorCode"))
@@ -147,11 +155,26 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 			confirmation.errorCode = SubmitResponse::Error;
 		}
 	}
+	else
+	{
+		confirmation.errorCode = SubmitResponse::Error;
+		confirmation.json = response;
+		Poco::JSON::Parser jsonParser;
+
+		try
+		{
+			auto json = jsonParser.parse(response).extract<Poco::JSON::Object::Ptr>();
+			confirmation.errorText = json->getValue<std::string>("errorDescription");
+			confirmation.errorNumber = json->getValue<int>("errorCode");
+		}
+		catch (...)
+		{}
+	}
 
 	return confirmation;
 }
 
-bool Burst::NonceResponse::isDataThere()
+bool Burst::NonceResponse::isDataThere() const
 {
 	return response_.isDataThere();
 }
@@ -209,7 +232,7 @@ const std::string& Burst::HttpResponse::getMessage() const
 
 const std::string& Burst::HttpResponse::getPart(size_t index) const
 {
-	static std::string empty = "";
+	static std::string empty;
 
 	if (index >= tokens_.size())
 		return empty;
