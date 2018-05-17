@@ -269,11 +269,11 @@ $.getJSON('https://next.json-generator.com/api/json/get/VJs_LJEAN', function(dat
                     var divider = $('<div class="dropdown-divider"></div>');
                     menu.append(divider);
                 }
-                var parent = $('<a class="dropdown-item" href="' + this.url + '"><i class="text-muted ' + this.icon + '"></i>  ' + this.label + '</a>');
+                var parent = $('<a class="dropdown-item" href="' + this.url + '" target="_blank"><i class="text-muted ' + this.icon + '"></i>  ' + this.label + '</a>');
                 menu.append(parent);
                 if (this.items && this.items.length > 0) {
                     $.each(this.items, function() {
-                        var child = $('<a class="dropdown-item" href="' + this.url + '"><i class="text-muted ' + this.icon + '" ></i>  ' + this.label + '</a>');
+                        var child = $('<a class="dropdown-item" href="' + this.url + '" target="_blank"><i class="text-muted ' + this.icon + '" ></i>  ' + this.label + '</a>');
                         menu.append(child);
                     });
                 }
