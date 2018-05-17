@@ -184,6 +184,11 @@ void Burst::MinerConfig::printUrl(HostType type) const
 	switch (type)
 	{
 	case HostType::MiningInfo: return printUrl(urlMiningInfo_, "Mininginfo URL");
+	case HostType::MiningInfoAlts:
+		{
+			for (size_t i = 0; i < urlMiningInfoAlt_.size(); ++i)
+				printUrl(urlMiningInfoAlt_[i], Poco::format("Alt. Mininginfo URL %z", i));
+		}
 	case HostType::Pool: return printUrl(urlPool_, "Submission URL");
 	case HostType::Wallet: return printUrl(urlWallet_, "Wallet URL");
 	case HostType::Server: return printUrl(urlServer_, "Server URL");
@@ -540,8 +545,25 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 			else
 				urlsObj = new Poco::JSON::Object;
 
-			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "http", 8124, "http://pool.creepminer.net:8124");
-			checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "http", 8124, "http://pool.creepminer.net:8124");
+			checkCreateUrlFunc(urlsObj, "submission", urlPool_, "https", 443, "https://pool.creepminer.net");
+
+			if (urlsObj->isArray("miningInfo"))
+			{
+				const auto miningInfoUrls = urlsObj->getArray("miningInfo");
+
+				for (unsigned i = 0; i < miningInfoUrls->size(); ++i)
+				{
+					if (i == 0)
+						urlMiningInfo_ = Url{miningInfoUrls->getElement<std::string>(i)};
+					else
+						urlMiningInfoAlt_.emplace_back(miningInfoUrls->getElement<std::string>(i));
+				}
+			}
+			else
+			{
+				checkCreateUrlFunc(urlsObj, "miningInfo", urlMiningInfo_, "https", 443, "https://pool.creepminer.net");
+			}
+
 			checkCreateUrlFunc(urlsObj, "wallet", urlWallet_, "https", 443, "https://wallet.creepminer.net");
 
 			if (urlMiningInfo_.empty() && !urlPool_.empty())
@@ -1102,6 +1124,12 @@ Burst::Url Burst::MinerConfig::getMiningInfoUrl() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	return urlMiningInfo_;
+}
+
+const std::vector<Burst::Url>& Burst::MinerConfig::getMiningInfoUrlAlt() const
+{
+	Poco::Mutex::ScopedLock lock(mutex_);
+	return urlMiningInfoAlt_;
 }
 
 Burst::Url Burst::MinerConfig::getWalletUrl() const

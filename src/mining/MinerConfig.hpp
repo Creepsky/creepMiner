@@ -47,6 +47,7 @@ namespace Burst
 		Pool,
 		Wallet,
 		MiningInfo,
+		MiningInfoAlts,
 		Server
 	};
 
@@ -165,6 +166,7 @@ namespace Burst
 		float getTimeout() const;
 		Url getPoolUrl() const;
 		Url getMiningInfoUrl() const;
+		const std::vector<Url>& getMiningInfoUrlAlt() const;
 		Url getWalletUrl() const;
 		std::string getProxyFullUrl() const;
 		Poco::Net::HTTPClientSession::ProxyConfig getProxyConfig() const;
@@ -289,10 +291,11 @@ namespace Burst
 		unsigned submissionMaxRetry_ = 10;
 		unsigned http_ = 1;
 		std::string confirmedDeadlinesPath_ = "";
-		Url urlPool_{"http://pool.creepminer.net:8124"};
-		Url urlMiningInfo_{"http://pool.creepminer.net:8124"};
+		Url urlPool_{"https://pool.creepminer.net"};
+		Url urlMiningInfo_{"https://pool.creepminer.net"};
 		Url urlWallet_{"https://wallet.creepminer.net"};
 		Url urlServer_{"http://0.0.0.0:8124"};
+		std::vector<Url> urlMiningInfoAlt_{};
 		std::string proxyIp_{};
 		Poco::UInt16 proxyPort_{};
 		Passphrase proxyUser_{}, proxyPassword_{};

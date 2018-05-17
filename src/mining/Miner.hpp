@@ -87,7 +87,7 @@ namespace Burst
 		void setIsProcessing(bool isProc);
 
 	private:
-		bool getMiningInfo();
+		bool getMiningInfo(const Url& url);
 		NonceConfirmation submitNonceAsyncImpl(
 			const std::tuple<Poco::UInt64, Poco::UInt64,
 			                 Poco::UInt64, Poco::UInt64, std::string, bool, std::string>&

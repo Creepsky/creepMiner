@@ -144,17 +144,33 @@ void Burst::Miner::run()
 	//wallet_.getLastBlock(currentBlockHeight_);
 
 	log_information(MinerLogger::miner, "Fetching getMiningInfo from pool");
-	
+	size_t currentMiningInfoIndex = 0;
+
 	while (running_)
 	{
 		try
 		{
-			if (getMiningInfo())
+			const auto& altMiningInfoUrls = MinerConfig::getConfig().getMiningInfoUrlAlt();
+			
+			std::vector<Url> miningInfoUrls;
+			miningInfoUrls.reserve(altMiningInfoUrls.size() + 1);
+			miningInfoUrls.emplace_back(MinerConfig::getConfig().getMiningInfoUrl());
+			miningInfoUrls.insert(miningInfoUrls.end(), altMiningInfoUrls.begin(), altMiningInfoUrls.end());
+
+			if (currentMiningInfoIndex >= miningInfoUrls.size())
+				currentMiningInfoIndex = 0;
+
+			const auto& miningInfoUrl = miningInfoUrls[currentMiningInfoIndex];
+			
+			if (getMiningInfo(miningInfoUrl))
 				errors = 0;
 			else
 			{
 				++errors;
-				log_debug(MinerLogger::miner, "Could not fetch getMiningInfo %u/5 times...", errors);
+				log_debug(MinerLogger::miner, "Could not fetch getMiningInfo %s (%u/5 times total)...",
+					miningInfoUrl.getCanonical(), errors);
+				++currentMiningInfoIndex;
+				miningInfoSession_.reset();
 			}
 
 			// we have a tollerance of 5 times of not being able to fetch mining infos, before its a real error
@@ -494,15 +510,15 @@ bool Burst::Miner::isProcessing() const
 	return isProcessing_;
 }
 
-bool Burst::Miner::getMiningInfo()
+bool Burst::Miner::getMiningInfo(const Url& url)
 {
 	using namespace Poco::Net;
 	poco_ndc(Miner::getMiningInfo);
 
 	try
 	{
-		if (miningInfoSession_ == nullptr && !MinerConfig::getConfig().getMiningInfoUrl().empty())
-			miningInfoSession_ = MinerConfig::getConfig().getMiningInfoUrl().createSession();
+		if (miningInfoSession_ == nullptr && !url.empty())
+			miningInfoSession_ = url.createSession();
 
 		Request request(std::move(miningInfoSession_));
 
