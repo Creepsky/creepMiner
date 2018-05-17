@@ -122,6 +122,41 @@ std::string Burst::Deadline::toActionString(const std::string& action) const
 	                    getWorker().empty() ? getIp().toString() : Poco::format("%s (%s)", getWorker(), getIp().toString()));
 }
 
+std::string Burst::Deadline::toActionString(const std::string& action,
+	const std::vector<std::pair<std::string, std::string>>& additionalData) const
+{
+	size_t longestKey = 0;
+
+	for (const auto& pair : additionalData)
+		if (pair.first.size() > longestKey)
+			longestKey = pair.first.size();
+
+	longestKey = std::max(longestKey, size_t{5});
+	
+	std::stringstream sstream;
+	sstream << Poco::format("%s: %s (%s)", getAccountName(), action, deadlineToReadableString()) << std::endl;
+	sstream << '\t' << Poco::format("nonce:%s%s", std::string(longestKey + 3 - 5, ' '), numberToString(getNonce())) << std::endl;
+	sstream << '\t' << Poco::format("in:%s%s", std::string(longestKey + 3 - 2, ' '), getPlotFile()) << std::endl;
+	sstream << '\t' << Poco::format("from:%s%s",
+	                                std::string(longestKey + 3 - 4, ' '),
+	                                getWorker().empty()
+		                                ? getIp().toString()
+		                                : Poco::format("%s (%s)", getWorker(), getIp().toString())) << std::endl;
+
+	for (size_t i = 0; i < additionalData.size(); ++i)
+	{
+		const auto& pair = additionalData[i];
+
+		sstream << '\t' << Poco::format("%s:%s%s", pair.first, std::string(longestKey + 3 - pair.first.size(), ' '),
+		                                pair.second);
+
+		if (i + 1 < additionalData.size())
+			sstream << std::endl;		
+	}
+
+	return sstream.str();
+}
+
 void Burst::Deadline::setDeadline(Poco::UInt64 deadline)
 {
 	deadline_ = deadline;

@@ -61,6 +61,8 @@ namespace Burst
 		Poco::UInt64 getTotalPlotsize() const;
 		const Poco::Net::IPAddress& getIp() const;
 		std::string toActionString(const std::string& action) const;
+		std::string toActionString(const std::string& action,
+			const std::vector<std::pair<std::string, std::string>>& additionalData) const;
 
 		bool isOnTheWay() const;
 		bool isSent() const;
