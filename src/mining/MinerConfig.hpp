@@ -274,6 +274,7 @@ namespace Burst
 		 * \return The http session, if the connection was successful, nullptr otherwise.
 		 */
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
+		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Url& url) const;
 
 		/**
 		 * \brief Returns the singleton-instance of the configuration.
