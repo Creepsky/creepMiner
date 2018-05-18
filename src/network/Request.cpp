@@ -66,7 +66,12 @@ Burst::Response Burst::Request::send(Poco::Net::HTTPRequest& request)
 	}
 	catch(Poco::Exception& exc)
 	{
-		log_error(MinerLogger::socket, "Error on sending request: %s", exc.displayText());
+		log_error(MinerLogger::socket, "Error on sending request\n"
+			"\tURI:    %s %s %s\n"
+			"\tHost:   %s\n"
+			"\tReason: %s",
+			request.getMethod(), request.getURI(), request.getVersion(), request.getHost(), exc.displayText());
+
 		log_current_stackframe(MinerLogger::socket);
 
 		session_->reset();
