@@ -34,11 +34,13 @@ string(REPLACE "." ";" VERSION_LIST ${VERSION})
 list(GET VERSION_LIST 0 VERSION_MAJOR)
 list(GET VERSION_LIST 1 VERSION_MINOR)
 list(GET VERSION_LIST 2 VERSION_BUILD)
+list(GET VERSION_LIST 3 VERSION_REVISION)
 
 # define it for the source files
 add_definitions(-DVERSION_MAJOR=${VERSION_MAJOR}
 				-DVERSION_MINOR=${VERSION_MINOR}
-				-DVERSION_BUILD=${VERSION_BUILD})
+				-DVERSION_BUILD=${VERSION_BUILD}
+				-DVERSION_REVISION=${VERSION_REVISION})
 
 ##################################################################
 # using Conan for dependencies

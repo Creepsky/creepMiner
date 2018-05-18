@@ -29,7 +29,7 @@
 
 std::string Burst::Settings::cpuInstructionSet;
 Burst::ProjectData Burst::Settings::project("creepMiner",
-	Burst::Version(VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, 0));
+	Burst::Version(VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, VERSION_REVISION));
 
 #ifdef USE_SSE4
 const bool Burst::Settings::sse4 = true;
@@ -196,10 +196,10 @@ std::string Burst::ProjectData::getOnlineVersion() const
 	return onlineVersion_.literal;
 }
 
-std::string Burst::ProjectData::getVersion() const
+const Burst::Version& Burst::ProjectData::getVersion() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return version_.literal;
+	return version_;
 }
 
 Burst::ProjectData::ProjectData(std::string&& name, Version version)

@@ -59,7 +59,7 @@ namespace Burst
 		void refreshNameAndVersion();
 		void refreshAndCheckOnlineVersion(Poco::Timer& timer);
 		std::string getOnlineVersion() const;
-		std::string getVersion() const;
+		const Version& getVersion() const;
 		std::string name;
 		std::string nameAndVersion;
 		std::string nameAndVersionVerbose;
