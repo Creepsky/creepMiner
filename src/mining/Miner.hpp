@@ -74,8 +74,8 @@ namespace Burst
 		                   std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool, std::string>,
 		                   Miner> submitNonceAsync;
 
-		std::shared_ptr<Deadline> getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
-		std::shared_ptr<Deadline> getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight);
+		std::shared_ptr<Deadline> getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight) const;
+		std::shared_ptr<Deadline> getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight) const;
 		MinerData& getData();
 		std::shared_ptr<Account> getAccount(AccountId id, bool persistent = false);
 		void createPlotVerifiers();

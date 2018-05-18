@@ -83,7 +83,7 @@ namespace Burst
 		//std::vector<Poco::JSON::Object> getEntries() const;
 		bool forEntries(const std::function<bool(const Poco::JSON::Object&)>& traverseFunction) const;
 		//const std::unordered_map<AccountId, Deadlines>& getDeadlines() const;
-		std::shared_ptr<Deadline> getBestDeadline(Poco::UInt64 accountId, DeadlineSearchType searchType);
+		std::shared_ptr<Deadline> getBestDeadline(Poco::UInt64 accountId, DeadlineSearchType searchType) const;
 		Poco::ActiveResult<std::shared_ptr<Account>> getLastWinnerAsync(const Wallet& wallet, Accounts& accounts);
 
 		bool addDeadlineIfBest(const std::shared_ptr<Deadline>& deadline);
@@ -116,7 +116,7 @@ namespace Burst
 
 	private:
 		std::shared_ptr<Deadline> getBestDeadlineUnlocked(Poco::UInt64 accountId,
-			DeadlineSearchType searchType);
+			DeadlineSearchType searchType) const;
 
 		bool addDeadlineUnlocked(const std::shared_ptr<Deadline>& deadline);
 

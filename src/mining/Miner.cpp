@@ -773,11 +773,11 @@ Burst::NonceConfirmation Burst::Miner::submitNonceAsyncImpl(
 	return submitNonce(deadline);
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight)
+std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight) const
 {
 	poco_ndc(Miner::getBestSent);
 
-	auto block = data_.getBlockData();
+	const auto block = data_.getBlockData();
 
 	if (block == nullptr ||
 		blockHeight != block->getBlockheight())
@@ -786,11 +786,11 @@ std::shared_ptr<Burst::Deadline> Burst::Miner::getBestSent(Poco::UInt64 accountI
 	return block->getBestDeadline(accountId, BlockData::DeadlineSearchType::Sent);
 }
 
-std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight)
+std::shared_ptr<Burst::Deadline> Burst::Miner::getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight) const
 {
 	poco_ndc(Miner::getBestConfirmed);
 
-	auto block = data_.getBlockData();
+	const auto block = data_.getBlockData();
 
 	if (block == nullptr ||
 		blockHeight != block->getBlockheight())

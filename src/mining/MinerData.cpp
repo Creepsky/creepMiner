@@ -453,7 +453,7 @@ bool Burst::BlockData::forEntries(const std::function<bool(const Poco::JSON::Obj
 //	return deadlines_;
 //}
 
-std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadlineUnlocked(const Poco::UInt64 accountId, const DeadlineSearchType searchType)
+std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadlineUnlocked(const Poco::UInt64 accountId, const DeadlineSearchType searchType) const
 {
 	poco_ndc(BlockData::getBestDeadlineUnlocked);
 
@@ -484,7 +484,7 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadlineUnlocked(const
 	}
 }
 
-std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(const Poco::UInt64 accountId, const DeadlineSearchType searchType)
+std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(const Poco::UInt64 accountId, const DeadlineSearchType searchType) const
 {
 	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	return getBestDeadlineUnlocked(accountId, searchType);
