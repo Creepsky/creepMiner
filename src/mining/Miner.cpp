@@ -145,6 +145,7 @@ void Burst::Miner::run()
 
 	log_information(MinerLogger::miner, "Fetching getMiningInfo from pool");
 	size_t currentMiningInfoIndex = 0;
+	std::string currentUrl;
 
 	while (running_)
 	{
@@ -161,6 +162,12 @@ void Burst::Miner::run()
 				currentMiningInfoIndex = 0;
 
 			const auto& miningInfoUrl = miningInfoUrls[currentMiningInfoIndex];
+
+			if (miningInfoUrl.getCanonical(true) != currentUrl)
+			{
+				currentUrl = miningInfoUrl.getCanonical(true);
+				log_debug(MinerLogger::miner, "Switched getMiningInfo source to %s", currentUrl);
+			}
 			
 			if (getMiningInfo(miningInfoUrl))
 				errors = 0;
