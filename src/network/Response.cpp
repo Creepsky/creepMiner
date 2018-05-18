@@ -164,8 +164,15 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation() const
 		try
 		{
 			auto json = jsonParser.parse(response).extract<Poco::JSON::Object::Ptr>();
-			confirmation.errorText = json->getValue<std::string>("errorDescription");
-			confirmation.errorNumber = json->getValue<int>("errorCode");
+			if (json->has("errorDescription"))
+				confirmation.errorText = json->getValue<std::string>("errorDescription");
+			else if (json->has("result"))
+				confirmation.errorText = json->getValue<std::string>("result");
+
+			if (json->has("errorCode"))
+				confirmation.errorNumber = json->getValue<int>("errorCode");
+			else
+				confirmation.errorNumber = -1;
 		}
 		catch (...)
 		{}
