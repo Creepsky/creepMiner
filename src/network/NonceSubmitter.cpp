@@ -33,7 +33,6 @@
 
 Burst::NonceSubmitter::NonceSubmitter(Miner& miner, const std::shared_ptr<Deadline>& deadline)
 	: Task(serializeDeadline(*deadline)),
-	  submitAsync(this, &NonceSubmitter::submit),
 	  miner_(miner),
 	  deadline_(deadline)
 {}

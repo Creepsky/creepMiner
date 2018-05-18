@@ -36,7 +36,6 @@ namespace Burst
 		NonceSubmitter(Miner& miner, const std::shared_ptr<Deadline>& deadline);
 		~NonceSubmitter() override = default;
 
-		Poco::ActiveMethod<NonceConfirmation, void, NonceSubmitter> submitAsync;
 		NonceConfirmation submit();
 
 		void runTask() override;
