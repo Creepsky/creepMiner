@@ -145,7 +145,8 @@ namespace Burst
 			}
 			catch (Poco::Exception& exc)
 			{
-				log_error(MinerLogger::plotVerifier, "One of the plot verifiers just crashed! It will recover now.");
+				log_error(MinerLogger::plotVerifier, "One of the plot verifiers just crashed! It will recover now.\n"
+					"\tReason: %s", exc.displayText());
 				log_exception(MinerLogger::plotVerifier, exc);
 			}
 			catch (std::exception& exc)
