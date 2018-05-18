@@ -178,4 +178,6 @@ namespace Burst
 
 	std::string toHex(const std::string& plainText);
 	std::string fromHex(const std::string& codedText);
+
+	std::string createBuildFeatures();
 }

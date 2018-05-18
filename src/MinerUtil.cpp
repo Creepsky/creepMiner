@@ -1135,3 +1135,22 @@ std::string Burst::fromHex(const std::string& codedText)
 	Poco::StreamCopier::copyToString(hex, out);
 	return out;
 }
+
+std::string Burst::createBuildFeatures()
+{
+	using namespace Burst::Settings;
+
+	std::stringstream sstream;
+
+	const auto checkAndPrint = [&](const bool flag, const std::string& text) {
+		sstream << ' ' << (flag ? '+' : '-') << text;
+	};
+
+	checkAndPrint(cuda, "CUDA");
+	checkAndPrint(openCl, "OpenCL");
+	checkAndPrint(sse4, "SSE4");
+	checkAndPrint(avx, "AVX");
+	checkAndPrint(avx2, "AVX2");
+
+	return sstream.str();
+}

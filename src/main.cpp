@@ -107,20 +107,8 @@ int main(const int argc, const char* argv[])
 
 	using namespace Burst::Settings;
 
-	std::stringstream sstream;
-
-	const auto checkAndPrint = [&](const bool flag, const std::string& text) {
-		sstream << ' ' << (flag ? '+' : '-') << text;
-	};
-
-	checkAndPrint(cuda, "CUDA");
-	checkAndPrint(openCl, "OpenCL");
-	checkAndPrint(sse4, "SSE4");
-	checkAndPrint(avx, "AVX");
-	checkAndPrint(avx2, "AVX2");
-
 	log_information(general, Burst::Settings::project.nameAndVersionVerbose);
-	log_information(general, "%s mode%s", mode, sstream.str());
+	log_information(general, "%s mode%s", mode, Burst::createBuildFeatures());
 	log_information(general, "----------------------------------------------");
 	log_information(general, "Github:   https://github.com/Creepsky/creepMiner");
 	log_information(general, "Author:   Creepsky [creepsky@gmail.com]");
