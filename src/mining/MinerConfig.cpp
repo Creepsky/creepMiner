@@ -129,6 +129,23 @@ void Burst::MinerConfig::printConsole() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 
+	log_system(MinerLogger::config, "Version : %s%s", Settings::project.getVersion().literal,
+		Settings::project.getVersion().revision > 0
+			? Poco::format(" (DEV. %u)", Settings::project.getVersion().revision)
+			: std::string{});
+
+#ifdef NDEBUG
+	std::string mode = "Release";
+#else
+	std::string mode = "Debug";
+#endif
+
+	log_system(MinerLogger::config, "Mode : %s", mode);
+	log_system(MinerLogger::config, "Build features :%s", createBuildFeatures());
+
+	if (!getWorkerName().empty())
+		log_system(MinerLogger::config, "Worker : %s", getWorkerName());
+
 	log_system(MinerLogger::config, "Submission Max Retry : %s",
 		getSubmissionMaxRetry() == 0u ? "unlimited" : std::to_string(getSubmissionMaxRetry()) + " seconds");
 
