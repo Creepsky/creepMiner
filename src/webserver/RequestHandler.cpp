@@ -756,14 +756,11 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 
 			log_information(MinerLogger::server, deadline->toActionString("forwarded nonce discarded - wrong block"));
 
-			const auto responseString = Poco::format(
-				R"({ "result" : "Your submitted deadline is for another block!", "nonce" : %Lu, "blockheight" : %Lu, "currentBlockheight" : %Lu })",
-				nonce, blockheight, miner.getBlockheight());
-
+			const auto confirmation = NonceConfirmation::createWrongBlock(miner.getBlockheight(), blockheight, nonce, deadline->getDeadline());
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-			response.setContentLength(responseString.size());
+			response.setContentLength(confirmation.json.size());
 			auto& responseData = response.send();
-			responseData << responseString << std::flush;
+			responseData << confirmation.json << std::flush;
 		}
 		else if (accountId != 0 && nonce != 0 && deadlineValue != 0)
 		{

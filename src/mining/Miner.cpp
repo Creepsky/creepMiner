@@ -402,14 +402,16 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const std::shared_ptr<Deadlin
 	poco_ndc(Miner::addNewDeadline);
 
 	NonceConfirmation nonceConfirmation;
-	nonceConfirmation.deadline = 0;
 
 	try
 	{
-		if (deadline->getBlock() != getBlockheight())
+		const auto currentHeight = getBlockheight();
+
+		if (deadline->getBlock() != currentHeight)
 		{
 			log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - wrong block"));
-			nonceConfirmation.errorCode = SubmitResponse::WrongBlock;
+			nonceConfirmation = NonceConfirmation::createWrongBlock(deadline->getBlock(), currentHeight, deadline->getNonce(),
+			                                                        deadline->getDeadline());
 		}
 		else
 		{
@@ -421,7 +423,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const std::shared_ptr<Deadlin
 			if (block == nullptr)
 			{
 				log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - no block data"));
-				nonceConfirmation.errorCode = SubmitResponse::Error;
+				nonceConfirmation = NonceConfirmation::createError(deadline->getNonce(), deadline->getDeadline(), "No block data");
 			}
 			else if (block->addDeadlineIfBest(deadline))
 			{
@@ -437,7 +439,7 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const std::shared_ptr<Deadlin
 				if (tooHigh)
 				{
 					log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - deadline too high"));
-					nonceConfirmation.errorCode = SubmitResponse::TooHigh;
+					nonceConfirmation = NonceConfirmation::createTooHigh(deadline->getNonce(), deadline->getDeadline(), targetDeadline);
 				}
 				else
 				{
@@ -448,7 +450,11 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const std::shared_ptr<Deadlin
 			else
 			{
 				log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - not best"));
-				nonceConfirmation.errorCode = SubmitResponse::NotBest;
+				const auto best = block->getBestDeadline();
+				Poco::UInt64 bestDeadline = 0;
+				if (best != nullptr)
+					bestDeadline = best->getDeadline();
+				nonceConfirmation = NonceConfirmation::createNotBest(deadline->getNonce(), deadline->getDeadline(), bestDeadline);
 			}
 		}
 	}
@@ -456,12 +462,10 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const std::shared_ptr<Deadlin
 	{
 		log_error(MinerLogger::miner, deadline->toActionString("nonce discarded - error occured") + Poco::format("\n\tReason: %s", e.displayText()));
 		log_current_stackframe(MinerLogger::miner);
-		nonceConfirmation.errorCode = SubmitResponse::Error;
+		nonceConfirmation = NonceConfirmation::createError(deadline->getNonce(), deadline->getDeadline(), e.displayText());
 	}
 
-	nonceConfirmation.json = Poco::format(
-		R"({ "result" : "success", "deadline" : %Lu, "deadlineText" : "%s", "deadlineString" : "%s" })",
-		deadline->getDeadline(), deadline->deadlineToReadableString(), deadline->deadlineToReadableString());
+	nonceConfirmation = NonceConfirmation::createSuccess(deadline->getNonce(), deadline->getDeadline(), deadline->deadlineToReadableString());
 
 	return nonceConfirmation;
 }
