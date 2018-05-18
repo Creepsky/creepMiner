@@ -32,11 +32,6 @@
 #include "logging/Output.hpp"
 #include "Plot.hpp"
 #include "logging/Performance.hpp"
-#ifdef _WIN32
-#include <io.h> 
-#include <fcntl.h> 
-#include <sys/stat.h>
-#endif
 
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
@@ -133,40 +128,22 @@ void Burst::PlotReader::runTask()
 			for (auto plotFileIter = plotList.begin(); plotFileIter != plotList.end() && !isCancelled() && currentBlock; ++plotFileIter)
 			{
 				auto& plotFile = **plotFileIter;
-
-#ifdef _WIN32
-				int file;
-				_sopen_s(&file, plotFile.getPath().c_str(), _O_BINARY | _O_NOINHERIT | _O_RDONLY | _O_SEQUENTIAL, _SH_DENYRD, _S_IREAD);
-#else
 				std::ifstream inputStream(plotFile.getPath(), std::ifstream::in | std::ifstream::binary);
-#endif
 
 				START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile", plotFile.getPath())
 				Poco::Timestamp timeStartFile;
 
-#ifdef _WIN32
-				if (!isCancelled() && file > -1)
-#else
 				if (!isCancelled() && inputStream.is_open())
-#endif
 				{
 					if (plotReadNotification->wakeUpCall)
 					{
 						// its just a wake up call for the HDD, simply read the first byte
 						char dummyByte;
 						//
-#ifdef _WIN32
-						_read(file, &dummyByte, 1);
-#else
 						inputStream.read(&dummyByte, 1);
-#endif
 
 						// close the file ...
-#ifdef _WIN32
-						_close(file);
-#else
 						inputStream.close();
-#endif
 
 						log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
 
@@ -284,24 +261,14 @@ void Burst::PlotReader::runTask()
 							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.CreateVerification", plotFile.getPath());
 
 							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.SeekAndRead", plotFile.getPath());
-#ifdef _WIN32
-							_lseek(file, static_cast<long>(staggerBlockOffset + staggerScoopOffset + chunkOffset), SEEK_SET);
-							_read(file, verification->buffer.data(), memoryToAcquire);
-#else
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire);
-#endif
 
 							if (memoryAcquiredMirror)
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
-#ifdef _WIN32
-								_lseek(file, static_cast<long>(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset), SEEK_SET);
-								_read(file, bufferMirror.data(), memoryToAcquire);
-#else
 								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
 								inputStream.read(reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire);
-#endif
 
 								for (size_t i = 0; i < verification->buffer.size(); ++i)
 									memcpy(&verification->buffer[i][32], &bufferMirror[i][32], 32);
@@ -331,11 +298,7 @@ void Burst::PlotReader::runTask()
 					}
 				}
 
-#ifdef _WIN32
-				_close(file);
-#else
 				inputStream.close();
-#endif
 
 				// check, if the incoming plot-read-notification is for the current round
 				currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
