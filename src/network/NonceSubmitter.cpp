@@ -46,7 +46,7 @@ void Burst::NonceSubmitter::runTask()
 Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 {
 	auto accountName = deadline_->getAccountName();
-	NonceConfirmation confirmation{0, SubmitResponse::None, ""};
+	NonceConfirmation confirmation{0, SubmitResponse::None, "", 0, ""};
 	Poco::JSON::Parser jsonParser;
 
 	const auto& altUrls = MinerConfig::getConfig().getPoolUrlAlt();

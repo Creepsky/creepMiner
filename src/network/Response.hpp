@@ -70,6 +70,12 @@ namespace Burst
 		std::string json;
 		int errorNumber;
 		std::string errorText;
+
+		static NonceConfirmation createWrongBlock(Poco::UInt64 currentHeight, Poco::UInt64 yourHeight, Poco::UInt64 nonce, Poco::UInt64 deadline);
+		static NonceConfirmation createTooHigh(Poco::UInt64 nonce, Poco::UInt64 deadline, Poco::UInt64 targetDeadline);
+		static NonceConfirmation createNotBest(Poco::UInt64 nonce, Poco::UInt64 deadline, Poco::UInt64 best);
+		static NonceConfirmation createError(Poco::UInt64 nonce, Poco::UInt64 deadline, const std::string& errorMessage);
+		static NonceConfirmation createSuccess(Poco::UInt64 nonce, Poco::UInt64 deadline, const std::string& deadlineText);
 	};
 
 	class NonceResponse
