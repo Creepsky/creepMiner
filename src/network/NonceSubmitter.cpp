@@ -39,12 +39,19 @@ Burst::NonceSubmitter::NonceSubmitter(Miner& miner, const std::shared_ptr<Deadli
 
 void Burst::NonceSubmitter::runTask()
 {
+	// ReSharper disable CppExpressionWithoutSideEffects
 	submit();
+	// ReSharper restore CppExpressionWithoutSideEffects
 }
 
-Burst::NonceConfirmation Burst::NonceSubmitter::submit()
+Burst::NonceConfirmation Burst::NonceSubmitter::submit() const
 {
-	auto accountName = deadline_->getAccountName();
+	return submit(deadline_, miner_);
+}
+
+Burst::NonceConfirmation Burst::NonceSubmitter::submit(const std::shared_ptr<Deadline>& deadline, const Miner& miner)
+{
+	auto accountName = deadline->getAccountName();
 	NonceConfirmation confirmation{0, SubmitResponse::None, "", 0, ""};
 	Poco::JSON::Parser jsonParser;
 
@@ -55,13 +62,13 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 	urls.insert(urls.end(), altUrls.begin(), altUrls.end());
 	auto urlIter = urls.begin();
 
-	const auto loopConditionHelper = [this, &confirmation, &urls](unsigned& tryCount,
+	const auto loopConditionHelper = [&deadline, &miner, &confirmation, &urls](unsigned& tryCount,
 	                                                              unsigned maxTryCount,
 	                                                              std::vector<Url>::iterator* urlIter)
 	{
 		if (confirmation.errorCode == SubmitResponse::Confirmed ||
 			confirmation.errorCode == SubmitResponse::NotBest ||
-			deadline_->getBlock() != miner_.getBlockheight())
+			deadline->getBlock() != miner.getBlockheight())
 			return false;
 
 		if ((maxTryCount > 0 && tryCount >= maxTryCount) || confirmation.errorCode == SubmitResponse::Error)
@@ -80,11 +87,11 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 			return false;
 		}
 
-		const auto bestSent = miner_.getBestSent(deadline_->getAccountId(), deadline_->getBlock());
+		const auto bestSent = miner.getBestSent(deadline->getAccountId(), deadline->getBlock());
 
 		if (bestSent != nullptr)
 		{
-			if (bestSent->getDeadline() < deadline_->getDeadline())
+			if (bestSent->getDeadline() < deadline->getDeadline())
 				confirmation.errorCode = SubmitResponse::NotBest;
 				
 			//MinerLogger::write("Best sent nonce so far: " + bestSent->deadlineToReadableString() + " vs. this deadline: "
@@ -93,7 +100,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 
 		if (confirmation.errorCode == SubmitResponse::NotBest)
 		{
-			log_debug(MinerLogger::nonceSubmitter, deadline_->toActionString("nonce discarded - not best"));
+			log_debug(MinerLogger::nonceSubmitter, deadline->toActionString("nonce discarded - not best"));
 			return false;
 		}
 			
@@ -111,16 +118,16 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 	{
 		NonceRequest request{MinerConfig::getConfig().createSession(*urlIter)};
 
-		auto response = request.submit(*deadline_);
+		auto response = request.submit(*deadline);
 		auto receiveTryCount = 0u;
 
 		if (response.canReceive())
 		{
 			if (firstSendAttempt)
 			{
-				deadline_->send();
+				deadline->send();
 				confirmation.errorCode = SubmitResponse::Submitted;
-				log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), deadline_->toActionString("nonce submitted"));
+				log_ok_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceSent), deadline->toActionString("nonce submitted"));
 				firstSendAttempt = false;
 			}
 
@@ -136,7 +143,7 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 		{
 			confirmation.errorCode = SubmitResponse::Error;
 
-			log_debug(MinerLogger::nonceSubmitter, deadline_->toActionString(Poco::format("no connection to %s %u/%u",
+			log_debug(MinerLogger::nonceSubmitter, deadline->toActionString(Poco::format("no connection to %s %u/%u",
 				urlIter->getCanonical(), submitTryCount, submissionMaxRetry)));
 		}
 
@@ -150,28 +157,28 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 	}
 	
 	// it has to be the same block
-	if (deadline_->getBlock() == miner_.getBlockheight())
+	if (deadline->getBlock() == miner.getBlockheight())
 	{
 		if (confirmation.errorCode == SubmitResponse::Confirmed)
 		{
 			// our calculated deadlines differs from the pools one
-			if (confirmation.deadline != deadline_->getDeadline())
+			if (confirmation.deadline != deadline->getDeadline())
 			{
 				log_error(MinerLogger::nonceSubmitter,
 					"The pool calculated a different deadline for your nonce than your miner has!\n"
 					"\tPlot file: %s\n"
 					"\tPools deadline: %s\n"
 					"\tYour deadline: %s",
-					deadline_->getPlotFile(),
+					deadline->getPlotFile(),
 					deadlineFormat(confirmation.deadline),
-					deadlineFormat(deadline_->getDeadline()));
+					deadlineFormat(deadline->getDeadline()));
 
 				// change the deadline
-				deadline_->setDeadline(confirmation.deadline);
+				deadline->setDeadline(confirmation.deadline);
 			}
 			else
 			{
-				auto bestConfirmed = miner_.getBestConfirmed(deadline_->getAccountId(), deadline_->getBlock());
+				auto bestConfirmed = miner.getBestConfirmed(deadline->getAccountId(), deadline->getBlock());
 				//auto showConfirmation = true;
 
 				// it is better to show all confirmations...
@@ -180,16 +187,16 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 					//	showConfirmation = bestConfirmed->getDeadline() > deadline->getDeadline();
 
 				//if (showConfirmation)
-				log_success_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceConfirmed), deadline_->toActionString("nonce confirmed"));
+				log_success_if(MinerLogger::nonceSubmitter, MinerLogger::hasOutput(NonceConfirmed), deadline->toActionString("nonce confirmed"));
 
 				// we have to confirm it at the very last position
 				// because we work with the best confirmed deadline so far before
 				// this point
-				deadline_->confirm();
+				deadline->confirm();
 			}
 		}
 		else if (confirmation.errorCode == SubmitResponse::NotBest)
-			log_debug(MinerLogger::nonceSubmitter, deadline_->toActionString("nonce discarded - not best"));
+			log_debug(MinerLogger::nonceSubmitter, deadline->toActionString("nonce discarded - not best"));
 		else
 		{
 			std::vector<std::pair<std::string, std::string>> errorDescription;
@@ -207,16 +214,16 @@ Burst::NonceConfirmation Burst::NonceSubmitter::submit()
 
 			// sent, but not confirmed
 			if (firstSendAttempt)
-				log_warning(MinerLogger::nonceSubmitter, deadline_->toActionString("could not submit nonce! This is probably a network issue.", errorDescription));
+				log_warning(MinerLogger::nonceSubmitter, deadline->toActionString("could not submit nonce! This is probably a network issue.", errorDescription));
 			else if (confirmation.errorCode == SubmitResponse::Error)
-				log_error(MinerLogger::nonceSubmitter, deadline_->toActionString("error on submitting nonce!", errorDescription));
+				log_error(MinerLogger::nonceSubmitter, deadline->toActionString("error on submitting nonce!", errorDescription));
 			else
-				log_warning(MinerLogger::nonceSubmitter, deadline_->toActionString("got no confirmation from pool!", errorDescription));
+				log_warning(MinerLogger::nonceSubmitter, deadline->toActionString("got no confirmation from pool!", errorDescription));
 		}
 	}
 	else
 	{
-		log_debug(MinerLogger::nonceSubmitter, deadline_->toActionString("found nonce was for the last block, stopped submitting!"));
+		log_debug(MinerLogger::nonceSubmitter, deadline->toActionString("found nonce was for the last block, stopped submitting!"));
 	}
 
 	return confirmation;

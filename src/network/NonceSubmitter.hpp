@@ -36,7 +36,8 @@ namespace Burst
 		NonceSubmitter(Miner& miner, const std::shared_ptr<Deadline>& deadline);
 		~NonceSubmitter() override = default;
 
-		NonceConfirmation submit();
+		NonceConfirmation submit() const;
+		static NonceConfirmation submit(const std::shared_ptr<Deadline>& deadline, const Miner& miner);
 
 		void runTask() override;
 
