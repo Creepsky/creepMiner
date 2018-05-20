@@ -140,9 +140,9 @@ void Burst::Message::stackframe(Poco::Message::Priority priority, TextType type,
 	std::stringstream ss;
 	ss << "Stackframe" << std::endl;
 	stackframe.dump(ss);
+	const auto stackframeString = ss.str();
 
-	logIntoFile(priority, type, logger, ss.str(), file, line);
+	log(priority, type, logger, stackframeString.substr(0, stackframeString.size() - 1), file, line);
 }
 
-Burst::Message::Message()
-{}
+Burst::Message::Message() = default;
