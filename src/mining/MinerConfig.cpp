@@ -1533,7 +1533,15 @@ Poco::UInt64 Burst::MinerConfig::getMaxBufferSize() const
 	Poco::Mutex::ScopedLock lock(mutex_);
 
 	if (maxBufferSizeMb_ == 0)
-		return getTotalPlotsize() / 4096;
+	{
+		Poco::UInt64 maxSize = 0;
+
+		for (const auto& plot : getPlotFiles())
+			if (plot->getStaggerScoopBytes() > maxSize)
+				maxSize = plot->getStaggerScoopBytes();
+
+		return maxSize * getBufferChunkCount();
+	}
 
 	return maxBufferSizeMb_ * 1024 * 1024;
 }
