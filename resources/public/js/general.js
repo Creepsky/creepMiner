@@ -1,6 +1,7 @@
 var websocket;
 var servername = 'creepMiner';
 var MasterMiner = 'false';
+var container = 'false'
 var loggers = [
 	["miner", "Miner", 6],
 	["config", "Config", 6],
@@ -166,7 +167,7 @@ $(document).ready(function() {
 // dynamically switch bootswatch themes
 function SwitchTheme (name){
  $('link[rel*=jquery]').remove();
- console.log(name);
+ //console.log(name);
  $('head').append('<link rel="stylesheet jquery" href="https://bootswatch.com/4/'+ name +'/bootstrap.min.css" type="text/css" />');
  document.cookie = "theme = https://bootswatch.com/4/"+name+"/bootstrap.min.css;";
 }
@@ -208,6 +209,14 @@ function eraseCookie(name) {
 // set the title in header and replace the server-name element with server name
 document.getElementById('server-name').innerHTML = servername;
 document.title = servername;
+
+// if master miner is set show and hide some elements
+if (container == 'true') {
+    var dElement = document.getElementsByClassName('d-container'), i;
+    for (var i = 0; i < dElement.length; i ++) {
+        dElement[i].style.display = 'inline';
+    }
+}
 
 // if master miner is set show and hide some elements
 if (MasterMiner == 'true') {
@@ -282,6 +291,6 @@ $.getJSON('https://next.json-generator.com/api/json/get/VJs_LJEAN', function(dat
         });
     }
     var source = builddata();
-    console.log(source);
+    //console.log(source);
     buildMenu($('#dynamic-menu'), source);
 });
