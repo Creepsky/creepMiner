@@ -226,17 +226,20 @@ void Burst::BlockData::setLastWinner(const std::shared_ptr<Account>& account)
 
 void Burst::BlockData::refreshBlockEntry() const
 {
+	poco_ndc(MinerData::refreshBlockEntry);
 	if (parent_ != nullptr)
 		addBlockEntry(createJsonNewBlock(*parent_));
 }
 
 void Burst::BlockData::refreshConfig() const
 {
+	poco_ndc(MinerData::refreshConfig);
 	addBlockEntry(createJsonConfig());
 }
 
 void Burst::BlockData::refreshPlotDirs() const
 {
+	poco_ndc(MinerData::refreshPlotDirs);
 	addBlockEntry(createJsonPlotDirsRescan());
 }
 
@@ -643,6 +646,7 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
                                                                   const std::string& genSig,
                                                                   Poco::UInt64 blockTargetDeadline)
 {
+	poco_ndc(MinerData::startNewBlock);
 	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 
 	// save the old data in the historical container
