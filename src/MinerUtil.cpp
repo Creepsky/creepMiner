@@ -1154,3 +1154,11 @@ std::string Burst::createBuildFeatures()
 
 	return sstream.str();
 }
+
+std::string Burst::jsonToString(const Poco::JSON::Object& json)
+{
+	static std::stringstream sstream;
+	sstream.str("");
+	Poco::JSON::Stringifier::condense(json, sstream);
+	return sstream.str();
+}

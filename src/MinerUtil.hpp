@@ -180,4 +180,6 @@ namespace Burst
 	std::string fromHex(const std::string& codedText);
 
 	std::string createBuildFeatures();
+
+	std::string jsonToString(const Poco::JSON::Object& json);
 }
