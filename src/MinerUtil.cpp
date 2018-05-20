@@ -71,7 +71,7 @@
 //  Windows
 #define cpuid(info, x) __cpuidex(info, x, 0)
 #else
-#ifdef __arm__
+#if defined __arm__ || defined __aarch64__
 void cpuid(int info[4], int InfoType)
 {}
 #else
@@ -938,8 +938,8 @@ bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
 
 int Burst::cpuGetInstructionSets()
 {
-#if defined __arm__
-	return sse2;
+#if defined __arm__ || defined __aarch64__
+	return Sse2;
 #elif defined __GNUC__
 	auto instruction_sets = 0;
 
@@ -959,7 +959,7 @@ int Burst::cpuGetInstructionSets()
 #else
 	int info[4];
 	cpuid(info, 0);
-	const auto n_ids = info[0];
+	const auto nIds = info[0];
 
 	auto hasSse2 = false;
 	auto hasSse4 = false;
@@ -967,7 +967,7 @@ int Burst::cpuGetInstructionSets()
 	auto hasAvx2 = false;
 
 	//  Detect Features
-	if (n_ids >= 0x00000001)
+	if (nIds >= 0x00000001)
 	{
 		cpuid(info, 0x00000001);
 		hasSse2 = (info[3] & 1 << 26) != 0;
@@ -975,7 +975,7 @@ int Burst::cpuGetInstructionSets()
 		hasAvx = (info[2] & 1 << 28) != 0;
 	}
 
-	if (n_ids >= 0x00000007)
+	if (nIds >= 0x00000007)
 	{
 		cpuid(info, 0x00000007);
 		hasAvx2 = (info[1] & (static_cast<int>(1) << 5)) != 0;
