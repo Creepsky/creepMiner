@@ -69,7 +69,7 @@ namespace Burst
 		Poco::Message::Priority getPriority() const;
 
 	private:
-		static Poco::FastMutex mutex_;
+		static Poco::Mutex mutex_;
 		Poco::Message::Priority priority_;
 	};
 }
