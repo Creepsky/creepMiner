@@ -335,7 +335,6 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 
 		// setup new block-data
 		auto block = data_.startNewBlock(blockHeight, baseTarget, gensigStr, MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local));
-		block->refreshBlockEntry();
 		setIsProcessing(true);
 
 		// printing block info and transfer it to local server
