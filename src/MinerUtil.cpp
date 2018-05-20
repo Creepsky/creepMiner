@@ -941,21 +941,21 @@ int Burst::cpuGetInstructionSets()
 #if defined __arm__ || defined __aarch64__
 	return Sse2;
 #elif defined __GNUC__
-	auto instruction_sets = 0;
+	auto instructionSets = 0;
 
 	if (__builtin_cpu_supports("sse2"))
-		instruction_sets += Sse2;
+		instructionSets += Sse2;
 
-	if (__builtin_cpu_supports("sse4.2"))
-		instruction_sets += Sse4;
+	if (__builtin_cpu_supports("sse4.1"))
+		instructionSets += Sse4;
 
 	if (__builtin_cpu_supports("avx"))
-		instruction_sets += Avx;
+		instructionSets += Avx;
 
 	if (__builtin_cpu_supports("avx2"))
-		instruction_sets += Avx2;
+		instructionSets += Avx2;
 
-	return instruction_sets;
+	return instructionSets;
 #else
 	int info[4];
 	cpuid(info, 0);
