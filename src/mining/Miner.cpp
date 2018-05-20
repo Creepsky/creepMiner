@@ -392,8 +392,8 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 	}
 	catch (const Poco::Exception& e)
 	{
-		log_error(MinerLogger::server, "Could not update the gensig: %s", e.displayText());
-		log_current_stackframe(MinerLogger::server);
+		log_error(MinerLogger::miner, "Could not update the gensig: %s", e.displayText());
+		log_current_stackframe(MinerLogger::miner);
 	}
 }
 
