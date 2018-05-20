@@ -48,28 +48,39 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav">
                     <li class="nav-item" id="btnBlock">
-                        <a class="nav-link" href="/">Block</a>
+                        <a class="nav-link" href="/"><i class="fas fa-th-large"></i> Block</a>
                     </li>
                     <li class="nav-item" id="btnPlots">
-                        <a class="nav-link" href="/plotfiles">Plots</a>
+                        <a class="nav-link" href="/plotfiles"><i class="fas fa-hdd"></i> Plots</a>
                     </li>
                     <li class="nav-item mm-hide" id="btnSettings">
-                        <a class="nav-link" href="/settings">Settings</a>
+                        <a class="nav-link" href="/settings"><i class="fas fa-wrench"></i> Settings</a>
                     </li>
                     <li class="nav-item" id="btnAbout" data-toggle='tooltip' data-placement='bottom' data-original-title=''>
-                        <a href="" class="nav-link" data-toggle="modal" data-target="#aboutModal">About</a>
+                        <a href="" class="nav-link" data-toggle="modal" data-target="#aboutModal"><i class="fas fa-info"></i> About</a>
                     </li>
                 </ul>
                 <!-- right nav bar-->
                 <ul class="nav navbar-nav ml-auto">
                     <!-- miner selector -->
                     <li class="nav-item dropdown mm-show">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="miners">Miners <span class="caret"></span></a>
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="miners"><i class="fas fa-server"></i> Miners <span class="caret"></span></a>
                         <div id="dynamic-menu" class="dropdown-menu" aria-labelledby="dropdownMenuLink"></div>
+                    </li>
+                    <!-- docker -->
+                    <li class="nav-item dropdown d-container">
+                      <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="download"><i class="fab fa-docker"></i> System <span class="caret"></span></a>
+                      <div class="dropdown-menu" aria-labelledby="download">
+                        <a class="dropdown-item" href="/" onmouseover="javascript:event.target.port=9001"><i class="fas fa-cubes"></i> Supervisor</a>
+                        <a class="dropdown-item" href="/" onmouseover="javascript:event.target.port=9002"><i class="fas fa-file-medical-alt"></i> Logs</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="https://store.docker.com/community/images/whumphrey/creepminer"><i class="fas fa-shopping-bag"></i> docker store</a>
+                        <a class="dropdown-item" href="https://github.com/nitr8/docker-creepminer"><i class="fab fa-github"></i> github</a>
+                      </div>
                     </li>
                     <!-- theme selector -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="themes">Theme <span class="caret"></span></a>
+                        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" id="themes"><i class="fas fa-paint-brush"></i> Theme <span class="caret"></span></a>
                         <div class="dropdown-menu" aria-labelledby="themes" id="themeSelector"></div>
                     </li>
                     <!-- sign out btn -->
