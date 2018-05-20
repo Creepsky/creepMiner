@@ -15,17 +15,16 @@ creepMiner is written in C++ and is multi-threaded to get the best performance, 
 ## Getting Started
 Please follow the [Quick start guide](https://github.com/Creepsky/creepMiner/wiki)
 
-If you need help and support then please review the [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ) and [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) 
-
-
-[![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt) chat and ask in the **#help** channel.
-
 ## Instructions
 - [Quickstart Quide](https://github.com/Creepsky/creepMiner/wiki)
 - [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner)
 - [Multi miner setup](https://github.com/Creepsky/creepMiner/wiki/Multi-miner-setup)
 - [Solo mining](https://github.com/Creepsky/creepMiner/wiki/Solo-mining)
 - [Mining & Optimization](https://github.com/Creepsky/creepMiner/wiki/Mining-&-Optimization)
+
+If you need help and support then please review the [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ) and [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) 
+
+[![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt) chat and ask in the **#help** channel.
 
 ### Build Status
 | Platform | Master | Development |
