@@ -134,7 +134,7 @@ void Burst::PlotReader::runTask()
 				const auto inputStream = CreateFileA(plotFile.getPath().c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
 				                                     OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, nullptr);
 #else
-				std::ifstream inputStream(plotFile.getPath(), std::ifstream::in | std::ifstream::binary);
+				const auto inputStream = open(plotFile.getPath().c_str(), O_RDONLY);
 #endif
 
 				START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile", plotFile.getPath())
@@ -143,7 +143,7 @@ void Burst::PlotReader::runTask()
 #ifdef _WIN32
 				if (!isCancelled() && inputStream != INVALID_HANDLE_VALUE)
 #else
-				if (!isCancelled() && inputStream.is_open())
+				if (!isCancelled() && inputStream >= 0)
 #endif
 				{
 					if (plotReadNotification->wakeUpCall)
@@ -154,14 +154,15 @@ void Burst::PlotReader::runTask()
 #ifdef _WIN32
 						ReadFile(inputStream, &dummyByte, 1, &_, nullptr);
 #else
-						inputStream.read(&dummyByte, 1);
+						if (read(inputStream, &dummyByte, 1) != 1)
+							log_error(MinerLogger::plotReader, "Could not wake up HDD %s", plotReadNotification->dir);
 #endif
 
 						// close the file ...
 #ifdef _WIN32
 						CloseHandle(inputStream);
 #else
-						inputStream.close();
+						close(inputStream);
 #endif
 
 						log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
@@ -284,8 +285,9 @@ void Burst::PlotReader::runTask()
 							SetFilePointer(inputStream, staggerBlockOffset + staggerScoopOffset + chunkOffset, nullptr, FILE_BEGIN);
 							ReadFile(inputStream, reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire, &_, nullptr);
 #else
-							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire);
+							lseek(inputStream, staggerBlockOffset + staggerScoopOffset + chunkOffset, SEEK_SET);
+							if (read(inputStream, reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire) != memoryToAcquire)
+								log_warning(MinerLogger::plotReader, "Could not read nonce %Lu+ in %s", startNonce, plotFile.getPath());
 #endif
 
 							if (memoryAcquiredMirror)
@@ -295,8 +297,9 @@ void Burst::PlotReader::runTask()
 								SetFilePointer(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, nullptr, FILE_BEGIN);
 								ReadFile(inputStream, reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire, &_, nullptr);
 #else
-								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
-								inputStream.read(reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire);
+								lseek(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, SEEK_SET);
+								if (read(inputStream, reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire) != memoryAcquired)
+									log_warning(MinerLogger::plotReader, "Could not read mirror for nonce %Lu+ in %s", startNonce, plotFile.getPath());
 #endif
 
 								for (size_t i = 0; i < verification->buffer.size(); ++i)
@@ -330,7 +333,7 @@ void Burst::PlotReader::runTask()
 #ifdef _WIN32
 				CloseHandle(inputStream);
 #else
-				inputStream.close();
+				close(inputStream);
 #endif
 
 				// check, if the incoming plot-read-notification is for the current round
