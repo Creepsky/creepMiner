@@ -72,7 +72,7 @@ deploy:
 
     # Deploy to GitHub Releases
   - provider: GitHub
-    artifact: /.*\.exe/ /.*\.zip/
+    artifact: /.*\.zip/
     draft: false
     prerelease: false
     force_update: true
