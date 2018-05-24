@@ -127,23 +127,23 @@ void Burst::PlotReader::runTask()
 				++plotFileIter)
 			{
 				auto& plotFile = **plotFileIter;
-				std::ifstream inputStream(plotFile.getPath(), std::ifstream::in | std::ifstream::binary);
+				HANDLE ifile = CreateFileA(plotFile.getPath().c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, nullptr);
 
 				START_PROBE_DOMAIN("PlotReader.ReadFile", plotFile.getPath())
 					Poco::Timestamp timeStartFile;
 
-				if (!isCancelled() && inputStream.is_open())
+				if (!isCancelled() && !(ifile == INVALID_HANDLE_VALUE))
 				{
 					if (plotReadNotification->wakeUpCall)
 					{
 						// its just a wake up call for the HDD, simply read the first byte
 						char dummyByte;
 						//
-						inputStream.read(&dummyByte, 1);
-
+						DWORD b = 0;
+						ReadFile(ifile, &dummyByte, (DWORD)(1), &b, NULL);
+						
 						// close the file ...
-						inputStream.close();
-
+						CloseHandle(ifile);
 						log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
 
 						// ... and then jump to the next notification, no need to search for deadlines
@@ -237,8 +237,10 @@ void Burst::PlotReader::runTask()
 							TAKE_PROBE("PlotReader.CreateVerification");
 
 							START_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
-							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							inputStream.read(reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire);
+							SetFilePointer(ifile, staggerBlockOffset + staggerScoopOffset + chunkOffset, nullptr, FILE_BEGIN);
+							DWORD b = 0;
+							ReadFile(ifile, reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire, &b, NULL);
+
 							TAKE_PROBE_DOMAIN("PlotReader.SeekAndRead", plotFile.getPath());
 
 							verificationQueue_->enqueueNotification(verification);
@@ -261,7 +263,7 @@ void Burst::PlotReader::runTask()
 					}
 				}
 
-				inputStream.close();
+				CloseHandle(ifile);
 
 				// check, if the incoming plot-read-notification is for the current round
 				currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
