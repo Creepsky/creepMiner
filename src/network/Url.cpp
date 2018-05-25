@@ -52,7 +52,7 @@ Burst::Url::Url(const std::string& url, const std::string& defaultScheme, unsign
 
 std::string Burst::Url::getCanonical(bool withScheme) const
 {
-	return (withScheme ? uri_.getScheme() + "://" : "") + uri_.getHost();
+	return (withScheme ? uri_.getScheme() + "://" : "") + uri_.getHost() + ":" + std::to_string(uri_.getPort());
 }
 
 std::string Burst::Url::getIp() const
