@@ -282,7 +282,9 @@ void Burst::PlotReader::runTask()
 
 							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.SeekAndRead", plotFile.getPath());
 #ifdef _WIN32
-							SetFilePointer(inputStream, staggerBlockOffset + staggerScoopOffset + chunkOffset, nullptr, FILE_BEGIN);
+							LARGE_INTEGER winOffset;
+							winOffset.QuadPart = static_cast<LONGLONG>(staggerBlockOffset + staggerScoopOffset + chunkOffset);
+							SetFilePointerEx(inputStream, winOffset, nullptr, FILE_BEGIN);
 							ReadFile(inputStream, reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire, &_, nullptr);
 #else
 							lseek(inputStream, staggerBlockOffset + staggerScoopOffset + chunkOffset, SEEK_SET);
@@ -294,7 +296,9 @@ void Burst::PlotReader::runTask()
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
 #ifdef _WIN32
-								SetFilePointer(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, nullptr, FILE_BEGIN);
+								LARGE_INTEGER winOffsetMirror;
+								winOffsetMirror.QuadPart = static_cast<LONGLONG>(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
+								SetFilePointerEx(inputStream, winOffsetMirror, nullptr, FILE_BEGIN);
 								ReadFile(inputStream, reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire, &_, nullptr);
 #else
 								lseek(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, SEEK_SET);
