@@ -33,6 +33,14 @@
 #include "Plot.hpp"
 #include "logging/Performance.hpp"
 
+#define _FILE_OFFSET_BITS 64
+
+#if defined __APPLE__
+#define LSEEK64 lseek64
+#elif defined __linux__
+#define LSEEK64 lseek64
+#endif
+
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
 void Burst::GlobalBufferSize::setMax(const Poco::UInt64 max)
@@ -287,7 +295,7 @@ void Burst::PlotReader::runTask()
 							SetFilePointerEx(inputStream, winOffset, nullptr, FILE_BEGIN);
 							ReadFile(inputStream, reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire, &_, nullptr);
 #else
-							lseek(inputStream, staggerBlockOffset + staggerScoopOffset + chunkOffset, SEEK_SET);
+							LSEEK64(inputStream, staggerBlockOffset + staggerScoopOffset + chunkOffset, SEEK_SET);
 							if (read(inputStream, reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire) != memoryToAcquire)
 								log_warning(MinerLogger::plotReader, "Could not read nonce %Lu+ in %s", startNonce, plotFile.getPath());
 #endif
@@ -301,7 +309,7 @@ void Burst::PlotReader::runTask()
 								SetFilePointerEx(inputStream, winOffsetMirror, nullptr, FILE_BEGIN);
 								ReadFile(inputStream, reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire, &_, nullptr);
 #else
-								lseek(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, SEEK_SET);
+								LSEEK64(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, SEEK_SET);
 								if (read(inputStream, reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire) != memoryAcquired)
 									log_warning(MinerLogger::plotReader, "Could not read mirror for nonce %Lu+ in %s", startNonce, plotFile.getPath());
 #endif
