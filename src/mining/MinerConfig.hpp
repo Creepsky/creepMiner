@@ -219,8 +219,6 @@ namespace Burst
 		unsigned getWakeUpTime() const;
 		const std::string& getCpuInstructionSet() const;
 		const std::string& getProcessorType() const;
-		bool isBenchmark() const;
-		long getBenchmarkInterval() const;
 		unsigned getGpuPlatform() const;
 		unsigned getGpuDevice() const;
 		unsigned getMaxConnectionsQueued() const;
@@ -329,8 +327,6 @@ namespace Burst
 		unsigned wakeUpTime_ = 0;
 		std::string cpuInstructionSet_ = "AUTO";
 		std::string processorType_ = "CPU";
-		bool benchmark_ = false;
-		long benchmarkInterval_ = 60;
 		unsigned gpuPlatform_ = 0, gpuDevice_ = 0;
 		unsigned maxConnectionsQueued_ = 64, maxConnectionsActive_ = 32;
 		std::vector<std::string> forwardingWhitelist_;

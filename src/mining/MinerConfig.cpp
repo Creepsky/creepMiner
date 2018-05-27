@@ -181,9 +181,6 @@ void Burst::MinerConfig::printConsole() const
 
 	if (getConfig().getProcessorType() == "CPU")
 		log_system(MinerLogger::config, "CPU instruction set : %s", getConfig().getCpuInstructionSet());
-
-	if (getConfig().isBenchmark())
-		log_warning(MinerLogger::config, "Benchmark mode activated!");
 }
 
 void Burst::MinerConfig::printConsolePlots() const
@@ -545,13 +542,6 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 		// benchmark
 		auto benchmarkObj = miningObj->getObject("benchmark");
-
-		if (!benchmarkObj.isNull() && benchmarkObj->has("active"))
-			benchmark_ = benchmarkObj->getValue<bool>("active");
-		else
-			benchmark_ = getOrAdd(miningObj, "benchmark", false);
-
-		miningObj->set("benchmark", benchmark_);
 
 		// urls
 		{
@@ -1597,16 +1587,6 @@ const std::string& Burst::MinerConfig::getProcessorType() const
 	return processorType_;
 }
 
-bool Burst::MinerConfig::isBenchmark() const
-{
-	return benchmark_;
-}
-
-long Burst::MinerConfig::getBenchmarkInterval() const
-{
-	return benchmarkInterval_;
-}
-
 unsigned Burst::MinerConfig::getGpuPlatform() const
 {
 	return gpuPlatform_;
@@ -1704,14 +1684,6 @@ bool Burst::MinerConfig::save(const std::string& path) const
 		mining.set("gpuPlatform", getGpuPlatform());
 		mining.set("databasePath", getDatabasePath());
 		mining.set("workerName", getWorkerName());
-
-		// benchmark
-		{
-			Poco::JSON::Object benchmark;
-			benchmark.set("active", isBenchmark());
-			benchmark.set("interval", getBenchmarkInterval());
-			mining.set("benchmark", benchmark);
-		}
 
 		// passphrase
 		{

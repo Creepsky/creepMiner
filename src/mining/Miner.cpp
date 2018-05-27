@@ -29,7 +29,6 @@
 #include "network/NonceSubmitter.hpp"
 #include <Poco/JSON/Parser.h>
 #include "plots/PlotSizes.hpp"
-#include "logging/Performance.hpp"
 #include <Poco/FileStream.h>
 #include <fstream>
 #include <Poco/File.h>
@@ -287,9 +286,6 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 
 	try
 	{
-		CLEAR_PROBES()
-		START_PROBE("Miner.StartNewBlock")
-
 		// stop all reading processes if any
 		if (!MinerConfig::getConfig().getPlotFiles().empty())
 		{
@@ -297,9 +293,7 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 				plotReadQueue_.size(), plotReader_->count(), verificationQueue_.size(), verifier_->count());
 			log_debug(MinerLogger::miner, "Allocated memory: %s", memToString(PlotReader::globalBufferSize.getSize(), 1));
 		
-			START_PROBE("Miner.SetBuffersize")
 			PlotReader::globalBufferSize.setMax(MinerConfig::getConfig().getMaxBufferSize());
-			TAKE_PROBE("Miner.SetBuffersize")
 		}
 		
 		// clear the plot read queue
@@ -386,8 +380,6 @@ void Burst::Miner::updateGensig(const std::string& gensigStr, Poco::UInt64 block
 		// so show it when it's done
 		if (blockHeight > 0 && wallet_.isActive())
 			block->getLastWinnerAsync(wallet_, accounts_);
-
-		TAKE_PROBE("Miner.StartNewBlock")
 	}
 	catch (const Poco::Exception& e)
 	{
@@ -709,20 +701,6 @@ void Burst::Miner::onWakeUp(Poco::Timer& timer)
 	addPlotReadNotifications(true);
 }
 
-void Burst::Miner::saveBenchmark() const
-{
-	try
-	{
-		Poco::FileStream perfLogStream{ "benchmark.csv", std::ios_base::out | std::ios::trunc };
-		perfLogStream << Performance::instance();
-		log_success(MinerLogger::miner, "Wrote benchmark data into benchmark.csv");
-	}
-	catch (...)
-	{
-		log_error(MinerLogger::miner, "Could not write benchmark data into benchmark.csv! Please close it.");
-	}
-}
-
 void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 {
 	poco_ndc(Miner::onRoundProcessed);
@@ -744,9 +722,6 @@ void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 			numberToString(block->getBlockheight()),
 			Poco::NumberFormatter::format(roundTime, 3),
 			bestDeadline == nullptr ? "none" : deadlineFormat(bestDeadline->getDeadline()));
-
-		if (MinerConfig::getConfig().isBenchmark())
-			saveBenchmark();
 	}
 	catch (const Poco::Exception& e)
 	{

@@ -96,7 +96,6 @@ namespace Burst
 		                    Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);
 		void onWakeUp(Poco::Timer& timer);
-		void saveBenchmark() const;
 		void onRoundProcessed(Poco::UInt64 blockHeight, double roundTime);
 
 		bool running_ = false, restart_ = false, isProcessing_ = false;

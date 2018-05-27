@@ -28,7 +28,6 @@
 #include <Poco/Notification.h>
 #include <Poco/NotificationQueue.h>
 #include "shabal/MinerShabal.hpp"
-#include "logging/Performance.hpp"
 #include "mining/Miner.hpp"
 #include "logging/Message.hpp"
 #include "logging/MinerLogger.hpp"
@@ -115,29 +114,23 @@ namespace Burst
 					return isCancelled() || verifyNotification->block != data_->getCurrentBlockheight();
 				};
 
-				START_PROBE_DOMAIN("PlotVerifier.SearchDeadline", verifyNotification->inputPath);
 				auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer,
 				                                              verifyNotification->nonceRead,
 				                                              verifyNotification->nonceStart, verifyNotification->baseTarget,
 				                                              verifyNotification->gensig,
 				                                              stopFunction, stream);
-				TAKE_PROBE_DOMAIN("PlotVerifier.SearchDeadline", verifyNotification->inputPath);
 
 				if (bestResult.first != 0 && bestResult.second != 0)
 				{
-					START_PROBE_DOMAIN("PlotVerifier.Submit", verifyNotification->inputPath);
 					submitFunction_(bestResult.first,
 					                verifyNotification->accountId,
 					                bestResult.second,
 					                verifyNotification->block,
 					                verifyNotification->inputPath,
 					                true);
-					TAKE_PROBE_DOMAIN("PlotVerifier.Submit", verifyNotification->inputPath);
 				}
 
-				START_PROBE_DOMAIN("PlotVerifier.FreeMemory", verifyNotification->inputPath);
 				PlotReader::globalBufferSize.free(verifyNotification->memorySize);
-				TAKE_PROBE_DOMAIN("PlotVerifier.FreeMemory", verifyNotification->inputPath);
 
 				if (progress_ != nullptr)
 					progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::plotSize,

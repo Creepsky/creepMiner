@@ -31,7 +31,6 @@
 #include <Poco/Timestamp.h>
 #include "logging/Output.hpp"
 #include "Plot.hpp"
-#include "logging/Performance.hpp"
 #include <Poco/FileStream.h>
 
 #define _FILE_OFFSET_BITS 64
@@ -112,8 +111,6 @@ void Burst::PlotReader::runTask()
 			else
 				break;
 
-			START_PROBE_DOMAIN("PlotReader.ReadDir", plotReadNotification->dir)
-
 			// only process the current block
 			if (data_.getCurrentBlockheight() != plotReadNotification->blockheight)
 				continue;
@@ -139,7 +136,6 @@ void Burst::PlotReader::runTask()
 				auto& plotFile = **plotFileIter;
 				Poco::FileInputStream inputStream{plotFile.getPath()};
 
-				START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile", plotFile.getPath())
 				Poco::Timestamp timeStartFile;
 
 				if (!isCancelled() && inputStream)
@@ -170,7 +166,6 @@ void Burst::PlotReader::runTask()
 
 					while (nonce < plotFile.getNonces() && currentBlock && !isCancelled())
 					{
-						START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces", plotFile.getPath());
 						const auto startNonce = nonce;
 						auto readNonces = noncesPerChunk;
 						const auto staggerBegin = startNonce / plotFile.getStaggerSize();
@@ -183,7 +178,6 @@ void Burst::PlotReader::runTask()
 						auto memoryAcquiredMirror = false;
 						const auto memoryToAcquire = static_cast<unsigned>(std::min(readNonces * Settings::scoopSize, chunkBytes));
 
-						START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.AllocMemory", plotFile.getPath());
 						while (!isCancelled() && !memoryAcquired)
 						{
 							memoryAcquired = globalBufferSize.reserve(memoryToAcquire);
@@ -192,7 +186,6 @@ void Burst::PlotReader::runTask()
 								while (!isCancelled() && !memoryAcquiredMirror)
 									memoryAcquiredMirror = globalBufferSize.reserve(memoryToAcquire);
 						}
-						TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.AllocMemory", plotFile.getPath());
 
 						// if the reader is cancelled, jump out of the loop
 						if (isCancelled())
@@ -209,12 +202,10 @@ void Burst::PlotReader::runTask()
 
 						if (memoryAcquired && currentBlock)
 						{
-							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork", plotFile.getPath());
 							const auto chunkOffset = startNonce % plotFile.getStaggerSize() * Settings::scoopSize;
 							const auto staggerBlockOffset = staggerBegin * plotFile.getStaggerBytes();
 							const auto staggerScoopOffset = plotReadNotification->scoopNum * plotFile.getStaggerScoopBytes();
 
-							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.CreateVerification", plotFile.getPath());
 							VerifyNotification::Ptr verification(new VerifyNotification{});
 							verification->accountId = plotFile.getAccountId();
 							verification->nonceStart = plotFile.getNonceStart();
@@ -265,9 +256,7 @@ void Burst::PlotReader::runTask()
 									}
 								}
 							}
-							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.CreateVerification", plotFile.getPath());
 
-							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.SeekAndRead", plotFile.getPath());
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							inputStream.read(reinterpret_cast<char*>(verification->buffer.data()), memoryToAcquire);
 
@@ -283,22 +272,18 @@ void Burst::PlotReader::runTask()
 								bufferMirror.clear();
 								globalBufferSize.free(memoryToAcquire);
 							}
-							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.SeekAndRead", plotFile.getPath());
 
 							verificationQueue_->enqueueNotification(verification);
 
 							// check, if the incoming plot-read-notification is for the current round
 							currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
 							nonce += readNonces;
-
-							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork", plotFile.getPath());
 						}
 						// if the memory was acquired, but it was not the right block, give it free
 						else if (memoryAcquired)
 							globalBufferSize.free(memoryToAcquire);
 							// this should never happen.. no memory allocated, not cancelled, wrong block
 						else;
-						TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces", plotFile.getPath());
 					}
 				}
 
@@ -333,18 +318,12 @@ void Burst::PlotReader::runTask()
 						memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
 
 					if (!MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
-					{
-						START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Progress", plotFile.getPath())
 						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
-						TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Progress", plotFile.getPath())
-					}
 				}
 
 				// if it was cancelled, we push the current plot dir back in the queue again
 				if (isCancelled())
 					plotReadQueue_->enqueueNotification(plotReadNotification);
-
-				TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile", plotFile.getPath());
 			}
 
 			if (plotReadNotification->wakeUpCall)
@@ -384,8 +363,6 @@ void Burst::PlotReader::runTask()
 					plotReadNotification->plotList.size() == 1 ? std::string("file") : std::string("files"),
 					memToString(totalSizeBytes, 2));
 			}
-
-			TAKE_PROBE_DOMAIN("PlotReader.ReadDir", plotReadNotification->dir)
 		}
 		catch (Poco::Exception& exc)
 		{
