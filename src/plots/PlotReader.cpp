@@ -32,6 +32,7 @@
 #include "logging/Output.hpp"
 #include "Plot.hpp"
 #include "logging/Performance.hpp"
+#include <Poco/FileStream.h>
 
 #define _FILE_OFFSET_BITS 64
 
@@ -136,51 +137,29 @@ void Burst::PlotReader::runTask()
 			for (auto plotFileIter = plotList.begin(); plotFileIter != plotList.end() && !isCancelled() && currentBlock; ++plotFileIter)
 			{
 				auto& plotFile = **plotFileIter;
-
-#ifdef _WIN32
-				DWORD _;
-				const auto inputStream = CreateFileA(plotFile.getPath().c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
-				                                     OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, nullptr);
-#else
-				const auto inputStream = open(plotFile.getPath().c_str(), O_RDONLY);
-#endif
+				Poco::FileInputStream inputStream{plotFile.getPath()};
 
 				START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile", plotFile.getPath())
 				Poco::Timestamp timeStartFile;
 
-#ifdef _WIN32
-				if (!isCancelled() && inputStream != INVALID_HANDLE_VALUE)
-#else
-				if (!isCancelled() && inputStream >= 0)
-#endif
+				if (!isCancelled() && inputStream)
 				{
 					if (plotReadNotification->wakeUpCall)
 					{
 						// its just a wake up call for the HDD, simply read the first byte
 						char dummyByte;
-						//
-#ifdef _WIN32
-						ReadFile(inputStream, &dummyByte, 1, &_, nullptr);
-#else
-						if (read(inputStream, &dummyByte, 1) != 1)
+
+						if (inputStream >> dummyByte)
+							log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
+						else
 							log_error(MinerLogger::plotReader, "Could not wake up HDD %s", plotReadNotification->dir);
-#endif
-
-						// close the file ...
-#ifdef _WIN32
-						CloseHandle(inputStream);
-#else
-						close(inputStream);
-#endif
-
-						log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
 
 						// ... and then jump to the next notification, no need to search for deadlines
 						break;
 					}
 
 					const auto maxBufferSize = MinerConfig::getConfig().getMaxBufferSizeRaw();
-					auto chunkBytes = maxBufferSize / MinerConfig::getConfig().getBufferChunkCount();
+					auto chunkBytes = MinerConfig::getConfig().getMaxBufferSize() / MinerConfig::getConfig().getBufferChunkCount();
 
 					// unlimited buffer size
 					if (maxBufferSize == 0)
@@ -289,30 +268,14 @@ void Burst::PlotReader::runTask()
 							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.CreateVerification", plotFile.getPath());
 
 							START_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.SeekAndRead", plotFile.getPath());
-#ifdef _WIN32
-							LARGE_INTEGER winOffset;
-							winOffset.QuadPart = static_cast<LONGLONG>(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							SetFilePointerEx(inputStream, winOffset, nullptr, FILE_BEGIN);
-							ReadFile(inputStream, reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire, &_, nullptr);
-#else
-							LSEEK64(inputStream, staggerBlockOffset + staggerScoopOffset + chunkOffset, SEEK_SET);
-							if (read(inputStream, reinterpret_cast<char*>(&verification->buffer[0]), memoryToAcquire) != memoryToAcquire)
-								log_warning(MinerLogger::plotReader, "Could not read nonce %Lu+ in %s", startNonce, plotFile.getPath());
-#endif
+							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
+							inputStream.read(reinterpret_cast<char*>(verification->buffer.data()), memoryToAcquire);
 
 							if (memoryAcquiredMirror)
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
-#ifdef _WIN32
-								LARGE_INTEGER winOffsetMirror;
-								winOffsetMirror.QuadPart = static_cast<LONGLONG>(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
-								SetFilePointerEx(inputStream, winOffsetMirror, nullptr, FILE_BEGIN);
-								ReadFile(inputStream, reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire, &_, nullptr);
-#else
-								LSEEK64(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, SEEK_SET);
-								if (read(inputStream, reinterpret_cast<char*>(&bufferMirror[0]), memoryToAcquire) != memoryAcquired)
-									log_warning(MinerLogger::plotReader, "Could not read mirror for nonce %Lu+ in %s", startNonce, plotFile.getPath());
-#endif
+								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
+								inputStream.read(reinterpret_cast<char*>(bufferMirror.data()), memoryToAcquire);
 
 								for (size_t i = 0; i < verification->buffer.size(); ++i)
 									memcpy(&verification->buffer[i][32], &bufferMirror[i][32], 32);
@@ -323,9 +286,6 @@ void Burst::PlotReader::runTask()
 							TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces.PushWork.SeekAndRead", plotFile.getPath());
 
 							verificationQueue_->enqueueNotification(verification);
-
-							if (MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
-								progress_->add(readNonces * Settings::plotSize, plotReadNotification->blockheight);
 
 							// check, if the incoming plot-read-notification is for the current round
 							currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
@@ -341,12 +301,6 @@ void Burst::PlotReader::runTask()
 						TAKE_PROBE_DOMAIN("PlotReader.ReadDir.ReadFile.Nonces", plotFile.getPath());
 					}
 				}
-
-#ifdef _WIN32
-				CloseHandle(inputStream);
-#else
-				close(inputStream);
-#endif
 
 				// check, if the incoming plot-read-notification is for the current round
 				currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
