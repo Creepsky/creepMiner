@@ -97,7 +97,6 @@ namespace Burst
 	};
 
 	bool isNumberStr(const std::string& str);
-	std::string getFileNameFromPath(const std::string& strPath);
 	std::vector<std::string>& splitStr(const std::string& s, char delim, std::vector<std::string>& elems);
 	std::vector<std::string> splitStr(const std::string& s, char delim);
 	std::vector<std::string> splitStr(const std::string& s, const std::string& delim);

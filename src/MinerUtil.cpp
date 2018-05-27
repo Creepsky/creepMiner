@@ -51,6 +51,7 @@
 #include <Poco/StreamCopier.h>
 #include <Poco/HexBinaryEncoder.h>
 #include <Poco/HexBinaryDecoder.h>
+#include <Poco/StringTokenizer.h>
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -87,13 +88,6 @@ void cpuid(int info[4], int InfoType)
 bool Burst::isNumberStr(const std::string& str)
 {
 	return std::all_of(str.begin(), str.end(), ::isdigit);
-}
-
-std::string Burst::getFileNameFromPath(const std::string& strPath)
-{
-	size_t iLastSeparator;
-	return strPath.substr((iLastSeparator = strPath.find_last_of("/\\")) !=
-						  std::string::npos ? iLastSeparator + 1 : 0, strPath.size() - strPath.find_last_of('.'));
 }
 
 std::vector<std::string> Burst::splitStr(const std::string& s, char delim)
@@ -143,8 +137,12 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 {
 	try
 	{
-		const auto fileName = getFileNameFromPath(filePath);
+		Poco::Path path{filePath};
 
+		if (!path.getExtension().empty())
+			return PlotCheckResult::InvalidParameter;
+
+		const auto fileName = path.getBaseName();
 		const auto accountIdStr = getAccountIdFromPlotFile(fileName);
 		const auto nonceStartStr = getStartNonceFromPlotFile(fileName);
 		const auto nonceCountStr = getNonceCountFromPlotFile(fileName);
