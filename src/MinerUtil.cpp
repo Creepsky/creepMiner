@@ -530,7 +530,8 @@ Poco::JSON::Object Burst::createJsonNewBlock(const MinerData& data)
 	json.set("blocksWon", std::to_string(data.getBlocksWon()));
 	json.set("onlineVersion", Settings::project.getOnlineVersion());
 	json.set("runningVersion", Settings::project.getVersion().literal);
-	
+	json.set("runningBuild", Settings::project.getVersion().revision);
+
 	if (bestOverall != nullptr)
 		json.set("bestOverall", createJsonDeadline(*bestOverall));
 	else

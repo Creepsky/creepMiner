@@ -692,7 +692,7 @@ function connectBlock() {
             switch (response["type"]) {
                 case "new block":
                     newBlock(response);
-                    checkVersion(response["runningVersion"], response["onlineVersion"]);
+                    checkVersion(response["runningVersion"], response["onlineVersion"], response["runningBuild"]);
                     break;
                 case "nonce found":
                 case "nonce found (too high)":

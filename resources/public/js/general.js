@@ -38,11 +38,12 @@ function connect(onMessage) {
 }
 
 // version checker and update about btn
-function checkVersion(runningVer, onlineVer) {
+function checkVersion(runningVer, onlineVer, runningBuild) {
 	var onlineVersionSplit = onlineVer.split(".");
     var runningVersionSplit = runningVer.split(".");
 	var current=true;
-    if (Number(onlineVersionSplit[0]) > Number(runningVersionSplit[0]))
+	//console.info(runningVer + '.' + runningBuild);
+    if (Number(runningVersionSplit[0]) > Number(runningVersionSplit[0]))
         current=false;
     else if (Number(onlineVersionSplit[1]) > Number(runningVersionSplit[1]))
         current=false;
@@ -50,8 +51,8 @@ function checkVersion(runningVer, onlineVer) {
         current=false;
 	if(!current)
 	{
-        $("#btnAbout").find("a").css({"color":"#dc3545"});
-        $("#btnAbout").attr({"data-original-title": "A new version is available"});
+        $("#btnAbout").find("a").css({"color":"#ffc107"});
+        $("#btnAbout").attr({"data-original-title": "New version available"});
         $("#runningVer").html("&nbsp;v&nbsp;" + runningVer);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
         $("#versionCardHeader").toggleClass("bg-success",false);
@@ -59,12 +60,12 @@ function checkVersion(runningVer, onlineVer) {
         $("#versionAlert").toggleClass("alert-success",false);
         $("#versionAlert").toggleClass("alert-danger",true);
         $("#versionAlert").html("<i class='fas fa-wrench'></i>&nbsp;&nbsp;<strong>Update available!</strong>"+
-            " Download the latest from <i class='fab fa-github-square'></i>&nbsp;<a href='https://github.com/Creepsky/creepMiner/releases'>github</a>");
+            " Download it from <i class='fab fa-github-square'></i>&nbsp;<a href='https://github.com/Creepsky/creepMiner/releases'>github</a>");
     } else
     {
-        $("#runningVer").html("<i class='fas fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer);
+        $("#runningVer").html("<i class='fas fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer +"." + runningBuild);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
-        $("#versionAlert").html("<i class='fas fa-check text-success'></i>&nbsp;&nbsp;You are running a current version of creepMiner.");
+        //$("#versionAlert").html("<i class='fas fa-check text-success'></i>&nbsp;&nbsp;You are running a current version of creepMiner.");
     }
 	return current
 }

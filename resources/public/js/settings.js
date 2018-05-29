@@ -41,7 +41,7 @@ function connectCallback(msg) {
                 update_settings(response);
                 break;
             case "new block":
-                checkVersion(response["runningVersion"], response["onlineVersion"]);
+                checkVersion(response["runningVersion"], response["onlineVersion"], response["runningBuild"]);
                 break;
             default:
                 break;
