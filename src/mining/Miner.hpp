@@ -86,6 +86,8 @@ namespace Burst
 		void rescanPlotfiles();
 		void setIsProcessing(bool isProc);
 
+		bool isPoC2() const;
+
 	private:
 		bool getMiningInfo(const Url& url);
 		NonceConfirmation submitNonceAsyncImpl(

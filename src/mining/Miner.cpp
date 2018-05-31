@@ -898,3 +898,10 @@ void Burst::Miner::setIsProcessing(bool isProc)
 
 	isProcessing_ = isProc;
 }
+
+bool Burst::Miner::isPoC2() const
+{
+	const auto block = data_.getBlockData();
+	poco_check_ptr(block);
+	return block->getBlockheight() >= MinerConfig::getConfig().getPoc2StartBlock();
+}
