@@ -67,6 +67,9 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	for (size_t i = 0; i < Settings::plotSize; i++)
 		gendata[i] ^= final[i % Settings::hashSize];
 
+	if (miner.isPoC2())
+		convertToPoC2(gendata);
+
 	std::array<uint8_t, 32> target{};
 	Poco::UInt64 result;
 
@@ -147,6 +150,8 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(const std::string& plotPath,
 		auto nonce = startNonce + nonceInterval * nonceStep + nonces[nonceInterval];
 		if (nonce >= startNonce + nonceCount) nonce = startNonce + nonceCount - 1;
 		genData[nonceInterval] = generateSse2(account, nonce);
+		if (miner.isPoC2())
+			convertToPoC2(genData[nonceInterval].data());
 	}
 
 	//waiting for read thread to finish
