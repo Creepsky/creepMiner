@@ -11,6 +11,6 @@ cmake
 
 [imports]
 bin, *.dll -> ./bin
-lib, *.dylib -> ./bin
+lib, *.dylib -> ./lib
 lib, *.so* -> ./lib
 
