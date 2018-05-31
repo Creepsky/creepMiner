@@ -146,7 +146,7 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(const std::string& plotPath,
 	{
 		auto nonce = startNonce + nonceInterval * nonceStep + nonces[nonceInterval];
 		if (nonce >= startNonce + nonceCount) nonce = startNonce + nonceCount - 1;
-		genData[nonceInterval] = generateSse2(account, nonce)[0];
+		genData[nonceInterval] = generateSse2(account, nonce);
 	}
 
 	//waiting for read thread to finish
@@ -200,9 +200,10 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(const std::string& plotPath,
 	return totalIntegrity / noncesChecked;
 }
 
-std::array<std::vector<char>, Burst::Shabal256Sse2::HashSize> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+std::vector<char> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
 {
-	return generate<Shabal256Sse2, PlotGeneratorOperations1<Shabal256Sse2>>(account, startNonce);
+	const auto gendata = generate<Shabal256Sse2, PlotGeneratorOperations1<Shabal256Sse2>>(account, startNonce);
+	return gendata[0];
 }
 
 std::array<std::vector<char>, Burst::Shabal256Avx::HashSize> Burst::PlotGenerator::generateAvx(const Poco::UInt64 account, const Poco::UInt64 startNonce)

@@ -41,7 +41,7 @@ namespace Burst
 		static Poco::UInt64 generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner);
 		static double checkPlotfileIntegrity(const std::string& plotPath, Miner& miner, MinerServer& server);
 
-		static std::array<std::vector<char>, Shabal256Sse2::HashSize> generateSse2(Poco::UInt64 account, Poco::UInt64 startNonce);
+		static std::vector<char> generateSse2(Poco::UInt64 account, Poco::UInt64 startNonce);
 		static std::array<std::vector<char>, Shabal256Avx::HashSize> generateAvx(Poco::UInt64 account, Poco::UInt64 startNonce);
 		static std::array<std::vector<char>, Shabal256Sse4::HashSize> generateSse4(Poco::UInt64 account, Poco::UInt64 startNonce);
 		static std::array<std::vector<char>, Shabal256Avx2::HashSize> generateAvx2(Poco::UInt64 account, Poco::UInt64 startNonce);
