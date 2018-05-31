@@ -163,6 +163,25 @@ namespace Burst
 
 			return deadlines;
 		}
+
+		static void convertToPoC2(char* gendata);
+
+		template <typename TContainer>
+		static void convertToPoC2(TContainer& container)
+		{
+			std::vector<std::thread> workers;
+
+			for (auto& gendata : container)
+			{
+				workers.emplace_back([&]()
+				{
+					convertToPoC2(gendata);
+				});
+			}
+
+			for (auto& worker : workers)
+				worker.join();
+		}
 	};
 
 	template <typename TShabal>

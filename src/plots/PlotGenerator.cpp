@@ -247,3 +247,21 @@ std::array<Poco::UInt64, Burst::Shabal256Avx2::HashSize> Burst::PlotGenerator::
 {
 	return calculateDeadline<Shabal256Avx2, PlotGeneratorOperations8<Shabal256Avx2>>(gendatas, generationSignature, scoop, baseTarget);
 }
+
+void Burst::PlotGenerator::convertToPoC2(char* gendata)
+{
+	std::array<char, Settings::hashSize> buffer{};
+	auto indexMirror = Settings::hashSize - Settings::scoopSize;
+
+	for (size_t i = 0; i < Settings::plotSize / 2; i += Settings::scoopSize)
+	{
+		const auto scoop = &gendata[i + Settings::hashSize];
+		const auto mirrorScoop = &gendata[indexMirror + Settings::hashSize];
+
+		memcpy(buffer.data(), scoop, Settings::hashSize);
+		memcpy(scoop, mirrorScoop, Settings::hashSize);
+		memcpy(mirrorScoop, buffer.data(), Settings::hashSize);
+
+		indexMirror -= Settings::scoopSize;
+	}
+}
