@@ -438,15 +438,15 @@ Burst::NonceConfirmation Burst::Miner::submitNonce(const std::shared_ptr<Deadlin
 					return NonceSubmitter{*this, deadline}.submit();
 				}
 			}
-			else
-			{
-				log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - not best"));
-				const auto best = block->getBestDeadline();
-				Poco::UInt64 bestDeadline = 0;
-				if (best != nullptr)
-					bestDeadline = best->getDeadline();
-				nonceConfirmation = NonceConfirmation::createNotBest(deadline->getNonce(), deadline->getDeadline(), bestDeadline);
-			}
+			//else
+			//{
+			//	log_debug(MinerLogger::miner, deadline->toActionString("nonce discarded - not best"));
+			//	const auto best = block->getBestDeadline();
+			//	Poco::UInt64 bestDeadline = 0;
+			//	if (best != nullptr)
+			//		bestDeadline = best->getDeadline();
+			//	nonceConfirmation = NonceConfirmation::createNotBest(deadline->getNonce(), deadline->getDeadline(), bestDeadline);
+			//}
 		}
 	}
 	catch (const Poco::Exception& e)
