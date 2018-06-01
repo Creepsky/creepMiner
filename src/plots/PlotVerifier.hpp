@@ -43,7 +43,7 @@ namespace Burst
 	{
 		typedef Poco::AutoPtr<VerifyNotification> Ptr;
 
-		std::vector<ScoopData> buffer;
+		ScoopData* buffer = nullptr;
 		Poco::UInt64 accountId = 0;
 		Poco::UInt64 nonceRead = 0;
 		Poco::UInt64 nonceStart = 0;
@@ -51,7 +51,7 @@ namespace Burst
 		Poco::UInt64 block = 0;
 		GensigData gensig;
 		Poco::UInt64 baseTarget = 0;
-		Poco::UInt64 memorySize = 0;
+		Poco::UInt64 nonces = 0;
 	};
 	
 	using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
@@ -114,10 +114,9 @@ namespace Burst
 					return isCancelled() || verifyNotification->block != data_->getCurrentBlockheight();
 				};
 
-				auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer,
-				                                              verifyNotification->nonceRead,
-				                                              verifyNotification->nonceStart, verifyNotification->baseTarget,
-				                                              verifyNotification->gensig,
+				auto bestResult = TVerificationAlgorithm::run(verifyNotification->buffer, verifyNotification->nonces,
+				                                              verifyNotification->nonceRead, verifyNotification->nonceStart,
+				                                              verifyNotification->baseTarget, verifyNotification->gensig,
 				                                              stopFunction, stream);
 
 				if (bestResult.first != 0 && bestResult.second != 0)
@@ -130,11 +129,10 @@ namespace Burst
 					                true);
 				}
 
-				PlotReader::globalBufferSize.free(verifyNotification->memorySize);
+				PlotReader::globalBufferSize.free(verifyNotification->buffer);
 
 				if (progress_ != nullptr)
-					progress_->add(static_cast<Poco::UInt64>(verifyNotification->buffer.size()) * Settings::plotSize,
-						verifyNotification->block);
+					progress_->add(verifyNotification->nonces * Settings::plotSize, verifyNotification->block);
 			}
 			catch (Poco::Exception& exc)
 			{
@@ -233,7 +231,7 @@ namespace Burst
 			return true;
 		}
 
-		static DeadlineTuple run(std::vector<ScoopData>& buffer, const Poco::UInt64 nonceRead,
+		static DeadlineTuple run(ScoopData* buffer, const size_t size, const Poco::UInt64 nonceRead,
 		                         const Poco::UInt64 nonceStart, const Poco::UInt64 baseTarget, const GensigData& gensig,
 		                         const std::function<bool()>& stop, void* stream)
 		{
@@ -245,15 +243,15 @@ namespace Burst
 
 			std::array<HashData, TShabal::HashSize> targets{};
 
-			for (size_t i = 0; i < buffer.size() && !stop(); i += TShabal::HashSize)
+			for (size_t i = 0; i < size && !stop(); i += TShabal::HashSize) 
 			{
 				auto shabal = shabalOriginal;
 
 				// hash the scoop according to the cpu instruction level
-				TShabalOperations::update(shabal, buffer.data(), i, buffer.size());
+				TShabalOperations::update(shabal, buffer, i, size);
 
 				// digest the hash
-				TShabalOperations::close(shabal, targets, i, buffer.size());
+				TShabalOperations::close(shabal, targets, i, size);
 
 				for (auto j = 0u; j < TShabal::HashSize; ++j)
 				{
@@ -279,18 +277,11 @@ namespace Burst
 			return TGpu::initStream(stream);
 		}
 
-		static DeadlineTuple run(std::vector<ScoopData>& buffer, Poco::UInt64 nonceRead,
-			Poco::UInt64 nonceStart, Poco::UInt64 baseTarget, const GensigData& gensig,
-			std::function<bool()> stop, void* stream)
+		static DeadlineTuple run(ScoopData* buffer, size_t size, Poco::UInt64 nonceRead, Poco::UInt64 nonceStart,
+		                         Poco::UInt64 baseTarget, const GensigData& gensig, std::function<bool()> stop, void* stream)
 		{
 			DeadlineTuple bestDeadline{0, 0};
-			TGpu::template run<TAlgorithm>(
-				buffer,
-				gensig,
-				nonceStart + nonceRead,
-				baseTarget,
-				stream,
-				bestDeadline);
+			TGpu::template run<TAlgorithm>(buffer, size, gensig, nonceStart + nonceRead, baseTarget, stream, bestDeadline);
 			return bestDeadline;
 		}
 	};

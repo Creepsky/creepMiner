@@ -45,42 +45,55 @@ Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
 void Burst::GlobalBufferSize::setMax(const Poco::UInt64 max)
 {
-	Poco::FastMutex::ScopedLock lock{mutex_};
-	max_ = max;
+	chunkQueue.wakeUpAll();
+
+	if (max > 0)
+	{
+		if (getMax() == max)
+			return;
+
+		if (memoryPool_ != nullptr)
+			memoryPool_.reset();
+
+		const auto chunks = MinerConfig::getConfig().getBufferChunkCount();
+		auto chunkSize = max / chunks;
+
+		memoryPool_ = std::make_unique<Poco::MemoryPool>(chunkSize, 0, chunks);
+		max_ = max;
+	}
 }
 
-bool Burst::GlobalBufferSize::reserve(const Poco::UInt64 size)
+void* Burst::GlobalBufferSize::reserve()
 {
 	// unlimited memory
-	if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
-		return true;
+	//if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
+	//	return true;
 
-	Poco::FastMutex::ScopedLock lock{mutex_};
-
-	if (size_ + size > max_)
-		return false;
-
-	size_ += size;
-	return true;
+	try
+	{
+		return memoryPool_->get();
+	}
+	catch (...)
+	{
+		return nullptr;
+	}
 }
 
-void Burst::GlobalBufferSize::free(Poco::UInt64 size)
+void Burst::GlobalBufferSize::free(void* memory)
 {
 	// unlimited memory
-	if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
-		return;
+	//if (MinerConfig::getConfig().getMaxBufferSizeRaw() == 0)
+	//	return true;
 
-	Poco::FastMutex::ScopedLock lock{mutex_};
-
-	if (size > size_)
-		size = size_;
-
-	size_ -= size;
+	memoryPool_->release(memory);
 }
 
 Poco::UInt64 Burst::GlobalBufferSize::getSize() const
 {
-	return size_;
+	if (memoryPool_ == nullptr)
+		return 0;
+
+	return memoryPool_->blockSize() * memoryPool_->allocated();
 }
 
 Poco::UInt64 Burst::GlobalBufferSize::getMax() const
@@ -97,7 +110,7 @@ Burst::PlotReader::PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress>
 
 void Burst::PlotReader::runTask()
 {
-	std::vector<ScoopData> bufferMirror;
+	ScoopData* memoryMirror = nullptr;
 
 	while (!isCancelled())
 	{
@@ -174,33 +187,32 @@ void Burst::PlotReader::runTask()
 						if (staggerBegin != staggerEnd)
 							readNonces = plotFile.getStaggerSize() - startNonce % plotFile.getStaggerSize();
 
-						auto memoryAcquired = false;
-						auto memoryAcquiredMirror = false;
-						const auto memoryToAcquire = static_cast<unsigned>(std::min(readNonces * Settings::scoopSize, chunkBytes));
+						const auto memoryToAcquire = std::min(readNonces * Settings::scoopSize, chunkBytes);
+						ScoopData* memory = nullptr;
 
-						while (!isCancelled() && !memoryAcquired)
+						while (!isCancelled() && memory == nullptr)
 						{
-							memoryAcquired = globalBufferSize.reserve(memoryToAcquire);
+							memory = reinterpret_cast<ScoopData*>(globalBufferSize.reserve());
 
 							if (poc2 && !plotFile.isPoC(2))
-								while (!isCancelled() && !memoryAcquiredMirror)
-									memoryAcquiredMirror = globalBufferSize.reserve(memoryToAcquire);
+								while (!isCancelled() && memoryMirror == nullptr)
+									memoryMirror = reinterpret_cast<ScoopData*>(globalBufferSize.reserve());							
 						}
 
 						// if the reader is cancelled, jump out of the loop
 						if (isCancelled())
 						{
 							// but first give free the allocated memory
-							if (memoryAcquired)
-								globalBufferSize.free(memoryToAcquire);
+							if (memory != nullptr)
+								globalBufferSize.free(memory);
 
-							if (memoryAcquiredMirror)
-								globalBufferSize.free(memoryToAcquire);
+							if (memoryMirror != nullptr)
+								globalBufferSize.free(memoryMirror);
 
 							continue;
 						}
 
-						if (memoryAcquired && currentBlock)
+						if (memory != nullptr && currentBlock)
 						{
 							const auto chunkOffset = startNonce % plotFile.getStaggerSize() * Settings::scoopSize;
 							const auto staggerBlockOffset = staggerBegin * plotFile.getStaggerBytes();
@@ -214,63 +226,22 @@ void Burst::PlotReader::runTask()
 							verification->gensig = plotReadNotification->gensig;
 							verification->nonceRead = startNonce;
 							verification->baseTarget = plotReadNotification->baseTarget;
-							verification->memorySize = memoryToAcquire;
-
-							memoryAcquired = false;
-
-							while (!memoryAcquired && !isCancelled())
-							{
-								try
-								{
-									verification->buffer.resize(readNonces);
-									memoryAcquired = true;
-								}
-								catch (std::bad_alloc&)
-								{
-								}
-								catch (...)
-								{
-									globalBufferSize.free(memoryToAcquire);
-									throw;
-								}
-							}
-
-							if (memoryAcquiredMirror)
-							{
-								memoryAcquiredMirror = false;
-
-								while (!memoryAcquiredMirror && !isCancelled())
-								{
-									try
-									{
-										bufferMirror.resize(readNonces);
-										memoryAcquiredMirror = true;
-									}
-									catch (std::bad_alloc&)
-									{
-									}
-									catch (...)
-									{
-										globalBufferSize.free(memoryToAcquire);
-										throw;
-									}
-								}
-							}
+							verification->nonces = readNonces;
+							verification->buffer = memory;
 
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							inputStream.read(reinterpret_cast<char*>(verification->buffer.data()), memoryToAcquire);
+							inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire);
 
-							if (memoryAcquiredMirror)
+							if (memoryMirror != nullptr)
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
 								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
-								inputStream.read(reinterpret_cast<char*>(bufferMirror.data()), memoryToAcquire);
+								inputStream.read(reinterpret_cast<char*>(memoryMirror), memoryToAcquire);
 
-								for (size_t i = 0; i < verification->buffer.size(); ++i)
-									memcpy(&verification->buffer[i][32], &bufferMirror[i][32], 32);
+								for (size_t i = 0; i < readNonces; ++i)
+									memcpy(&verification->buffer[i][32], &memoryMirror[i][32], 32);
 
-								bufferMirror.clear();
-								globalBufferSize.free(memoryToAcquire);
+								globalBufferSize.free(memoryMirror);
 							}
 
 							verificationQueue_->enqueueNotification(verification);
@@ -280,9 +251,9 @@ void Burst::PlotReader::runTask()
 							nonce += readNonces;
 						}
 						// if the memory was acquired, but it was not the right block, give it free
-						else if (memoryAcquired)
-							globalBufferSize.free(memoryToAcquire);
-							// this should never happen.. no memory allocated, not cancelled, wrong block
+						else if (memory != nullptr)
+							globalBufferSize.free(memory);
+						// this should never happen.. no memory allocated, not cancelled, wrong block
 						else;
 					}
 				}
