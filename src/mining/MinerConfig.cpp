@@ -518,7 +518,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 		databasePath_ = getOrAdd(miningObj, "databasePath", std::string("data.db"));
 		workerName_ = getOrAdd(miningObj, "workerName", std::string{});
-		poc2StartBlock_ = getOrAdd(miningObj, "poc2StartBlock", 505000);
+		poc2StartBlock_ = getOrAdd(miningObj, "poc2StartBlock", 502000);
 
 		// auto detect the max. cpu instruction set
 		if (cpuInstructionSet_ == "AUTO")
