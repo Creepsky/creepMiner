@@ -14,7 +14,8 @@
     },
     "files": [
         {
-            "includePattern": "/.*/travis/build/Creepsky/(creepMiner-.*\\.tar\\.gz)",
+            "includePattern": "\\./(creepMiner-.*\\.tar\\.gz)",
+            "excludePattern": "\\./_CPack_Packages/.*",
             "uploadPattern": "/$1"
         }
     ],
