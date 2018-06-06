@@ -14,8 +14,8 @@
     },
     "files": [
         {
-            "includePattern": "\\./(creepMiner-.*\\.tar\\.gz)",
-            "excludePattern": "\\./_CPack_Packages/.*",
+            "includePattern": "./(creepMiner-.*.tar.gz)",
+            "excludePattern": "./_CPack_Packages/.*",
             "uploadPattern": "/$1"
         }
     ],
