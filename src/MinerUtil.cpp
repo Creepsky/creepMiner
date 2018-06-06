@@ -1201,7 +1201,7 @@ Burst::LowLevelFileStream::LowLevelFileStream(const std::string& path)
         handle_ = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
                                              OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, nullptr);
 #else
-        handle_ = open(plotFile.getPath().c_str(), O_RDONLY);
+        handle_ = open(path.c_str(), O_RDONLY);
 #endif
 }
 
@@ -1210,7 +1210,7 @@ Burst::LowLevelFileStream::~LowLevelFileStream()
 #ifdef _WIN32
 	CloseHandle(handle_);
 #else
-	close(inputStream);
+	close(handle_);
 #endif
 }
 
@@ -1232,7 +1232,7 @@ bool Burst::LowLevelFileStream::read(char* buffer, const size_t bytes) const
 	ReadFile(handle_, buffer, static_cast<DWORD>(bytes), &bytesRead, nullptr);
 	return bytesRead == bytes;
 #else
-	return read(handle_, buffer, bytes) == bytes;
+	return ::read(handle_, buffer, bytes) == bytes;
 #endif
 }
 
