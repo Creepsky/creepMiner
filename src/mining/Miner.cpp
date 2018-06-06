@@ -41,7 +41,7 @@ namespace Burst
 	{
 		template <typename T>
 		void createWorkerDefault(std::unique_ptr<Poco::ThreadPool>& thread_pool, std::unique_ptr<Poco::TaskManager>& task_manager,
-			const size_t size, Miner& miner, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress)
+			const size_t size, Miner& miner, Poco::NotificationQueue& queue)
 		{
 			thread_pool = std::make_unique<Poco::ThreadPool>(1, static_cast<int>(size));
 			task_manager = std::make_unique<Poco::TaskManager>(*thread_pool);
@@ -55,7 +55,7 @@ namespace Burst
 			};
 
 			for (size_t i = 0; i < size; ++i)
-				task_manager->start(new T(miner.getData(), queue, progress, submitFunction));
+				task_manager->start(new T(miner.getData(), queue, submitFunction));
 		}
 
 		template <typename T, typename ...Args>
@@ -110,7 +110,7 @@ void Burst::Miner::run()
 
 		// create the plot readers
 		MinerHelper::createWorker<PlotReader>(plotReaderPool_, plotReader_, MinerConfig::getConfig().getMaxPlotReaders(),
-			data_, progressRead_, verificationQueue_, plotReadQueue_);
+			data_, progressRead_, progressVerify_, verificationQueue_, plotReadQueue_);
 
 		// create the plot verifiers
 		createPlotVerifiers();
@@ -670,23 +670,21 @@ namespace Burst
 		const auto readProgressChanged = progress.read != readProgressPercent;
 		const auto verifyProgressChanged = progress.verify != readProgressPercent;
 
-		progress.read = readProgressPercent;
-		progress.verify = verifyProgressPercent;
-
-		if (readProgressChanged)
+		if (readProgressChanged || verifyProgressChanged)
+		{
+			progress.read = readProgressPercent;
+			progress.verify = verifyProgressPercent;
 			progress.bytesPerSecondRead = readProgressValue / 4096. / timeDiffSeconds.count();
-
-		if (verifyProgressChanged)
 			progress.bytesPerSecondVerify = verifyProgressValue / 4096. / timeDiffSeconds.count();
-
-		progress.bytesPerSecondCombined = (readProgressValue + verifyProgressValue) / 4096. / timeDiffSeconds.
-			count();
-
-		MinerLogger::writeProgress(progress);
-		data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
-		
-		if (readProgressPercent == 100.f && verifyProgressPercent == 100.f && blockProcessed != nullptr)
-			blockProcessed(blockheight, timeDiffSeconds.count());
+			progress.bytesPerSecondCombined = (readProgressValue + verifyProgressValue) / 4096. / timeDiffSeconds.
+				count();
+			
+			MinerLogger::writeProgress(progress);
+			data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
+			
+			if (readProgressPercent == 100.f && verifyProgressPercent == 100.f && blockProcessed != nullptr)
+				blockProcessed(blockheight, timeDiffSeconds.count());
+		}
 	}
 }
 
@@ -790,11 +788,9 @@ void Burst::Miner::createPlotVerifiers()
 	auto forceCpu = false, fallback = false;
 	const auto createWorker = [this](std::function<void(std::unique_ptr<Poco::ThreadPool>&,
 	                                                    std::unique_ptr<Poco::TaskManager>&,
-	                                                    size_t, Miner&, Poco::NotificationQueue&,
-	                                                    std::shared_ptr<PlotReadProgress>)> function)
+	                                                    size_t, Miner&, Poco::NotificationQueue&)> function)
 	{
-		function(verifierPool_, verifier_, MinerConfig::getConfig().getMiningIntensity(), *this, verificationQueue_,
-		         progressVerify_);
+		function(verifierPool_, verifier_, MinerConfig::getConfig().getMiningIntensity(), *this, verificationQueue_);
 	};
 
 	if (processorType == "CUDA")
@@ -866,7 +862,7 @@ void Burst::Miner::setMaxPlotReader(unsigned max_reader)
 	shutDownWorker(*plotReaderPool_, *plotReader_, plotReadQueue_);
 	MinerConfig::getConfig().setMaxPlotReaders(max_reader);
 	MinerHelper::createWorker<PlotReader>(plotReaderPool_, plotReader_, MinerConfig::getConfig().getMaxPlotReaders(),
-		data_, progressRead_, verificationQueue_, plotReadQueue_);
+		data_, progressRead_, progressVerify_, verificationQueue_, plotReadQueue_);
 }
 
 void Burst::Miner::setMaxBufferSize(Poco::UInt64 size)

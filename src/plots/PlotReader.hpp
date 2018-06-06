@@ -80,7 +80,8 @@ namespace Burst
 	class PlotReader : public Poco::Task
 	{
 	public:
-		PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress> progress,
+		PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress> progressRead,
+			std::shared_ptr<PlotReadProgress> progressVerify,
 			Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue);
 		~PlotReader() override = default;
 
@@ -90,7 +91,7 @@ namespace Burst
 
 	private:
 		MinerData& data_;
-		std::shared_ptr<PlotReadProgress> progress_;
+		std::shared_ptr<PlotReadProgress> progressRead_, progressVerify_;
 		Poco::NotificationQueue* verificationQueue_;
 		Poco::NotificationQueue* plotReadQueue_;
 	};
@@ -112,5 +113,16 @@ namespace Burst
 		mutable std::mutex mutex_;
 
 		void fireProgressChanged();
+	};
+
+	class PlotReadProgressGuard
+	{
+	public:
+		PlotReadProgressGuard(std::shared_ptr<PlotReadProgress> progress, Poco::UInt64 nonces, Poco::UInt64 blockheight);
+		~PlotReadProgressGuard();
+
+	private:
+		std::shared_ptr<PlotReadProgress> progress_;
+		Poco::UInt64 nonces_, blockheight_;
 	};
 }

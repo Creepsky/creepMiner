@@ -33,14 +33,6 @@
 #include "Plot.hpp"
 #include <Poco/FileStream.h>
 
-#define _FILE_OFFSET_BITS 64
-
-#if defined __APPLE__
-#define LSEEK64 lseek64
-#elif defined __linux__
-#define LSEEK64 lseek64
-#endif
-
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
 void Burst::GlobalBufferSize::setMax(const Poco::UInt64 max)
@@ -101,9 +93,11 @@ Poco::UInt64 Burst::GlobalBufferSize::getMax() const
 	return max_;
 }
 
-Burst::PlotReader::PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress> progress,
+Burst::PlotReader::PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress> progressRead,
+                              std::shared_ptr<PlotReadProgress> progressVerify,
                               Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue)
-	: Task("PlotReader"), data_(data), progress_{std::move(progress)}, verificationQueue_{&verificationQueue},
+	: Task("PlotReader"), data_(data), progressRead_{std::move(progressRead)}, progressVerify_{std::move(progressVerify)},
+	  verificationQueue_{&verificationQueue},
 	  plotReadQueue_(&plotReadQueue)
 {
 }
@@ -148,6 +142,9 @@ void Burst::PlotReader::runTask()
 			{
 				auto& plotFile = **plotFileIter;
 				Poco::FileInputStream inputStream{plotFile.getPath()};
+				PlotReadProgressGuard progressGuard{progressRead_, plotFile.getNonces(), plotReadNotification->blockheight};
+				const auto progressGuardVerify = std::make_shared<PlotReadProgressGuard>(
+					progressVerify_, plotFile.getNonces(), plotReadNotification->blockheight);
 
 				Poco::Timestamp timeStartFile;
 
@@ -228,6 +225,7 @@ void Burst::PlotReader::runTask()
 							verification->baseTarget = plotReadNotification->baseTarget;
 							verification->nonces = readNonces;
 							verification->buffer = memory;
+							verification->progress = progressGuardVerify;
 
 							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire);
@@ -287,9 +285,6 @@ void Burst::PlotReader::runTask()
 						memToString(plotFile.getSize(), 2),
 						Poco::DateTimeFormatter::format(span, "%s.%i"),
 						memToString(static_cast<Poco::UInt64>(bytesPerSeconds), 2));
-
-					if (!MinerConfig::getConfig().isSteadyProgressBar() && progress_ != nullptr)
-						progress_->add(plotFile.getSize(), plotReadNotification->blockheight);
 				}
 
 				// if it was cancelled, we push the current plot dir back in the queue again
@@ -396,4 +391,15 @@ void Burst::PlotReadProgress::fireProgressChanged()
 {
 	auto progress = getProgress();
 	progressChanged.notify(this, progress);
+}
+
+Burst::PlotReadProgressGuard::PlotReadProgressGuard(std::shared_ptr<PlotReadProgress> progress, const Poco::UInt64 nonces,
+	const Poco::UInt64 blockheight)
+	: progress_(std::move(progress)), nonces_(nonces), blockheight_(blockheight)
+{
+}
+
+Burst::PlotReadProgressGuard::~PlotReadProgressGuard()
+{
+	progress_->add(nonces_ * Settings::plotSize, blockheight_);
 }

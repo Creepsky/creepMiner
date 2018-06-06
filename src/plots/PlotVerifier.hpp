@@ -22,7 +22,6 @@
 #pragma once
 
 #include <Poco/Task.h>
-#include <vector>
 #include "Declarations.hpp"
 #include <Poco/AutoPtr.h>
 #include <Poco/Notification.h>
@@ -37,7 +36,7 @@
 
 namespace Burst
 {
-	class PlotReadProgress;
+	class PlotReadProgressGuard;
 
 	struct VerifyNotification : Poco::Notification
 	{
@@ -52,6 +51,7 @@ namespace Burst
 		GensigData gensig;
 		Poco::UInt64 baseTarget = 0;
 		Poco::UInt64 nonces = 0;
+		std::shared_ptr<PlotReadProgressGuard> progress;
 	};
 	
 	using DeadlineTuple = std::pair<Poco::UInt64, Poco::UInt64>;
@@ -61,22 +61,19 @@ namespace Burst
 	class PlotVerifier : public Poco::Task
 	{
 	public:
-		PlotVerifier(MinerData& data, Poco::NotificationQueue& queue, std::shared_ptr<PlotReadProgress> progress,
-		             SubmitFunction submitFunction);
+		PlotVerifier(MinerData& data, Poco::NotificationQueue& queue, SubmitFunction submitFunction);
 		~PlotVerifier() override;
 		void runTask() override;
 		
 	private:
 		MinerData* data_;
 		Poco::NotificationQueue* queue_;
-		std::shared_ptr<PlotReadProgress> progress_;
 		SubmitFunction submitFunction_;
 	};
 
 	template <typename TVerificationAlgorithm>
-	PlotVerifier<TVerificationAlgorithm>::PlotVerifier(MinerData& data, Poco::NotificationQueue& queue,
-		std::shared_ptr<PlotReadProgress> progress, SubmitFunction submitFunction)
-		: Task("PlotVerifier"), data_{&data}, queue_{&queue}, progress_{progress}, submitFunction_{submitFunction}
+	PlotVerifier<TVerificationAlgorithm>::PlotVerifier(MinerData& data, Poco::NotificationQueue& queue, SubmitFunction submitFunction)
+		: Task("PlotVerifier"), data_{&data}, queue_{&queue}, submitFunction_{submitFunction}
 	{
 	}
 
@@ -130,9 +127,6 @@ namespace Burst
 				}
 
 				PlotReader::globalBufferSize.free(verifyNotification->buffer);
-
-				if (progress_ != nullptr)
-					progress_->add(verifyNotification->nonces * Settings::plotSize, verifyNotification->block);
 			}
 			catch (Poco::Exception& exc)
 			{
