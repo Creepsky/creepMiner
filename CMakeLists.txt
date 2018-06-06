@@ -230,7 +230,7 @@ endif ()
 # Packaging
 ##################################################################
 set(CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burstcoin c++ cpu/gpu miner")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burstcoin C++ CPU and GPU Miner")
 set(CPACK_PACKAGE_VENDOR "Creepsky")
 set(CPACK_PACKAGE_VERSION ${VERSION})
 set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
