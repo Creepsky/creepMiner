@@ -69,7 +69,6 @@ artifacts:
 # providers: Local, FTP, WebDeploy, AzureCS, AzureBlob, S3, NuGet, Environment
 # provider names are case-sensitive!
 deploy:
-
     # Deploy to GitHub Releases
   - provider: GitHub
     artifact: /.*\.zip/
@@ -81,3 +80,16 @@ deploy:
     on:
       branch: master
       appveyor_repo_tag: true       # deploy on tag push only
+  - provider: BinTray
+    username: Creepsky
+    repo: creepMiner
+    api_key:
+      secure: KkWiYEwxZuF+y1XOTWasSx0MT5GRP4f4o8k4TzavQl2lqzLEjhESqan+dt8jGLgX
+    subject: Creepsky
+    package: creepMiner
+    version: development
+    publish: true
+    artifact: /.*\.zip/
+    override: true
+    on:
+      branch: development
