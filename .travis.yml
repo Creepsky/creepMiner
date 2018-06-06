@@ -75,6 +75,45 @@ matrix:
       on:
         branch: development
   - os: linux
+    sudo: true
+    addons:
+      apt:
+        sources:
+        - ubuntu-toolchain-r-test
+        packages:
+        - g++-5
+    env:
+    - NAME="linux g++-5 opencl" MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+    script:
+    - sudo apt-get install opencl-headers
+    - sudo apt install ocl-icd-opencl-dev
+    - pip install conan --user
+    - conan install . --build=missing
+    - cmake .
+    - make -j$(nproc)
+    - make package
+    cache:
+      directories:
+      - "$HOME/.conan"
+    deploy:
+    - provider: releases
+      skip_cleanup: true
+      file_glob: true
+      file:
+      - "*.tar.gz"
+      on:
+        tags: true
+      api_key:
+        secure: xs3GCmymdo/fo46+ELma466ZdnYtYnQtV68EE3wbhXJD1Kc4Wq+rRiHXIpR+fhWhDFsbaiM0KIhjbMwwmphnXOhcVXvcufxqtvMxEySWx9uPOsIQ+LoeElmiU4AmmnEerVOEYDACj//KianI6Zm70PIwUBYGBaW41x97jhe4WLoQdKPj/ORsEGh/oZtJfI05qXzW1UdF6labSD/4jcx6CEsiFFCAh7EeAZjB0rhqfknp1IGn3N1G+rN43zYgMs9D3ww9PRDZdGlMqYk4cJglCQQAqQa0I71LtNcgkKNxfh4JBz8qyHRrTPr4tQXhtz9IPrQFLmSKtCvTJjjmUZ5RE2FqhVPXxswBKEv43tsDklqDt/qGjlcuMZwnn3c18R2gkBx2kXpyie6ujXIxrWaiao6Mp+OS2knzb5ebI4fqj6G8+mwQNheuR5qcmnZVfgv6CyCLxVgIOZEGaq6TBS9+6FiP6pqpKP3ySM/etmQB8GwDz53aUYirykL7sjunYMxiqf7T6XSwqHiZJWZUVZVPNxhEft2BVaxwhCf78KasZd0tzFfsEb0NM8vfKSAkj4zTdYTW3it6iSjH30PJbOjDuYSMC1Aje/T5q8JnPXJcIB2/i1BkAp37VXgC6ebOT/cSQsliVptzZx4ZXjuIN8zkuf6ka6NYNKVYOFRv5pChJoc=
+    - provider: bintray
+      file: bintray-dev.json
+      user: creepsky
+      skip_cleanup: true
+      key:
+        secure: Br+EQG0ypyBrzs/vvQozCmAdjE5yILyGY/IMcS2bUmlWurEBeQIk+nSSRFSCBdi0/GfXrs3a91XenIsvrYYIQQVNjJ277vw4fyJ2lFAbyIp7S3NeCFT04nmcDXqszIYDjdSHeQTFvuUnOD9vhLleDnke2Lff4+weVGgqD1Hr8mkPEUStqij3PYzk/5qVTUdQ69D0kIWr5+z+p0FSCerdAsdMW8LNX/6T+y4Cq7X4TdJudh4vW0mwnhkdj2IOl608cCNGU4OVLeHQdqQKC3yMxmJyyIryRa4ylwlqPw7s+9FBqGb2Gemip9a6gOowoPIbf2PPCquGDCKDtlTeT09fQbLcbOP4LtWZ/VentZAx6PbIrYxymPTI5p362a0z/SHCZ4X0I7ElUdCzGncHTkR9rKaRCEEnQiIsqK0OUa2sS18+rcnza0WgcXYR0ZUSWzjLbWhg1WeQzzQzITU3tM22CHG/Joy9z1Ob6xw+rdS9xw0/nTJoVHAfUobEfXx5tyFm5tnobIPrrdsoMZJ1sKH+geCP0m/tLyZCTQflmTwauUsB3+NTsomS2D4t3zX13XApGFgCRAbG+u3Hb9xv7PXSpxVpf70arDxVs8ZZsewJ4910VEoPk4Mg/dTYAh/M+2PQnd7TlNQ4pMkEOQTajti6bkHTA8dn2XjfomOCjOx5OxE=
+      on:
+        branch: development
+  - os: linux
     sudo: false
     addons:
       apt:
