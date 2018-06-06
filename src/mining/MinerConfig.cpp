@@ -406,6 +406,7 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 				logOutputType_ = LogOutputType::Terminal;
 
 			logUseColors_ = getOrAdd(loggingObj, "useColors", true);
+			verboseLogging_ = getOrAdd(loggingObj, "verbose", true);
 
 			Poco::JSON::Object::Ptr progressBarObj = nullptr;
 
@@ -2198,4 +2199,9 @@ bool Burst::MinerConfig::isForwardingMinerName() const
 Poco::UInt64 Burst::MinerConfig::getPoc2StartBlock() const
 {
 	return poc2StartBlock_;
+}
+
+bool Burst::MinerConfig::isVerboseLogging() const
+{
+	return verboseLogging_;
 }

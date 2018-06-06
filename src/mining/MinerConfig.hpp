@@ -228,6 +228,7 @@ namespace Burst
 		bool isCumulatingPlotsizes() const;
 		bool isForwardingMinerName() const;
 		Poco::UInt64 getPoc2StartBlock() const;
+		bool isVerboseLogging() const;
 
 		void setUrl(const std::string& url, HostType hostType);
 		void setBufferSize(Poco::UInt64 bufferSize);
@@ -338,6 +339,7 @@ namespace Burst
 		std::string databasePath_;
 		std::string workerName_;
 		Poco::UInt64 poc2StartBlock_ = 0;
+		bool verboseLogging_ = false;
 		mutable Poco::Mutex mutex_;
 	};
 }
