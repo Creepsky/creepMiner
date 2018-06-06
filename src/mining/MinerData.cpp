@@ -799,6 +799,8 @@ void Burst::MinerData::forAllBlocks(const Poco::UInt64 from, const Poco::UInt64 
 			{
 				auto deadline = std::make_shared<Deadline>(nonces[j], values[j],std::make_shared<Account>(accounts[j]), height, files[j]);
 
+				historicBlock->addDeadline(deadline);
+
 				switch (status[j])
 				{
 				case 3:
