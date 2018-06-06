@@ -348,7 +348,7 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	
 	for (auto i = 0u; i < tokenizer.count(); ++i)
 	{
-		block << getTextTypeColor(TextType::Normal) << getTime() << ": "
+		block << getTextTypeColor(TextType::Unimportant) << getTime() << ": "
 			<< getTextTypeColor(type);
 		
 #ifdef _WIN32
