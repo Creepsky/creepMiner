@@ -274,7 +274,7 @@ void Burst::PlotReader::runTask()
 								ReadFile(inputStream, reinterpret_cast<char*>(memoryMirror), memoryToAcquire, &_, nullptr);
 #else
 								LSEEK64(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, SEEK_SET);
-								if (read(inputStream, reinterpret_cast<char*>(memoryMirror), memoryToAcquire) != memoryAcquired)
+								if (read(inputStream, reinterpret_cast<char*>(memoryMirror), memoryToAcquire) != memoryToAcquire)
 									log_warning(MinerLogger::plotReader, "Could not read mirror for nonce %Lu+ in %s", startNonce, plotFile.getPath());
 #endif
 
