@@ -14,7 +14,7 @@
     },
     "files": [
         {
-            "includePattern": "(.*\\.tar\\.gz)",
+            "includePattern": "/home/travis/build/Creepsky/creepMiner/(.*\\.tar\\.gz)",
             "uploadPattern": "/$1"
         }
     ],
