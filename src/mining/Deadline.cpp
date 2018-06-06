@@ -27,6 +27,37 @@
 #include "wallet/Account.hpp"
 #include "MinerData.hpp"
 #include "plots/PlotSizes.hpp"
+#include "MinerConfig.hpp"
+
+Burst::Deadline::Deadline(Deadline&& other) noexcept
+	: account_{std::move(other.account_)}, block_{other.block_}, nonce_{other.nonce_},
+	  deadline_{other.deadline_}, plotFile_{std::move(other.plotFile_)}, onTheWay_{other.onTheWay_.load()},
+	  sent_{other.sent_.load()},
+	  confirmed_{other.confirmed_.load()}, minerName_{std::move(other.minerName_)},
+	  workerName_{std::move(other.workerName_)}, plotsize_{other.plotsize_}, ip_{std::move(other.ip_)},
+	  parent_{other.parent_}
+{
+}
+
+Burst::Deadline& Burst::Deadline::operator=(Deadline&& other) noexcept
+{
+	if (this == &other)
+		return *this;
+	account_ = std::move(other.account_);
+	block_ = other.block_;
+	nonce_ = other.nonce_;
+	deadline_ = other.deadline_;
+	plotFile_ = std::move(other.plotFile_);
+	onTheWay_ = other.onTheWay_.load();
+	sent_ = other.sent_.load();
+	confirmed_ = other.confirmed_.load();
+	minerName_ = std::move(other.minerName_);
+	workerName_ = std::move(other.workerName_);
+	plotsize_ = other.plotsize_;
+	ip_ = std::move(other.ip_);
+	parent_ = other.parent_;
+	return *this;
+}
 
 Burst::Deadline::Deadline(const Poco::UInt64 nonce, const Poco::UInt64 deadline, std::shared_ptr<Account> account,
                           const Poco::UInt64 block, std::string plotFile, Deadlines* parent)
@@ -43,12 +74,12 @@ Burst::Deadline::Deadline(const Poco::UInt64 nonce, const Poco::UInt64 deadline,
 
 Poco::UInt64 Burst::Deadline::getNonce() const
 {
-	return nonce_.load();
+	return nonce_;
 }
 
 Poco::UInt64 Burst::Deadline::getDeadline() const
 {
-	return deadline_.load();
+	return deadline_;
 }
 
 Burst::AccountId Burst::Deadline::getAccountId() const
@@ -68,7 +99,7 @@ std::string Burst::Deadline::getAccountName() const
 
 Poco::UInt64 Burst::Deadline::getBlock() const
 {
-	return block_.load();
+	return block_;
 }
 
 bool Burst::Deadline::isOnTheWay() const

@@ -38,10 +38,13 @@ namespace Burst
 	class Deadline : public std::enable_shared_from_this<Deadline>
 	{
 	public:
-		//Deadline(Poco::UInt64 nonce, Poco::UInt64 deadline);
+
 		Deadline(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile,
 			Deadlines* parent = nullptr);
-		Deadline(Deadline&& rhs) = default;
+		Deadline(const Deadline& other) = delete;
+		Deadline(Deadline&& other) noexcept;
+		Deadline& operator=(const Deadline& other) = delete;
+		Deadline& operator=(Deadline&& other) noexcept;
 		~Deadline();
 
 		void found(bool tooHigh = false);
@@ -80,9 +83,9 @@ namespace Burst
 
 	private:
 		std::shared_ptr<Account> account_;
-		std::atomic<Poco::UInt64> block_;
-		std::atomic<Poco::UInt64> nonce_;
-		std::atomic<Poco::UInt64> deadline_;
+		Poco::UInt64 block_;
+		Poco::UInt64 nonce_;
+		Poco::UInt64 deadline_;
 		std::string plotFile_ = "";
 		std::atomic<bool> onTheWay_;
 		std::atomic<bool> sent_;
