@@ -81,11 +81,11 @@ deploy:
       branch: master
       appveyor_repo_tag: true       # deploy on tag push only
   - provider: BinTray
-    username: Creepsky
+    username: creepsky
     repo: creepMiner
     api_key:
       secure: KkWiYEwxZuF+y1XOTWasSx0MT5GRP4f4o8k4TzavQl2lqzLEjhESqan+dt8jGLgX
-    subject: Creepsky
+    subject: creepsky
     package: creepMiner
     version: development
     publish: true
