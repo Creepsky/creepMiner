@@ -537,7 +537,16 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 
 		Settings::setCpuInstructionSet(cpuInstructionSet_);
 
-		processorType_ = getOrAdd(miningObj, "processorType", std::string("CPU"));
+		std::string defaultProcessorType;
+
+		if (Settings::cuda)
+			defaultProcessorType = "CUDA";
+		else if (Settings::openCl)
+			defaultProcessorType = "OPENCL";
+		else
+			defaultProcessorType = "CPU";
+
+		processorType_ = getOrAdd(miningObj, "processorType", defaultProcessorType);
 
 		gpuPlatform_ = getOrAdd(miningObj, "gpuPlatform", 0u);
 		gpuDevice_ = getOrAdd(miningObj, "gpuDevice", 0u);
