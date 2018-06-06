@@ -602,12 +602,13 @@ bool Burst::Miner::getMiningInfo(const Url& url)
 							if (MinerConfig::getConfig().getSubmitProbability() == 0.)
 							{
 								if (targetDeadlinePoolBefore != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
-									log_system(MinerLogger::config,
+									log_system(MinerLogger::config, std::string(50, '-') + "\n" +
 										"got new target deadline from pool\n"
-										"\told pool target deadline:    %s\n"
-										"\tnew pool target deadline:    %s\n"
-										"\ttarget deadline from config: %s\n"
-										"\tlowest target deadline:      %s",
+										"old pool target deadline:    \t%s\n"
+										"new pool target deadline:    \t%s\n"
+										"target deadline from config: \t%s\n"
+										"lowest target deadline:      \t%s\n" +
+										std::string(50, '-'),
 										deadlineFormat(targetDeadlinePoolBefore),
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)),
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Local)),
@@ -616,10 +617,11 @@ bool Burst::Miner::getMiningInfo(const Url& url)
 							else
 							{
 								if (targetDeadlinePoolBefore != MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool))
-									log_system(MinerLogger::config,
+									log_system(MinerLogger::config, std::string(50, '-') + "\n" +
 										"got new target deadline from pool\n"
-										"\told pool target deadline:    %s\n"
-										"\tnew pool target deadline:    %s",
+										"old pool target deadline:    \t%s\n"
+										"new pool target deadline:    \t%s\n" +
+										std::string(50, '-'),
 										deadlineFormat(targetDeadlinePoolBefore),
 										deadlineFormat(MinerConfig::getConfig().getTargetDeadline(TargetDeadlineType::Pool)));
 							}
