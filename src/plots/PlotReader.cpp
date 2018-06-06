@@ -191,9 +191,22 @@ void Burst::PlotReader::runTask()
 						{
 							memory = reinterpret_cast<ScoopData*>(globalBufferSize.reserve());
 
+							if (memory == nullptr)
+							{
+								std::this_thread::sleep_for(std::chrono::milliseconds{38});
+								continue;
+							}
+
 							if (poc2 && !plotFile.isPoC(2))
+							{
 								while (!isCancelled() && memoryMirror == nullptr)
+								{
 									memoryMirror = reinterpret_cast<ScoopData*>(globalBufferSize.reserve());
+
+									if (memoryMirror == nullptr)
+										std::this_thread::sleep_for(std::chrono::milliseconds{38});
+								}
+							}
 						}
 
 						// if the reader is cancelled, jump out of the loop
