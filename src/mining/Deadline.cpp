@@ -114,12 +114,15 @@ const Poco::Net::IPAddress& Burst::Deadline::getIp() const
 
 std::string Burst::Deadline::toActionString(const std::string& action) const
 {
-	return Poco::format("%s: %s (%s)\n"
-	                    "\tnonce: %s\n"
-	                    "\tin:    %s\n"
-	                    "\tfrom:  %s",
-	                    getAccountName(), action, deadlineToReadableString(), numberToString(getNonce()), getPlotFile(),
-	                    getWorker().empty() ? getIp().toString() : Poco::format("%s (%s)", getWorker(), getIp().toString()));
+	if (MinerConfig::getConfig().isVerboseLogging())
+		return Poco::format("%s: %s (%s)\n"
+		                    "\tnonce: %s\n"
+		                    "\tin:    %s\n"
+		                    "\tfrom:  %s",
+		                    getAccountName(), action, deadlineToReadableString(), numberToString(getNonce()), getPlotFile(),
+		                    getWorker().empty() ? getIp().toString() : Poco::format("%s (%s)", getWorker(), getIp().toString()));
+
+	return Poco::format("%s: %s (%s)", getAccountName(), action, deadlineToReadableString(), numberToString(getNonce()));
 }
 
 std::string Burst::Deadline::toActionString(const std::string& action,
