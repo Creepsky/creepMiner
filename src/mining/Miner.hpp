@@ -68,11 +68,8 @@ namespace Burst
 		const std::string& getGensigStr() const;
 		void updateGensig(const std::string& gensigStr, Poco::UInt64 blockHeight, Poco::UInt64 baseTarget);
 
-		NonceConfirmation submitNonce(const std::shared_ptr<Deadline>& deadline);
-
-		Poco::ActiveMethod<NonceConfirmation,
-		                   std::tuple<Poco::UInt64, Poco::UInt64, Poco::UInt64, Poco::UInt64, std::string, bool, std::string>,
-		                   Miner> submitNonceAsync;
+		std::shared_ptr<Deadline> addDeadline(Deadline deadline, NonceConfirmation& confirmation);
+		NonceConfirmation submitDeadline(std::shared_ptr<Deadline> deadline);
 
 		std::shared_ptr<Deadline> getBestSent(Poco::UInt64 accountId, Poco::UInt64 blockHeight) const;
 		std::shared_ptr<Deadline> getBestConfirmed(Poco::UInt64 accountId, Poco::UInt64 blockHeight) const;
@@ -90,10 +87,6 @@ namespace Burst
 
 	private:
 		bool getMiningInfo(const Url& url);
-		NonceConfirmation submitNonceAsyncImpl(
-			const std::tuple<Poco::UInt64, Poco::UInt64,
-			                 Poco::UInt64, Poco::UInt64, std::string, bool, std::string>&
-			data);
 		void shutDownWorker(Poco::ThreadPool& threadPool, Poco::TaskManager& taskManager,
 		                    Poco::NotificationQueue& queue) const;
 		void progressChanged(float& progress);

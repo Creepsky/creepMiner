@@ -741,11 +741,11 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		if (request.has(xMiner) && MinerConfig::getConfig().isForwardingMinerName())
 			minerName = request.get(xMiner);
 
-		auto deadline = std::make_shared<Deadline>(nonce, deadlineValue, account, blockheight, plotfile);
-		deadline->setMiner(minerName);
-		deadline->setWorker(workerName);
-		deadline->setTotalPlotsize(capacity);
-		deadline->setIp(request.clientAddress().host());
+		Deadline deadline(nonce, deadlineValue, account, blockheight, plotfile);
+		deadline.setMiner(minerName);
+		deadline.setWorker(workerName);
+		deadline.setTotalPlotsize(capacity);
+		deadline.setIp(request.clientAddress().host());
 
 		if (MinerConfig::getConfig().isCumulatingPlotsizes())
 			PlotSizes::set(request.clientAddress().host(), capacity * 1024 * 1024 * 1024, false);
@@ -754,9 +754,9 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		{
 			poco_ndc(SubmitNonceHandler::handleRequest::wrongBlock);
 
-			log_information(MinerLogger::server, deadline->toActionString("forwarded nonce discarded - wrong block"));
+			log_information(MinerLogger::server, deadline.toActionString("forwarded nonce discarded - wrong block"));
 
-			const auto confirmation = NonceConfirmation::createWrongBlock(miner.getBlockheight(), blockheight, nonce, deadline->getDeadline());
+			const auto confirmation = NonceConfirmation::createWrongBlock(miner.getBlockheight(), blockheight, nonce, deadline.getDeadline());
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
 			response.setContentLength(confirmation.json.size());
 			auto& responseData = response.send();
@@ -765,17 +765,23 @@ void Burst::RequestHandler::submitNonce(Poco::Net::HTTPServerRequest& request, P
 		else if (accountId != 0 && nonce != 0 && deadlineValue != 0)
 		{
 			poco_ndc(SubmitNonceHandler::handleRequest::forwarding);
-			log_information(MinerLogger::server, deadline->toActionString("forwarding nonce"));
-			const auto forwardResult = miner.submitNonce(deadline);
+			log_information(MinerLogger::server, deadline.toActionString("forwarding nonce"));
+			NonceConfirmation confirmation;
+			const auto addedDeadline = miner.addDeadline(std::move(deadline), confirmation);
+			if (addedDeadline != nullptr)
+				confirmation = miner.submitDeadline(addedDeadline);
+			else
+				confirmation = NonceConfirmation::createSuccess(deadline.getNonce(), deadline.getDeadline(),
+				                                                deadline.deadlineToReadableString());
 			response.setStatus(Poco::Net::HTTPResponse::HTTP_OK);
-			response.setContentLength(forwardResult.json.size());
+			response.setContentLength(confirmation.json.size());
 			auto& responseData = response.send();
-			responseData << forwardResult.json << std::flush;
+			responseData << confirmation.json << std::flush;
 		}
 		else
 		{
 			poco_ndc(SubmitNonceHandler::handleRequest::forwardingBlind);
-			log_information(MinerLogger::server, deadline->toActionString("forwarding nonce - incompatible client"));
+			log_information(MinerLogger::server, deadline.toActionString("forwarding nonce - incompatible client"));
 
 			// sum up the capacity
 			request.set(xCapacity, std::to_string(PlotSizes::getTotal(PlotSizes::Type::Combined)));

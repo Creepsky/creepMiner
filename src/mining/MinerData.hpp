@@ -55,7 +55,7 @@ namespace Burst
 	public:
 		BlockData(Poco::UInt64 blockHeight, Poco::UInt64 baseTarget, const std::string& genSigStr, MinerData* parent = nullptr, Poco::UInt64 blockTargetDeadline = 0);
 
-		bool addDeadline(const std::shared_ptr<Deadline>& deadline);
+		bool addDeadline(std::shared_ptr<Deadline> deadline);
 		void setBaseTarget(Poco::UInt64 baseTarget);
 		void setLastWinner(const std::shared_ptr<Account>& account);
 		void setRoundTime(double rTime);
@@ -86,7 +86,7 @@ namespace Burst
 		std::shared_ptr<Deadline> getBestDeadline(Poco::UInt64 accountId, DeadlineSearchType searchType) const;
 		Poco::ActiveResult<std::shared_ptr<Account>> getLastWinnerAsync(const Wallet& wallet, Accounts& accounts);
 
-		bool addDeadlineIfBest(const std::shared_ptr<Deadline>& deadline);
+		std::shared_ptr<Deadline> addDeadlineIfBest(Deadline deadline);
 
 		void addMessage(const Poco::Message& message) const;
 		void clearEntries() const;
@@ -118,7 +118,7 @@ namespace Burst
 		std::shared_ptr<Deadline> getBestDeadlineUnlocked(Poco::UInt64 accountId,
 			DeadlineSearchType searchType) const;
 
-		bool addDeadlineUnlocked(const std::shared_ptr<Deadline>& deadline);
+		bool addDeadlineUnlocked(std::shared_ptr<Deadline> deadline);
 
 		std::atomic<Poco::UInt64> blockHeight_;
 		std::atomic<Poco::UInt64> scoop_{};
