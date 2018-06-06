@@ -33,6 +33,14 @@
 #include "Plot.hpp"
 #include <Poco/FileStream.h>
 
+#define _FILE_OFFSET_BITS 64
+
+#if defined __APPLE__
+#define LSEEK64 lseek
+#elif defined __linux__
+#define LSEEK64 lseek64
+#endif
+
 Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
 void Burst::GlobalBufferSize::setMax(const Poco::UInt64 max)
@@ -141,24 +149,42 @@ void Burst::PlotReader::runTask()
 			for (auto plotFileIter = plotList.begin(); plotFileIter != plotList.end() && !isCancelled() && currentBlock; ++plotFileIter)
 			{
 				auto& plotFile = **plotFileIter;
-				Poco::FileInputStream inputStream{plotFile.getPath()};
 				PlotReadProgressGuard progressGuard{progressRead_, plotFile.getNonces(), plotReadNotification->blockheight};
 				const auto progressGuardVerify = std::make_shared<PlotReadProgressGuard>(
 					progressVerify_, plotFile.getNonces(), plotReadNotification->blockheight);
 
+#ifdef _WIN32
+				DWORD _;
+				const auto inputStream = CreateFileA(plotFile.getPath().c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+				                                     OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, nullptr);
+#else
+				const auto inputStream = open(plotFile.getPath().c_str(), O_RDONLY);
+#endif
+
 				Poco::Timestamp timeStartFile;
 
-				if (!isCancelled() && inputStream)
+#ifdef _WIN32
+				if (!isCancelled() && inputStream != INVALID_HANDLE_VALUE)
+#else
+				if (!isCancelled() && inputStream >= 0)
+#endif
 				{
 					if (plotReadNotification->wakeUpCall)
 					{
 						// its just a wake up call for the HDD, simply read the first byte
 						char dummyByte;
-
-						if (inputStream >> dummyByte)
-							log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
-						else
+						//
+#ifdef _WIN32
+						ReadFile(inputStream, &dummyByte, 1, &_, nullptr);
+						CloseHandle(inputStream);
+#else
+						if (read(inputStream, &dummyByte, 1) != 1)
 							log_error(MinerLogger::plotReader, "Could not wake up HDD %s", plotReadNotification->dir);
+
+						close(inputStream);
+#endif
+
+						log_debug(MinerLogger::plotReader, "Woke up the HDD %s", plotReadNotification->dir);
 
 						// ... and then jump to the next notification, no need to search for deadlines
 						break;
@@ -227,14 +253,30 @@ void Burst::PlotReader::runTask()
 							verification->buffer = memory;
 							verification->progress = progressGuardVerify;
 
-							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire);
+#ifdef _WIN32
+							LARGE_INTEGER winOffset;
+							winOffset.QuadPart = static_cast<LONGLONG>(staggerBlockOffset + staggerScoopOffset + chunkOffset);
+							SetFilePointerEx(inputStream, winOffset, nullptr, FILE_BEGIN);
+							ReadFile(inputStream, reinterpret_cast<char*>(verification->buffer), memoryToAcquire, &_, nullptr);
+#else
+							LSEEK64(inputStream, staggerBlockOffset + staggerScoopOffset + chunkOffset, SEEK_SET);
+							if (read(inputStream, reinterpret_cast<char*>(verification->buffer), memoryToAcquire) != memoryToAcquire)
+								log_warning(MinerLogger::plotReader, "Could not read nonce %Lu+ in %s", startNonce, plotFile.getPath());
+#endif
 
 							if (memoryMirror != nullptr)
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
-								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
-								inputStream.read(reinterpret_cast<char*>(memoryMirror), memoryToAcquire);
+#ifdef _WIN32
+								LARGE_INTEGER winOffsetMirror;
+								winOffsetMirror.QuadPart = static_cast<LONGLONG>(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
+								SetFilePointerEx(inputStream, winOffsetMirror, nullptr, FILE_BEGIN);
+								ReadFile(inputStream, reinterpret_cast<char*>(memoryMirror), memoryToAcquire, &_, nullptr);
+#else
+								LSEEK64(inputStream, staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset, SEEK_SET);
+								if (read(inputStream, reinterpret_cast<char*>(memoryMirror), memoryToAcquire) != memoryAcquired)
+									log_warning(MinerLogger::plotReader, "Could not read mirror for nonce %Lu+ in %s", startNonce, plotFile.getPath());
+#endif
 
 								for (size_t i = 0; i < readNonces; ++i)
 									memcpy(&verification->buffer[i][32], &memoryMirror[i][32], 32);
@@ -255,6 +297,12 @@ void Burst::PlotReader::runTask()
 						else;
 					}
 				}
+
+#ifdef _WIN32
+				CloseHandle(inputStream);
+#else
+				close(inputStream);
+#endif
 
 				// check, if the incoming plot-read-notification is for the current round
 				currentBlock = plotReadNotification->blockheight == data_.getCurrentBlockheight();
