@@ -226,7 +226,8 @@ void Burst::MinerConfig::printBufferSize() const
 void Burst::MinerConfig::printBufferChunks() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	log_system(MinerLogger::config, "Buffer Chunks : %s", std::to_string(getBufferChunkCount()));
+	log_system(MinerLogger::config, "Buffer Chunks : %s (%s each)", std::to_string(getBufferChunkCount()),
+		memToString(getMaxBufferSize() / getBufferChunkCount(), 0));
 }
 
 template <typename T>
