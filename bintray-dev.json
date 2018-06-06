@@ -10,7 +10,7 @@
     },
     "version": {
         "name": "development",
-        "desc": "latest development branch artifacts",
+        "desc": "latest development branch artifacts"
     },
     "files": [
         {
