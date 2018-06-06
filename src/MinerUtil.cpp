@@ -64,7 +64,14 @@
 #if defined(BSD)
 #include <sys/sysctl.h>
 #endif
+#endif
 
+#define _FILE_OFFSET_BITS 64
+
+#if defined __APPLE__
+#define LSEEK64 lseek
+#elif defined __linux__
+#define LSEEK64 lseek64
 #endif
 
 // cpuinfo stuff (sse2, sse4, ...)
@@ -1160,4 +1167,80 @@ std::string Burst::jsonToString(const Poco::JSON::Object& json)
 	sstream.str("");
 	Poco::JSON::Stringifier::condense(json, sstream);
 	return sstream.str();
+}
+
+Burst::LowLevelFileStream::LowLevelFileStream(const LowLevelFileStream& other)
+	: handle_{other.handle_}
+{
+}
+
+Burst::LowLevelFileStream::LowLevelFileStream(LowLevelFileStream&& other) noexcept
+	: handle_{other.handle_}
+{
+}
+
+Burst::LowLevelFileStream& Burst::LowLevelFileStream::operator=(const LowLevelFileStream& other)
+{
+	if (this == &other)
+		return *this;
+	handle_ = other.handle_;
+	return *this;
+}
+
+Burst::LowLevelFileStream& Burst::LowLevelFileStream::operator=(LowLevelFileStream&& other) noexcept
+{
+	if (this == &other)
+		return *this;
+	handle_ = other.handle_;
+	return *this;
+}
+
+Burst::LowLevelFileStream::LowLevelFileStream(const std::string& path)
+{
+#ifdef _WIN32
+        handle_ = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+                                             OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, nullptr);
+#else
+        handle_ = open(plotFile.getPath().c_str(), O_RDONLY);
+#endif
+}
+
+Burst::LowLevelFileStream::~LowLevelFileStream()
+{
+#ifdef _WIN32
+	CloseHandle(handle_);
+#else
+	close(inputStream);
+#endif
+}
+
+bool Burst::LowLevelFileStream::seekg(const size_t offset) const
+{
+#ifdef _WIN32
+	LARGE_INTEGER winOffset; 
+	winOffset.QuadPart = static_cast<LONGLONG>(offset);
+	return SetFilePointerEx(handle_, winOffset, nullptr, FILE_BEGIN);
+#else
+	return LSEEK64(handle_, offset, SEEK_SET) == offset;
+#endif
+}
+
+bool Burst::LowLevelFileStream::read(char* buffer, const size_t bytes) const
+{
+#ifdef _WIN32
+	DWORD bytesRead = 0;
+	ReadFile(handle_, buffer, static_cast<DWORD>(bytes), &bytesRead, nullptr);
+	return bytesRead == bytes;
+#else
+	return read(handle_, buffer, bytes) == bytes;
+#endif
+}
+
+Burst::LowLevelFileStream::operator bool() const
+{
+#ifdef _WIN32
+	return handle_ != INVALID_HANDLE_VALUE;
+#else
+	return handle_ >= 0;
+#endif
 }

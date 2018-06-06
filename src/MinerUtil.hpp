@@ -181,4 +181,26 @@ namespace Burst
 	std::string createBuildFeatures();
 
 	std::string jsonToString(const Poco::JSON::Object& json);
+
+	class LowLevelFileStream
+	{
+	public:
+		LowLevelFileStream(const LowLevelFileStream& other);
+		LowLevelFileStream(LowLevelFileStream&& other) noexcept;
+		LowLevelFileStream(const std::string& path);
+		LowLevelFileStream& operator=(const LowLevelFileStream& other);
+		LowLevelFileStream& operator=(LowLevelFileStream&& other) noexcept;
+		~LowLevelFileStream();
+
+		bool seekg(size_t offset) const;
+		bool read(char* buffer, size_t bytes) const;
+		operator bool() const;
+
+	private:
+#ifdef _WIN32
+		void* handle_;
+#else
+		int handle_;
+#endif
+	};
 }
