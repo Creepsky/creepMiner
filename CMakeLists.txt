@@ -206,7 +206,13 @@ endif ()
 ##################################################################
 # Naming
 ##################################################################
-set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
+if ((USE_CUDA OR USE_OPENCL) AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	set_target_properties(creepMiner PROPERTIES RELEASE_POSTFIX -gpu)
+	set_target_properties(creepMiner PROPERTIES RELWITHDEBINFO_POSTFIX -gpu)
+	set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -gpu-d)
+else ()
+	set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
+endif ()
 
 ##################################################################
 # Installing
