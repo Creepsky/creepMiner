@@ -320,8 +320,7 @@ void Burst::PlotReader::runTask()
 					sstr << " + " << relatedPlotList.first;
 
 				log_information_if(MinerLogger::plotReader, MinerLogger::hasOutput(DirDone),
-					"Dir %s read in %ss (~%s/s)\n"
-					"\t%z %s (%s)",
+					"Dir %s read in %ss (~%s/s), %z %s (%s)",
 					sstr.str(),
 					Poco::DateTimeFormatter::format(span, "%s.%i"),
 					memToString(static_cast<Poco::UInt64>(bytesPerSecond), 2),
