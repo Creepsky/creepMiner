@@ -89,7 +89,7 @@ matrix:
     - sudo apt install ocl-icd-opencl-dev
     - pip install conan --user
     - conan install . --build=missing
-    - cmake .
+    - cmake . -DUSE_CUDA=OFF -DUSE_OPENCL=ON
     - make -j$(nproc)
     - make package
     cache:
