@@ -714,9 +714,11 @@ void Burst::Miner::onRoundProcessed(Poco::UInt64 blockHeight, double roundTime)
 		block->setRoundTime(roundTime);
 		const auto bestDeadline = block->getBestDeadline(BlockData::DeadlineSearchType::Found);
 
-		log_information(MinerLogger::miner, "Processed block %s\n"
-			"\tround time:     %ss\n"
-			"\tbest deadline:  %s",
+		log_information(MinerLogger::miner, std::string(50, '-') + "\n"
+			"processed block \t%s\n"
+			"round time      \t%ss\n"
+			"best deadline   \t%s\n" +
+			std::string(50, '-'),
 			numberToString(block->getBlockheight()),
 			Poco::NumberFormatter::format(roundTime, 3),
 			bestDeadline == nullptr ? "none" : deadlineFormat(bestDeadline->getDeadline()));
