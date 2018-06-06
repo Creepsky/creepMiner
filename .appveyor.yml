@@ -87,6 +87,19 @@ deploy:
       secure: KkWiYEwxZuF+y1XOTWasSx0MT5GRP4f4o8k4TzavQl2lqzLEjhESqan+dt8jGLgX
     subject: creepsky
     package: creepMiner
+    version: stable
+    publish: true
+    artifact: /.*\.zip/
+    override: true
+    on:
+      branch: master
+  - provider: BinTray
+    username: creepsky
+    repo: creepMiner
+    api_key:
+      secure: KkWiYEwxZuF+y1XOTWasSx0MT5GRP4f4o8k4TzavQl2lqzLEjhESqan+dt8jGLgX
+    subject: creepsky
+    package: creepMiner-dev
     version: development
     publish: true
     artifact: /.*\.zip/
