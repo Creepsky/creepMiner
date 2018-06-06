@@ -540,9 +540,6 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		gpuPlatform_ = getOrAdd(miningObj, "gpuPlatform", 0u);
 		gpuDevice_ = getOrAdd(miningObj, "gpuDevice", 0u);
 
-		// benchmark
-		auto benchmarkObj = miningObj->getObject("benchmark");
-
 		// urls
 		{
 			const auto checkCreateUrlArrayFunc = [&checkCreateUrlFunc](Poco::JSON::Object::Ptr urlsObj, const std::string& name,
