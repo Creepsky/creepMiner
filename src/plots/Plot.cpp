@@ -28,12 +28,13 @@
 #include "logging/MinerLogger.hpp"
 #include "MinerUtil.hpp"
 
-Burst::PlotFile::PlotFile(std::string&& path, const Poco::UInt64 size)
-	: path_(move(path)), size_(size)
+Burst::PlotFile::PlotFile(std::string&& path)
+	: path_(move(path))
 {
 	accountId_ = stoull(getAccountIdFromPlotFile(path_));
 	nonceStart_ = stoull(getStartNonceFromPlotFile(path_));
 	nonces_ = stoull(getNonceCountFromPlotFile(path_));
+	size_ = nonces_ * Settings::plotSize;
 
 	const auto staggerSize = getStaggerSizeFromPlotFile(path_);
 	const auto version = getVersionFromPlotFile(path_);
@@ -244,7 +245,7 @@ std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& f
 				return plotfile;
 
 		// make a new plotfile and add it to the list
-		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()), file.getSize());
+		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()));
 		plotfiles_.emplace_back(plotFile);
 		size_ += file.getSize();
 

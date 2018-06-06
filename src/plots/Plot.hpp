@@ -42,9 +42,8 @@ namespace Burst
 		/**
 		 * \brief Constructor.
 		 * \param path The path to the plotfile.
-		 * \param size The size of the plotfile in Bytes.
 		 */
-		PlotFile(std::string&& path, Poco::UInt64 size);
+		PlotFile(std::string&& path);
 
 		/**
 		 * \brief Returns the path to the plotfile.
