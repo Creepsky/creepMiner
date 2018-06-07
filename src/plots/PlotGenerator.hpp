@@ -22,10 +22,13 @@
 #pragma once
 
 #include <Poco/Types.h>
-#include <thread>
+#include <mutex>
 #include <vector>
+#include <condition_variable>
 #include "Declarations.hpp"
 #include "shabal/MinerShabal.hpp"
+#include <future>
+#include <cstring>
 
 namespace Burst
 {

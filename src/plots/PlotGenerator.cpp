@@ -24,6 +24,8 @@
 #include "shabal/MinerShabal.hpp"
 #include "mining/Miner.hpp"
 #include "PlotVerifier.hpp"
+#include "MinerUtil.hpp"
+#include <future>
 
 Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner)
 {
