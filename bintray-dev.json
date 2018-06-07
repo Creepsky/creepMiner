@@ -1,0 +1,26 @@
+{
+    "package": {
+        "name": "creepMiner-dev",
+        "repo": "creepMiner",
+        "subject": "creepsky",
+        "website_url": "https://github.com/Creepsky/creepMiner",
+        "issue_tracker_url": "https://github.com/Creepsky/creepMiner/issues",
+        "vcs_url": "https://github.com/Creepsky/creepMiner/tree/development",
+        "licenses": ["GPL-3.0"]
+    },
+    "version": {
+        "name": "development",
+        "desc": "latest development branch artifacts"
+    },
+    "files": [
+        {
+            "includePattern": "./(creepMiner-.*.tar.gz)",
+            "excludePattern": "./_CPack_Packages/.*",
+            "uploadPattern": "/$1",
+            "matrixParams": {
+                "override": 1
+            }
+        }
+    ],
+    "publish": true
+}
