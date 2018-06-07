@@ -19,7 +19,7 @@
 // 
 // ==========================================================================
 
-#include "PlotGenerator.hpp"
+#include "plotgenerator.hpp"
 #include "Declarations.hpp"
 #include "shabal/MinerShabal.hpp"
 #include "mining/Miner.hpp"
@@ -61,7 +61,10 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	for (size_t i = 0; i < Settings::PlotSize; i++)
 		gendata[i] ^= final[i % Settings::HashSize];
 
-	std::array<uint8_t, 32> target;
+	if (miner.isPoC2())
+		convertToPoC2(gendata);
+
+	std::array<uint8_t, 32> target{};
 	Poco::UInt64 result;
 
 	const auto generationSignature = miner.getGensig();
@@ -76,4 +79,71 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	memcpy(&result, target.data(), sizeof(Poco::UInt64));
 
 	return result / basetarget;
+}
+
+std::vector<char> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+{
+	const auto gendata = generate<Shabal256_SSE2, PlotGeneratorOperations1<Shabal256_SSE2>>(account, startNonce);
+	return gendata[0];
+}
+
+std::array<std::vector<char>, Burst::Shabal256_AVX::HashSize> Burst::PlotGenerator::generateAvx(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+{
+	return generate<Shabal256_AVX, PlotGeneratorOperations4<Shabal256_AVX>>(account, startNonce);
+}
+
+std::array<std::vector<char>, Burst::Shabal256_SSE4::HashSize> Burst::PlotGenerator::generateSse4(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+{
+	return generate<Shabal256_SSE4, PlotGeneratorOperations4<Shabal256_SSE4>>(account, startNonce);
+}
+
+std::array<std::vector<char>, Burst::Shabal256_AVX2::HashSize> Burst::PlotGenerator::generateAvx2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+{
+	return generate<Shabal256_AVX2, PlotGeneratorOperations8<Shabal256_AVX2>>(account, startNonce);
+}
+
+Poco::UInt64 Burst::PlotGenerator::calculateDeadlineSse2(std::vector<char>& gendata,
+	GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
+{
+	std::array<std::vector<char>, 1> container = {gendata};
+	return calculateDeadline<Shabal256_SSE2, PlotGeneratorOperations1<Shabal256_SSE2>>(container, generationSignature, scoop, baseTarget)[0];
+}
+
+std::array<Poco::UInt64, Burst::Shabal256_AVX::HashSize> Burst::PlotGenerator::
+	calculateDeadlineAvx(std::array<std::vector<char>, Shabal256_AVX::HashSize>& gendatas,
+		GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
+{
+	return calculateDeadline<Shabal256_AVX, PlotGeneratorOperations4<Shabal256_AVX>>(gendatas, generationSignature, scoop, baseTarget);
+}
+
+std::array<Poco::UInt64, Burst::Shabal256_SSE4::HashSize> Burst::PlotGenerator::
+	calculateDeadlineSse4(std::array<std::vector<char>, Shabal256_SSE4::HashSize>& gendatas,
+		GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
+{
+	return calculateDeadline<Shabal256_SSE4, PlotGeneratorOperations4<Shabal256_SSE4>>(gendatas, generationSignature, scoop, baseTarget);
+}
+
+std::array<Poco::UInt64, Burst::Shabal256_AVX2::HashSize> Burst::PlotGenerator::
+	calculateDeadlineAvx2(std::array<std::vector<char>, Shabal256_AVX2::HashSize>& gendatas,
+		GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
+{
+	return calculateDeadline<Shabal256_AVX2, PlotGeneratorOperations8<Shabal256_AVX2>>(gendatas, generationSignature, scoop, baseTarget);
+}
+
+void Burst::PlotGenerator::convertToPoC2(char* gendata)
+{
+	std::array<char, Settings::HashSize> buffer{};
+	auto indexMirror = Settings::HashSize - Settings::ScoopSize;
+
+	for (size_t i = 0; i < Settings::PlotSize / 2; i += Settings::ScoopSize)
+	{
+		const auto scoop = &gendata[i + Settings::HashSize];
+		const auto mirrorScoop = &gendata[indexMirror + Settings::HashSize];
+
+		memcpy(buffer.data(), scoop, Settings::HashSize);
+		memcpy(scoop, mirrorScoop, Settings::HashSize);
+		memcpy(mirrorScoop, buffer.data(), Settings::HashSize);
+
+		indexMirror -= Settings::ScoopSize;
+	}
 }

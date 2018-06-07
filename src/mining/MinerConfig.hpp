@@ -195,6 +195,7 @@ namespace Burst
 		const std::vector<std::string>& getForwardingWhitelist() const;
 		bool isCumulatingPlotsizes() const;
 		bool isForwardingMinerName() const;
+		Poco::UInt64 getPoc2StartBlock() const;
 
 		void setUrl(std::string url, HostType hostType);
 		void setBufferSize(Poco::UInt64 bufferSize);
@@ -300,6 +301,7 @@ namespace Burst
 		bool cumulatePlotsizes_ = true;
 		bool minerNameForwarding_ = true;
 		bool calculateEveryDeadline_ = false;
+		Poco::UInt64 poc2StartBlock_ = 0;
 		mutable Poco::Mutex mutex_;
 	};
 }

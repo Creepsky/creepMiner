@@ -426,6 +426,8 @@ bool Burst::MinerConfig::readConfigFile(const std::string& configPath)
 		cpuInstructionSet_ = Poco::toUpper(getOrAdd(miningObj, "cpuInstructionSet", std::string("SSE2")));
 		cpuInstructionSet_ = Poco::trim(cpuInstructionSet_);
 
+		poc2StartBlock_ = getOrAdd(miningObj, "poc2StartBlock", 502000);
+
 		// auto detect the max. cpu instruction set
 		if (cpuInstructionSet_ == "AUTO")
 		{
@@ -1666,4 +1668,9 @@ void Burst::MinerConfig::useLogfile(bool use)
 bool Burst::MinerConfig::isForwardingMinerName() const
 {
 	return minerNameForwarding_;
+}
+
+Poco::UInt64 Burst::MinerConfig::getPoc2StartBlock() const
+{
+	return poc2StartBlock_;
 }

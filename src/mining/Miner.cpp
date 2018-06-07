@@ -810,3 +810,10 @@ void Burst::Miner::rescanPlotfiles()
 		data_.getBlockData()->refreshPlotDirs();
 	}
 }
+
+bool Burst::Miner::isPoC2() const
+{
+	const auto block = data_.getBlockData();
+	poco_check_ptr(block);
+	return block->getBlockheight() >= MinerConfig::getConfig().getPoc2StartBlock();
+}

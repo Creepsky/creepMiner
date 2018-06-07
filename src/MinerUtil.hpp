@@ -105,6 +105,7 @@ namespace Burst
 	std::string getStartNonceFromPlotFile(const std::string& path);
 	std::string getNonceCountFromPlotFile(const std::string& path);
 	std::string getStaggerSizeFromPlotFile(const std::string& path);
+	std::string getVersionFromPlotFile(const std::string& path);
 	std::string deadlineFormat(Poco::UInt64 seconds);
 	Poco::UInt64 deadlineFragment(Poco::UInt64 seconds, DeadlineFragment fragment);
 	Poco::UInt64 formatDeadline(const std::string& format);

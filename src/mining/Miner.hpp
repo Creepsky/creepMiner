@@ -86,6 +86,8 @@ namespace Burst
 		static void setMaxBufferSize(Poco::UInt64 size);
 		void rescanPlotfiles();
 
+		bool isPoC2() const;
+
 	private:
 		bool getMiningInfo();
 		NonceConfirmation submitNonceAsyncImpl(
