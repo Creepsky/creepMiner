@@ -15,6 +15,7 @@ endif ()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
 
 option(MINIMAL_BUILD "If yes, the miner will be build without any extras like CUDA, CPU instructions..." OFF)
 option(NO_GPU "If yes, the miner will be build without CUDA and OpenCL." OFF)
@@ -34,11 +35,13 @@ string(REPLACE "." ";" VERSION_LIST ${VERSION})
 list(GET VERSION_LIST 0 VERSION_MAJOR)
 list(GET VERSION_LIST 1 VERSION_MINOR)
 list(GET VERSION_LIST 2 VERSION_BUILD)
+list(GET VERSION_LIST 3 VERSION_REVISION)
 
 # define it for the source files
 add_definitions(-DVERSION_MAJOR=${VERSION_MAJOR}
 				-DVERSION_MINOR=${VERSION_MINOR}
-				-DVERSION_BUILD=${VERSION_BUILD})
+				-DVERSION_BUILD=${VERSION_BUILD}
+				-DVERSION_REVISION=${VERSION_REVISION})
 
 # init conan
 if (CONAN_DEBUG)
@@ -109,6 +112,7 @@ if (UNIX OR APPLE)
 elseif (MSVC)
 	include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 	set_source_files_properties(bin/icon.ico src/resources.rc PROPERTIES LANGUAGE RC)
+	add_definitions(/MP)
 endif ()
 
 ##################################################################
@@ -141,7 +145,7 @@ if (USE_SSE4 AND NOT MINIMAL_BUILD)
 	add_definitions(-DUSE_SSE4)
 	set(SOURCE_FILES ${SOURCE_FILES} src/shabal/mshabal/mshabal_sse4.cpp)
 	if (UNIX OR APPLE)
-		set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse4)
+		set_source_files_properties(src/shabal/mshabal/mshabal_sse4.cpp PROPERTIES COMPILE_FLAGS -msse2)
 	endif ()
 endif ()
 
@@ -190,7 +194,22 @@ endif ()
 ##################################################################
 # Naming
 ##################################################################
-set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
+if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	set_target_properties(creepMiner PROPERTIES RELEASE_POSTFIX -cuda)
+	set_target_properties(creepMiner PROPERTIES RELWITHDEBINFO_POSTFIX -cuda)
+	set_target_properties(creepMiner PROPERTIES MINSIZEREL_POSTFIX -cuda)
+	set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -cuda-d)
+	set(CREEPSKY_NAME ${CMAKE_PROJECT_NAME}-cuda)
+elseif (USE_OPENCL AND NOT MINIMAL_BUILD AND NOT NO_GPU)
+	set_target_properties(creepMiner PROPERTIES RELEASE_POSTFIX -opencl)
+	set_target_properties(creepMiner PROPERTIES RELWITHDEBINFO_POSTFIX -opencl)
+	set_target_properties(creepMiner PROPERTIES MINSIZEREL_POSTFIX -opencl)
+	set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -opencl-d)
+	set(CREEPSKY_NAME ${CMAKE_PROJECT_NAME}-opencl)
+else ()
+	set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
+	set(CREEPSKY_NAME ${CMAKE_PROJECT_NAME})
+endif ()
 
 ##################################################################
 # Installing
@@ -214,8 +233,8 @@ endif ()
 ##################################################################
 # Packaging
 ##################################################################
-set(CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burstcoin c++ cpu/gpu miner")
+set(CPACK_PACKAGE_NAME ${CREEPSKY_NAME})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Burstcoin C++ CPU and GPU Miner")
 set(CPACK_PACKAGE_VENDOR "Creepsky")
 set(CPACK_PACKAGE_VERSION ${VERSION})
 set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
@@ -226,16 +245,16 @@ SET(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 set(CPACK_SOURCE_PACKAGE_FILE "${CMAKE_PROJECT_NAME}-${CPACK_PACKAGE_VERSION}")
 #set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 
-if (UNIX)
+if (UNIX OR APPLE)
     set(CPACK_SET_DESTDIR true)
     set(CPACK_INSTALL_PREFIX "/opt/${CMAKE_PROJECT_NAME}-${VERSION}")
     set(CPACK_SOURCE_GENERATOR "TGZ;TBZ2")
-    set(CPACK_GENERATOR "DEB;TGZ")
+    set(CPACK_GENERATOR "TGZ")
     set(CPACK_PACKAGE_SECTION "misc")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Creepsky")
 	include(CPack)
 elseif (WIN32)
-	set(CPACK_GENERATOR "NSIS;ZIP")
+	set(CPACK_GENERATOR "ZIP")
 	#set(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
 	#set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")
 	#set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}\\resources\\icon.ico")

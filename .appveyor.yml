@@ -25,6 +25,22 @@ image: Visual Studio 2017
 install:
   - pip install conan
 
+# stop all if one is failing
+matrix:
+  fast_finish: true
+
+environment:
+  global:
+    OPENCL_INCLUDE_DIR: C:\Intel\OpenCL\sdk\include
+    OPENCL_LIB_DIR: C:\Intel\OpenCL\sdk\lib\x64\OpenCL.lib
+  matrix:
+    - GPU: OFF
+    - GPU: ON
+
+cache:
+  - C:\Intel\OpenCL
+  - C:\Program Files (x86)\Common Files\Intel\OpenCL
+
 #---------------------------------#
 #       build configuration       #
 #---------------------------------#
@@ -44,10 +60,15 @@ build:
 
 # scripts to run before build
 before_build:
+  - IF "%GPU%" == "ON" ( IF NOT EXIST "C:\Intel\OpenCL\" ( appveyor DownloadFile "http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/12527/intel_sdk_for_opencl_2017_7.0.0.2567.exe" ) )
+  - IF "%GPU%" == "ON" ( IF NOT EXIST "C:\Intel\OpenCL\" ( start /wait .\intel_sdk_for_opencl_2017_7.0.0.2567.exe install --output=output.log --eula=accept ) )
+  - IF "%GPU%" == "ON" ( IF NOT EXIST "C:\Program Files (x86)\Common Files\Intel\OpenCL\" ( appveyor DownloadFile "http://registrationcenter-download.intel.com/akdlm/irc_nas/12512/opencl_runtime_16.1.2_x64_setup.msi" ) )
+  - IF "%GPU%" == "ON" ( IF NOT EXIST "C:\Program Files (x86)\Common Files\Intel\OpenCL\" ( start /wait msiexec /i opencl_runtime_16.1.2_x64_setup.msi /qn  /l*v clruntime.log ) )
+  - pip install conan
   - mkdir C:\projects\creepMiner\bin\Release
   - cd C:\projects\creepminer
   - conan install . -o Poco:shared=False -o OpenSSL:shared=False -o zlib:shared=False --build=missing
-  - cmake CMakeLists.txt -G "Visual Studio 15 2017 Win64" -DUSE_CUDA=OFF -DUSE_OPENCL=OFF -DCMAKE_BUILD_TYPE=RELEASE
+  - cmake CMakeLists.txt -G "Visual Studio 15 2017 Win64" -DUSE_CUDA=OFF -DUSE_OPENCL=%GPU% -DCMAKE_BUILD_TYPE=RELEASE -DOpenCL_INCLUDE_DIR=%OPENCL_INCLUDE_DIR% -DOpenCL_LIBRARY=%OPENCL_LIB_DIR%
 
 # scripts to run after build
 after_build:
@@ -59,7 +80,6 @@ after_build:
 
 artifacts:
   # pushing a single file
-  - path: '*.exe'
   - path: '*.zip'
 
 #---------------------------------#
@@ -69,10 +89,9 @@ artifacts:
 # providers: Local, FTP, WebDeploy, AzureCS, AzureBlob, S3, NuGet, Environment
 # provider names are case-sensitive!
 deploy:
-
     # Deploy to GitHub Releases
   - provider: GitHub
-    artifact: /.*\.(exe|zip)
+    artifact: /.*\.zip/
     draft: false
     prerelease: false
     force_update: true
@@ -81,3 +100,29 @@ deploy:
     on:
       branch: master
       appveyor_repo_tag: true       # deploy on tag push only
+  - provider: BinTray
+    username: creepsky
+    repo: creepMiner
+    api_key:
+      secure: KkWiYEwxZuF+y1XOTWasSx0MT5GRP4f4o8k4TzavQl2lqzLEjhESqan+dt8jGLgX
+    subject: creepsky
+    package: creepMiner
+    version: stable
+    publish: true
+    artifact: /.*\.zip/
+    override: true
+    on:
+      branch: master
+  - provider: BinTray
+    username: creepsky
+    repo: creepMiner
+    api_key:
+      secure: KkWiYEwxZuF+y1XOTWasSx0MT5GRP4f4o8k4TzavQl2lqzLEjhESqan+dt8jGLgX
+    subject: creepsky
+    package: creepMiner-dev
+    version: development
+    publish: true
+    artifact: /.*\.zip/
+    override: true
+    on:
+      branch: development
