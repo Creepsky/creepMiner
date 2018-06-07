@@ -146,37 +146,41 @@ Burst::PlotCheckResult Burst::isValidPlotFile(const std::string& filePath)
 		auto nonceCountStr = getNonceCountFromPlotFile(fileName);
 		auto staggerStr = getStaggerSizeFromPlotFile(fileName);
 
-		if (accountIdStr == "" ||
-			nonceStartStr == "" ||
-			nonceCountStr == "" ||
-			staggerStr == "")
+		if (accountIdStr.empty() ||
+			nonceStartStr.empty() ||
+			nonceCountStr.empty())
 			return PlotCheckResult::EmptyParameter;
 
 		volatile auto accountId = std::stoull(accountIdStr);
 		std::stoull(nonceStartStr);
-		volatile auto nonceCount = std::stoull(nonceCountStr);
-		volatile auto staggerSize = std::stoull(staggerStr);
+		const volatile auto nonceCount = std::stoull(nonceCountStr);
+		Poco::UInt64 staggerSize = 0;
+
+		if (!staggerStr.empty())
+			staggerSize = std::stoull(staggerStr);
 
 		// values are 0
 		if (accountId == 0 ||
-			nonceCount == 0 ||
-			staggerSize == 0)
+			nonceCount == 0)
+			return PlotCheckResult::InvalidParameter;
+
+		if (!staggerStr.empty() && staggerSize == 0)
 			return PlotCheckResult::InvalidParameter;
 
 		// only do these checks if the user dont want to use insecure plotfiles (should be default)
 		if (!MinerConfig::getConfig().useInsecurePlotfiles())
 		{
 			// stagger not multiplier of nonce count
-			if (nonceCount % staggerSize != 0)
+			if (!staggerStr.empty() && nonceCount % staggerSize != 0)
 				return PlotCheckResult::WrongStaggersize;
 
-			Poco::File file{ filePath };
+			Poco::File file{filePath};
 		
 			// file is incomplete
 			if (nonceCount * Settings::PlotSize != file.getSize())
 				return PlotCheckResult::Incomplete;
 
-			std::ifstream alternativeFileData{ filePath + ":stream" };
+			std::ifstream alternativeFileData{filePath + ":stream"};
 
 			if (alternativeFileData)
 			{
@@ -213,6 +217,11 @@ std::string Burst::getStaggerSizeFromPlotFile(const std::string& path)
 	return getInformationFromPlotFile(path, 3);
 }
 
+std::string Burst::getVersionFromPlotFile(const std::string& path)
+{
+	return getInformationFromPlotFile(path, 4);
+}
+
 std::string Burst::getStartNonceFromPlotFile(const std::string& path)
 {
 	auto filenamePos = path.find_last_of("/\\");
@@ -222,13 +231,10 @@ std::string Burst::getStartNonceFromPlotFile(const std::string& path)
 
 	auto fileNamePart = splitStr(path.substr(filenamePos + 1, path.length() - (filenamePos + 1)), '_');
 
-	if (fileNamePart.size() > 3)
-	{
-		auto nonceStartPart = fileNamePart[1];
+	auto nonceStartPart = fileNamePart[1];
 
-		if (isNumberStr(nonceStartPart))
-			return nonceStartPart;
-	}
+	if (isNumberStr(nonceStartPart))
+		return nonceStartPart;
 
 	return "";
 }

@@ -67,7 +67,10 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	for (size_t i = 0; i < Settings::PlotSize; i++)
 		gendata[i] ^= final[i % Settings::HashSize];
 
-	std::array<uint8_t, 32> target;
+	if (miner.isPoC2())
+		convertToPoC2(gendata);
+
+	std::array<uint8_t, 32> target{};
 	Poco::UInt64 result;
 
 	const auto generationSignature = miner.getGensig();
@@ -146,7 +149,9 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 	{
 		auto nonce = startNonce + nonceInterval * nonceStep + nonces[nonceInterval];
 		if (nonce >= startNonce + nonceCount) nonce = startNonce + nonceCount - 1;
-		genData[nonceInterval] = generateSse2(account, nonce)[0];
+		genData[nonceInterval] = generateSse2(account, nonce);
+		if (miner.isPoC2())
+			convertToPoC2(genData[nonceInterval].data());
 	}
 
 	//waiting for read thread to finish
@@ -200,9 +205,10 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 	return totalIntegrity / noncesChecked;
 }
 
-std::array<std::vector<char>, Burst::Shabal256_SSE2::HashSize> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+std::vector<char> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
 {
-	return generate<Shabal256_SSE2, PlotGeneratorOperations1<Shabal256_SSE2>>(account, startNonce);
+	const auto gendata = generate<Shabal256_SSE2, PlotGeneratorOperations1<Shabal256_SSE2>>(account, startNonce);
+	return gendata[0];
 }
 
 std::array<std::vector<char>, Burst::Shabal256_AVX::HashSize> Burst::PlotGenerator::generateAvx(const Poco::UInt64 account, const Poco::UInt64 startNonce)
@@ -246,4 +252,22 @@ std::array<Poco::UInt64, Burst::Shabal256_AVX2::HashSize> Burst::PlotGenerator::
 		GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
 {
 	return calculateDeadline<Shabal256_AVX2, PlotGeneratorOperations8<Shabal256_AVX2>>(gendatas, generationSignature, scoop, baseTarget);
+}
+
+void Burst::PlotGenerator::convertToPoC2(char* gendata)
+{
+	std::array<char, Settings::HashSize> buffer{};
+	auto indexMirror = Settings::HashSize - Settings::ScoopSize;
+
+	for (size_t i = 0; i < Settings::PlotSize / 2; i += Settings::ScoopSize)
+	{
+		const auto scoop = &gendata[i + Settings::HashSize];
+		const auto mirrorScoop = &gendata[indexMirror + Settings::HashSize];
+
+		memcpy(buffer.data(), scoop, Settings::HashSize);
+		memcpy(scoop, mirrorScoop, Settings::HashSize);
+		memcpy(mirrorScoop, buffer.data(), Settings::HashSize);
+
+		indexMirror -= Settings::ScoopSize;
+	}
 }
