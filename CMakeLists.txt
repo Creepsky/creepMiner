@@ -206,22 +206,7 @@ endif ()
 ##################################################################
 # Naming
 ##################################################################
-if (USE_CUDA AND NOT MINIMAL_BUILD AND NOT NO_GPU)
-	set_target_properties(creepMiner PROPERTIES RELEASE_POSTFIX -cuda)
-	set_target_properties(creepMiner PROPERTIES RELWITHDEBINFO_POSTFIX -cuda)
-	set_target_properties(creepMiner PROPERTIES MINSIZEREL_POSTFIX -cuda)
-	set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -cuda-d)
-	set(CREEPSKY_NAME ${CMAKE_PROJECT_NAME}-cuda)
-elseif (USE_OPENCL AND NOT MINIMAL_BUILD AND NOT NO_GPU)
-	set_target_properties(creepMiner PROPERTIES RELEASE_POSTFIX -opencl)
-	set_target_properties(creepMiner PROPERTIES RELWITHDEBINFO_POSTFIX -opencl)
-	set_target_properties(creepMiner PROPERTIES MINSIZEREL_POSTFIX -opencl)
-	set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -opencl-d)
-	set(CREEPSKY_NAME ${CMAKE_PROJECT_NAME}-opencl)
-else ()
-	set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
-	set(CREEPSKY_NAME ${CMAKE_PROJECT_NAME})
-endif ()
+set_target_properties(creepMiner PROPERTIES DEBUG_POSTFIX -d)
 
 ##################################################################
 # Installing
