@@ -31,8 +31,8 @@ matrix:
 
 environment:
   global:
-    - OPENCL_INCLUDE_DIR: C:\Intel\OpenCL\sdk\include
-    - OPENCL_LIB_DIR: C:\Intel\OpenCL\sdk\lib\x64\OpenCL.lib
+    OPENCL_INCLUDE_DIR: C:\Intel\OpenCL\sdk\include
+    OPENCL_LIB_DIR: C:\Intel\OpenCL\sdk\lib\x64\OpenCL.lib
   matrix:
     - GPU: OFF
     - GPU: ON
