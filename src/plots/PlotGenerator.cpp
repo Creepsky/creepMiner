@@ -19,7 +19,7 @@
 // 
 // ==========================================================================
 
-#include "plotgenerator.hpp"
+#include "PlotGenerator.hpp"
 #include "Declarations.hpp"
 #include "shabal/MinerShabal.hpp"
 #include "mining/Miner.hpp"
