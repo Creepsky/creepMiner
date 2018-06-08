@@ -181,7 +181,7 @@ void Burst::PlotReader::runTask()
 						{
 							memoryAcquired = globalBufferSize.reserve(memoryToAcquire);
 
-							if (poc2 && !plotFile.isPoC(2))
+							if ((poc2 && !plotFile.isPoC(2)) || (!poc2 && plotFile.isPoC(2)))
 								while (!isCancelled() && !memoryAcquiredMirror)
 									memoryAcquiredMirror = globalBufferSize.reserve(memoryToAcquire);
 						}
