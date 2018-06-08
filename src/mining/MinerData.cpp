@@ -82,7 +82,7 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadline(const Poco::UInt6
                                                                const std::shared_ptr<Account>& account,
                                                                const Poco::UInt64 block, const std::string& plotFile)
 {
-	std::lock_guard<std::mutex> lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	return addDeadlineUnlocked(nonce, deadline, account, block, plotFile);
 }
 
@@ -100,7 +100,7 @@ void Burst::BlockData::confirmedDeadlineEvent(const std::shared_ptr<Deadline>& d
 
 	// set the best deadline for this block
 	{
-		std::lock_guard<std::mutex> lock{ mutex_ };
+		Poco::Mutex::ScopedLock lock{ mutex_ };
 
 		if (bestDeadline_ == nullptr ||
 			bestDeadline_->getDeadline() > deadline->getDeadline())
@@ -175,7 +175,7 @@ void Burst::BlockData::setLastWinner(std::shared_ptr<Account> account)
 {
 	// set the winner for the last block
 	{
-		std::lock_guard<std::mutex> lock{mutex_};
+		Poco::Mutex::ScopedLock lock{mutex_};
 		lastWinner_ = account;
 	}
 
@@ -206,7 +206,7 @@ void Burst::BlockData::setProgress(float progressRead, float progressVerificatio
 		return;
 
 	{
-		std::lock_guard<std::mutex> lock{ mutex_ };
+		Poco::Mutex::ScopedLock lock{ mutex_ };
 		jsonProgress_ = new Poco::JSON::Object{createJsonProgress(progressRead, progressVerification)};
 	}
 
@@ -219,7 +219,7 @@ void Burst::BlockData::setProgress(const std::string& plotDir, float progress, P
 	if (blockheight != getBlockheight())
 		return;
 
-	std::lock_guard<std::mutex> lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	auto json = new Poco::JSON::Object{ createJsonProgress(progress, 0.f) };
 	json->set("type", "plotdir-progress");
 	json->set("dir", plotDir);
@@ -238,7 +238,7 @@ void Burst::BlockData::setRoundTime(double rTime)
 void Burst::BlockData::addBlockEntry(Poco::JSON::Object entry) const
 {
 	{
-		std::lock_guard<std::mutex> lock{ mutex_ };
+		Poco::Mutex::ScopedLock lock{ mutex_ };
 		entries_->emplace_back(entry);	
 	}
 	
@@ -298,7 +298,7 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline() const
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(const DeadlineSearchType searchType) const
 {
-	std::lock_guard<std::mutex> lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	std::shared_ptr<Deadline> bestDeadline;
 
 	for (const auto& accountDeadlines : deadlines_)
@@ -328,7 +328,7 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(const Deadlin
 
 bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)> traverseFunction) const
 {
-	std::lock_guard<std::mutex> lock{mutex_};
+	Poco::Mutex::ScopedLock lock{mutex_};
 
 	if (entries_ == nullptr)
 		return false;
@@ -358,7 +358,7 @@ bool Burst::BlockData::forEntries(std::function<bool(const Poco::JSON::Object&)>
 
 //const std::unordered_map<Burst::AccountId, Burst::Deadlines>& Burst::BlockData::getDeadlines() const
 //{
-//	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+//	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 //	return deadlines_;
 //}
 
@@ -384,7 +384,7 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadlineUnlocked(Poco:
 
 std::shared_ptr<Burst::Deadline> Burst::BlockData::getBestDeadline(Poco::UInt64 accountId, BlockData::DeadlineSearchType searchType)
 {
-	std::lock_guard<std::mutex> lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	return getBestDeadlineUnlocked(accountId, searchType);
 }
 
@@ -399,7 +399,7 @@ std::shared_ptr<Burst::Deadline> Burst::BlockData::addDeadlineIfBest(const Poco:
                                                                      const Poco::UInt64 block,
                                                                      const std::string& plotFile)
 {
-	std::lock_guard<std::mutex> lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 
 	const auto bestDeadline = getBestDeadlineUnlocked(account->getId(), DeadlineSearchType::Found);
 
@@ -414,7 +414,7 @@ void Burst::BlockData::addMessage(const Poco::Message& message) const
 	Poco::JSON::Object json;
 
 	{
-		std::lock_guard<std::mutex> lock{ mutex_ };
+		Poco::Mutex::ScopedLock lock{ mutex_ };
 
 		if (entries_ == nullptr)
 			return;
@@ -435,13 +435,13 @@ void Burst::BlockData::addMessage(const Poco::Message& message) const
 
 void Burst::BlockData::clearEntries() const
 {
-	std::lock_guard<std::mutex> lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	entries_->clear();
 }
 
 bool Burst::BlockData::forDeadlines(const std::function<bool(const Deadline&)>& traverseFunction) const
 {
-	std::lock_guard<std::mutex> lock{mutex_};
+	Poco::Mutex::ScopedLock lock{mutex_};
 
 	if (deadlines_.empty())
 		return false;
@@ -512,7 +512,7 @@ std::shared_ptr<Burst::BlockData> Burst::MinerData::startNewBlock(Poco::UInt64 b
                                                                   const std::string& genSig,
                                                                   Poco::UInt64 blockTargetDeadline)
 {
-	std::lock_guard<std::mutex> lock{mutex_};
+	Poco::Mutex::ScopedLock lock{mutex_};
 
 	// save the old data in the historical container
 	if (blockData_ != nullptr)
@@ -678,7 +678,7 @@ Poco::UInt64 Burst::MinerData::runGetWonBlocks(const std::pair<const Wallet*, co
 	bool refresh;
 
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
+		Poco::Mutex::ScopedLock lock(mutex_);
 		const auto before = blocksWon_.load();
 		blocksWon_.store(wonBlocks);
 		refresh = before != wonBlocks;
@@ -700,7 +700,7 @@ void Burst::MinerData::addMessage(const Poco::Message& message)
 
 std::shared_ptr<Burst::Deadline> Burst::MinerData::getBestDeadlineOverall(bool onlyHistorical) const
 {
-	std::lock_guard<std::mutex> mutex{mutex_};
+	Poco::Mutex::ScopedLock mutex{mutex_};
 	Poco::UInt64 from = 0, to = 0;
 
 	if (onlyHistorical)
@@ -882,19 +882,19 @@ Burst::HighscoreValue<Poco::UInt64> Burst::MinerData::getHighestDifficulty() con
 
 Poco::UInt64 Burst::MinerData::getCurrentBlockheight() const
 {
-	std::lock_guard<std::mutex> lock {mutex_};
+	Poco::Mutex::ScopedLock lock {mutex_};
 	return blockData_ == nullptr ? 0 : blockData_->getBlockheight();
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentBasetarget() const
 {
-		std::lock_guard<std::mutex> lock {mutex_};
+		Poco::Mutex::ScopedLock lock {mutex_};
 	return blockData_ == nullptr ? 0 : blockData_->getBasetarget();
 }
 
 Poco::UInt64 Burst::MinerData::getCurrentScoopNum() const
 {
-		std::lock_guard<std::mutex> lock {mutex_};
+		Poco::Mutex::ScopedLock lock {mutex_};
 	return blockData_ == nullptr ? 0 : blockData_->getScoop();
 }
 

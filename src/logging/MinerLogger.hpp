@@ -138,7 +138,7 @@ namespace Burst
 		static const Output_Flags& getOutput();
 
 	private:		
-		static std::mutex mutex_;
+		static Poco::Mutex mutex_;
 		static TextType currentTextType_;
 		static std::map<TextType, ConsoleColorPair> typeColors;
 		static bool progressFlag_;

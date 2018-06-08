@@ -136,7 +136,7 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 		{
 			if (!close)
 			{
-				std::lock_guard<std::mutex> lock(mutex_);
+				Poco::Mutex::ScopedLock lock(mutex_);
 				if (!queue_.empty())
 				{
 					auto data = queue_.front();
@@ -184,7 +184,7 @@ void Burst::RequestHandler::WebsocketRequestHandler::handleRequest(Poco::Net::HT
 
 void Burst::RequestHandler::WebsocketRequestHandler::onNewData(std::string& data)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::Mutex::ScopedLock lock(mutex_);
 	queue_.emplace_back(data);
 }
 

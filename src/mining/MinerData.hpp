@@ -139,7 +139,7 @@ namespace Burst
 		MinerData* parent_;
 		Poco::JSON::Object::Ptr jsonProgress_;
 		std::unordered_map<std::string, Poco::JSON::Object::Ptr> jsonDirProgress_;
-		mutable std::mutex mutex_;
+		mutable Poco::Mutex mutex_;
 
 		friend class Deadlines;
 	};
@@ -192,7 +192,7 @@ namespace Burst
 		Poco::Timestamp startTime_ = {};
 		std::atomic<Poco::UInt64> blocksWon_;
 		std::shared_ptr<BlockData> blockData_ = nullptr;
-		mutable std::mutex mutex_;
+		mutable Poco::Mutex mutex_;
 
 		std::unique_ptr<Poco::Data::Session> dbSession_ = nullptr;
 

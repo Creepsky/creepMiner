@@ -223,7 +223,7 @@ std::vector<Burst::Block> Burst::Account::DataLoader::runGetAccountBlocks(const 
 
 std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, const Wallet& wallet, bool persistent)
 {
-	Poco::FastMutex::ScopedLock lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 
 	auto iter = accounts_.find(id);
 
@@ -248,13 +248,13 @@ std::shared_ptr<Burst::Account> Burst::Accounts::getAccount(AccountId id, const 
 
 bool Burst::Accounts::isLoaded(AccountId id) const
 {
-	Poco::FastMutex::ScopedLock lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 	return accounts_.find(id) != accounts_.end();
 }
 
 std::vector<std::shared_ptr<Burst::Account>> Burst::Accounts::getAccounts() const
 {
-	Poco::FastMutex::ScopedLock lock{ mutex_ };
+	Poco::Mutex::ScopedLock lock{ mutex_ };
 
 	std::vector<std::shared_ptr<Account>> accounts;
 

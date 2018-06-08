@@ -26,6 +26,7 @@
 #include <chrono>
 #include <ostream>
 #include <string>
+#include <Poco/Mutex.h>
 
 namespace Burst
 {
@@ -105,7 +106,7 @@ namespace Burst
 		};
 		
 		std::map<std::string, Probe> probes_;
-		mutable std::mutex mutex_;
+		mutable Poco::Mutex mutex_;
 	};
 }
 

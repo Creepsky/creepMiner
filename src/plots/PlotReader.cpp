@@ -37,7 +37,7 @@ Burst::GlobalBufferSize Burst::PlotReader::globalBufferSize;
 
 void Burst::GlobalBufferSize::setMax(const Poco::UInt64 max)
 {
-	Poco::FastMutex::ScopedLock lock{mutex_};
+	Poco::Mutex::ScopedLock lock{mutex_};
 	max_ = max;
 }
 
@@ -47,7 +47,7 @@ bool Burst::GlobalBufferSize::reserve(const Poco::UInt64 size)
 	if (MinerConfig::getConfig().getMaxBufferSize() == 0)
 		return true;
 
-	Poco::FastMutex::ScopedLock lock{mutex_};
+	Poco::Mutex::ScopedLock lock{mutex_};
 
 	if (size_ + size > max_)
 		return false;
@@ -62,7 +62,7 @@ void Burst::GlobalBufferSize::free(Poco::UInt64 size)
 	if (MinerConfig::getConfig().getMaxBufferSize() == 0)
 		return;
 
-	Poco::FastMutex::ScopedLock lock{mutex_};
+	Poco::Mutex::ScopedLock lock{mutex_};
 
 	if (size > size_)
 		size = size_;
@@ -400,7 +400,7 @@ void Burst::PlotReader::runTask()
 
 void Burst::PlotReadProgress::reset(Poco::UInt64 blockheight, uintmax_t max)
 {
-	std::lock_guard<std::mutex> guard(mutex_);
+	Poco::Mutex::ScopedLock guard(mutex_);
 	progress_ = 0;
 	blockheight_ = blockheight;
 	max_ = max;
@@ -409,7 +409,7 @@ void Burst::PlotReadProgress::reset(Poco::UInt64 blockheight, uintmax_t max)
 void Burst::PlotReadProgress::add(uintmax_t value, Poco::UInt64 blockheight)
 {
 	{
-		std::lock_guard<std::mutex> guard(mutex_);
+		Poco::Mutex::ScopedLock guard(mutex_);
 
 		if (blockheight != blockheight_)
 			return;
@@ -422,19 +422,19 @@ void Burst::PlotReadProgress::add(uintmax_t value, Poco::UInt64 blockheight)
 
 bool Burst::PlotReadProgress::isReady() const
 {
-	std::lock_guard<std::mutex> guard(mutex_);
+	Poco::Mutex::ScopedLock guard(mutex_);
 	return progress_ >= max_;
 }
 
 uintmax_t Burst::PlotReadProgress::getValue() const
 {
-	std::lock_guard<std::mutex> guard(mutex_);
+	Poco::Mutex::ScopedLock guard(mutex_);
 	return progress_;
 }
 
 float Burst::PlotReadProgress::getProgress() const
 {
-	std::lock_guard<std::mutex> guard(mutex_);
+	Poco::Mutex::ScopedLock guard(mutex_);
 
 	if (max_ == 0.f)
 		return 0.f;

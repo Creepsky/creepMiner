@@ -88,7 +88,7 @@ bool Burst::Deadline::isConfirmed() const
 
 const std::string& Burst::Deadline::getPlotFile() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 	return plotFile_;
 }
 
@@ -173,7 +173,7 @@ Burst::Deadlines::Deadlines(BlockData* parent)
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(Poco::UInt64 nonce, Poco::UInt64 deadline, std::shared_ptr<Account> account, Poco::UInt64 block, std::string plotFile)
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 	
 	auto deadlinePtr = std::make_shared<Deadline>(nonce, deadline, account, block, std::move(plotFile), this);
 
@@ -184,13 +184,13 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::add(Poco::UInt64 nonce, Poco:
 
 void Burst::Deadlines::clear()
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 	deadlines_.clear();
 }
 
 bool Burst::Deadlines::confirm(Nonce nonce)
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
 	const auto iter = std::find_if(deadlines_.begin(), deadlines_.end(), [nonce](std::shared_ptr<Deadline> dl)
 	{
@@ -207,7 +207,7 @@ bool Burst::Deadlines::confirm(Nonce nonce)
 
 bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, Poco::UInt64 block)
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
 	const auto iter = std::find_if(deadlines_.begin(), deadlines_.end(),
 	                               [nonce, accountId, block](std::shared_ptr<Deadline> dl)
@@ -225,7 +225,7 @@ bool Burst::Deadlines::confirm(Nonce nonce, AccountId accountId, Poco::UInt64 bl
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBest() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
 	if (deadlines_.empty())
 		return nullptr;
@@ -235,7 +235,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBest() const
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestConfirmed() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
 	for (auto& deadline : deadlines_)
 		if (deadline->isConfirmed())
@@ -251,7 +251,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestFound() const
 
 std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestSent() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
 	for (auto& deadline : deadlines_)
 		if (deadline->isSent())
@@ -262,7 +262,7 @@ std::shared_ptr<Burst::Deadline> Burst::Deadlines::getBestSent() const
 
 std::vector<std::shared_ptr<Burst::Deadline>> Burst::Deadlines::getDeadlines() const
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{mutex_};
+	Poco::ScopedLock<Poco::Mutex> lock{mutex_};
 	std::vector<std::shared_ptr<Deadline>> deadlines;
 
 	for (auto& deadline : deadlines_)
@@ -285,6 +285,6 @@ void Burst::Deadlines::deadlineConfirmed(const std::shared_ptr<Deadline>& deadli
 
 void Burst::Deadlines::resort()
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 	deadlines_ = { deadlines_.begin(), deadlines_.end() };
 }

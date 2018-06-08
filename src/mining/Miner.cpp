@@ -625,13 +625,13 @@ void Burst::Miner::shut_down_worker(Poco::ThreadPool& thread_pool, Poco::TaskMan
 
 namespace Burst
 {
-	std::mutex progressMutex_;
+	Poco::Mutex progressMutex_;
 	Progress progress_;
 
 	void showProgress(PlotReadProgress& progressRead, PlotReadProgress& progressVerify, MinerData& data, Poco::UInt64 blockheight,
 		std::chrono::high_resolution_clock::time_point& startPoint, std::function<void(Poco::UInt64, double)> blockProcessed)
 	{
-		std::lock_guard<std::mutex> lock(progressMutex_);
+		Poco::Mutex::ScopedLock lock(progressMutex_);
 
 		const auto readProgressPercent = progressRead.getProgress();
 		const auto verifyProgressPercent = progressVerify.getProgress();

@@ -56,7 +56,7 @@ namespace Burst
 	private:
 		Poco::UInt64 size_ = 0;
 		Poco::UInt64 max_ = 0;
-		mutable Poco::FastMutex mutex_;
+		mutable Poco::Mutex mutex_;
 	};
 
 	struct PlotReadNotification : Poco::Notification
@@ -105,7 +105,7 @@ namespace Burst
 	private:
 		uintmax_t progress_ = 0, max_ = 0;
 		Poco::UInt64 blockheight_ = 0;
-		mutable std::mutex mutex_;
+		mutable Poco::Mutex mutex_;
 
 		void fireProgressChanged();
 	};

@@ -25,7 +25,7 @@
 #include "logging/Message.hpp"
 #include "logging/MinerLogger.hpp"
 
-Poco::FastMutex Burst::ColoredPriorityConsoleChannel::mutex_;
+Poco::Mutex Burst::ColoredPriorityConsoleChannel::mutex_;
 
 Burst::ColoredPriorityConsoleChannel::ColoredPriorityConsoleChannel()
 	: ColoredPriorityConsoleChannel{ Poco::Message::Priority::PRIO_INFORMATION }
@@ -37,7 +37,7 @@ Burst::ColoredPriorityConsoleChannel::ColoredPriorityConsoleChannel(Poco::Messag
 
 void Burst::ColoredPriorityConsoleChannel::log(const Poco::Message& msg)
 {
-	Poco::ScopedLock<Poco::FastMutex> lock{ mutex_ };
+	Poco::ScopedLock<Poco::Mutex> lock{ mutex_ };
 
 	if (priority_ >= msg.getPriority())
 	{

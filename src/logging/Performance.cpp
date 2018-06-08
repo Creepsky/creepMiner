@@ -23,10 +23,11 @@
 #include <vector>
 #include <iomanip>
 #include <algorithm>
+#include <Poco/Mutex.h>
 
 void Burst::Performance::reset(const std::string &id)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::Mutex::ScopedLock lock(mutex_);
 	
 	auto iter = probes_.find(id);
 
@@ -43,13 +44,13 @@ void Burst::Performance::reset(const std::string &id)
 
 void Burst::Performance::clear()
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::Mutex::ScopedLock lock(mutex_);
 	probes_.clear();
 }
 
 void Burst::Performance::takeProbe(const std::string &id)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::Mutex::ScopedLock lock(mutex_);
 	
 	auto iter = probes_.find(id);
 
@@ -73,7 +74,7 @@ void Burst::Performance::takeProbe(const std::string &id)
 
 void Burst::Performance::print(std::ostream& stream) const
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::Mutex::ScopedLock lock(mutex_);
 
 	const auto delimiter = ';';
 

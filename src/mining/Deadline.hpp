@@ -81,7 +81,7 @@ namespace Burst
 		std::string minerName_ = "";
 		Poco::UInt64 plotsize_ = 0;
 		Deadlines* parent_;
-		mutable Poco::FastMutex mutex_;
+		mutable Poco::Mutex mutex_;
 	};
 
 	class Deadlines
@@ -118,7 +118,7 @@ namespace Burst
 
 		std::set<std::shared_ptr<Deadline>, LessThan> deadlines_;
 		BlockData* parent_;
-		mutable Poco::FastMutex mutex_;
+		mutable Poco::Mutex mutex_;
 
 		friend class Deadline;
 	};

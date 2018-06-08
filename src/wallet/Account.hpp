@@ -96,6 +96,6 @@ namespace Burst
 
 	private:
 		std::unordered_map<AccountId, std::shared_ptr<Account>> accounts_;
-		mutable Poco::FastMutex mutex_;
+		mutable Poco::Mutex mutex_;
 	};
 }

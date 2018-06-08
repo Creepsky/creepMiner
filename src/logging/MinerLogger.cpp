@@ -48,7 +48,7 @@
 #include "ProgressPrinter.hpp"
 #include <Poco/StringTokenizer.h>
 
-std::mutex Burst::MinerLogger::mutex_;
+Poco::Mutex Burst::MinerLogger::mutex_;
 Burst::TextType Burst::MinerLogger::currentTextType_ = Burst::TextType::Normal;
 bool Burst::MinerLogger::progressFlag_ = false;
 Burst::Progress Burst::MinerLogger::lastProgress_;
@@ -249,7 +249,7 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 {
 	try
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
+		Poco::Mutex::ScopedLock lock(mutex_);
 
 		Poco::Path fullPath;
 		fullPath.parseDirectory(dir);
@@ -333,7 +333,7 @@ bool Burst::MinerLogger::hasOutput(Burst::Output id)
 
 void Burst::MinerLogger::write(const std::string& text, TextType type)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::Mutex::ScopedLock lock(mutex_);
 
 	auto block = Console::print();
 
@@ -369,7 +369,7 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 
 void Burst::MinerLogger::writeProgress(const Progress& progress)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::Mutex::ScopedLock lock(mutex_);
 
 	size_t doneSizeRead, notDoneSize, doneSizeVerified;
 
@@ -405,7 +405,7 @@ void Burst::MinerLogger::writeProgress(const Progress& progress)
 
 void Burst::MinerLogger::setTextTypeColor(TextType type, ConsoleColorPair color)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::Mutex::ScopedLock lock(mutex_);
 	typeColors[type] = color;
 }
 

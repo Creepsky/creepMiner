@@ -115,7 +115,7 @@ namespace Burst
 			void onNewData(std::string& data);
 
 		private:
-			std::mutex mutex_;
+			Poco::Mutex mutex_;
 			MinerServer& server_;
 			MinerData& data_;
 			std::deque<std::string> queue_;
