@@ -141,7 +141,15 @@ void Burst::PlotReader::runTask()
 			for (auto plotFileIter = plotList.begin(); plotFileIter != plotList.end() && !isCancelled() && currentBlock; ++plotFileIter)
 			{
 				auto& plotFile = **plotFileIter;
-				LowLevelFileStream inputStream{plotFile.getPath()};
+				const auto startPos = plotFile.getStartPos();
+				std::string filePath;
+				if (startPos > 0) {
+					filePath = plotFile.getDevicePath();
+				}
+				else {
+					filePath = plotFile.getPath();
+				}
+				LowLevelFileStream inputStream{filePath};
 				PlotReadProgressGuard progressGuard{progressRead_, plotFile.getNonces(), plotReadNotification->blockheight};
 				const auto progressGuardVerify = std::make_shared<PlotReadProgressGuard>(
 					progressVerify_, plotFile.getNonces(), plotReadNotification->blockheight);
@@ -240,13 +248,13 @@ void Burst::PlotReader::runTask()
 							verification->buffer = memory;
 							verification->progress = progressGuardVerify;
 
-							inputStream.seekg(staggerBlockOffset + staggerScoopOffset + chunkOffset);
+							inputStream.seekg(startPos + staggerBlockOffset + staggerScoopOffset + chunkOffset);
 							inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire);
 
 							if (memoryMirror != nullptr)
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
-								inputStream.seekg(staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
+								inputStream.seekg(startPos + staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
 								inputStream.read(reinterpret_cast<char*>(memoryMirror), memoryToAcquire);
 
 								for (size_t i = 0; i < readNonces; ++i)
