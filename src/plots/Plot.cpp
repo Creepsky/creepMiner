@@ -20,7 +20,9 @@
 // ==========================================================================
 
 #include <fstream>
-#include <libgen.h>
+#if defined __linux__ || defined __APPLE__
+  #include <libgen.h>
+#endif
 #include "Plot.hpp"
 #include <Poco/SHA1Engine.h>
 #include <Poco/DigestStream.h>
@@ -54,9 +56,11 @@ Burst::PlotFile::PlotFile(std::string&& path, const Poco::UInt64 size, const Poc
 	if (!version.empty())
 		version_ = stoull(version);
 
+#if defined __linux__ || defined __APPLE__
         if (startPos > 0ULL) {
             devicePath_ = std::string(dirname((char *)path_.c_str()));
         }
+#endif
 	startPos_ = startPos;
 }
 
