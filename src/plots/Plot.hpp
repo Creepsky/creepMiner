@@ -25,13 +25,6 @@
 #include <memory>
 #include <vector>
 
-#define NONCE_SIZE 262144ULL
-
-// Status of plot files on BFS file system
-#define ST_OK 1
-#define ST_INCOMPLETE 2
-
-
 namespace Poco {
 	class File;
 }
@@ -49,10 +42,9 @@ namespace Burst
 		/**
 		 * \brief Constructor.
 		 * \param path The path to the plotfile.
-		 * \param size The size of the plotfile in Bytes.
 		 * \param startPos The start position of the plotfile on the device (in bytes).
 		 */
-		PlotFile(std::string&& path, Poco::UInt64 size, Poco::UInt64 startPos);
+		PlotFile(std::string&& path, Poco::UInt64 startPos = 0);
 
 		/**
 		 * \brief Returns the path to the plotfile.
