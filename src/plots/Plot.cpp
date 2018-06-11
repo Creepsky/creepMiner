@@ -19,6 +19,10 @@
 // 
 // ==========================================================================
 
+#include <fstream>
+#if defined __linux__ || defined __APPLE__
+  #include <libgen.h>
+#endif
 #include "Plot.hpp"
 #include <Poco/SHA1Engine.h>
 #include <Poco/DigestStream.h>
@@ -28,13 +32,12 @@
 #include "logging/MinerLogger.hpp"
 #include "MinerUtil.hpp"
 
-Burst::PlotFile::PlotFile(std::string&& path)
-	: path_(move(path))
+Burst::PlotFile::PlotFile(std::string&& path, const Poco::UInt64 size, const Poco::UInt64 startPos)
+	: path_(move(path)), size_(size)
 {
 	accountId_ = stoull(getAccountIdFromPlotFile(path_));
 	nonceStart_ = stoull(getStartNonceFromPlotFile(path_));
 	nonces_ = stoull(getNonceCountFromPlotFile(path_));
-	size_ = nonces_ * Settings::plotSize;
 
 	const auto staggerSize = getStaggerSizeFromPlotFile(path_);
 	const auto version = getVersionFromPlotFile(path_);
@@ -52,6 +55,13 @@ Burst::PlotFile::PlotFile(std::string&& path)
 
 	if (!version.empty())
 		version_ = stoull(version);
+
+#if defined __linux__ || defined __APPLE__
+        if (startPos > 0ULL) {
+            devicePath_ = std::string(dirname((char *)path_.c_str()));
+        }
+#endif
+	startPos_ = startPos;
 }
 
 const std::string& Burst::PlotFile::getPath() const
@@ -107,6 +117,16 @@ bool Burst::PlotFile::isOptimized() const
 bool Burst::PlotFile::isPoC(int version) const
 {
 	return version_ == version;
+}
+
+const std::string& Burst::PlotFile::getDevicePath() const
+{
+	return devicePath_;
+}
+
+Poco::UInt64 Burst::PlotFile::getStartPos() const
+{
+	return startPos_;
 }
 
 Burst::PlotDir::PlotDir(std::string plotPath, Type type)
@@ -230,6 +250,43 @@ bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
 		return true;
 	}
 
+#if defined __linux__ || defined __APPLE__
+    if ((fileOrPath.find("/dev/") == 0) && fileOrDir.isDevice()) {
+        std::ifstream device(fileOrPath, std::ios::binary);
+        char tocData[1024];
+        std::list<std::string> toc;
+
+        device.read(tocData, 1024);
+        if (strncmp("BFS0", tocData, 4) != 0)
+            throw Poco::Exception{Poco::format("%s has no BFS, skipping it!", fileOrPath)};
+
+        uint32_t *uTocData = (uint32_t *)tocData;
+
+        for (int pos = 1; pos < 256; pos += 8) {
+            uint64_t key = (uint64_t)uTocData[pos] | ((uint64_t)uTocData[pos + 1] << 32);
+            uint64_t startNonce = (uint64_t)uTocData[pos + 2] | ((uint64_t)uTocData[pos + 3] << 32);
+            uint32_t nonces = uTocData[pos + 4];
+            uint32_t stagger = uTocData[pos + 5];
+            uint32_t status = uTocData[pos + 7];
+            uint64_t startPos = (((uint64_t)status & 0xffff) << 32) | (uint64_t)uTocData[pos + 6];
+            uint64_t size = (uint64_t)nonces * NONCE_SIZE;
+
+            if (key == 0ULL)
+                continue;
+            status >>= 16;
+            if (status != ST_OK) // File is incomplete
+                continue;
+            // make a new plotfile and add it to the list
+            std::stringstream filePath;
+            filePath << fileOrPath << "/" << key << "_" << startNonce << "_" << nonces << "_" << stagger;
+            auto plotFile = std::make_shared<PlotFile>(filePath.str(), size, startPos);
+            plotfiles_.emplace_back(plotFile);
+            size_ += size;
+        }
+        return true;
+    }
+#endif
+
 	return false;
 }
 
@@ -245,7 +302,7 @@ std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& f
 				return plotfile;
 
 		// make a new plotfile and add it to the list
-		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()));
+		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()), file.getSize(), 0);
 		plotfiles_.emplace_back(plotFile);
 		size_ += file.getSize();
 
