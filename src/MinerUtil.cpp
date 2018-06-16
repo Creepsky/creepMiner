@@ -224,19 +224,7 @@ std::string Burst::getVersionFromPlotFile(const std::string& path)
 
 std::string Burst::getStartNonceFromPlotFile(const std::string& path)
 {
-	auto filenamePos = path.find_last_of("/\\");
-
-	if (filenamePos == std::string::npos)
-		filenamePos = 0;
-
-	auto fileNamePart = splitStr(path.substr(filenamePos + 1, path.length() - (filenamePos + 1)), '_');
-
-	auto nonceStartPart = fileNamePart[1];
-
-	if (isNumberStr(nonceStartPart))
-		return nonceStartPart;
-
-	return "";
+	return getInformationFromPlotFile(path, 1);
 }
 
 std::string Burst::deadlineFormat(Poco::UInt64 seconds)
