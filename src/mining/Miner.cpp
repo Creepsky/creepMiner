@@ -700,7 +700,11 @@ namespace Burst
 			data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
 			
 			if (readProgressPercent == 100.f && verifyProgressPercent == 100.f && blockProcessed != nullptr)
+			{
 				blockProcessed(blockheight, timeDiffSeconds.count());
+				progress.read = 0.f;
+				progress.verify = 0.f;
+			}
 		}
 	}
 }
