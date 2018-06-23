@@ -13,7 +13,7 @@ creepMiner is written in C++ and is multi-threaded to get the best performance, 
 - Multi Mining (Build a network of several miners)
 - Filter bad deadlines with the auto target deadline feature
 - Responsive web interface for keeping a close eye on your mining 
-- **Support for BFS (Burst File System).**
+- Support for **[BFS (Burst File System)](https://github.com/Creepsky/creepMiner/wiki/Burst-File-System)**
 
 ## Quickstart
 
@@ -23,23 +23,6 @@ creepMiner is written in C++ and is multi-threaded to get the best performance, 
 If you need help and support then please review the [**FAQ**](https://github.com/Creepsky/creepMiner/wiki/FAQ) and [Setting up the miner](https://github.com/Creepsky/creepMiner/wiki/Setting-up-the-miner) else [![Join the chat at https://discord.gg/qnjyVQt](https://img.shields.io/badge/join-discord-blue.svg)](https://discord.gg/qnjyVQt) chat and ask in the **#help** channel.
 
 Alternatively their is a [![Join the chat at https://gitter.im/creepminer/lobby](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/creepminer/lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) however that is not as much monitored as discord.
-
-## BFS
-
-For creating a hard disk with BFS do the following steps with bfs.py from https://github.com/brmmm3/plotTools:
-
-1. Initialize hard disk (will overwrite the first 1024 bytes):
-python3 bfs.py i /dev/sdX
-
-2. Write plot files to hard disk:
-python3 bfs.py w /dev/sdX plotfile1 plotfile2 ...
-
-For further possible commands for bfs.py see https://github.com/brmmm3/plotTools.
-
-In mining.conf add to the list of directories:
-"/dev/sdX"
-
-That's it!
 
 ## Instructions
 

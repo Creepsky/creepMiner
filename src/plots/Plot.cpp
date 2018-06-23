@@ -32,12 +32,17 @@
 #include "logging/MinerLogger.hpp"
 #include "MinerUtil.hpp"
 
-Burst::PlotFile::PlotFile(std::string&& path, const Poco::UInt64 size, const Poco::UInt64 startPos)
-	: path_(move(path)), size_(size)
+// Status of plot files on BFS file system
+#define ST_OK 1
+#define ST_INCOMPLETE 2
+
+Burst::PlotFile::PlotFile(std::string&& path, const Poco::UInt64 startPos)
+	: path_(move(path))
 {
 	accountId_ = stoull(getAccountIdFromPlotFile(path_));
 	nonceStart_ = stoull(getStartNonceFromPlotFile(path_));
 	nonces_ = stoull(getNonceCountFromPlotFile(path_));
+	size_ = nonces_ * Settings::plotSize;
 
 	const auto staggerSize = getStaggerSizeFromPlotFile(path_);
 	const auto version = getVersionFromPlotFile(path_);
@@ -114,9 +119,10 @@ bool Burst::PlotFile::isOptimized() const
 	return getStaggerCount() == getNonces();
 }
 
-bool Burst::PlotFile::isPoC(int version) const
+bool Burst::PlotFile::isPoC(const int version) const
 {
-	return version_ == version;
+	poco_assert(version >= 0);
+	return version_ == static_cast<Poco::UInt64>(version);
 }
 
 const std::string& Burst::PlotFile::getDevicePath() const
@@ -269,7 +275,6 @@ bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
             uint32_t stagger = uTocData[pos + 5];
             uint32_t status = uTocData[pos + 7];
             uint64_t startPos = (((uint64_t)status & 0xffff) << 32) | (uint64_t)uTocData[pos + 6];
-            uint64_t size = (uint64_t)nonces * NONCE_SIZE;
 
             if (key == 0ULL)
                 continue;
@@ -279,9 +284,9 @@ bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
             // make a new plotfile and add it to the list
             std::stringstream filePath;
             filePath << fileOrPath << "/" << key << "_" << startNonce << "_" << nonces << "_" << stagger;
-            auto plotFile = std::make_shared<PlotFile>(filePath.str(), size, startPos);
+            auto plotFile = std::make_shared<PlotFile>(filePath.str(), startPos);
             plotfiles_.emplace_back(plotFile);
-            size_ += size;
+            size_ += plotFile->getSize();
         }
         return true;
     }
@@ -302,7 +307,7 @@ std::shared_ptr<Burst::PlotFile> Burst::PlotDir::addPlotFile(const Poco::File& f
 				return plotfile;
 
 		// make a new plotfile and add it to the list
-		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()), file.getSize(), 0);
+		auto plotFile = std::make_shared<PlotFile>(std::string(file.path()));
 		plotfiles_.emplace_back(plotFile);
 		size_ += file.getSize();
 

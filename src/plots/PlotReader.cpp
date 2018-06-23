@@ -248,14 +248,46 @@ void Burst::PlotReader::runTask()
 							verification->buffer = memory;
 							verification->progress = progressGuardVerify;
 
-							inputStream.seekg(startPos + staggerBlockOffset + staggerScoopOffset + chunkOffset);
-							inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire);
+							const auto offset = startPos + staggerBlockOffset + staggerScoopOffset + chunkOffset;
+
+							if (!inputStream.seekg(offset))
+							{
+								log_error(MinerLogger::plotReader, "Could not set the read position of '%s' to %Lu (nonce %Lu)",
+									plotFile.getPath(), offset, offset / Settings::plotSize);
+								globalBufferSize.free(memory);
+								break;
+							}
+
+							if (!inputStream.read(reinterpret_cast<char*>(verification->buffer), memoryToAcquire))
+							{
+								log_error(MinerLogger::plotReader,
+									"Could not read %Lu bytes (%Lu nonces) of '%s' at position %Lu (mirror nonce), file size is %Lu",
+									memoryToAcquire, memoryToAcquire / Settings::plotSize, plotFile.getPath(), offset, plotFile.getSize());
+								globalBufferSize.free(memory);
+								break;
+							}
 
 							if (memoryMirror != nullptr)
 							{
 								const auto staggerScoopOffsetMirror = (4095 - plotReadNotification->scoopNum) * plotFile.getStaggerScoopBytes();
-								inputStream.seekg(startPos + staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset);
-								inputStream.read(reinterpret_cast<char*>(memoryMirror), memoryToAcquire);
+								const auto offsetMirror = startPos + staggerBlockOffset + staggerScoopOffsetMirror + chunkOffset;
+
+								if (!inputStream.seekg(offsetMirror))
+								{
+									log_error(MinerLogger::plotReader, "Could not set read position of %s to %Lu (mirror nonce %Lu)",
+										plotFile.getPath(), offsetMirror, offsetMirror / Settings::plotSize);
+									globalBufferSize.free(memoryMirror);
+									break;
+								}
+
+								if (!inputStream.read(reinterpret_cast<char*>(memoryMirror), memoryToAcquire))
+								{
+									log_error(MinerLogger::plotReader,
+										"Could not read %Lu bytes (%Lu nonces) of '%s' at position %Lu (mirror nonce), file size is %Lu",
+										memoryToAcquire, memoryToAcquire / Settings::plotSize, plotFile.getPath(), offsetMirror, plotFile.getSize());
+									globalBufferSize.free(memoryMirror);
+									break;
+								}
 
 								for (size_t i = 0; i < readNonces; ++i)
 									memcpy(&verification->buffer[i][32], &memoryMirror[i][32], 32);
