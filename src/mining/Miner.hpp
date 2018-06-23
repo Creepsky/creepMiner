@@ -56,6 +56,7 @@ namespace Burst
 		void run();
 		void stop();
 		void restart();
+		static void sigUsr1Handler(int sigNum);
 		void addPlotReadNotifications(bool wakeUpCall = false);
 		bool wantRestart() const;
 
@@ -106,5 +107,6 @@ namespace Burst
 		Poco::Timer wakeUpTimer_;
 		mutable Poco::Mutex workerMutex_;
 		std::chrono::high_resolution_clock::time_point startPoint_;
+                static Miner *instance;
 	};
 }

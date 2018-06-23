@@ -19,6 +19,7 @@
 // 
 // ==========================================================================
 
+#include <signal.h>
 #include "Miner.hpp"
 #include "logging/MinerLogger.hpp"
 #include "MinerConfig.hpp"
@@ -34,6 +35,8 @@
 #include <Poco/File.h>
 #include <Poco/Delegate.h>
 #include "plots/PlotVerifier.hpp"
+
+Burst::Miner *Burst::Miner::instance;
 
 namespace Burst
 {
@@ -83,7 +86,9 @@ namespace Burst
 }
 
 Burst::Miner::Miner()
-{}
+{
+	instance = this;
+}
 
 Burst::Miner::~Miner() = default;
 
@@ -156,6 +161,8 @@ void Burst::Miner::run()
 	size_t currentMiningInfoIndex = 0;
 	std::string currentUrl;
 
+	signal(SIGUSR1, Burst::Miner::sigUsr1Handler);
+
 	while (running_)
 	{
 		try
@@ -206,6 +213,8 @@ void Burst::Miner::run()
 		std::this_thread::sleep_for(std::chrono::seconds(MinerConfig::getConfig().getMiningInfoInterval()));
 	}
 
+	signal(SIGUSR1, NULL);
+
 	if (wakeUpTime > 0)
 		wakeUpTimer_.stop();
 
@@ -231,6 +240,11 @@ void Burst::Miner::restart()
 {
 	restart_ = true;
 	stop();
+}
+
+void Burst::Miner::sigUsr1Handler(int sigNum)
+{
+	instance->restart();
 }
 
 void Burst::Miner::addPlotReadNotifications(bool wakeUpCall)
@@ -646,6 +660,11 @@ bool Burst::Miner::getMiningInfo(const Url& url)
 		transferSession(request, miningInfoSession_);
 		transferSession(response, miningInfoSession_);
 
+		return false;
+	}
+	catch (const Poco::NotFoundException& e)
+	{
+		log_error(MinerLogger::miner, "Could not get the mining information: %s", e.displayText());
 		return false;
 	}
 	catch (const Poco::Exception& e)
