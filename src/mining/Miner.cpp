@@ -648,6 +648,11 @@ bool Burst::Miner::getMiningInfo(const Url& url)
 
 		return false;
 	}
+	catch (const Poco::NotFoundException& e)
+	{
+		log_error(MinerLogger::miner, "Could not get the mining information: %s", e.displayText());
+		return false;
+	}
 	catch (const Poco::Exception& e)
 	{
 		log_error(MinerLogger::miner, "Could not get the mining information: %s", e.displayText());
