@@ -522,6 +522,15 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		workerName_ = getOrAdd(miningObj, "workerName", std::string{});
 		poc2StartBlock_ = getOrAdd(miningObj, "poc2StartBlock", 502000);
 
+		// Check if CPU instruction set was wrongly configured. Auto detect in case of wrong settings.
+		if ((((cpuInstructionSet_ == "AVX2") && !cpuHasInstructionSet(CpuInstructionSet::Avx2))
+			|| ((cpuInstructionSet_ == "AVX") && !cpuHasInstructionSet(CpuInstructionSet::Avx))
+			|| ((cpuInstructionSet_ == "SSE4") && !cpuHasInstructionSet(CpuInstructionSet::Sse4)))
+			|| ((cpuInstructionSet_ != "AVX2") || (cpuInstructionSet_ != "AVX")
+				|| (cpuInstructionSet_ != "SSE4")|| (cpuInstructionSet_ != "SSE2"))) {
+			log_warning(MinerLogger::config, "Configured instruction set is not supported by CPU!");
+			cpuInstructionSet_ = "AUTO";
+		}
 		// auto detect the max. cpu instruction set
 		if (cpuInstructionSet_ == "AUTO")
 		{
