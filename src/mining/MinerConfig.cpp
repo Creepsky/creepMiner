@@ -526,9 +526,10 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 		if ((((cpuInstructionSet_ == "AVX2") && !cpuHasInstructionSet(CpuInstructionSet::Avx2))
 			|| ((cpuInstructionSet_ == "AVX") && !cpuHasInstructionSet(CpuInstructionSet::Avx))
 			|| ((cpuInstructionSet_ == "SSE4") && !cpuHasInstructionSet(CpuInstructionSet::Sse4)))
-			|| ((cpuInstructionSet_ != "AVX2") || (cpuInstructionSet_ != "AVX")
-				|| (cpuInstructionSet_ != "SSE4")|| (cpuInstructionSet_ != "SSE2"))) {
-			log_warning(MinerLogger::config, "Configured instruction set is not supported by CPU!");
+			|| ((cpuInstructionSet_ != "AVX2") && (cpuInstructionSet_ != "AVX")
+				&& (cpuInstructionSet_ != "SSE4") && (cpuInstructionSet_ != "SSE2"))) {
+			log_warning(MinerLogger::config, "Configured CPU instruction set %s is not supported by CPU!",
+				cpuInstructionSet_);
 			cpuInstructionSet_ = "AUTO";
 		}
 		// auto detect the max. cpu instruction set
