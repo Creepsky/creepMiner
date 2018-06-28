@@ -101,7 +101,9 @@ Poco::UInt64 Burst::PlotFile::getStaggerSize() const
 
 Poco::UInt64 Burst::PlotFile::getStaggerCount() const
 {
-	return getNonces() / getStaggerSize();
+	if (getStaggerSize() > 0)
+		return getNonces() / getStaggerSize();
+	return 1;
 }
 
 Poco::UInt64 Burst::PlotFile::getStaggerBytes() const
@@ -283,7 +285,11 @@ bool Burst::PlotDir::addPlotLocation(const std::string& fileOrPath)
                 continue;
             // make a new plotfile and add it to the list
             std::stringstream filePath;
-            filePath << fileOrPath << "/" << key << "_" << startNonce << "_" << nonces << "_" << stagger;
+	    if (stagger > 0) {
+		filePath << fileOrPath << "/" << key << "_" << startNonce << "_" << nonces << "_" << stagger;
+	    } else {
+		filePath << fileOrPath << "/" << key << "_" << startNonce << "_" << nonces;
+	    }
             auto plotFile = std::make_shared<PlotFile>(filePath.str(), startPos);
             plotfiles_.emplace_back(plotFile);
             size_ += plotFile->getSize();
