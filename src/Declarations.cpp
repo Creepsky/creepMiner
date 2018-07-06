@@ -83,8 +83,8 @@ Burst::Version::Version(std::string version)
 
 	Poco::StringTokenizer tokenizer{ version, "." };
 
-	// need major.minor.build (3 parts, concatenated by a dot)
-	if (tokenizer.count() == 3)
+	// need major.minor.build (3 to 4 parts, concatenated by a dot)
+	if (tokenizer.count() >= 3)
 	{
 		try
 		{
