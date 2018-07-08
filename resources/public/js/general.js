@@ -167,8 +167,8 @@ $(document).ready(function() {
 function SwitchTheme (name){
  $('link[rel*=jquery]').remove();
  console.log(name);
- $('head').append('<link rel="stylesheet jquery" href="/css/'+ name +'/bootstrap.min.css" type="text/css" />');
- document.cookie = "theme = /css/"+name+"/bootstrap.min.css;";
+ $('head').append('<link rel="stylesheet jquery" href="https://bootswatch.com/4/'+ name +'/bootstrap.min.css" type="text/css" />');
+ document.cookie = "theme = https://bootswatch.com/4/"+name+"/bootstrap.min.css;";
 }
 
 // fetch cookie
