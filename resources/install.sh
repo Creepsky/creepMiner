@@ -3,8 +3,8 @@
 
 usage()
 {
-    echo "Usage:    install.sh [cpu] [gpu] [min] [cuda] [cl] [sse4] [avx] [avx2] [help]"
-    echo "cpu:      builds the cpu version (sse2 + sse4 + avx + avx2)"
+    echo "Usage:    install.sh [cpu] [gpu] [min] [cuda] [cl] [sse4] [avx] [avx2] [neon] [help]"
+    echo "cpu:      builds the cpu version (sse2 + sse4 + avx + avx2 + neon)"
     echo "gpu:      builds the gpu version (opencl + cuda + cpu)"
     echo "min:      builds the minimal version (only sse2)"
     echo "cuda:     adds CUDA to the build"
@@ -13,6 +13,7 @@ usage()
     echo "sse4:     adds sse4 to the build"
     echo "avx:      adds avx to the build"
     echo "avx2:     adds avx2 to the build"
+    echo "neon:     adds neon to the build"
     echo "help:     shows this help"
 }
 
@@ -21,6 +22,7 @@ set_cpu()
     sse4=$1
     avx=$1
     avx2=$1
+    neon=$1
 }
 
 set_gpu()
@@ -58,6 +60,9 @@ do
     elif [ $i = "avx2" ]
     then
         avx2=true
+    elif [ $i = "neon" ]
+    then
+        neon=true
     elif [ $i = "cl" ]
     then
         opencl=true
@@ -79,16 +84,18 @@ use_flag()
 use_sse4=$(use_flag "USE_SSE4" $sse4)
 use_avx=$(use_flag "USE_AVX" $avx)
 use_avx2=$(use_flag "USE_AVX2" $avx2)
+use_neon=$(use_flag "USE_NEON" $neon)
 use_opencl=$(use_flag "USE_OPENCL" $opencl)
 use_cuda=$(use_flag "USE_CUDA" $cuda)
 
 echo $use_sse4
 echo $use_avx
 echo $use_avx2
+echo $use_neon
 echo $use_opencl
 echo $use_cuda
 
 conan install . --build=missing -s compiler.libcxx=libstdc++11
 rm CMakeCache.txt -f
-cmake . -DCMAKE_BUILD_TYPE=RELEASE $use_sse4 $use_avx $use_avx2 $use_opencl $use_cuda
+cmake . -DCMAKE_BUILD_TYPE=RELEASE $use_sse4 $use_avx $use_avx2 $use_neon $use_opencl $use_cuda
 make -j$(nproc)

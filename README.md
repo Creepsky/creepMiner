@@ -6,7 +6,7 @@ The creepMiner is a client application for mining Burst on a pool or solo. For m
 creepMiner is written in C++ and is multi-threaded to get the best performance, it can also be compiled on most operating systems.
 
 ## Features
-- Mine with your **CPU** (__SSE2__/__SSE4__/__AVX__/__AVX2__) or your **GPU** (__OpenCL__, __CUDA__)
+- Mine with your **CPU** (__SSE2__/__SSE4__/__AVX__/__AVX2__/__NEON__) or your **GPU** (__OpenCL__, __CUDA__)
 - Mine **solo** or in a **pool**
 - Multi Mining (Build a network of several miners)
 - Filter bad deadlines with the auto target deadline feature

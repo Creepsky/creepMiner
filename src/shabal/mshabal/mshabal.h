@@ -143,6 +143,13 @@ extern "C" {
 	void avx2_mshabal_init(mshabal256_context *sc, unsigned out_size);
 
 	/*
+	* Initialize a context structure. The output size must be a multiple
+	* of 32, between 32 and 512 (inclusive). The output size is expressed
+	* in bits.
+	*/
+	void neon_mshabal_init(mshabal_context *sc, unsigned out_size);
+
+	/*
 	* Process some more data bytes; four chunks of data, pointed to by
 	* data0, data1, data2 and data3, are processed. The four chunks have
 	* the same length of "len" bytes. For efficiency, it is best if data is
@@ -186,6 +193,20 @@ extern "C" {
 		const void *data0, const void *data1, const void *data2, const void *data3,
 		const void *data4, const void *data5, const void *data6, const void *data7,
 		size_t len);
+
+	/*
+	* Process some more data bytes; four chunks of data, pointed to by
+	* data0, data1, data2 and data3, are processed. The four chunks have
+	* the same length of "len" bytes. For efficiency, it is best if data is
+	* processed by medium-sized chunks, e.g. a few kilobytes at a time.
+	*
+	* The "len" data bytes shall all be accessible. If "len" is zero, this
+	* this function does nothing and ignores the data* arguments.
+	* Otherwise, if one of the data* argument is NULL, then the
+	* corresponding instance is deactivated (the final value obtained from
+	* that instance is undefined).
+	*/
+	void neon_mshabal(mshabal_context *sc, const void *data0, const void *data1, const void *data2, const void *data3, size_t len);
 
 	/*
 	* Terminate the Shabal computation incarnated by the provided context
@@ -263,6 +284,30 @@ extern "C" {
 		unsigned n,
 		void *dst0, void *dst1, void *dst2, void *dst3,
 		void *dst4, void *dst5, void *dst6, void *dst7);
+
+	/*
+	* Terminate the Shabal computation incarnated by the provided context
+	* structure. "n" shall be a value between 0 and 7 (inclusive): this is
+	* the number of extra bits to extract from ub0, ub1, ub2 and ub3, and
+	* append at the end of the input message for each of the four parallel
+	* instances. Bits in "ub*" are taken in big-endian format: first bit is
+	* the one of numerical value 128, second bit has numerical value 64,
+	* and so on. Other bits in "ub*" are ignored. For most applications,
+	* input messages will consist in sequence of bytes, and the "ub*" and
+	* "n" parameters will be zero.
+	*
+	* The Shabal output for each of the parallel instances is written out
+	* in the areas pointed to by, respectively, dst0, dst1, dst2 and dst3.
+	* These areas shall be wide enough to accomodate the result (result
+	* size was specified as parameter to mshabal_init()). It is acceptable
+	* to use NULL for any of those pointers, if the result from the
+	* corresponding instance is not needed.
+	*
+	* After this call, the context structure is invalid. The caller shall
+	* release it, or reinitialize it with mshabal_init(). The mshabal_close()
+	* function does NOT imply a hidden call to mshabal_init().
+	*/
+	void neon_mshabal_close(mshabal_context *sc, unsigned ub0, unsigned ub1, unsigned ub2, unsigned ub3, unsigned n, void *dst0, void *dst1, void *dst2, void *dst3);
 
 #ifdef  __cplusplus
 }

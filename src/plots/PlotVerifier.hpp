@@ -320,16 +320,19 @@ namespace Burst
 	using PlotVerifierOperation_sse4 = PlotVerifierOperations_4<Shabal256_SSE4>;
 	using PlotVerifierOperation_avx = PlotVerifierOperations_4<Shabal256_AVX>;
 	using PlotVerifierOperation_avx2 = PlotVerifierOperations_8<Shabal256_AVX2>;
+	using PlotVerifierOperation_neon = PlotVerifierOperations_4<Shabal256_NEON>;
 
 	using PlotVerifierAlgorithm_sse2 = PlotVerifierAlgorithm_cpu<Shabal256_SSE2, PlotVerifierOperation_sse2>;
 	using PlotVerifierAlgorithm_sse4 = PlotVerifierAlgorithm_cpu<Shabal256_SSE4, PlotVerifierOperation_sse4>;
 	using PlotVerifierAlgorithm_avx = PlotVerifierAlgorithm_cpu<Shabal256_AVX, PlotVerifierOperation_avx>;
 	using PlotVerifierAlgorithm_avx2 = PlotVerifierAlgorithm_cpu<Shabal256_AVX2, PlotVerifierOperation_avx2>;
+	using PlotVerifierAlgorithm_neon = PlotVerifierAlgorithm_cpu<Shabal256_NEON, PlotVerifierOperation_neon>;
 
 	using PlotVerifier_sse2 = PlotVerifier<PlotVerifierAlgorithm_sse2>;
 	using PlotVerifier_sse4 = PlotVerifier<PlotVerifierAlgorithm_sse4>;
 	using PlotVerifier_avx = PlotVerifier<PlotVerifierAlgorithm_avx>;
 	using PlotVerifier_avx2 = PlotVerifier<PlotVerifierAlgorithm_avx2>;
+	using PlotVerifier_neon = PlotVerifier<PlotVerifierAlgorithm_neon>;
 
 	using PlotVerifierAlgorithm_cuda = PlotVerifierAlgorithm_gpu<GpuCuda, Gpu_Algorithm_Atomic>;
 	using PlotVerifierAlgorithm_opencl = PlotVerifierAlgorithm_gpu<GpuOpenCL, Gpu_Algorithm_Atomic>;

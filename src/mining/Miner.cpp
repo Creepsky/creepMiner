@@ -791,6 +791,8 @@ void Burst::Miner::createPlotVerifiers()
 			createWorker(MinerHelper::create_worker_default<PlotVerifier_avx>);
 		else if (cpuInstructionSet == "AVX2" && Settings::Avx2)
 			createWorker(MinerHelper::create_worker_default<PlotVerifier_avx2>);
+		else if (cpuInstructionSet == "NEON" && Settings::Neon)
+			createWorker(MinerHelper::create_worker_default<PlotVerifier_neon>);
 		else if (cpuInstructionSet == "SSE2")
 			createWorker(MinerHelper::create_worker_default<PlotVerifier_sse2>);
 		else

@@ -49,6 +49,12 @@ const bool Burst::Settings::Avx2 = true;
 const bool Burst::Settings::Avx2 = false;
 #endif
 
+#ifdef USE_NEON
+const bool Burst::Settings::Neon = true;
+#else
+const bool Burst::Settings::Neon = false;
+#endif
+
 #ifdef USE_CUDA
 const bool Burst::Settings::Cuda = true;
 #else
