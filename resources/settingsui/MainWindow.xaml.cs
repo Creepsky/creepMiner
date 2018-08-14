@@ -223,6 +223,7 @@ namespace ConfigEditor
             this.CPUInstSet.Add(new Base("SSE4"));
             this.CPUInstSet.Add(new Base("AVX"));
 			this.CPUInstSet.Add(new Base("AVX2"));
+            this.CPUInstSet.Add(new Base("NEON"));
 
             this.ProcessorType.Add(new Base("CPU"));
             this.ProcessorType.Add(new Base("CUDA"));

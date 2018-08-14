@@ -500,6 +500,8 @@ Burst::ReadConfigFileResult Burst::MinerConfig::readConfigFile(const std::string
 				cpuInstructionSet_ = "AVX";
 			else if (cpuHasInstructionSet(CpuInstructionSet::sse4))
 				cpuInstructionSet_ = "SSE4";
+			else if (cpuHasInstructionSet(CpuInstructionSet::neon))
+				cpuInstructionSet_ = "NEON";
 			else
 				cpuInstructionSet_ = "SSE2";
 		}

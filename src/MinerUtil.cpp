@@ -927,6 +927,7 @@ bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
 	case sse4: return (instructionSets & sse4) == sse4;
 	case avx: return (instructionSets & avx) == avx;
 	case avx2: return (instructionSets & avx2) == avx2;
+	case neon: return (instructionSets & neon) == neon;
 	default: return false;
 	}
 }
@@ -934,7 +935,19 @@ bool Burst::cpuHasInstructionSet(CpuInstructionSet cpuInstructionSet)
 int Burst::cpuGetInstructionSets()
 {
 #if defined __arm__
-	return sse2;
+	auto instruction_sets = 0;
+
+	instruction_sets |= sse2;
+
+#if defined __ARM_NEON__
+	instruction_sets |= neon;
+#endif
+
+#if defined __ARM_FEATURE_SIMD32
+	instruction_sets |= neon;
+#endif
+
+	return instruction_sets;
 #elif defined __GNUC__
 	auto instruction_sets = 0;
 

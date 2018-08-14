@@ -119,6 +119,7 @@ int main(const int argc, const char* argv[])
 	checkAndPrint(Sse4, "SSE4");
 	checkAndPrint(Avx, "AVX");
 	checkAndPrint(Avx2, "AVX2");
+	checkAndPrint(Neon, "NEON");
 
 	log_information(general, Burst::Settings::Project.nameAndVersionVerbose);
 	log_information(general, "%s mode%s", mode, sstream.str());
