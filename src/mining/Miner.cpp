@@ -648,6 +648,11 @@ bool Burst::Miner::getMiningInfo(const Url& url)
 
 		return false;
 	}
+	catch (const Poco::NotFoundException& e)
+	{
+		log_error(MinerLogger::miner, "Could not get the mining information: %s", e.displayText());
+		return false;
+	}
 	catch (const Poco::Exception& e)
 	{
 		log_error(MinerLogger::miner, "Could not get the mining information: %s", e.displayText());
@@ -700,7 +705,11 @@ namespace Burst
 			data.getBlockData()->setProgress(readProgressPercent, verifyProgressPercent, blockheight);
 			
 			if (readProgressPercent == 100.f && verifyProgressPercent == 100.f && blockProcessed != nullptr)
+			{
 				blockProcessed(blockheight, timeDiffSeconds.count());
+				progress.read = 0.f;
+				progress.verify = 0.f;
+			}
 		}
 	}
 }
