@@ -234,10 +234,10 @@ namespace Burst
             uint64_t deadline = std::numeric_limits<uint64_t>::max();
             uint64_t offset = 0;
             std::vector<uint8_t> scoops;
-            for (size_t i = 0; i < buffer.size(); i++) { // Compile scoops into one big array
-                scoops.insert(scoops.end(), &buffer[i][0], &buffer[i][Settings::ScoopSize]);
+            for (size_t i = 0; i < buffer->size(); i++) { // Compile scoops into one big array
+                scoops.insert(scoops.end(), &buffer[i][0], &buffer[i][Settings::scoopSize]);
             }
-            shabal_findBestDeadlineDirect(reinterpret_cast<const char*>(scoops.data()), buffer.size(), reinterpret_cast<const char*>(gensig.data()), &deadline, &offset);
+            shabal_findBestDeadlineDirect(reinterpret_cast<const char*>(scoops.data()), buffer->size(), reinterpret_cast<const char*>(gensig.data()), &deadline, &offset);
             return {nonceStart + nonceRead + offset, deadline};
 		}
 	};
