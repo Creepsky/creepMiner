@@ -192,6 +192,13 @@ endif ()
 ##################################################################
 # Libraries
 ##################################################################
+
+# Optimised Shabal Library
+FIND_LIBRARY(SHABAL_LIB NAMES shabal.dll libshabal.dylib libshabal.so HINTS "${CMAKE_SOURCE_DIR}/libShabal")
+add_library(shabalLib STATIC IMPORTED)
+set_property(TARGET shabalLib PROPERTY IMPORTED_LOCATION ${SHABAL_LIB})
+target_link_libraries(creepMiner shabalLib)
+
 target_link_libraries(creepMiner ${CONAN_LIBS})
 
 if (NOT USE_CONAN)
@@ -222,9 +229,13 @@ if (NOT MSVC)
 			WORLD_READ WORLD_WRITE WORLD_EXECUTE)
 	if (UNIX)
 		install(DIRECTORY lib/ DESTINATION lib)
-	endif ()
+		install(FILES libShabal/libshabal.so DESTINATION .)
+	elseif (APPLE)
+		install(FILES libShabal/libshabal.dylib DESTINATION .)
+	endif()
 else ()
 	install(TARGETS creepMiner RUNTIME DESTINATION .)
+	install(FILES libShabal/shabal.dll DESTINATION .)
 endif ()
 
 ##################################################################

@@ -33,6 +33,7 @@
 #include "PlotReader.hpp"
 #include "gpu/gpu_shell.hpp"
 #include "gpu/algorithm/gpu_algorithm_atomic.hpp"
+#include "libShabal.h"
 
 namespace Burst
 {
@@ -222,6 +223,7 @@ namespace Burst
 	{
 		static bool initStream(void** stream)
 		{
+            shabal_init();
 			return true;
 		}
 
@@ -229,36 +231,14 @@ namespace Burst
 		                         const Poco::UInt64 nonceStart, const Poco::UInt64 baseTarget, const GensigData& gensig,
 		                         const std::function<bool()>& stop, void* stream)
 		{
-			DeadlineTuple bestResult = {0, 0};
-			TShabal shabalOriginal;
-
-			// hash the gensig according to the cpu instruction level
-			shabalOriginal.update(gensig.data(), Settings::hashSize);
-
-			std::array<HashData, TShabal::HashSize> targets{};
-
-			for (size_t i = 0; i < size && !stop(); i += TShabal::HashSize) 
-			{
-				auto shabal = shabalOriginal;
-
-				// hash the scoop according to the cpu instruction level
-				TShabalOperations::update(shabal, buffer, i, size);
-
-				// digest the hash
-				TShabalOperations::close(shabal, targets, i, size);
-
-				for (auto j = 0u; j < TShabal::HashSize; ++j)
-				{
-					const auto nonce = nonceStart + nonceRead + i + j;
-					const auto deadline = *reinterpret_cast<Poco::UInt64*>(targets[j].data()) / baseTarget;
-
-					// make sure the nonce->deadline pair is valid and better than the others
-					if (nonce > 0 && deadline > 0 && (bestResult.second == 0 || deadline < bestResult.second))
-						bestResult = std::make_pair(nonce, deadline);
-				}
-			}
-
-			return bestResult;
+            uint64_t deadline = std::numeric_limits<uint64_t>::max();
+            uint64_t offset = 0;
+            std::vector<uint8_t> scoops;
+            for (size_t i = 0; i < buffer->size(); i++) { // Compile scoops into one big array
+                scoops.insert(scoops.end(), &buffer[i][0], &buffer[i][Settings::scoopSize]);
+            }
+            shabal_findBestDeadlineDirect(reinterpret_cast<const char*>(scoops.data()), buffer->size(), reinterpret_cast<const char*>(gensig.data()), &deadline, &offset);
+            return {nonceStart + nonceRead + offset, deadline};
 		}
 	};
 
