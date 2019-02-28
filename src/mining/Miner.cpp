@@ -567,21 +567,20 @@ bool Burst::Miner::getMiningInfo(const Url& url)
 
 				std::string gensig;
 
-				if (root->has("height"))
+				if (root->has("generationSignature"))
 				{
-					const std::string newBlockHeightStr = root->get("height");
-					const auto newBlockHeight = std::stoull(newBlockHeightStr);
+					gensig = root->get("generationSignature").convert<std::string>();
 
-					if (data_.getBlockData() == nullptr ||
-						newBlockHeight > data_.getBlockData()->getBlockheight())
+					if ((data_.getBlockData() == nullptr || gensig != data_.getBlockData()->getGensigStr()) &&
+						root->has("height"))
 					{
 						std::string baseTargetStr;
 
+						const std::string newBlockHeightStr = root->get("height");
+						const auto newBlockHeight = std::stoull(newBlockHeightStr);
+
 						if (root->has("baseTarget"))
 							baseTargetStr = root->get("baseTarget").convert<std::string>();
-
-						if (root->has("generationSignature"))
-							gensig = root->get("generationSignature").convert<std::string>();
 
 						if (root->has("targetDeadline"))
 						{
