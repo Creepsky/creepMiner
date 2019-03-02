@@ -25,7 +25,7 @@
 
 namespace Burst
 {
-	struct Mshabal_sse4_Impl
+	struct MshabalSse4Impl
 	{
 		static constexpr size_t HashSize = 4;
 

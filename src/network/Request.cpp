@@ -57,14 +57,21 @@ Burst::Response Burst::Request::send(Poco::Net::HTTPRequest& request)
 	
 	if (!canSend())
 		return {nullptr};
-	
+
+	request.set("User-Agent", Settings::project.nameAndVersion);
+
 	try
 	{
 		session_->sendRequest(request);
 	}
 	catch(Poco::Exception& exc)
 	{
-		log_error(MinerLogger::socket, "Error on sending request: %s", exc.displayText());
+		log_error(MinerLogger::socket, "Error on sending request\n"
+			"\tURI:    %s %s %s\n"
+			"\tHost:   %s\n"
+			"\tReason: %s",
+			request.getMethod(), request.getURI(), request.getVersion(), request.getHost(), exc.displayText());
+
 		log_current_stackframe(MinerLogger::socket);
 
 		session_->reset();
@@ -104,10 +111,11 @@ Burst::NonceResponse Burst::NonceRequest::submit(const Deadline& deadline)
 	Poco::URI::encode(plotFileStrDecoded, "", plotFileStr);
 
 	HTTPRequest request{HTTPRequest::HTTP_POST, uri.getPathAndQuery(), HTTPRequest::HTTP_1_1};
-	request.set(X_Capacity, std::to_string(deadline.getTotalPlotsize()));
-	request.set(X_Miner, deadline.getMiner());
-	request.set(X_Deadline, std::to_string(deadline.getDeadline()));
-	request.set(X_Plotfile, plotFileStr);
+	request.set(xCapacity, std::to_string(deadline.getTotalPlotsize()));
+	request.set(xMiner, deadline.getMiner());
+	request.set(xDeadline, std::to_string(deadline.getDeadline()));
+	request.set(xPlotfile, plotFileStr);
+	request.set(xWorker, deadline.getWorker());
 	request.setKeepAlive(false);
 	request.setContentLength(0);
 

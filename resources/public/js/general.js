@@ -1,6 +1,7 @@
 var websocket;
 var servername = 'creepMiner';
 var MasterMiner = 'false';
+var container = 'false'
 var loggers = [
 	["miner", "Miner", 6],
 	["config", "Config", 6],
@@ -37,11 +38,12 @@ function connect(onMessage) {
 }
 
 // version checker and update about btn
-function checkVersion(runningVer, onlineVer) {
+function checkVersion(runningVer, onlineVer, runningBuild) {
 	var onlineVersionSplit = onlineVer.split(".");
     var runningVersionSplit = runningVer.split(".");
 	var current=true;
-    if (Number(onlineVersionSplit[0]) > Number(runningVersionSplit[0]))
+	//console.info(runningVer + '.' + runningBuild);
+    if (Number(runningVersionSplit[0]) > Number(runningVersionSplit[0]))
         current=false;
     else if (Number(onlineVersionSplit[1]) > Number(runningVersionSplit[1]))
         current=false;
@@ -49,8 +51,8 @@ function checkVersion(runningVer, onlineVer) {
         current=false;
 	if(!current)
 	{
-        $("#btnAbout").find("a").css({"color":"#dc3545"});
-        $("#btnAbout").attr({"data-original-title": "A new version is available"});
+        $("#btnAbout").find("a").css({"color":"#ffc107"});
+        $("#btnAbout").attr({"data-original-title": "New version available"});
         $("#runningVer").html("&nbsp;v&nbsp;" + runningVer);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
         $("#versionCardHeader").toggleClass("bg-success",false);
@@ -58,12 +60,12 @@ function checkVersion(runningVer, onlineVer) {
         $("#versionAlert").toggleClass("alert-success",false);
         $("#versionAlert").toggleClass("alert-danger",true);
         $("#versionAlert").html("<i class='fas fa-wrench'></i>&nbsp;&nbsp;<strong>Update available!</strong>"+
-            " Download the latest from <i class='fab fa-github-square'></i>&nbsp;<a href='https://github.com/Creepsky/creepMiner/releases'>github</a>");
+            " Download it from <i class='fab fa-github-square'></i>&nbsp;<a href='https://github.com/Creepsky/creepMiner/releases'>github</a>");
     } else
     {
-        $("#runningVer").html("<i class='fas fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer);
+        $("#runningVer").html("<i class='fas fa-check text-success'></i>&nbsp;v&nbsp;" + runningVer +"." + runningBuild);
         $("#latestVer").html("&nbsp;v&nbsp;" + onlineVer);
-        $("#versionAlert").html("<i class='fas fa-check text-success'></i>&nbsp;&nbsp;You are running a current version of creepMiner.");
+        //$("#versionAlert").html("<i class='fas fa-check text-success'></i>&nbsp;&nbsp;You are running a current version of creepMiner.");
     }
 	return current
 }
@@ -166,9 +168,9 @@ $(document).ready(function() {
 // dynamically switch bootswatch themes
 function SwitchTheme (name){
  $('link[rel*=jquery]').remove();
- console.log(name);
- $('head').append('<link rel="stylesheet jquery" href="/css/'+ name +'/bootstrap.min.css" type="text/css" />');
- document.cookie = "theme = /css/"+name+"/bootstrap.min.css;";
+ //console.log(name);
+ $('head').append('<link rel="stylesheet jquery" href="https://bootswatch.com/4/'+ name +'/bootstrap.min.css" type="text/css" />');
+ document.cookie = "theme = https://bootswatch.com/4/"+name+"/bootstrap.min.css;";
 }
 
 // fetch cookie
@@ -209,10 +211,87 @@ function eraseCookie(name) {
 document.getElementById('server-name').innerHTML = servername;
 document.title = servername;
 
-// if master miner is set hide some elements
+// if master miner is set show and hide some elements
+if (container == 'true') {
+    var dElement = document.getElementsByClassName('d-container'), i;
+    for (var i = 0; i < dElement.length; i ++) {
+        dElement[i].style.display = 'inline';
+    }
+}
+
+// if master miner is set show and hide some elements
 if (MasterMiner == 'true') {
+	var mmElement = document.getElementsByClassName('mm-show'), i;
+	for (var i = 0; i < mmElement.length; i ++) {
+	    mmElement[i].style.display = 'inline';
+	}
 	var mmHideElements = document.getElementsByClassName('mm-hide'), i;
 	for (var i = 0; i < mmHideElements.length; i ++) {
 	    mmHideElements[i].style.display = 'none';
 	}
 }
+
+// master miner menu - WIP
+$.getJSON('https://next.json-generator.com/api/json/get/VJs_LJEAN', function(data) {
+    var builddata = function() {
+        var source = [];
+        var items = [];
+        for (i = 0; i < data.length; i++) {
+            var item = data[i];
+            var label = item["name"];
+            var parentid = item["parent_id"];
+            var icon = item["icon"];
+            var id = item["id"];
+            var url = item["url"];
+
+            if (items[parentid]) {
+                var item = {
+                    parentid: parentid,
+                    label: label,
+                    url: url,
+                    icon: icon,
+                    item: item
+                };
+                if (!items[parentid].items) {
+                    items[parentid].items = [];
+                }
+                items[parentid].items[items[parentid].items.length] = item;
+                items[id] = item;
+            } else {
+                items[id] = {
+                    parentid: parentid,
+                    label: label,
+                    url: url,
+                    icon: icon,
+                    item: item
+                };
+                source[id] = items[id];
+            }
+        }
+        return source;
+    }
+    // build dynamic menu from json payload
+    var buildMenu = function(menu, source) {
+        var isFirst = true;
+        $.each(source, function() {
+            if (this.label) {
+                if (!isFirst) {
+                    var divider = $('<div class="dropdown-divider"></div>');
+                    menu.append(divider);
+                }
+                var parent = $('<a class="dropdown-item" href="' + this.url + '" target="_blank"><i class="text-muted ' + this.icon + '"></i>  ' + this.label + '</a>');
+                menu.append(parent);
+                if (this.items && this.items.length > 0) {
+                    $.each(this.items, function() {
+                        var child = $('<a class="dropdown-item" href="' + this.url + '" target="_blank"><i class="text-muted ' + this.icon + '" ></i>  ' + this.label + '</a>');
+                        menu.append(child);
+                    });
+                }
+                isFirst = false;
+            }
+        });
+    }
+    var source = builddata();
+    //console.log(source);
+    buildMenu($('#dynamic-menu'), source);
+});

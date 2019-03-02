@@ -32,12 +32,12 @@
 namespace Burst
 {
 	template <typename TAlgorithm>
-	class Shabal256_Shell
+	class Shabal256Shell
 	{
 	public:
 		static constexpr size_t HashSize = TAlgorithm::HashSize;
 
-		Shabal256_Shell()
+		Shabal256Shell()
 		{
 			TAlgorithm::init(context_);
 		}
@@ -64,8 +64,8 @@ namespace Burst
 		typename TAlgorithm::context_t context_;
 	};
 
-	using Shabal256_AVX2 = Shabal256_Shell<Mshabal_avx2_Impl>;
-	using Shabal256_AVX = Shabal256_Shell<Mshabal_avx_Impl>;
-	using Shabal256_SSE4 = Shabal256_Shell<Mshabal_sse4_Impl>;
-	using Shabal256_SSE2 = Shabal256_Shell<Sphlib_Impl>;
+	using Shabal256Avx2 = Shabal256Shell<MshabalAvx2Impl>;
+	using Shabal256Avx = Shabal256Shell<MshabalAvxImpl>;
+	using Shabal256Sse4 = Shabal256Shell<MshabalSse4Impl>;
+	using Shabal256Sse2 = Shabal256Shell<SphlibImpl>;
 }

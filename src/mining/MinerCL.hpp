@@ -25,7 +25,7 @@
  * OpenCL relevant classes and functions.
  */
 #include <vector>
-#include <stdio.h>
+#include <cstdio>
 #include <string>
 
 #ifdef USE_OPENCL
@@ -65,11 +65,11 @@ namespace Burst
 	/**
 	 * \brief A OpenCL context.
 	 */
-	class MinerCL
+	class MinerCl
 	{
 	public:
-		MinerCL();
-		~MinerCL();
+		MinerCl();
+		~MinerCl();
 
 		bool create(unsigned platformIdx = 0, unsigned deviceIdx = 0);
 		cl_command_queue createCommandQueue();
@@ -88,21 +88,21 @@ namespace Burst
 
 		bool initialized() const;
 
-		static MinerCL& getCL();
+		static MinerCl& getCL();
 
 	private:
 		cl_context context_ = nullptr;
 		cl_program program_ = nullptr;
-		std::vector<cl_command_queue> command_queues_;
-		cl_kernel kernel_calculate_deadlines_ = nullptr,
-			kernel_best_deadline_ = nullptr;
+		std::vector<cl_command_queue> commandQueues_;
+		cl_kernel kernelCalculateDeadlines_ = nullptr,
+			kernelBestDeadline_ = nullptr;
 		bool initialized_ = false;
 		std::vector<ClPlatform> platforms_;
 		unsigned platformIdx_ = 0, deviceIdx_ = 0;
-		size_t kernel_Calculate_WorkGroupSize_ = 0;
-		size_t kernel_FindBest_WorkGroupSize_ = 0;
-		size_t kernel_Calculate_PrefferedWorkGroupSize_ = 0;
-		size_t kernel_FindBest_PrefferedWorkGroupSize_ = 0;
-		size_t compute_units_ = 0;
+		size_t kernelCalculateWorkGroupSize_ = 0;
+		size_t kernelFindBestWorkGroupSize_ = 0;
+		size_t kernelCalculatePrefferedWorkGroupSize_ = 0;
+		size_t kernelFindBestPrefferedWorkGroupSize_ = 0;
+		size_t computeUnits_ = 0;
 	};
 }

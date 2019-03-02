@@ -59,60 +59,60 @@ namespace Burst
 		void refreshNameAndVersion();
 		void refreshAndCheckOnlineVersion(Poco::Timer& timer);
 		std::string getOnlineVersion() const;
-		std::string getVersion() const;
+		const Version& getVersion() const;
 		std::string name;
 		std::string nameAndVersion;
 		std::string nameAndVersionVerbose;
 	private:
-		Version version;
-		Version onlineVersion;
+		Version version_;
+		Version onlineVersion_;
 		mutable Poco::Mutex mutex_;
 	};
 
 	namespace Settings
 	{
 		// 32 bytes, half of scoop
-		constexpr size_t HashSize = 32;
+		constexpr size_t hashSize = 32;
 		// there are 4096 scoops inside a plot (nonce)
-		constexpr size_t ScoopPerPlot = 4096;
+		constexpr size_t scoopPerPlot = 4096;
 		// every scoop consists of 2 hashes
-		constexpr size_t HashPerScoop = 2;
+		constexpr size_t hashPerScoop = 2;
 		// 64 bytes, whole scoop, two hashes
-		constexpr size_t ScoopSize = HashSize * HashPerScoop;
+		constexpr size_t scoopSize = hashSize * hashPerScoop;
 		// 262144 bytes, a nonce, 4096 scoops
-		constexpr size_t PlotSize = ScoopSize * ScoopPerPlot;
+		constexpr size_t plotSize = scoopSize * scoopPerPlot;
 		// 96 bytes, a scoop and the gensig
-		constexpr size_t PlotScoopSize = ScoopSize + HashSize;
+		constexpr size_t plotScoopSize = scoopSize + hashSize;
 
 #if defined POCO_OS_FAMILY_BSD
-		static constexpr auto OsFamily = "BSD";
+		static constexpr auto osFamily = "BSD";
 #elif defined POCO_OS_FAMILY_UNIX
-		static constexpr auto OsFamily = "Unix";
+		static constexpr auto osFamily = "Unix";
 #elif defined POCO_OS_FAMILY_WINDOWS
-		static constexpr auto OsFamily = "Windows";
+		static constexpr auto osFamily = "Windows";
 #else
-		static constexpr auto OsFamily = "";
+		static constexpr auto osFamily = "";
 #endif
 
 #if POCO_ARCH == POCO_ARCH_IA64 || POCO_ARCH == POCO_ARCH_AMD64 || POCO_ARCH == POCO_ARCH_AARCH64
-		static constexpr auto Arch = "x64";
+		static constexpr auto arch = "x64";
 #else
-		static constexpr auto Arch = "x32";
+		static constexpr auto arch = "x32";
 #endif
 
-		extern std::string Cpu_Instruction_Set;
-		extern ProjectData Project;
+		extern std::string cpuInstructionSet;
+		extern ProjectData project;
 
-		extern const bool Sse4, Avx, Avx2, Cuda, OpenCl;
+		extern const bool sse4, avx, avx2, cuda, openCl;
 
 		void setCpuInstructionSet(std::string cpuInstructionSet);
 	};
 
-	template <size_t SZ>
-	using BytesArray = std::array<uint8_t, SZ>;
-	using ScoopData = BytesArray<Settings::ScoopSize>;
-	using GensigData = BytesArray<Settings::HashSize>;
-	using HashData = BytesArray<Settings::HashSize>;
+	template <size_t Sz>
+	using BytesArray = std::array<uint8_t, Sz>;
+	using ScoopData = BytesArray<Settings::scoopSize>;
+	using GensigData = BytesArray<Settings::hashSize>;
+	using HashData = BytesArray<Settings::hashSize>;
 
 	using AccountId = Poco::UInt64;
 	using Nonce = Poco::UInt64;

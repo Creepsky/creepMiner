@@ -90,14 +90,13 @@ namespace Burst
 
 	enum CpuInstructionSet
 	{
-		sse2 = 1 << 0,
-		sse4 = 1 << 1,
-		avx = 1 << 2,
-		avx2 = 1 << 3
+		Sse2 = 1 << 0,
+		Sse4 = 1 << 1,
+		Avx = 1 << 2,
+		Avx2 = 1 << 3
 	};
 
 	bool isNumberStr(const std::string& str);
-	std::string getFileNameFromPath(const std::string& strPath);
 	std::vector<std::string>& splitStr(const std::string& s, char delim, std::vector<std::string>& elems);
 	std::vector<std::string> splitStr(const std::string& s, char delim);
 	std::vector<std::string> splitStr(const std::string& s, const std::string& delim);
@@ -129,7 +128,7 @@ namespace Burst
 	Poco::Timespan secondsToTimespan(float seconds);
 	std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Poco::URI& uri);
 	Poco::Net::SocketAddress getHostAddress(const Poco::URI& uri);
-	std::string serializeDeadline(const Deadline& deadline, std::string delimiter = ":");
+	std::string serializeDeadline(const Deadline& deadline, const std::string& delimiter = ":");
 
 	Poco::JSON::Object createJsonDeadline(const Deadline& deadline);
 	Poco::JSON::Object createJsonDeadline(const Deadline& deadline, const std::string& type);
@@ -146,8 +145,7 @@ namespace Burst
 	std::string getTime();
 	std::string getFilenameWithtimestamp(const std::string& name, const std::string& ending);
 
-	std::string hash_HMAC_SHA1(const std::string& plain, const std::string& passphrase);
-	bool check_HMAC_SHA1(const std::string& plain, const std::string& hashed, const std::string& passphrase);
+	std::string hashHmacSha1(const std::string& plain, const std::string& passphrase);
 
 	/*
 	 * \brief Creates a string that is padded and locked on a specific size.
@@ -176,4 +174,33 @@ namespace Burst
 
 	Poco::Path getMinerHomeDir();
 	Poco::Path getMinerHomeDir(const std::string& filename);
+
+	std::string toHex(const std::string& plainText);
+	std::string fromHex(const std::string& codedText);
+
+	std::string createBuildFeatures();
+
+	std::string jsonToString(const Poco::JSON::Object& json);
+
+	class LowLevelFileStream
+	{
+	public:
+		LowLevelFileStream(const LowLevelFileStream& other);
+		LowLevelFileStream(LowLevelFileStream&& other) noexcept;
+		LowLevelFileStream(const std::string& path);
+		LowLevelFileStream& operator=(const LowLevelFileStream& other);
+		LowLevelFileStream& operator=(LowLevelFileStream&& other) noexcept;
+		~LowLevelFileStream();
+
+		bool seekg(size_t offset) const;
+		bool read(char* buffer, size_t bytes) const;
+		operator bool() const;
+
+	private:
+#ifdef _WIN32
+		void* handle_;
+#else
+		int handle_;
+#endif
+	};
 }

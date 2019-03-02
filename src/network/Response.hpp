@@ -40,7 +40,8 @@ namespace Burst
 		Response& operator=(Response&& rhs) = default;
 
 		bool canReceive() const;
-		bool receive(std::string& data);
+		bool receive(std::string& data) const;
+		bool receive(std::string& data, int& status) const;
 
 		std::unique_ptr<Poco::Net::HTTPClientSession> transferSession();
 		const Poco::Exception* getLastError() const;
@@ -67,6 +68,14 @@ namespace Burst
 		Poco::UInt64 deadline;
 		SubmitResponse errorCode;
 		std::string json;
+		int errorNumber;
+		std::string errorText;
+
+		static NonceConfirmation createWrongBlock(Poco::UInt64 currentHeight, Poco::UInt64 yourHeight, Poco::UInt64 nonce, Poco::UInt64 deadline);
+		static NonceConfirmation createTooHigh(Poco::UInt64 nonce, Poco::UInt64 deadline, Poco::UInt64 targetDeadline);
+		static NonceConfirmation createNotBest(Poco::UInt64 nonce, Poco::UInt64 deadline, Poco::UInt64 best);
+		static NonceConfirmation createError(Poco::UInt64 nonce, Poco::UInt64 deadline, const std::string& errorMessage);
+		static NonceConfirmation createSuccess(Poco::UInt64 nonce, Poco::UInt64 deadline, const std::string& deadlineText);
 	};
 
 	class NonceResponse
@@ -75,8 +84,8 @@ namespace Burst
 		NonceResponse(std::unique_ptr<Poco::Net::HTTPClientSession> session);
 
 		bool canReceive() const;
-		NonceConfirmation getConfirmation();
-		bool isDataThere();
+		NonceConfirmation getConfirmation() const;
+		bool isDataThere() const;
 
 		std::unique_ptr<Poco::Net::HTTPClientSession> transferSession();
 		const Poco::Exception* getLastError() const;

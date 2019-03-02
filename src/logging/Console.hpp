@@ -157,6 +157,8 @@ namespace Burst
 		
 		const PrintBlock& setColor(ConsoleColor color) const;
 
+		void* getHandle() const;
+
 	private:
 		void* handle_ = nullptr;
 		std::ostream* stream_;

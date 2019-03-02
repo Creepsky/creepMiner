@@ -11,6 +11,7 @@ creepMiner is written in C++ and is multi-threaded to get the best performance, 
 - Multi Mining (Build a network of several miners)
 - Filter bad deadlines with the auto target deadline feature
 - Responsive web interface for keeping a close eye on your mining 
+- Support for **[BFS (Burst File System)](https://github.com/Creepsky/creepMiner/wiki/Burst-File-System)**
 
 ## Getting Started
 Please follow the [Quick start guide](https://github.com/Creepsky/creepMiner/wiki)

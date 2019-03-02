@@ -1,22 +1,22 @@
 // ==========================================================================
-// 
+//
 // creepMiner - Burstcoin cryptocurrency CPU and GPU miner
 // Copyright (C)  2016-2018 Creepsky (creepsky@gmail.com)
-// 
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110 - 1301  USA
-// 
+//
 // ==========================================================================
 
 #pragma once
@@ -47,6 +47,7 @@ namespace Burst
 		Pool,
 		Wallet,
 		MiningInfo,
+		MiningInfoAlts,
 		Server
 	};
 
@@ -63,13 +64,14 @@ namespace Burst
 	 */
 	struct Passphrase
 	{
-		std::string algorithm = "aes-256-cbc";
-		std::string decrypted;
-		bool deleteKey = true;
-		std::string encrypted;
+		std::string algorithm;
 		Poco::UInt32 iterations = 1000;
 		std::string key;
 		std::string salt;
+		std::string decrypted;
+		bool deleteKey = true;
+		std::string encrypted;
+		static const std::string delimiter;
 
 		/**
 		 * \brief Decrypts the encrypted passphrase.
@@ -82,6 +84,18 @@ namespace Burst
 		 * \return The encrypted passphrase.
 		 */
 		const std::string& encrypt();
+
+		bool isOneWayHash() const;
+		bool isTwoWayHash() const;
+		bool isEncrypted() const;
+		bool isPlainText() const;
+		bool check(const std::string& plainText) const;
+		bool empty() const;
+
+		std::string toString() const;
+
+		static Passphrase fromString(const std::string& string);
+		static std::string createSalt(size_t length = 20);
 	};
 
 	enum class ReadConfigFileResult
@@ -91,9 +105,7 @@ namespace Burst
 		Invalid,
 		Error
 	};
-
-	class Socket;
-
+	
 	class MinerConfig
 	{
 	public:
@@ -122,7 +134,7 @@ namespace Burst
 		 * \return true, if saved, false otherwise.
 		 */
 		bool save() const;
-		
+
 		/**
 		 * \brief Saves the current settings by creating a JSON object for it and saving it
 		 * into a file.
@@ -153,8 +165,12 @@ namespace Burst
 		float getSendTimeout() const;
 		float getTimeout() const;
 		Url getPoolUrl() const;
+		const std::vector<Url>& getPoolUrlAlt() const;
 		Url getMiningInfoUrl() const;
+		const std::vector<Url>& getMiningInfoUrlAlt() const;
 		Url getWalletUrl() const;
+		std::string getProxyFullUrl() const;
+		Poco::Net::HTTPClientSession::ProxyConfig getProxyConfig() const;
 
 		unsigned getReceiveMaxRetry() const;
 		unsigned getSendMaxRetry() const;
@@ -165,6 +181,7 @@ namespace Burst
 		const std::string& getServerCertificatePath() const;
 		const std::string& getServerCertificatePass() const;
 		const std::string& getDatabasePath() const;
+		const std::string& getWorkerName() const;
 
 		Url getServerUrl() const;
 		double getSubmitProbability() const;
@@ -172,7 +189,7 @@ namespace Burst
 		double getDeadlinePerformanceFac() const;
 		Poco::UInt64 getTargetDeadline(TargetDeadlineType type = TargetDeadlineType::Combined) const;
 		unsigned getMiningIntensity(bool real = true) const;
-		bool forPlotDirs(std::function<bool(PlotDir&)> traverseFunction) const;
+		bool forPlotDirs(const std::function<bool(PlotDir&)>& traverseFunction) const;
 		//const std::string& getPlotsHash() const;
 		const std::string& getPassphrase() const;
 		bool useInsecurePlotfiles() const;
@@ -195,15 +212,13 @@ namespace Burst
 		unsigned getMaxPlotReaders(bool real = true) const;
 		Poco::Path getPathLogfile() const;
 		std::string getLogDir() const;
-		std::string getServerUser() const;
-		std::string getServerPass() const;
+		const Passphrase& getServerUser() const;
+		const Passphrase& getServerPass() const;
 		unsigned getWalletRequestTries() const;
 		unsigned getWalletRequestRetryWaitTime() const;
 		unsigned getWakeUpTime() const;
 		const std::string& getCpuInstructionSet() const;
 		const std::string& getProcessorType() const;
-		bool isBenchmark() const;
-		long getBenchmarkInterval() const;
 		unsigned getGpuPlatform() const;
 		unsigned getGpuDevice() const;
 		unsigned getMaxConnectionsQueued() const;
@@ -213,8 +228,9 @@ namespace Burst
 		bool isCumulatingPlotsizes() const;
 		bool isForwardingMinerName() const;
 		Poco::UInt64 getPoc2StartBlock() const;
+		bool isVerboseLogging() const;
 
-		void setUrl(std::string url, HostType hostType);
+		void setUrl(const std::string& url, HostType hostType);
 		void setBufferSize(Poco::UInt64 bufferSize);
 		void setMaxHistoricalBlocks(Poco::UInt64 maxHistData);
 		void setMaxSubmissionRetry(unsigned value);
@@ -257,26 +273,16 @@ namespace Burst
 		 * \return The http session, if the connection was successful, nullptr otherwise.
 		 */
 		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(HostType hostType) const;
-
-		/**
-		 * \brief The passphrase, used by the webserver to hash (hmac) the username.
-		 */
-		static const std::string webserverUserPassphrase;
-
-		/**
-		 * \brief The passphrase, used by the webserver to hash (hmac) the password.
-		 */
-		static const std::string webserverPassPassphrase;
+		std::unique_ptr<Poco::Net::HTTPClientSession> createSession(const Url& url) const;
 
 		/**
 		 * \brief Returns the singleton-instance of the configuration.
 		 * \return the current configuration.
 		 */
 		static MinerConfig& getConfig();
-		
+
 	private:
 		static Poco::JSON::Object::Ptr readOutput(Poco::JSON::Object::Ptr json);
-		static const std::string hashDelimiter;
 
 		std::string configPath_;
 		std::vector<std::shared_ptr<PlotDir>> plotDirs_;
@@ -286,22 +292,27 @@ namespace Burst
 		unsigned submissionMaxRetry_ = 10;
 		unsigned http_ = 1;
 		std::string confirmedDeadlinesPath_ = "";
-		Url urlPool_;
-		Url urlMiningInfo_;
-		Url urlWallet_;
+		Url urlPool_{"https://pool.creepminer.net"};
+		Url urlMiningInfo_{"https://pool.creepminer.net"};
+		Url urlWallet_{"https://wallet.creepminer.net"};
+		Url urlServer_{"http://0.0.0.0:8124"};
+		std::vector<Url> urlMiningInfoAlt_{};
+		std::vector<Url> urlPoolAlt_{};
+		std::string proxyIp_{};
+		Poco::UInt16 proxyPort_{};
+		Passphrase proxyUser_{}, proxyPassword_{};
 		bool startServer_ = true;
-		Url serverUrl_{"http://0.0.0.0:8124"};
-		double targetDLFactor_ = 1.0;
+		double targetDlFactor_ = 1.0;
 		double deadlinePerformanceFac_ = 1.0;
 		double submitProbability_ = 0.999;
 		Poco::UInt64 targetDeadline_ = 0, targetDeadlinePool_ = 0;
 		unsigned miningIntensity_ = 0;
 		std::string plotsHash_;
-		std::string serverUser_, serverPass_;
+		Passphrase serverUser_{}, serverPass_{};
 		unsigned maxPlotReaders_ = 0;
 		Poco::Path pathLogfile_ = "";
-		Poco::UInt64 maxBufferSizeMB_ = 0;
-		Poco::UInt64 maxHistoricalBlocks_ = 0;
+		Poco::UInt64 maxBufferSizeMb_ = 0;
+		Poco::UInt64 maxHistoricalBlocks_ = 360;
 		unsigned bufferChunkCount_ = 16;
 		unsigned walletRequestTries_ = 3;
 		unsigned walletRequestRetryWaitTime_ = 3;
@@ -317,8 +328,6 @@ namespace Burst
 		unsigned wakeUpTime_ = 0;
 		std::string cpuInstructionSet_ = "AUTO";
 		std::string processorType_ = "CPU";
-		bool benchmark_ = false;
-		long benchmarkInterval_ = 60;
 		unsigned gpuPlatform_ = 0, gpuDevice_ = 0;
 		unsigned maxConnectionsQueued_ = 64, maxConnectionsActive_ = 32;
 		std::vector<std::string> forwardingWhitelist_;
@@ -328,7 +337,9 @@ namespace Burst
 		std::string serverCertificatePath_;
 		std::string serverCertificatePass_;
 		std::string databasePath_;
+		std::string workerName_;
 		Poco::UInt64 poc2StartBlock_ = 0;
+		bool verboseLogging_ = false;
 		mutable Poco::Mutex mutex_;
 	};
 }

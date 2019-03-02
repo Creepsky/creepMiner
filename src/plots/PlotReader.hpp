@@ -32,6 +32,8 @@
 #include <Poco/Notification.h>
 #include "mining/MinerConfig.hpp"
 #include "Plot.hpp"
+#include <Poco/NotificationQueue.h>
+#include <Poco/MemoryPool.h>
 
 namespace Poco
 {
@@ -47,16 +49,18 @@ namespace Burst
 	{
 	public:
 		void setMax(Poco::UInt64 max);
-		bool reserve(Poco::UInt64 size);
-		void free(Poco::UInt64 size);
+		void* reserve();
+		void free(void* memory);
 		
 		Poco::UInt64 getSize() const;
 		Poco::UInt64 getMax() const;
 
+		Poco::NotificationQueue chunkQueue;
+
 	private:
-		Poco::UInt64 size_ = 0;
-		Poco::UInt64 max_ = 0;
-		mutable Poco::FastMutex mutex_;
+		Poco::Event reserveEvent_;
+		Poco::UInt64 max_;
+		std::unique_ptr<Poco::MemoryPool> memoryPool_;
 	};
 
 	struct PlotReadNotification : Poco::Notification
@@ -76,7 +80,8 @@ namespace Burst
 	class PlotReader : public Poco::Task
 	{
 	public:
-		PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress> progress,
+		PlotReader(MinerData& data, std::shared_ptr<PlotReadProgress> progressRead,
+			std::shared_ptr<PlotReadProgress> progressVerify,
 			Poco::NotificationQueue& verificationQueue, Poco::NotificationQueue& plotReadQueue);
 		~PlotReader() override = default;
 
@@ -86,7 +91,7 @@ namespace Burst
 
 	private:
 		MinerData& data_;
-		std::shared_ptr<PlotReadProgress> progress_;
+		std::shared_ptr<PlotReadProgress> progressRead_, progressVerify_;
 		Poco::NotificationQueue* verificationQueue_;
 		Poco::NotificationQueue* plotReadQueue_;
 	};
@@ -108,5 +113,16 @@ namespace Burst
 		mutable std::mutex mutex_;
 
 		void fireProgressChanged();
+	};
+
+	class PlotReadProgressGuard
+	{
+	public:
+		PlotReadProgressGuard(std::shared_ptr<PlotReadProgress> progress, Poco::UInt64 nonces, Poco::UInt64 blockheight);
+		~PlotReadProgressGuard();
+
+	private:
+		std::shared_ptr<PlotReadProgress> progress_;
+		Poco::UInt64 nonces_, blockheight_;
 	};
 }

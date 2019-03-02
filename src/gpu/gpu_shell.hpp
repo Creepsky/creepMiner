@@ -32,12 +32,12 @@ namespace Burst
 	 * \tparam TImpl The implementation class.
 	 */
 	template <typename TImpl>
-	struct Gpu_Shell
+	struct GpuShell
 	{
 		/**
 		 * \brief An alias for the implementation.
 		 */
-		using impl_t = TImpl;
+		using ImplT = TImpl;
 
 		/**
 		* \brief Initializes a new stream (queue).
@@ -88,23 +88,6 @@ namespace Burst
 		}
 
 		/**
-		 * \brief Frees a list of memory blocks on the GPU.
-		 * \tparam T The type of the tail.
-		 * \tparam Args Variadic template types.
-		 * \param arg The tail argument, that is freed.
-		 * \param args The list of memory, that needs to be freed.
-		 * \return true, when the list of memory was freed, false otherwise.
-		 */
-		//template <typename T, typename ...Args>
-		//static bool freeMemory(T arg, Args&&... args)
-		//{
-		//	if (!freeMemory(arg))
-		//		return false;
-
-		//	return freeMemory(std::forward<Args&&>(args)...);
-		//}
-
-		/**
 		 * \brief Searches for the best deadline in a memory block.
 		 * \tparam Args Variadic template types.
 		 * \param args The arguments that are needed to verify the deadlines.
@@ -138,7 +121,7 @@ namespace Burst
 		template <typename TAlgorithm, typename ...Args>
 		static bool run(Args&&... args)
 		{
-			return TAlgorithm::template run<Gpu_Shell>(std::forward<Args&&>(args)...);
+			return TAlgorithm::template run<GpuShell>(std::forward<Args&&>(args)...);
 		}
 
 		/**
@@ -154,7 +137,7 @@ namespace Burst
 		}
 	};
 
-	struct Gpu_Helper
+	struct GpuHelper
 	{
 		/**
 		 * \brief Calculates the byte size a structure type.
@@ -162,12 +145,12 @@ namespace Burst
 		 * \param size The amount of structures.
 		 * \return The size of all structures in bytes.
 		 */
-		static Poco::UInt64 calcMemorySize(MemoryType memType, Poco::UInt64 size)
+		static Poco::UInt64 calcMemorySize(const MemoryType memType, Poco::UInt64 size)
 		{
 			if (memType == MemoryType::Buffer)
-				size *= sizeof(Poco::UInt8) * Burst::Settings::ScoopSize;
+				size *= sizeof(Poco::UInt8) * Settings::scoopSize;
 			else if (memType == MemoryType::Gensig)
-				size = sizeof(Poco::UInt8) * Burst::Settings::HashSize;
+				size = sizeof(Poco::UInt8) * Settings::hashSize;
 			else if (memType == MemoryType::Deadlines)
 				size *= sizeof(CalculatedDeadline);
 
@@ -181,12 +164,12 @@ namespace Burst
 		 * \return The size of all types in bytes.
 		 */
 		template <typename T>
-		static Poco::UInt64 calcMemorySize(Poco::UInt64 size)
+		static Poco::UInt64 calcMemorySize(const Poco::UInt64 size)
 		{
 			return size * sizeof(T);
 		}
 	};
 
-	using GpuCuda = Gpu_Shell<Gpu_Cuda_Impl>;
-	using GpuOpenCL = Gpu_Shell<Gpu_Opencl_Impl>;
+	using GpuCuda = GpuShell<GpuCudaImpl>;
+	using GpuOpenCl = GpuShell<GpuOpenclImpl>;
 }

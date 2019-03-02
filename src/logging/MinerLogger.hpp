@@ -135,20 +135,20 @@ namespace Burst
 		 * \brief Returns the flags for all outputs.
 		 * \return A flag-map for all outputs.
 		 */
-		static const Output_Flags& getOutput();
+		static const OutputFlags& getOutput();
 
 	private:		
-		static std::mutex mutex_;
+		static Poco::Mutex mutex_;
 		static TextType currentTextType_;
-		static std::map<TextType, ConsoleColorPair> typeColors;
+		static std::map<TextType, ConsoleColorPair> typeColors_;
 		static bool progressFlag_;
 		static Progress lastProgress_;
 		static size_t lastProgressDoneRead_, lastProgressDoneVerify_;
 		static size_t lastPipeCount_;
 
-		static const std::unordered_map<std::string, ColoredPriorityConsoleChannel*> channels_;
-		static const std::unordered_map<std::string, MinerDataChannel*> websocketChannels_;
-		static Output_Flags output_;
+		static const std::unordered_map<std::string, ColoredPriorityConsoleChannel*> channels;
+		static const std::unordered_map<std::string, MinerDataChannel*> websocketChannels;
+		static OutputFlags output_;
 		static Poco::Channel* fileChannel_;
 		static Poco::FormattingChannel* fileFormatter_;
 		static std::string logFileName_;

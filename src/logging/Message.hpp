@@ -275,7 +275,7 @@ namespace Burst
 #define log_trace(logger, text, ...) Burst::Message::log(Poco::Message::Priority::PRIO_TRACE, Burst::TextType::Debug, *logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)
 #define log_exception(logger, exception) Burst::Message::log(Poco::Message::Priority::PRIO_ERROR, Burst::TextType::Error, *logger, exception, __FILE__, __LINE__)
 #define log_memory(logger, text, memory, size) Burst::Message::log(Poco::Message::Priority::PRIO_TRACE, Burst::TextType::Debug, *logger, text, memory, size, __FILE__, __LINE__)
-#define log_stackframe(logger, stackframe) Burst::Message::log(Poco::Message::Priority::PRIO_ERROR, Burst::TextType::Error, *logger, stackframe, __FILE__, __LINE__)
+#define log_stackframe(logger, stackframe) Burst::Message::log(Poco::Message::Priority::PRIO_INFORMATION, Burst::TextType::Unimportant, *logger, stackframe, __FILE__, __LINE__)
 #define log_current_stackframe(logger) log_stackframe(logger, Poco::NestedDiagnosticContext::current())
 
 #define log_ok(logger, text, ...) Burst::Message::log(Poco::Message::Priority::PRIO_INFORMATION, Burst::TextType::Ok, *logger, text, __FILE__, __LINE__, true, ##__VA_ARGS__)

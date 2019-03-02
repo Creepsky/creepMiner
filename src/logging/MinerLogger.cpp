@@ -48,7 +48,7 @@
 #include "ProgressPrinter.hpp"
 #include <Poco/StringTokenizer.h>
 
-std::mutex Burst::MinerLogger::mutex_;
+Poco::Mutex Burst::MinerLogger::mutex_;
 Burst::TextType Burst::MinerLogger::currentTextType_ = Burst::TextType::Normal;
 bool Burst::MinerLogger::progressFlag_ = false;
 Burst::Progress Burst::MinerLogger::lastProgress_;
@@ -68,9 +68,9 @@ Poco::Logger* Burst::MinerLogger::plotVerifier;
 Poco::Logger* Burst::MinerLogger::wallet;
 Poco::Logger* Burst::MinerLogger::general;
 
-Burst::Output_Flags Burst::MinerLogger::output_ = []()
+Burst::OutputFlags Burst::MinerLogger::output_ = []()
 {
-	auto output_flags = Output_Helper::create_flags(true);
+	auto output_flags = OutputHelper::createFlags(true);
 	output_flags[PlotDone] = false;
 	output_flags[NonceFoundTooHigh] = false;
 	return output_flags;
@@ -90,7 +90,7 @@ const std::vector<Burst::MinerLogger::ChannelDefinition> Burst::MinerLogger::cha
 	{ "general", Poco::Message::Priority::PRIO_INFORMATION },
 };
 
-const std::unordered_map<std::string, Burst::ColoredPriorityConsoleChannel*> Burst::MinerLogger::channels_ = []()
+const std::unordered_map<std::string, Burst::ColoredPriorityConsoleChannel*> Burst::MinerLogger::channels = []()
 {
 	std::unordered_map<std::string, ColoredPriorityConsoleChannel*> channels_;
 
@@ -100,7 +100,7 @@ const std::unordered_map<std::string, Burst::ColoredPriorityConsoleChannel*> Bur
 	return channels_;
 }();
 
-const std::unordered_map<std::string, Burst::MinerDataChannel*> Burst::MinerLogger::websocketChannels_ = []()
+const std::unordered_map<std::string, Burst::MinerDataChannel*> Burst::MinerLogger::websocketChannels = []()
 {
 	std::unordered_map<std::string, MinerDataChannel*> channels_;
 
@@ -112,9 +112,9 @@ const std::unordered_map<std::string, Burst::MinerDataChannel*> Burst::MinerLogg
 
 Poco::Channel* Burst::MinerLogger::fileChannel_ = new Poco::FileChannel;
 Poco::FormattingChannel* Burst::MinerLogger::fileFormatter_ = nullptr;
-std::string Burst::MinerLogger::logFileName_ = getFilenameWithtimestamp("creepMiner", "log");
+std::string Burst::MinerLogger::logFileName_ = "creepMiner.log";
 
-std::map<Burst::TextType, Burst::ConsoleColorPair> Burst::MinerLogger::typeColors =
+std::map<Burst::TextType, Burst::ConsoleColorPair> Burst::MinerLogger::typeColors_ =
 	{
 			{ TextType::Normal, { ConsoleColor::White, ConsoleColor::Black } },
 			{ TextType::Error, { ConsoleColor::LightRed, ConsoleColor::Black } },
@@ -137,16 +137,16 @@ Burst::MinerLogger::ChannelDefinition::ChannelDefinition(std::string name, Poco:
 	: name{std::move(name)},
 	  default_priority{default_priority} {}
 
-const Burst::Output_Flags& Burst::MinerLogger::getOutput()
+const Burst::OutputFlags& Burst::MinerLogger::getOutput()
 {
 	return output_;
 }
 
 bool Burst::MinerLogger::setChannelPriority(const std::string& channel, Poco::Message::Priority priority)
 {
-	auto iter = channels_.find(channel);
+	auto iter = channels.find(channel);
 
-	if (iter != channels_.end())
+	if (iter != channels.end())
 	{
 		iter->second->setPriority(priority);
 		return true;
@@ -157,9 +157,9 @@ bool Burst::MinerLogger::setChannelPriority(const std::string& channel, Poco::Me
 
 bool Burst::MinerLogger::setChannelPriority(const std::string& channel, const std::string& priority)
 {
-	auto iter = channels_.find(channel);
+	auto iter = channels.find(channel);
 
-	if (iter != channels_.end())
+	if (iter != channels.end())
 	{
 		iter->second->setPriority(getStringToPriority(priority));
 		return true;
@@ -170,9 +170,9 @@ bool Burst::MinerLogger::setChannelPriority(const std::string& channel, const st
 
 std::string Burst::MinerLogger::getChannelPriority(const std::string& channel)
 {
-	const auto iter = channels_.find(channel);
+	const auto iter = channels.find(channel);
 
-	if (iter != channels_.end())
+	if (iter != channels.end())
 		return getPriorityToString(iter->second->getPriority());
 
 	return "";
@@ -239,7 +239,7 @@ std::map<std::string, std::string> Burst::MinerLogger::getChannelPriorities()
 {
 	std::map<std::string, std::string> channel_priorities;
 
-	for (auto& channel : channels_)
+	for (auto& channel : channels)
 		channel_priorities.emplace(channel.first, getChannelPriority(channel.first));
 
 	return channel_priorities;
@@ -249,7 +249,7 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 {
 	try
 	{
-		std::lock_guard<std::mutex> lock(mutex_);
+		Poco::ScopedLock<Poco::Mutex> lock(mutex_);
 
 		Poco::Path fullPath;
 		fullPath.parseDirectory(dir);
@@ -307,7 +307,7 @@ std::string Burst::MinerLogger::setLogDir(const std::string& dir)
 
 void Burst::MinerLogger::setChannelMinerData(MinerData* minerData)
 {
-	for (auto& channel : websocketChannels_)
+	for (auto& channel : websocketChannels)
 		channel.second->setMinerData(minerData);
 }
 
@@ -333,7 +333,7 @@ bool Burst::MinerLogger::hasOutput(Burst::Output id)
 
 void Burst::MinerLogger::write(const std::string& text, TextType type)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::ScopedLock<Poco::Mutex> lock(mutex_);
 
 	auto block = Console::print();
 
@@ -348,8 +348,17 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 	
 	for (auto i = 0u; i < tokenizer.count(); ++i)
 	{
-		block << getTextTypeColor(TextType::Normal) << getTime() << ": "
-			<< getTextTypeColor(type) << tokenizer[i];
+		block << getTextTypeColor(TextType::Unimportant) << getTime() << ": "
+			<< getTextTypeColor(type);
+		
+#ifdef _WIN32
+		std::wstring utext;
+		Poco::UnicodeConverter::toUTF16(tokenizer[i], utext);
+		DWORD written;
+		WriteConsoleW(block.getHandle(), utext.data(), static_cast<DWORD>(utext.size()), &written, nullptr);
+#else
+		block << tokenizer[i];
+#endif
 
 		if (i != tokenizer.count() - 1)
 			block.nextLine();
@@ -369,7 +378,7 @@ void Burst::MinerLogger::write(const std::string& text, TextType type)
 
 void Burst::MinerLogger::writeProgress(const Progress& progress)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
+	Poco::ScopedLock<Poco::Mutex> lock(mutex_);
 
 	size_t doneSizeRead, notDoneSize, doneSizeVerified;
 
@@ -405,8 +414,8 @@ void Burst::MinerLogger::writeProgress(const Progress& progress)
 
 void Burst::MinerLogger::setTextTypeColor(TextType type, ConsoleColorPair color)
 {
-	std::lock_guard<std::mutex> lock(mutex_);
-	typeColors[type] = color;
+	Poco::ScopedLock<Poco::Mutex> lock(mutex_);
+	typeColors_[type] = color;
 }
 
 void Burst::MinerLogger::setup()
@@ -426,11 +435,11 @@ void Burst::MinerLogger::setup()
 	{
 		fileChannel_ = new Poco::FileChannel;
 
-		// rotate every 1 MB
-		fileChannel_->setProperty("rotation", "5 M");
+		// rotate every 10 MB
+		fileChannel_->setProperty("rotation", "10 M");
 		// purge old logs
 		//fileChannel_->setProperty("purgeAge", "1 days");
-		fileChannel_->setProperty("purgeCount", "5");
+		fileChannel_->setProperty("purgeCount", "10");
 		// use local times
 		fileChannel_->setProperty("times", "local");
 		// archive old logfiles
@@ -459,8 +468,8 @@ void Burst::MinerLogger::refreshChannels()
 		logger.setLevel(Poco::Message::Priority::PRIO_TRACE);
 
 		auto splitter = new Poco::SplitterChannel;
-		auto& consoleChannel = channels_.at(channel.name);
-		auto& websocketChannel = websocketChannels_.at(channel.name);
+		auto& consoleChannel = channels.at(channel.name);
+		auto& websocketChannel = websocketChannels.at(channel.name);
 
 		splitter->addChannel(consoleChannel);
 
@@ -476,9 +485,9 @@ void Burst::MinerLogger::refreshChannels()
 
 Burst::ConsoleColorPair Burst::MinerLogger::getTextTypeColor(TextType type)
 {
-	const auto iter = typeColors.find(type);
+	const auto iter = typeColors_.find(type);
 
-	if (iter == typeColors.end())
+	if (iter == typeColors_.end())
 		return getTextTypeColor(TextType::Normal);
 
 	return (*iter).second;

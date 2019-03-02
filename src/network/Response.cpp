@@ -44,7 +44,13 @@ bool Burst::Response::canReceive() const
 	return session_ != nullptr;
 }
 
-bool Burst::Response::receive(std::string& data)
+bool Burst::Response::receive(std::string& data) const
+{
+	int status;
+	return receive(data, status);
+}
+
+bool Burst::Response::receive(std::string& data, int& status) const
 {
 	poco_ndc(Response::receive);
 	
@@ -56,7 +62,8 @@ bool Burst::Response::receive(std::string& data)
 		HTTPResponse response;
 		const auto responseStream = &session_->receiveResponse(response);
 		data = {std::istreambuf_iterator<char>(*responseStream), {}};
-		return response.getStatus() == HTTPResponse::HTTP_OK;
+		status = response.getStatus();
+		return status == HTTPResponse::HTTP_OK;
 	}
 	catch (Poco::Exception& exc)
 	{
@@ -88,7 +95,77 @@ bool Burst::Response::isDataThere() const
 		Poco::Net::Socket::SELECT_READ);
 }
 
-Burst::NonceResponse::NonceResponse(std::unique_ptr<Poco::Net::HTTPClientSession> session)
+Burst::NonceConfirmation Burst::NonceConfirmation::createWrongBlock(Poco::UInt64 currentHeight, Poco::UInt64 yourHeight,
+	Poco::UInt64 nonce, Poco::UInt64 deadline)
+{
+	NonceConfirmation c;
+	c.json = Poco::format(
+		R"({ "result" : "Your submitted deadline is for another block!", "nonce" : %Lu, "blockheight" : %Lu, "currentBlockheight" : %Lu })",
+		nonce, yourHeight, currentHeight);
+	c.errorText = "Your submitted deadline is for another block!";
+	c.errorCode = SubmitResponse::WrongBlock;
+	c.errorNumber = 1005;
+	c.deadline = deadline;
+	return c;
+}
+
+Burst::NonceConfirmation Burst::NonceConfirmation::createTooHigh(Poco::UInt64 nonce, Poco::UInt64 deadline,
+	Poco::UInt64 targetDeadline)
+{
+	NonceConfirmation c;
+	c.json = Poco::format(
+		R"({ "result" : "Your deadline was too high!", "nonce": %Lu, "deadline" : %Lu, "targetDeadline" : %Lu, "" })",
+		nonce, deadline, targetDeadline);
+	c.errorText = "Your deadline was too high!";
+	c.errorCode = SubmitResponse::TooHigh;
+	c.errorNumber = 1008;
+	c.deadline = deadline;
+	return c;
+}
+
+Burst::NonceConfirmation Burst::NonceConfirmation::createNotBest(Poco::UInt64 nonce, Poco::UInt64 deadline,
+	Poco::UInt64 best)
+{
+	NonceConfirmation c;
+	c.json = Poco::format(
+		R"({ "result" : "Your deadline was not the best one!", "nonce": %Lu, "deadline" : %Lu, "bestDeadline" : %Lu })",
+		nonce, deadline, best);
+	c.errorText = "Your deadline was not the best one!";
+	c.errorCode = SubmitResponse::NotBest;
+	c.errorNumber = -1;
+	c.deadline = deadline;
+	return c;
+}
+
+Burst::NonceConfirmation Burst::NonceConfirmation::createError(Poco::UInt64 nonce, Poco::UInt64 deadline,
+	const std::string& errorMessage)
+{
+	NonceConfirmation c;
+	c.json = Poco::format(
+		R"({ "result" : "Error occured: %s!", "nonce": %Lu, "deadline" : %Lu, "error" : %s })",
+		errorMessage, nonce, deadline, errorMessage);
+	c.errorText = errorMessage;
+	c.errorCode = SubmitResponse::Error;
+	c.errorNumber = -1;
+	c.deadline = deadline;
+	return c;
+}
+
+Burst::NonceConfirmation Burst::NonceConfirmation::createSuccess(Poco::UInt64 nonce, Poco::UInt64 deadline,
+	const std::string& deadlineText)
+{
+	NonceConfirmation c;
+	c.json = Poco::format(
+		R"({ "result" : "success", "deadline" : %Lu, "deadlineText" : "%s", "deadlineString" : "%s" })",
+		deadline, deadlineText, deadlineText);
+	c.errorText = "Deadline confirmed!";
+	c.errorCode = SubmitResponse::Error;
+	c.errorNumber = -1;
+	c.deadline = deadline;
+	return c;
+}
+
+Burst::NonceResponse::NonceResponse(std::unique_ptr<HTTPClientSession> session)
 	: response_(std::move(session))
 {}
 
@@ -97,14 +174,15 @@ bool Burst::NonceResponse::canReceive() const
 	return response_.canReceive();
 }
 
-Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
+Burst::NonceConfirmation Burst::NonceResponse::getConfirmation() const
 {
 	poco_ndc(NonceResponse::getConfirmation);
 	
 	std::string response;
-	NonceConfirmation confirmation{ 0, SubmitResponse::None };
+	int status;
+	NonceConfirmation confirmation{0, SubmitResponse::None, "", 0, ""};
 
-	if (response_.receive(response))
+	if (response_.receive(response, status))
 	{
 		try
 		{
@@ -115,7 +193,7 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 
 			if (root->has("deadline"))
 			{
-                confirmation.deadline = (Poco::UInt64)root->get("deadline");
+                confirmation.deadline = static_cast<Poco::UInt64>(root->get("deadline"));
 				confirmation.errorCode = SubmitResponse::Confirmed;
 			}
 			else if (root->has("errorCode"))
@@ -147,11 +225,33 @@ Burst::NonceConfirmation Burst::NonceResponse::getConfirmation()
 			confirmation.errorCode = SubmitResponse::Error;
 		}
 	}
+	else
+	{
+		confirmation.errorCode = SubmitResponse::Error;
+		confirmation.json = response;
+		Poco::JSON::Parser jsonParser;
+
+		try
+		{
+			auto json = jsonParser.parse(response).extract<Poco::JSON::Object::Ptr>();
+			if (json->has("errorDescription"))
+				confirmation.errorText = json->getValue<std::string>("errorDescription");
+			else if (json->has("result"))
+				confirmation.errorText = json->getValue<std::string>("result");
+
+			if (json->has("errorCode"))
+				confirmation.errorNumber = json->getValue<int>("errorCode");
+			else
+				confirmation.errorNumber = -1;
+		}
+		catch (...)
+		{}
+	}
 
 	return confirmation;
 }
 
-bool Burst::NonceResponse::isDataThere()
+bool Burst::NonceResponse::isDataThere() const
 {
 	return response_.isDataThere();
 }
@@ -209,7 +309,7 @@ const std::string& Burst::HttpResponse::getMessage() const
 
 const std::string& Burst::HttpResponse::getPart(size_t index) const
 {
-	static std::string empty = "";
+	static std::string empty;
 
 	if (index >= tokens_.size())
 		return empty;

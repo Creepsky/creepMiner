@@ -27,38 +27,38 @@
 #include "logging/MinerLogger.hpp"
 #include "webserver/RequestHandler.hpp"
 
-std::string Burst::Settings::Cpu_Instruction_Set = "";
-Burst::ProjectData Burst::Settings::Project("creepMiner",
-	Burst::Version(VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, 0));
+std::string Burst::Settings::cpuInstructionSet;
+Burst::ProjectData Burst::Settings::project("creepMiner",
+	Burst::Version(VERSION_MAJOR, VERSION_MINOR, VERSION_BUILD, VERSION_REVISION));
 
 #ifdef USE_SSE4
-const bool Burst::Settings::Sse4 = true;
+const bool Burst::Settings::sse4 = true;
 #else
-const bool Burst::Settings::Sse4 = false;
+const bool Burst::Settings::sse4 = false;
 #endif
 
 #ifdef USE_AVX
-const bool Burst::Settings::Avx = true;
+const bool Burst::Settings::avx = true;
 #else
-const bool Burst::Settings::Avx = false;
+const bool Burst::Settings::avx = false;
 #endif
 
 #ifdef USE_AVX2
-const bool Burst::Settings::Avx2 = true;
+const bool Burst::Settings::avx2 = true;
 #else
-const bool Burst::Settings::Avx2 = false;
+const bool Burst::Settings::avx2 = false;
 #endif
 
 #ifdef USE_CUDA
-const bool Burst::Settings::Cuda = true;
+const bool Burst::Settings::cuda = true;
 #else
-const bool Burst::Settings::Cuda = false;
+const bool Burst::Settings::cuda = false;
 #endif
 
 #ifdef USE_OPENCL
-const bool Burst::Settings::OpenCl = true;
+const bool Burst::Settings::openCl = true;
 #else
-const bool Burst::Settings::OpenCl = false;
+const bool Burst::Settings::openCl = false;
 #endif
 
 void Burst::Version::updateLiterals()
@@ -83,8 +83,8 @@ Burst::Version::Version(std::string version)
 
 	Poco::StringTokenizer tokenizer{ version, "." };
 
-	// need major.minor.build (3 parts, concatenated by a dot)
-	if (tokenizer.count() == 3)
+	// need major.minor.build (3 to 4 parts, concatenated by a dot)
+	if (tokenizer.count() >= 3)
 	{
 		try
 		{
@@ -172,44 +172,44 @@ bool Burst::Version::operator!=(const Version& rhs) const
 void Burst::ProjectData::refreshNameAndVersion()
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	nameAndVersion = this->name + " " + this->version.literal;
+	nameAndVersion = this->name + " " + this->version_.literal;
 	nameAndVersionVerbose = this->name + " " +
-		(this->version.revision > 0 ? this->version.literalVerbose : this->version.literal) + " " +
-		Settings::OsFamily + " " + Settings::Arch;
+		(this->version_.revision > 0 ? this->version_.literalVerbose : this->version_.literal) + " " +
+		Settings::osFamily + " " + Settings::arch;
 
-	if (Settings::Cpu_Instruction_Set != "")
-		nameAndVersionVerbose += std::string(" ") + Settings::Cpu_Instruction_Set;
+	if (!Settings::cpuInstructionSet.empty())
+		nameAndVersionVerbose += std::string(" ") + Settings::cpuInstructionSet;
 }
 
 void Burst::ProjectData::refreshAndCheckOnlineVersion(Poco::Timer& timer)
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
 	const std::string host = "https://github.com/Creepsky/creepMiner";
-	onlineVersion = Burst::RequestHandler::fetchOnlineVersion();
-	if (onlineVersion > version)
-		log_system(MinerLogger::general, "There is a new version (%s) on\n\t%s", onlineVersion.literal, host);
+	onlineVersion_ = Burst::RequestHandler::fetchOnlineVersion();
+	if (onlineVersion_ > version_)
+		log_system(MinerLogger::general, "There is a new version (%s) on\n\t%s", onlineVersion_.literal, host);
 }
 
 std::string Burst::ProjectData::getOnlineVersion() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return onlineVersion.literal;
+	return onlineVersion_.literal;
 }
 
-std::string Burst::ProjectData::getVersion() const
+const Burst::Version& Burst::ProjectData::getVersion() const
 {
 	Poco::Mutex::ScopedLock lock(mutex_);
-	return version.literal;
+	return version_;
 }
 
 Burst::ProjectData::ProjectData(std::string&& name, Version version)
-	: name{std::move(name)}, version{std::move(version)}, onlineVersion{ std::move(version) }
+	: name{std::move(name)}, version_{std::move(version)}, onlineVersion_{ std::move(version) }
 {
 	refreshNameAndVersion();
 }
 
 void Burst::Settings::setCpuInstructionSet(std::string cpuInstructionSet)
 {
-	Cpu_Instruction_Set = std::move(cpuInstructionSet);
-	Project.refreshNameAndVersion();
+	cpuInstructionSet = std::move(cpuInstructionSet);
+	project.refreshNameAndVersion();
 }

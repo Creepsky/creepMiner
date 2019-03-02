@@ -34,38 +34,38 @@
 Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::UInt64 nonce, const Miner& miner)
 {
 	char final[32];
-	char gendata[16 + Settings::PlotSize];
+	char gendata[16 + Settings::plotSize];
 
 	auto xv = reinterpret_cast<char*>(&account);
 
 	for (auto j = 0u; j <= 7; ++j)
-		gendata[Settings::PlotSize + j] = xv[7 - j];
+		gendata[Settings::plotSize + j] = xv[7 - j];
 
 	xv = reinterpret_cast<char*>(&nonce);
 
 	for (auto j = 0u; j <= 7; ++j)
-		gendata[Settings::PlotSize + 8 + j] = xv[7 - j];
+		gendata[Settings::plotSize + 8 + j] = xv[7 - j];
 
-	for (auto i = Settings::PlotSize; i > 0; i -= Settings::HashSize)
+	for (auto i = Settings::plotSize; i > 0; i -= Settings::hashSize)
 	{
-		Shabal256_SSE2 x;
+		Shabal256Sse2 x;
 
-		auto len = Settings::PlotSize + 16 - i;
+		auto len = Settings::plotSize + 16 - i;
 
-		if (len > Settings::ScoopPerPlot)
-			len = Settings::ScoopPerPlot;
+		if (len > Settings::scoopPerPlot)
+			len = Settings::scoopPerPlot;
 
 		x.update(&gendata[i], len);
-		x.close(&gendata[i - Settings::HashSize]);
+		x.close(&gendata[i - Settings::hashSize]);
 	}
 
-	Shabal256_SSE2 x;
-	x.update(&gendata[0], 16 + Settings::PlotSize);
+	Shabal256Sse2 x;
+	x.update(&gendata[0], 16 + Settings::plotSize);
 	x.close(&final[0]);
 
 	// XOR with final
-	for (size_t i = 0; i < Settings::PlotSize; i++)
-		gendata[i] ^= final[i % Settings::HashSize];
+	for (size_t i = 0; i < Settings::plotSize; i++)
+		gendata[i] ^= final[i % Settings::hashSize];
 
 	if (miner.isPoC2())
 		convertToPoC2(gendata);
@@ -77,9 +77,9 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 	const auto scoop = miner.getScoopNum();
 	const auto basetarget = miner.getBaseTarget();
 
-	Shabal256_SSE2 y;
-	y.update(generationSignature.data(), Settings::HashSize);
-	y.update(&gendata[scoop * Settings::ScoopSize], Settings::ScoopSize);
+	Shabal256Sse2 y;
+	y.update(generationSignature.data(), Settings::hashSize);
+	y.update(&gendata[scoop * Settings::scoopSize], Settings::scoopSize);
 	y.close(target.data());
 
 	memcpy(&result, target.data(), sizeof(Poco::UInt64));
@@ -88,7 +88,7 @@ Poco::UInt64 Burst::PlotGenerator::generateAndCheck(Poco::UInt64 account, Poco::
 }
 
 
-double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner& miner, MinerServer& server)
+double Burst::PlotGenerator::checkPlotfileIntegrity(const std::string& plotPath, Miner& miner, MinerServer& server)
 {
 	const auto account = Poco::NumberParser::parseUnsigned64(getAccountIdFromPlotFile(plotPath));
 	const auto startNonce = Poco::NumberParser::parseUnsigned64(getStartNonceFromPlotFile(plotPath));
@@ -101,24 +101,23 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 	std::uniform_int_distribution<Poco::UInt64> randInt(0, nonceCount);
 
 	log_system(MinerLogger::general, "Validating the integrity of file " + plotPath + " ...");
-	
-	const auto checkNonces = 32ull;		//number of nonces to check
-	const auto checkScoops = 32ull;		//number of scoops to check per nonce
-	const auto scoopSize = Settings::ScoopSize;
-	const auto scoopStep = Settings::ScoopPerPlot / checkScoops;
+
+	const auto checkNonces = 32ull; //number of nonces to check
+	const auto checkScoops = 32ull; //number of scoops to check per nonce
+	const auto scoopSize = Settings::scoopSize;
+	const auto scoopStep = Settings::scoopPerPlot / checkScoops;
 	const auto nonceStep = (nonceCount / checkNonces);
 
 	// drawing random numbers to decide which scoops/nonces to check
 	std::vector<Poco::UInt64> scoops(checkScoops + 1);
 	std::vector<Poco::UInt64> nonces(checkNonces + 1);
-	for (auto i = 0; i < (checkScoops + 1); i++) scoops[i] = randInt(gen) % scoopStep;
-	for (auto i = 0; i < (checkNonces + 1); i++) nonces[i] = randInt(gen) % nonceStep;
+	for (Poco::UInt64 i = 0; i < (checkScoops + 1); i++) scoops[i] = randInt(gen) % scoopStep;
+	for (Poco::UInt64 i = 0; i < (checkNonces + 1); i++) nonces[i] = randInt(gen) % nonceStep;
 
 	// reading the nonces from the plot file in a parallel thread
 	std::vector<char> readNonce(16 + scoopSize * checkNonces * checkScoops);
 
-	std::thread nonceReader([&readNonce, scoops, plotPath, &miner, nonces, checkNonces, checkScoops,
-		startNonce, nonceCount, staggerSize, scoopSize, scoopStep, nonceStep]
+	std::thread nonceReader([&]
 	{
 		const auto nonceScoopOffset = staggerSize * scoopSize;
 		for (auto scoopInterval = 0ull; scoopInterval < checkScoops; scoopInterval++)
@@ -126,7 +125,7 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 			while (miner.isProcessing()) Poco::Thread::sleep(1000);
 
 			auto scoop = scoopInterval * scoopStep + scoops[scoopInterval];
-			if (scoop >= Settings::ScoopPerPlot) scoop = Settings::ScoopPerPlot - 1;
+			if (scoop >= Settings::scoopPerPlot) scoop = Settings::scoopPerPlot - 1;
 
 			std::ifstream plotFile(plotPath, std::ifstream::in | std::ifstream::binary);
 
@@ -134,9 +133,10 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 			{
 				auto nonce = startNonce + nonceInterval * nonceStep + nonces[nonceInterval];
 				if (nonce >= startNonce + nonceCount) nonce = startNonce + nonceCount - 1;
-				const auto nonceStaggerOffset = ((nonce - startNonce) / staggerSize) *Settings::PlotSize*staggerSize + ((nonce - startNonce) % staggerSize)*scoopSize;
+				const auto nonceStaggerOffset = ((nonce - startNonce) / staggerSize) * Settings::plotSize * staggerSize + ((nonce -
+					startNonce) % staggerSize) * scoopSize;
 				plotFile.seekg(nonceStaggerOffset + scoop * nonceScoopOffset);
-				plotFile.read(readNonce.data() + nonceInterval * scoopSize + (checkNonces*scoopInterval*scoopSize), scoopSize);
+				plotFile.read(readNonce.data() + nonceInterval * scoopSize + (checkNonces * scoopInterval * scoopSize), scoopSize);
 			}
 			plotFile.close();
 		}
@@ -171,7 +171,7 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 		for (auto scoopInterval = 0ull; scoopInterval < checkScoops; scoopInterval++)
 		{
 			auto scoop = scoopInterval * scoopStep + scoops[scoopInterval];
-			if (scoop >= Settings::ScoopPerPlot) scoop = Settings::ScoopPerPlot - 1;
+			if (scoop >= Settings::scoopPerPlot) scoop = Settings::scoopPerPlot - 1;
 			const auto scoopPos = scoop * scoopSize;
 			const auto nonceScoopPos = nonceInterval * scoopSize + (checkNonces*scoopInterval*scoopSize);
 			auto bytes = 0;
@@ -207,67 +207,67 @@ double Burst::PlotGenerator::checkPlotfileIntegrity(std::string plotPath, Miner&
 
 std::vector<char> Burst::PlotGenerator::generateSse2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
 {
-	const auto gendata = generate<Shabal256_SSE2, PlotGeneratorOperations1<Shabal256_SSE2>>(account, startNonce);
+	const auto gendata = generate<Shabal256Sse2, PlotGeneratorOperations1<Shabal256Sse2>>(account, startNonce);
 	return gendata[0];
 }
 
-std::array<std::vector<char>, Burst::Shabal256_AVX::HashSize> Burst::PlotGenerator::generateAvx(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+std::array<std::vector<char>, Burst::Shabal256Avx::HashSize> Burst::PlotGenerator::generateAvx(const Poco::UInt64 account, const Poco::UInt64 startNonce)
 {
-	return generate<Shabal256_AVX, PlotGeneratorOperations4<Shabal256_AVX>>(account, startNonce);
+	return generate<Shabal256Avx, PlotGeneratorOperations4<Shabal256Avx>>(account, startNonce);
 }
 
-std::array<std::vector<char>, Burst::Shabal256_SSE4::HashSize> Burst::PlotGenerator::generateSse4(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+std::array<std::vector<char>, Burst::Shabal256Sse4::HashSize> Burst::PlotGenerator::generateSse4(const Poco::UInt64 account, const Poco::UInt64 startNonce)
 {
-	return generate<Shabal256_SSE4, PlotGeneratorOperations4<Shabal256_SSE4>>(account, startNonce);
+	return generate<Shabal256Sse4, PlotGeneratorOperations4<Shabal256Sse4>>(account, startNonce);
 }
 
-std::array<std::vector<char>, Burst::Shabal256_AVX2::HashSize> Burst::PlotGenerator::generateAvx2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
+std::array<std::vector<char>, Burst::Shabal256Avx2::HashSize> Burst::PlotGenerator::generateAvx2(const Poco::UInt64 account, const Poco::UInt64 startNonce)
 {
-	return generate<Shabal256_AVX2, PlotGeneratorOperations8<Shabal256_AVX2>>(account, startNonce);
+	return generate<Shabal256Avx2, PlotGeneratorOperations8<Shabal256Avx2>>(account, startNonce);
 }
 
 Poco::UInt64 Burst::PlotGenerator::calculateDeadlineSse2(std::vector<char>& gendata,
 	GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
 {
 	std::array<std::vector<char>, 1> container = {gendata};
-	return calculateDeadline<Shabal256_SSE2, PlotGeneratorOperations1<Shabal256_SSE2>>(container, generationSignature, scoop, baseTarget)[0];
+	return calculateDeadline<Shabal256Sse2, PlotGeneratorOperations1<Shabal256Sse2>>(container, generationSignature, scoop, baseTarget)[0];
 }
 
-std::array<Poco::UInt64, Burst::Shabal256_AVX::HashSize> Burst::PlotGenerator::
-	calculateDeadlineAvx(std::array<std::vector<char>, Shabal256_AVX::HashSize>& gendatas,
+std::array<Poco::UInt64, Burst::Shabal256Avx::HashSize> Burst::PlotGenerator::
+	calculateDeadlineAvx(std::array<std::vector<char>, Shabal256Avx::HashSize>& gendatas,
 		GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
 {
-	return calculateDeadline<Shabal256_AVX, PlotGeneratorOperations4<Shabal256_AVX>>(gendatas, generationSignature, scoop, baseTarget);
+	return calculateDeadline<Shabal256Avx, PlotGeneratorOperations4<Shabal256Avx>>(gendatas, generationSignature, scoop, baseTarget);
 }
 
-std::array<Poco::UInt64, Burst::Shabal256_SSE4::HashSize> Burst::PlotGenerator::
-	calculateDeadlineSse4(std::array<std::vector<char>, Shabal256_SSE4::HashSize>& gendatas,
+std::array<Poco::UInt64, Burst::Shabal256Sse4::HashSize> Burst::PlotGenerator::
+	calculateDeadlineSse4(std::array<std::vector<char>, Shabal256Sse4::HashSize>& gendatas,
 		GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
 {
-	return calculateDeadline<Shabal256_SSE4, PlotGeneratorOperations4<Shabal256_SSE4>>(gendatas, generationSignature, scoop, baseTarget);
+	return calculateDeadline<Shabal256Sse4, PlotGeneratorOperations4<Shabal256Sse4>>(gendatas, generationSignature, scoop, baseTarget);
 }
 
-std::array<Poco::UInt64, Burst::Shabal256_AVX2::HashSize> Burst::PlotGenerator::
-	calculateDeadlineAvx2(std::array<std::vector<char>, Shabal256_AVX2::HashSize>& gendatas,
+std::array<Poco::UInt64, Burst::Shabal256Avx2::HashSize> Burst::PlotGenerator::
+	calculateDeadlineAvx2(std::array<std::vector<char>, Shabal256Avx2::HashSize>& gendatas,
 		GensigData& generationSignature, const Poco::UInt64 scoop, const Poco::UInt64 baseTarget)
 {
-	return calculateDeadline<Shabal256_AVX2, PlotGeneratorOperations8<Shabal256_AVX2>>(gendatas, generationSignature, scoop, baseTarget);
+	return calculateDeadline<Shabal256Avx2, PlotGeneratorOperations8<Shabal256Avx2>>(gendatas, generationSignature, scoop, baseTarget);
 }
 
 void Burst::PlotGenerator::convertToPoC2(char* gendata)
 {
-	std::array<char, Settings::HashSize> buffer{};
-	auto indexMirror = Settings::HashSize - Settings::ScoopSize;
+	std::array<char, Settings::hashSize> buffer{};
+	auto indexMirror = Settings::hashSize - Settings::scoopSize;
 
-	for (size_t i = 0; i < Settings::PlotSize / 2; i += Settings::ScoopSize)
+	for (size_t i = 0; i < Settings::plotSize / 2; i += Settings::scoopSize)
 	{
-		const auto scoop = &gendata[i + Settings::HashSize];
-		const auto mirrorScoop = &gendata[indexMirror + Settings::HashSize];
+		const auto scoop = &gendata[i + Settings::hashSize];
+		const auto mirrorScoop = &gendata[indexMirror + Settings::hashSize];
 
-		memcpy(buffer.data(), scoop, Settings::HashSize);
-		memcpy(scoop, mirrorScoop, Settings::HashSize);
-		memcpy(mirrorScoop, buffer.data(), Settings::HashSize);
+		memcpy(buffer.data(), scoop, Settings::hashSize);
+		memcpy(scoop, mirrorScoop, Settings::hashSize);
+		memcpy(mirrorScoop, buffer.data(), Settings::hashSize);
 
-		indexMirror -= Settings::ScoopSize;
+		indexMirror -= Settings::scoopSize;
 	}
 }

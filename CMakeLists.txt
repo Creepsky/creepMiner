@@ -6,7 +6,7 @@ project(creepMiner)
 set(CMAKE_CXX_STANDARD 14)
 
 if (NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE RELEASE)
+	set(CMAKE_BUILD_TYPE RELWITHDEBINFO)
 endif ()
 
 ##################################################################
@@ -131,15 +131,15 @@ file(GLOB SOURCE_FILES
     src/logging/channels/*.*pp
     src/logging/*.*pp
     src/mining/*.*pp
-	src/network/*.*pp
-	src/nxt/nxt_address.h
-	src/nxt/nxt_address.cpp
-	src/plots/*.*pp
-	src/shabal/*.*pp
-	src/shabal/sphlib/*.*pp
+    src/network/*.*pp
+    src/nxt/nxt_address.h
+    src/nxt/nxt_address.cpp
+    src/plots/*.*pp
+    src/shabal/*.*pp
+    src/shabal/sphlib/*.*pp
     src/wallet/*.*pp
     src/webserver/*.*pp
-	src/resources.rc)
+    src/resources.rc)
 
 ##################################################################
 # Special files and settings
@@ -192,6 +192,13 @@ endif ()
 ##################################################################
 # Libraries
 ##################################################################
+
+# Optimised Shabal Library
+find_library(SHABAL_LIB NAMES shabal.dll libshabal.dylib libshabal.so HINTS "${CMAKE_SOURCE_DIR}/libShabal")
+add_library(shabalLib STATIC IMPORTED)
+set_property(TARGET shabalLib PROPERTY IMPORTED_LOCATION ${SHABAL_LIB})
+target_link_libraries(creepMiner shabalLib)
+
 target_link_libraries(creepMiner ${CONAN_LIBS})
 
 if (NOT USE_CONAN)
@@ -222,9 +229,13 @@ if (NOT MSVC)
 			WORLD_READ WORLD_WRITE WORLD_EXECUTE)
 	if (UNIX)
 		install(DIRECTORY lib/ DESTINATION lib)
-	endif ()
+		install(FILES libShabal/libshabal.so DESTINATION .)
+	elseif (APPLE)
+		install(FILES libShabal/libshabal.dylib DESTINATION .)
+	endif()
 else ()
 	install(TARGETS creepMiner RUNTIME DESTINATION .)
+	install(FILES libShabal/shabal.dll DESTINATION .)
 endif ()
 
 ##################################################################

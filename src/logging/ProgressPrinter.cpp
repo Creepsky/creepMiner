@@ -76,7 +76,7 @@ void Burst::ProgressPrinter::print(const Progress& progress) const
 
 		auto block = Console::print();
 		
-		block << MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
+		block << MinerLogger::getTextTypeColor(TextType::Unimportant) << getTime() << ": "
 			<< MinerLogger::getTextTypeColor(delimiterFront.textType) << delimiterFront.character
 			<< MinerLogger::getTextTypeColor(verifiedDoneChar.textType) << repeat(doneSizeVerified, verifiedDoneChar.character)
 			<< MinerLogger::getTextTypeColor(readDoneChar.textType) << repeat(doneSizeRead, readDoneChar.character)
@@ -90,7 +90,7 @@ void Burst::ProgressPrinter::print(const Progress& progress) const
 	}
 	else
 		Console::print()
-			<< MinerLogger::getTextTypeColor(TextType::Normal) << getTime() << ": "
+			<< MinerLogger::getTextTypeColor(TextType::Unimportant) << getTime() << ": "
 			<< "Read:  " << toPercentage << progress.read << "% ("
 			<< memToString(static_cast<Poco::UInt64>(progress.bytesPerSecondRead), 2) << "/s)   "
 			<< "Verified:  " << toPercentage << progress.verify << "% ("

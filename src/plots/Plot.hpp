@@ -42,9 +42,9 @@ namespace Burst
 		/**
 		 * \brief Constructor.
 		 * \param path The path to the plotfile.
-		 * \param size The size of the plotfile in Bytes.
+		 * \param startPos The start position of the plotfile on the device (in bytes).
 		 */
-		PlotFile(std::string&& path, Poco::UInt64 size);
+		PlotFile(std::string&& path, Poco::UInt64 startPos = 0);
 
 		/**
 		 * \brief Returns the path to the plotfile.
@@ -112,8 +112,22 @@ namespace Burst
 		 */
 		bool isPoC(int version) const;
 
+        /**
+		 * \brief Returns the device path for the plotfile-
+		 * \return A string, that holds the device path for the plotfile.
+		 */
+		const std::string& getDevicePath() const;
+
+		/**
+		 * \brief Returns the start position of the plotfile on the device.
+		 * \return The start position of the plotfile on the device (in bytes).
+		 */
+		Poco::UInt64 getStartPos() const;
+
 	private:
 		std::string path_;
+		std::string devicePath_;
+		Poco::UInt64 startPos_;
 		Poco::UInt64 size_;
 		Poco::UInt64 accountId_, nonceStart_, nonces_, staggerSize_, version_;
 	};
